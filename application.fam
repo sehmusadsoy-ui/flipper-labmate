@@ -12,3 +12,4 @@ App(
     fap_version="1.0",
     fap_description="Portable GPIO and digital signal diagnostic tool for Flipper Zero.",
 )
+
