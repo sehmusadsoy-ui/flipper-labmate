@@ -1,7 +1,7 @@
 #include <furi.h>
 #include <furi_hal.h>
 #include <furi_hal_resources.h>
-#include <furi_hal_interrupt.h>
+#include <furi_hal_pwm.h>
 #include <furi_hal_bus.h>
 #include <stm32wbxx_ll_tim.h>
 #include <gui/gui.h>
@@ -10,9 +10,6 @@
 #define MENU_COUNT 5
 #define GPIO_COUNT 8
 
-#define LABMATE_GEN_TIMER     TIM2
-#define LABMATE_GEN_TIMER_BUS FuriHalBusTIM2
-#define LABMATE_GEN_TIMER_IRQ FuriHalInterruptIdTIM2
 
 typedef enum {
     LabMateScreenMenu,
@@ -48,9 +45,16 @@ typedef struct {
     volatile uint32_t frequency_irq_last_tick;
     volatile uint32_t frequency_irq_edges;
     volatile bool frequency_irq_new_period;
+    volatile uint32_t frequency_irq_cycle_accumulator;
+    volatile uint8_t frequency_irq_accumulated_periods;
     bool frequency_irq_active;
 
-    uint32_t frequency_period_samples[4];
+    /* High-frequency hardware counter on PB3 / TIM2_CH2 */
+    bool frequency_hw_active;
+    uint32_t frequency_hw_last_count;
+    uint32_t frequency_hw_last_cycle;
+
+    uint32_t frequency_period_samples[8];
     uint8_t frequency_sample_index;
     uint8_t frequency_sample_count;
 
@@ -113,9 +117,21 @@ static const uint32_t generator_frequencies[] = {
     1,
     2,
     5,
+    10,
+    20,
+    50,
+    100,
+    200,
+    500,
+    1000,
+    2000,
+    5000,
+    10000,
+    20000,
+    50000,
 };
 
-#define GENERATOR_FREQ_COUNT 3
+#define GENERATOR_FREQ_COUNT 15
 
 static void frequency_gpio_callback(void* context) {
     LabMateApp* app = context;
@@ -128,11 +144,44 @@ static void frequency_gpio_callback(void* context) {
     uint32_t now_cycle = DWT->CYCCNT;
 
     if(app->frequency_irq_last_cycle != 0) {
-        app->frequency_irq_period_cycles =
+        uint32_t period_cycles =
             now_cycle -
             app->frequency_irq_last_cycle;
 
-        app->frequency_irq_new_period = true;
+        /*
+         * Above roughly 1 kHz, average 32 complete
+         * periods inside the ISR before publishing.
+         * This reduces interrupt timing jitter.
+         */
+        if(SystemCoreClock > 0 &&
+           period_cycles <
+               (SystemCoreClock / 1000U)) {
+
+            app->frequency_irq_cycle_accumulator +=
+                period_cycles;
+
+            app->frequency_irq_accumulated_periods++;
+
+            if(app->frequency_irq_accumulated_periods >= 32U) {
+                app->frequency_irq_period_cycles =
+                    (app->frequency_irq_cycle_accumulator +
+                     16U) /
+                    32U;
+
+                app->frequency_irq_new_period = true;
+
+                app->frequency_irq_cycle_accumulator = 0;
+                app->frequency_irq_accumulated_periods = 0;
+            }
+        } else {
+            app->frequency_irq_cycle_accumulator = 0;
+            app->frequency_irq_accumulated_periods = 0;
+
+            app->frequency_irq_period_cycles =
+                period_cycles;
+
+            app->frequency_irq_new_period = true;
+        }
     }
 
     app->frequency_irq_last_cycle = now_cycle;
@@ -140,7 +189,93 @@ static void frequency_gpio_callback(void* context) {
     app->frequency_irq_edges++;
 }
 
-static void frequency_interrupt_stop(LabMateApp* app) {
+static void frequency_hw_stop(LabMateApp* app) {
+    if(!app->frequency_hw_active) {
+        return;
+    }
+
+    LL_TIM_DisableCounter(TIM2);
+    LL_TIM_CC_DisableChannel(TIM2, LL_TIM_CHANNEL_CH2);
+
+    furi_hal_bus_disable(FuriHalBusTIM2);
+
+    furi_hal_gpio_init_simple(
+        &gpio_ext_pb3,
+        GpioModeAnalog);
+
+    app->frequency_hw_active = false;
+    app->frequency_hw_last_count = 0;
+    app->frequency_hw_last_cycle = 0;
+}
+
+static void frequency_hw_start(LabMateApp* app) {
+    if(app->frequency_hw_active) {
+        return;
+    }
+
+    /*
+     * PB3 -> TIM2_CH2
+     * TIM2 counts incoming rising edges directly in hardware.
+     * No interrupt is generated for each edge.
+     */
+    furi_hal_gpio_init_ex(
+        &gpio_ext_pb3,
+        GpioModeAltFunctionPushPull,
+        GpioPullNo,
+        GpioSpeedVeryHigh,
+        GpioAltFn1TIM2);
+
+    furi_hal_bus_enable(FuriHalBusTIM2);
+
+    LL_TIM_InitTypeDef timer_init = {0};
+    timer_init.Prescaler = 0;
+    timer_init.CounterMode = LL_TIM_COUNTERMODE_UP;
+    timer_init.Autoreload = UINT32_MAX;
+    timer_init.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
+
+    LL_TIM_Init(TIM2, &timer_init);
+
+    LL_TIM_IC_SetActiveInput(
+        TIM2,
+        LL_TIM_CHANNEL_CH2,
+        LL_TIM_ACTIVEINPUT_DIRECTTI);
+
+    LL_TIM_IC_SetPrescaler(
+        TIM2,
+        LL_TIM_CHANNEL_CH2,
+        LL_TIM_ICPSC_DIV1);
+
+    LL_TIM_IC_SetPolarity(
+        TIM2,
+        LL_TIM_CHANNEL_CH2,
+        LL_TIM_IC_POLARITY_RISING);
+
+    LL_TIM_IC_SetFilter(
+        TIM2,
+        LL_TIM_CHANNEL_CH2,
+        LL_TIM_IC_FILTER_FDIV1);
+
+    LL_TIM_SetTriggerInput(
+        TIM2,
+        LL_TIM_TS_TI2FP2);
+
+    LL_TIM_SetClockSource(
+        TIM2,
+        LL_TIM_CLOCKSOURCE_EXT_MODE1);
+
+    LL_TIM_CC_EnableChannel(
+        TIM2,
+        LL_TIM_CHANNEL_CH2);
+
+    LL_TIM_SetCounter(TIM2, 0);
+
+    app->frequency_hw_last_count = 0;
+    app->frequency_hw_last_cycle = DWT->CYCCNT;
+    app->frequency_hw_active = true;
+
+    LL_TIM_EnableCounter(TIM2);
+}
+static void __attribute__((unused)) frequency_interrupt_stop(LabMateApp* app) {
     if(!app->frequency_irq_active) return;
 
     const GpioPin* pin =
@@ -152,7 +287,7 @@ static void frequency_interrupt_stop(LabMateApp* app) {
     app->frequency_irq_active = false;
 }
 
-static void frequency_interrupt_start(LabMateApp* app) {
+static void __attribute__((unused)) frequency_interrupt_start(LabMateApp* app) {
     const GpioPin* pin =
         labmate_gpio_pins[app->gpio_index];
 
@@ -202,6 +337,8 @@ static void measurement_reset(LabMateApp* app) {
 
     app->frequency_sample_index = 0;
     app->frequency_sample_count = 0;
+    app->frequency_irq_cycle_accumulator = 0;
+    app->frequency_irq_accumulated_periods = 0;
 
     app->pulse_last_edge = now;
     app->pulse_high_ticks = 0;
@@ -234,11 +371,35 @@ static void gpio_change(
     int8_t direction) {
 
     /*
-     * Frequency Meter owns an active GPIO IRQ.
-     * Runtime pin switching is intentionally locked
-     * for maximum stability.
+     * Frequency Meter has two stable measurement modes:
+     *
+     * LEFT  -> PC1 / low-frequency period measurement
+     * RIGHT -> PB3 / TIM2 hardware edge counter
      */
     if(app->screen == LabMateScreenFrequency) {
+        uint8_t target_index =
+            (direction > 0) ? 4U : 1U; /* PB3 : PC1 */
+
+        if(app->gpio_index == target_index) {
+            return;
+        }
+
+        frequency_interrupt_stop(app);
+        frequency_hw_stop(app);
+
+        gpio_release(app->gpio_index);
+
+        app->gpio_index = target_index;
+        app->hold = false;
+
+        measurement_reset(app);
+
+        if(app->gpio_index == 4U) {
+            frequency_hw_start(app);
+        } else {
+            frequency_interrupt_start(app);
+        }
+
         return;
     }
 
@@ -318,6 +479,64 @@ static void measurement_update(LabMateApp* app) {
      */
     if(app->screen == LabMateScreenFrequency) {
 
+        /*
+         * High-frequency hardware counter mode.
+         * PB3 / TIM2_CH2 counts edges without GPIO interrupts.
+         */
+        if(app->frequency_hw_active) {
+            uint32_t current_cycle = DWT->CYCCNT;
+            uint32_t elapsed_cycles =
+                current_cycle -
+                app->frequency_hw_last_cycle;
+
+            /*
+             * Update roughly every 100 ms.
+             */
+            if(SystemCoreClock > 0 &&
+               elapsed_cycles >=
+                   (SystemCoreClock / 2U)) {
+
+                uint32_t current_count =
+                    LL_TIM_GetCounter(TIM2);
+
+                uint32_t delta_count =
+                    current_count -
+                    app->frequency_hw_last_count;
+
+                app->frequency_hw_last_count =
+                    current_count;
+
+                app->frequency_hw_last_cycle =
+                    current_cycle;
+
+                app->edges = current_count;
+
+                if(delta_count > 0) {
+                    app->frequency_millihz =
+                        (uint32_t)(
+                            (((uint64_t)delta_count *
+                              (uint64_t)SystemCoreClock *
+                              1000ULL) +
+                             (elapsed_cycles / 2U)) /
+                            elapsed_cycles);
+
+                    app->frequency_valid = true;
+                    app->frequency_last_edge = now;
+
+                } else if(
+                    tick_frequency > 0 &&
+                    (now -
+                     app->frequency_last_edge) >
+                        (tick_frequency * 3U)) {
+
+                    app->frequency_millihz = 0;
+                    app->frequency_valid = false;
+                }
+            }
+
+            return;
+        }
+
         if(app->frequency_irq_new_period) {
 
             uint32_t period_cycles;
@@ -340,28 +559,52 @@ static void measurement_update(LabMateApp* app) {
 
                 app->frequency_sample_index =
                     (app->frequency_sample_index + 1U) %
-                    4U;
+                    8U;
 
-                if(app->frequency_sample_count < 4U) {
+                if(app->frequency_sample_count < 8U) {
                     app->frequency_sample_count++;
                 }
 
                 uint64_t period_sum = 0;
+                uint32_t period_min = UINT32_MAX;
+                uint32_t period_max = 0;
 
                 for(uint8_t s = 0;
                     s < app->frequency_sample_count;
                     s++) {
 
-                    period_sum +=
+                    uint32_t sample =
                         app->frequency_period_samples[s];
+
+                    period_sum += sample;
+
+                    if(sample < period_min) {
+                        period_min = sample;
+                    }
+
+                    if(sample > period_max) {
+                        period_max = sample;
+                    }
+                }
+
+                uint8_t averaging_count =
+                    app->frequency_sample_count;
+
+                /*
+                 * Trim one minimum and one maximum sample
+                 * once enough measurements are available.
+                 */
+                if(averaging_count >= 5U) {
+                    period_sum -= period_min;
+                    period_sum -= period_max;
+                    averaging_count -= 2U;
                 }
 
                 uint32_t average_period =
                     (uint32_t)(
                         (period_sum +
-                         (app->frequency_sample_count /
-                          2U)) /
-                        app->frequency_sample_count);
+                         (averaging_count / 2U)) /
+                        averaging_count);
 
                 if(average_period > 0) {
 
@@ -405,6 +648,10 @@ static void measurement_update(LabMateApp* app) {
 
                 app->frequency_sample_index = 0;
                 app->frequency_sample_count = 0;
+
+                app->frequency_irq_last_cycle = 0;
+                app->frequency_irq_cycle_accumulator = 0;
+                app->frequency_irq_accumulated_periods = 0;
 
                 memset(
                     app->frequency_period_samples,
@@ -462,47 +709,14 @@ static void measurement_update(LabMateApp* app) {
 
 /* ---------- SIGNAL GENERATOR ---------- */
 
-static void generator_timer_isr(void* context) {
-    LabMateApp* app = context;
-
-    LL_TIM_ClearFlag_UPDATE(LABMATE_GEN_TIMER);
-
-    if(!app || !app->generator_running) {
-        return;
-    }
-
-    app->generator_state =
-        !app->generator_state;
-
-    furi_hal_gpio_write(
-        &gpio_ext_pa7,
-        app->generator_state);
-}
-
 static void generator_stop(LabMateApp* app) {
     if(app->generator_running) {
-        LL_TIM_DisableIT_UPDATE(LABMATE_GEN_TIMER);
-        LL_TIM_DisableCounter(LABMATE_GEN_TIMER);
-
-        furi_hal_interrupt_set_isr(
-            LABMATE_GEN_TIMER_IRQ,
-            NULL,
-            NULL);
-
-        furi_hal_bus_disable(
-            LABMATE_GEN_TIMER_BUS);
+        furi_hal_pwm_stop(
+            FuriHalPwmOutputIdTim1PA7);
     }
 
     app->generator_running = false;
     app->generator_state = false;
-
-    furi_hal_gpio_write(
-        &gpio_ext_pa7,
-        false);
-
-    furi_hal_gpio_init_simple(
-        &gpio_ext_pa7,
-        GpioModeAnalog);
 }
 
 static void generator_start(LabMateApp* app) {
@@ -514,54 +728,17 @@ static void generator_start(LabMateApp* app) {
         return;
     }
 
-    app->generator_state = false;
-
-    furi_hal_gpio_init_simple(
-        &gpio_ext_pa7,
-        GpioModeOutputPushPull);
-
-    furi_hal_gpio_write(
-        &gpio_ext_pa7,
-        false);
-
-    furi_hal_bus_enable(
-        LABMATE_GEN_TIMER_BUS);
-
     /*
-     * 50% duty cycle:
-     * GPIO toggles twice per complete output period.
+     * Hardware PWM on PA7 / TIM1.
+     * No per-edge generator ISR is required.
      */
-    uint32_t toggle_frequency =
-        freq * 2U;
-
-    LL_TIM_InitTypeDef timer_init = {0};
-
-    timer_init.Autoreload =
-        (SystemCoreClock / toggle_frequency) - 1U;
-
-    LL_TIM_Init(
-        LABMATE_GEN_TIMER,
-        &timer_init);
-
-    LL_TIM_SetCounter(
-        LABMATE_GEN_TIMER,
-        0);
-
-    LL_TIM_ClearFlag_UPDATE(
-        LABMATE_GEN_TIMER);
-
-    furi_hal_interrupt_set_isr(
-        LABMATE_GEN_TIMER_IRQ,
-        generator_timer_isr,
-        app);
+    furi_hal_pwm_start(
+        FuriHalPwmOutputIdTim1PA7,
+        freq,
+        50U);
 
     app->generator_running = true;
-
-    LL_TIM_EnableIT_UPDATE(
-        LABMATE_GEN_TIMER);
-
-    LL_TIM_EnableCounter(
-        LABMATE_GEN_TIMER);
+    app->generator_state = false;
 }
 static void generator_change_frequency(
     LabMateApp* app,
@@ -596,9 +773,143 @@ static void generator_change_frequency(
 
 /* ---------- DRAWING ---------- */
 
+static void ui_badge(
+    Canvas* canvas,
+    uint8_t x,
+    uint8_t y,
+    uint8_t w,
+    const char* text,
+    bool filled) {
+
+    if(filled) {
+        canvas_draw_box(canvas, x, y, w, 11);
+        canvas_set_color(canvas, ColorWhite);
+    } else {
+        canvas_draw_frame(canvas, x, y, w, 11);
+    }
+
+    canvas_set_font(canvas, FontSecondary);
+    canvas_draw_str(canvas, x + 4, y + 8, text);
+
+    if(filled) {
+        canvas_set_color(canvas, ColorBlack);
+    }
+}
+
+static void ui_key(
+    Canvas* canvas,
+    uint8_t x,
+    const char* key,
+    const char* label) {
+
+    canvas_draw_frame(canvas, x, 53, 18, 10);
+    canvas_set_font(canvas, FontSecondary);
+    canvas_draw_str(canvas, x + 3, 61, key);
+    canvas_draw_str(canvas, x + 21, 61, label);
+}
+
+static void ui_icon_gpio(
+    Canvas* canvas,
+    uint8_t x,
+    uint8_t y) {
+
+    canvas_draw_frame(canvas, x + 2, y + 2, 8, 8);
+
+    canvas_draw_line(canvas, x, y + 4, x + 2, y + 4);
+    canvas_draw_line(canvas, x, y + 7, x + 2, y + 7);
+
+    canvas_draw_line(canvas, x + 10, y + 4, x + 12, y + 4);
+    canvas_draw_line(canvas, x + 10, y + 7, x + 12, y + 7);
+}
+
+static void ui_icon_frequency(
+    Canvas* canvas,
+    uint8_t x,
+    uint8_t y) {
+
+    canvas_draw_line(canvas, x, y + 7, x + 2, y + 7);
+    canvas_draw_line(canvas, x + 2, y + 7, x + 4, y + 3);
+    canvas_draw_line(canvas, x + 4, y + 3, x + 6, y + 9);
+    canvas_draw_line(canvas, x + 6, y + 9, x + 8, y + 4);
+    canvas_draw_line(canvas, x + 8, y + 4, x + 11, y + 4);
+}
+
+static void ui_icon_pulse(
+    Canvas* canvas,
+    uint8_t x,
+    uint8_t y) {
+
+    canvas_draw_line(canvas, x, y + 8, x + 3, y + 8);
+    canvas_draw_line(canvas, x + 3, y + 8, x + 3, y + 3);
+    canvas_draw_line(canvas, x + 3, y + 3, x + 7, y + 3);
+    canvas_draw_line(canvas, x + 7, y + 3, x + 7, y + 8);
+    canvas_draw_line(canvas, x + 7, y + 8, x + 11, y + 8);
+}
+
+static void ui_icon_generator(
+    Canvas* canvas,
+    uint8_t x,
+    uint8_t y) {
+
+    canvas_draw_line(canvas, x + 5, y, x + 2, y + 6);
+    canvas_draw_line(canvas, x + 2, y + 6, x + 6, y + 6);
+    canvas_draw_line(canvas, x + 6, y + 6, x + 4, y + 11);
+    canvas_draw_line(canvas, x + 4, y + 11, x + 10, y + 4);
+    canvas_draw_line(canvas, x + 10, y + 4, x + 6, y + 4);
+}
+
+static void ui_icon_info(
+    Canvas* canvas,
+    uint8_t x,
+    uint8_t y) {
+
+    canvas_draw_frame(canvas, x + 1, y + 1, 10, 10);
+    canvas_draw_box(canvas, x + 5, y + 3, 2, 2);
+    canvas_draw_line(canvas, x + 6, y + 6, x + 6, y + 9);
+}
+
+static void ui_draw_menu_icon(
+    Canvas* canvas,
+    uint8_t item,
+    uint8_t x,
+    uint8_t y) {
+
+    switch(item) {
+    case 0:
+        ui_icon_gpio(canvas, x, y);
+        break;
+    case 1:
+        ui_icon_frequency(canvas, x, y);
+        break;
+    case 2:
+        ui_icon_pulse(canvas, x, y);
+        break;
+    case 3:
+        ui_icon_generator(canvas, x, y);
+        break;
+    case 4:
+        ui_icon_info(canvas, x, y);
+        break;
+    }
+}
+
+static void draw_header(
+    Canvas* canvas,
+    const char* title) {
+
+    canvas_set_font(canvas, FontPrimary);
+    canvas_draw_str(canvas, 2, 10, title);
+
+    canvas_draw_line(canvas, 0, 13, 127, 13);
+}
+
 static void draw_menu(
     Canvas* canvas,
     LabMateApp* app) {
+
+    /*
+     * LabMate v1.2 instrument-style main menu.
+     */
 
     canvas_set_font(
         canvas,
@@ -608,124 +919,212 @@ static void draw_menu(
         canvas,
         2,
         10,
-        "FLIPPER LABMATE");
-
-    canvas_set_font(
-        canvas,
-        FontSecondary);
+        "LABMATE");
 
     /*
-     * Five items do not fit with the old
-     * subtitle layout, so use compact rows.
+     * Version badge.
      */
-    for(uint8_t i = 0;
-        i < MENU_COUNT;
-        i++) {
+    ui_badge(
+        canvas,
+        99,
+        1,
+        27,
+        "v1.2",
+        false);
+
+    canvas_draw_line(
+        canvas,
+        0,
+        13,
+        127,
+        13);
+
+    /*
+     * Three visible rows.
+     * Selected item remains centered where possible.
+     */
+    uint8_t first = 0;
+
+    if(app->selected > 1) {
+        first =
+            app->selected - 1;
+    }
+
+    if(first + 3 > MENU_COUNT) {
+        first =
+            MENU_COUNT - 3;
+    }
+
+    for(uint8_t row = 0;
+        row < 3;
+        row++) {
+
+        uint8_t i =
+            first + row;
 
         uint8_t y =
-            22 + (i * 10);
+            25 + (row * 12);
 
         if(i == app->selected) {
+
+            /*
+             * Inverted active row.
+             */
             canvas_draw_box(
                 canvas,
-                0,
-                y - 8,
-                128,
-                10);
+                1,
+                y - 10,
+                126,
+                12);
 
             canvas_set_color(
                 canvas,
                 ColorWhite);
 
+            ui_draw_menu_icon(
+                canvas,
+                i,
+                4,
+                y - 9);
+
+            canvas_set_font(
+                canvas,
+                FontSecondary);
+
             canvas_draw_str(
                 canvas,
-                5,
+                20,
                 y,
                 menu_items[i]);
+
+            canvas_draw_str(
+                canvas,
+                117,
+                y,
+                ">");
 
             canvas_set_color(
                 canvas,
                 ColorBlack);
+
         } else {
+
+            ui_draw_menu_icon(
+                canvas,
+                i,
+                4,
+                y - 9);
+
+            canvas_set_font(
+                canvas,
+                FontSecondary);
+
             canvas_draw_str(
                 canvas,
-                5,
+                20,
                 y,
                 menu_items[i]);
+
+            canvas_draw_str(
+                canvas,
+                117,
+                y,
+                ">");
         }
     }
-}
 
-static void draw_gpio(
+    canvas_draw_line(
+        canvas,
+        0,
+        52,
+        127,
+        52);
+
+    /*
+     * Instrument-style navigation footer.
+     */
+    ui_key(
+        canvas,
+        2,
+        "^v",
+        "MOVE");
+
+    ui_key(
+        canvas,
+        70,
+        "OK",
+        "OPEN");
+}static void draw_gpio(
     Canvas* canvas,
     LabMateApp* app) {
 
     char buffer[32];
 
-    canvas_set_font(canvas, FontPrimary);
-    canvas_draw_str(
-        canvas,
-        2,
-        10,
-        "GPIO MONITOR");
+    draw_header(canvas, "GPIO MONITOR");
 
     canvas_set_font(canvas, FontSecondary);
 
     snprintf(
         buffer,
         sizeof(buffer),
-        "PIN: %s",
+        "%s",
         gpio_names[app->gpio_index]);
 
-    canvas_draw_str(
+    ui_badge(
         canvas,
         2,
-        23,
-        buffer);
-
-    snprintf(
-        buffer,
-        sizeof(buffer),
-        "STATE: %s",
-        app->gpio_state ?
-            "HIGH" : "LOW");
-
-    canvas_draw_str(
-        canvas,
-        2,
+        16,
         34,
-        buffer);
+        buffer,
+        false);
+
+    ui_badge(
+        canvas,
+        91,
+        16,
+        35,
+        app->hold ? "HOLD" : "LIVE",
+        !app->hold);
+
+    canvas_draw_frame(
+        canvas,
+        2,
+        30,
+        58,
+        20);
+
+    canvas_set_font(canvas, FontPrimary);
+
+    canvas_draw_str(
+        canvas,
+        app->gpio_state ? 12 : 17,
+        45,
+        app->gpio_state ? "HIGH" : "LOW");
+
+    canvas_set_font(canvas, FontSecondary);
+
+    canvas_draw_str(
+        canvas,
+        68,
+        36,
+        "EDGES");
 
     snprintf(
         buffer,
         sizeof(buffer),
-        "EDGES: %lu",
+        "%lu",
         (unsigned long)app->edges);
 
+    canvas_set_font(canvas, FontPrimary);
+
     canvas_draw_str(
         canvas,
-        2,
-        45,
+        68,
+        49,
         buffer);
 
-    canvas_draw_str(
-        canvas,
-        84,
-        23,
-        app->hold ?
-            "[HOLD]" : "[LIVE]");
-
-    canvas_draw_str(
-        canvas,
-        2,
-        56,
-        "PIN LOCK");
-
-    canvas_draw_str(
-        canvas,
-        73,
-        56,
-        "OK HOLD");
+    ui_key(canvas, 2, "<>", "PIN");
+    ui_key(canvas, 70, "OK", "HOLD");
 }
 
 static void draw_frequency(
@@ -734,202 +1133,243 @@ static void draw_frequency(
 
     char buffer[32];
 
-    canvas_set_font(canvas, FontPrimary);
-    canvas_draw_str(
+    draw_header(
         canvas,
-        2,
-        10,
         "FREQUENCY METER");
 
-    canvas_set_font(canvas, FontSecondary);
+    bool high_mode =
+        app->gpio_index == 4U;
 
-    snprintf(
-        buffer,
-        sizeof(buffer),
-        "PIN: %s",
-        gpio_names[app->gpio_index]);
-
-    canvas_draw_str(
+    /*
+     * Measurement mode badge.
+     */
+    ui_badge(
         canvas,
         2,
-        23,
-        buffer);
+        16,
+        48,
+        high_mode ?
+            "HIGH PB3" :
+            "LOW PC1",
+        high_mode);
 
-    canvas_draw_str(
+    /*
+     * LIVE / HOLD badge.
+     */
+    ui_badge(
         canvas,
-        84,
-        23,
+        91,
+        16,
+        35,
         app->hold ?
-            "[HOLD]" : "[LIVE]");
+            "HOLD" :
+            "LIVE",
+        !app->hold);
 
+    /*
+     * Format primary measurement.
+     */
     if(app->frequency_valid) {
-        uint32_t whole =
-            app->frequency_millihz / 1000;
+
+        uint32_t hz =
+            app->frequency_millihz /
+            1000U;
 
         uint32_t decimal =
-            (app->frequency_millihz % 1000) /
-            10;
+            (app->frequency_millihz %
+             1000U) /
+            10U;
+
+        if(hz >= 1000U) {
+
+            uint32_t khz_whole =
+                hz / 1000U;
+
+            uint32_t khz_decimal =
+                (hz % 1000U) /
+                10U;
+
+            snprintf(
+                buffer,
+                sizeof(buffer),
+                "%lu.%02lu kHz",
+                (unsigned long)
+                    khz_whole,
+                (unsigned long)
+                    khz_decimal);
+
+        } else {
+
+            snprintf(
+                buffer,
+                sizeof(buffer),
+                "%lu.%02lu Hz",
+                (unsigned long)hz,
+                (unsigned long)decimal);
+        }
+
+    } else {
 
         snprintf(
             buffer,
             sizeof(buffer),
-            "FREQ: %lu.%02lu Hz",
-            (unsigned long)whole,
-            (unsigned long)decimal);
-    } else {
-        snprintf(
-            buffer,
-            sizeof(buffer),
-            "FREQ: --- Hz");
+            "--- Hz");
     }
+
+    /*
+     * Main measurement.
+     */
+    canvas_set_font(
+        canvas,
+        FontPrimary);
 
     canvas_draw_str(
         canvas,
-        2,
-        36,
+        8,
+        41,
         buffer);
+
+    /*
+     * Edge counter as secondary data.
+     */
+    canvas_set_font(
+        canvas,
+        FontSecondary);
 
     snprintf(
         buffer,
         sizeof(buffer),
-        "EDGES: %lu",
-        (unsigned long)app->edges);
+        "EDGES %lu",
+        (unsigned long)
+            app->edges);
 
     canvas_draw_str(
         canvas,
-        2,
-        47,
+        74,
+        49,
         buffer);
 
-    canvas_draw_str(
+    canvas_draw_line(
+        canvas,
+        0,
+        52,
+        127,
+        52);
+
+    /*
+     * Three logical controls:
+     *
+     * LEFT = LOW
+     * OK   = HOLD
+     * RIGHT= HIGH
+     */
+    ui_key(
         canvas,
         2,
-        59,
-        "PIN LOCK");
+        "<",
+        "LOW");
+
+    canvas_set_font(
+        canvas,
+        FontSecondary);
 
     canvas_draw_str(
         canvas,
-        73,
-        59,
+        49,
+        61,
         "OK HOLD");
-}
 
-static void draw_pulse(
+    ui_key(
+        canvas,
+        91,
+        ">",
+        "HI");
+}static void draw_pulse(
     Canvas* canvas,
     LabMateApp* app) {
 
     char buffer[32];
 
-    canvas_set_font(canvas, FontPrimary);
-    canvas_draw_str(
+    draw_header(canvas, "PULSE ANALYZER");
+
+    ui_badge(
         canvas,
         2,
-        9,
-        "PULSE ANALYZER");
+        16,
+        38,
+        gpio_names[app->gpio_index],
+        false);
+
+    ui_badge(
+        canvas,
+        91,
+        16,
+        35,
+        app->hold ? "HOLD" : "LIVE",
+        !app->hold);
 
     canvas_set_font(canvas, FontSecondary);
-
-    snprintf(
-        buffer,
-        sizeof(buffer),
-        "PIN:%s",
-        gpio_names[app->gpio_index]);
-
-    canvas_draw_str(
-        canvas,
-        2,
-        19,
-        buffer);
-
-    canvas_draw_str(
-        canvas,
-        85,
-        19,
-        app->hold ?
-            "HOLD" : "LIVE");
 
     if(app->pulse_high_valid) {
         snprintf(
             buffer,
             sizeof(buffer),
-            "HIGH:%lu ms",
+            "HIGH %lu ms",
             (unsigned long)
-                ticks_to_ms(
-                    app->pulse_high_ticks));
+                ticks_to_ms(app->pulse_high_ticks));
     } else {
-        snprintf(
-            buffer,
-            sizeof(buffer),
-            "HIGH:--- ms");
+        snprintf(buffer, sizeof(buffer), "HIGH ---");
     }
 
-    canvas_draw_str(
-        canvas,
-        2,
-        29,
-        buffer);
+    canvas_draw_str(canvas, 2, 35, buffer);
 
     if(app->pulse_low_valid) {
         snprintf(
             buffer,
             sizeof(buffer),
-            "LOW :%lu ms",
+            "LOW  %lu ms",
             (unsigned long)
-                ticks_to_ms(
-                    app->pulse_low_ticks));
+                ticks_to_ms(app->pulse_low_ticks));
     } else {
-        snprintf(
-            buffer,
-            sizeof(buffer),
-            "LOW :--- ms");
+        snprintf(buffer, sizeof(buffer), "LOW  ---");
     }
 
-    canvas_draw_str(
-        canvas,
-        2,
-        39,
-        buffer);
+    canvas_draw_str(canvas, 65, 35, buffer);
 
     if(app->pulse_period_valid) {
+
+        snprintf(
+            buffer,
+            sizeof(buffer),
+            "PER %lu",
+            (unsigned long)
+                ticks_to_ms(app->pulse_period_ticks));
+
+        canvas_draw_str(canvas, 2, 48, buffer);
+
         uint32_t duty_whole =
-            app->pulse_duty_permille / 10;
+            app->pulse_duty_permille / 10U;
 
         uint32_t duty_decimal =
-            app->pulse_duty_permille % 10;
+            app->pulse_duty_permille % 10U;
 
         snprintf(
             buffer,
             sizeof(buffer),
-            "PER:%lu D:%lu.%lu%%",
-            (unsigned long)
-                ticks_to_ms(
-                    app->pulse_period_ticks),
+            "DUTY %lu.%lu%%",
             (unsigned long)duty_whole,
             (unsigned long)duty_decimal);
+
+        canvas_draw_str(canvas, 65, 48, buffer);
+
     } else {
-        snprintf(
-            buffer,
-            sizeof(buffer),
-            "PER:--- D:---");
+
+        canvas_draw_str(canvas, 2, 48, "PER ---");
+        canvas_draw_str(canvas, 65, 48, "DUTY ---");
     }
 
-    canvas_draw_str(
-        canvas,
-        2,
-        49,
-        buffer);
-
-    canvas_draw_str(
-        canvas,
-        2,
-        61,
-        "PIN LOCK");
-
-    canvas_draw_str(
-        canvas,
-        73,
-        61,
-        "OK HOLD");
+    ui_key(canvas, 2, "<>", "PIN");
+    ui_key(canvas, 70, "OK", "HOLD");
 }
 
 static void draw_generator(
@@ -938,62 +1378,122 @@ static void draw_generator(
 
     char buffer[32];
 
-    canvas_set_font(canvas, FontPrimary);
-    canvas_draw_str(
+    draw_header(
         canvas,
-        2,
-        10,
         "SIGNAL GENERATOR");
 
-    canvas_set_font(canvas, FontSecondary);
-
-    canvas_draw_str(
+    /*
+     * Output badge.
+     */
+    ui_badge(
         canvas,
         2,
-        23,
-        "OUT: PA7");
+        16,
+        43,
+        "OUT PA7",
+        false);
 
-    snprintf(
-        buffer,
-        sizeof(buffer),
-        "FREQ: %lu Hz",
-        (unsigned long)
-            generator_frequencies[
-                app->generator_freq_index]);
+    /*
+     * Generator state badge.
+     */
+    ui_badge(
+        canvas,
+        91,
+        16,
+        35,
+        app->generator_running ?
+            "RUN" :
+            "STOP",
+        app->generator_running);
 
+    uint32_t freq =
+        generator_frequencies[
+            app->
+            generator_freq_index];
+
+    /*
+     * Human-friendly frequency format.
+     */
+    canvas_set_font(
+        canvas,
+        FontPrimary);
+
+    if(freq >= 1000U &&
+       (freq % 1000U) == 0U) {
+
+        snprintf(
+            buffer,
+            sizeof(buffer),
+            "%lu kHz",
+            (unsigned long)
+                (freq / 1000U));
+
+    } else {
+
+        snprintf(
+            buffer,
+            sizeof(buffer),
+            "%lu Hz",
+            (unsigned long)
+                freq);
+    }
+
+    /*
+     * Primary value.
+     */
     canvas_draw_str(
         canvas,
-        2,
-        34,
+        10,
+        41,
         buffer);
 
-    canvas_draw_str(
+    /*
+     * Duty information.
+     */
+    canvas_set_font(
         canvas,
-        2,
-        45,
-        "DUTY: 50%");
+        FontSecondary);
 
     canvas_draw_str(
         canvas,
-        75,
-        45,
+        89,
+        37,
+        "DUTY");
+
+    canvas_set_font(
+        canvas,
+        FontPrimary);
+
+    canvas_draw_str(
+        canvas,
+        89,
+        48,
+        "50%");
+
+    canvas_draw_line(
+        canvas,
+        0,
+        52,
+        127,
+        52);
+
+    /*
+     * Footer controls.
+     */
+    ui_key(
+        canvas,
+        2,
+        "<>",
+        "FREQ");
+
+    ui_key(
+        canvas,
+        70,
+        "OK",
         app->generator_running ?
-            "RUN" : "STOP");
-
-    canvas_draw_str(
-        canvas,
-        2,
-        58,
-        "< > FREQ");
-
-    canvas_draw_str(
-        canvas,
-        72,
-        58,
-        "OK ON/OFF");
-}
-
-static void draw_about(
+            "STOP" :
+            "START");
+}static void draw_about(
     Canvas* canvas) {
 
     canvas_set_font(
@@ -1003,8 +1503,15 @@ static void draw_about(
     canvas_draw_str(
         canvas,
         2,
-        12,
-        "LabMate v1.0");
+        10,
+        "LABMATE v1.2");
+
+    canvas_draw_line(
+        canvas,
+        0,
+        13,
+        127,
+        13);
 
     canvas_set_font(
         canvas,
@@ -1013,28 +1520,33 @@ static void draw_about(
     canvas_draw_str(
         canvas,
         2,
-        25,
+        24,
         "Digital Signal Toolkit");
 
     canvas_draw_str(
         canvas,
         2,
         36,
-        "GPIO / FREQ / PULSE");
+        "LOW PC1");
 
     canvas_draw_str(
         canvas,
-        2,
         47,
-        "TIM2 Signal Generator");
+        36,
+        "HIGH PB3");
 
     canvas_draw_str(
         canvas,
         2,
-        58,
+        48,
+        "GEN PA7");
+
+    canvas_draw_str(
+        canvas,
+        2,
+        60,
         "3.3V GPIO ONLY");
 }
-
 static void render_callback(
     Canvas* canvas,
     void* ctx) {
@@ -1228,8 +1740,9 @@ int32_t labmate_app(void* p) {
                             LabMateScreenFrequency;
                         app->hold = false;
 
+                        app->gpio_index = 4U; /* PB3 / HIGH mode */
                         measurement_reset(app);
-                        frequency_interrupt_start(app);
+                        frequency_hw_start(app);
                         break;
 
                     case 2:
@@ -1289,6 +1802,7 @@ int32_t labmate_app(void* p) {
 
                     if(app->screen ==
                        LabMateScreenFrequency) {
+                        frequency_hw_stop(app);
                         frequency_interrupt_stop(app);
                     }
 
@@ -1380,6 +1894,39 @@ int32_t labmate_app(void* p) {
 
     return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
