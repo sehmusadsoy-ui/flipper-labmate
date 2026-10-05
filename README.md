@@ -1,132 +1,127 @@
 # Flipper LabMate
 
-**LabMate v1.0** is a compact digital-signal diagnostic toolkit for Flipper Zero running Momentum Firmware.
+LabMate is a compact digital-signal diagnostic toolkit for Flipper Zero running Momentum Firmware.
 
-It combines four practical tools in one external app:
+The project currently has a **stable v1.1 measurement/generator backend** and an actively polished **v1.2 user interface**.
 
-- **GPIO Monitor** — view HIGH/LOW state and edge activity
-- **Frequency Meter** — interrupt-based frequency measurement on PC1
+> **3.3 V GPIO ONLY.** Do not connect 5 V, 12 V, automotive wiring, mains voltage, or unknown-voltage signals directly to Flipper Zero GPIO.
+
+## Tools
+
+- **GPIO Monitor** — digital HIGH/LOW state, edge activity and LIVE/HOLD operation
+- **Frequency Meter** — dual low/high-frequency measurement modes
 - **Pulse Analyzer** — HIGH time, LOW time, period and duty cycle
-- **Signal Generator** — hardware-timed 1 Hz / 2 Hz / 5 Hz square-wave output on PA7
+- **Signal Generator** — hardware PWM square-wave output on PA7
+- **About** — compact hardware/mode reference screen
 
-> **3.3 V GPIO ONLY.** Do not connect 5 V, 12 V, automotive wiring, or unknown-voltage signals directly to Flipper Zero GPIO.
-
-## Screenshots
-
-### Main Interface
-
-| Main Menu | About |
-|---|---|
-| ![Main Menu](screenshots/03_main_menu.png) | ![About](screenshots/08_about.png) |
-
-### GPIO Monitor & Signal Generator
-
-| GPIO Monitor | Signal Generator |
-|---|---|
-| ![GPIO Monitor](screenshots/04_gpio_monitor.png) | ![Signal Generator](screenshots/07_signal_generator_menu.png) |
+## v1.1 Backend Improvements
 
 ### Frequency Meter
 
-| 1 Hz | 2 Hz | 5 Hz |
-|---|---|---|
-| ![1 Hz](screenshots/09_frequency_1hz.png) | ![2 Hz](screenshots/10_frequency_2hz.png) | ![5 Hz](screenshots/11_frequency_5hz.png) |
+LabMate now uses two dedicated measurement paths:
 
-### Pulse Analyzer
+- **LOW mode — PC1**
+  - period-based measurement
+  - GPIO interrupt capture
+  - high-resolution timing using `DWT->CYCCNT`
 
-| Idle | Signal Measurement |
-|---|---|
-| ![Pulse Analyzer Idle](screenshots/06_pulse_idle.png) | ![Pulse Analyzer Measurement](screenshots/12_pulse_measurement.png) |
+- **HIGH mode — PB3**
+  - TIM2 hardware edge counter
+  - avoids per-edge GPIO interrupt overhead at higher frequencies
 
-### Flipper Zero Menu
-
-| Tools Menu | LabMate |
-|---|---|
-| ![Tools Menu](screenshots/01_tools_menu.png) | ![LabMate in Tools](screenshots/02_labmate_in_tools.png) |
-
-## Features
-
-### GPIO Monitor
-
-- Digital HIGH / LOW display
-- Edge counter
-- LIVE / HOLD modes
-- Selectable external GPIO pins
-
-### Frequency Meter
-
-- Rising-edge GPIO interrupt capture
-- High-resolution timing using `DWT->CYCCNT`
-- Moving-period averaging
-- Two-decimal frequency display
-- Edge counter
-- Signal-loss timeout
-- Input intentionally locked to **PC1** in v1.0 for stability
-
-### Pulse Analyzer
-
-- HIGH duration
-- LOW duration
-- Period
-- Duty cycle
-- LIVE / HOLD modes
+Left/right input control in the Frequency Meter switches between the two measurement modes.
 
 ### Signal Generator
 
-- Output pin: **PA7**
-- TIM2 hardware-timer driven
-- 50% duty cycle
-- Presets: **1 Hz, 2 Hz, 5 Hz**
-- Continues running while navigating back to the LabMate menu
-
-## Verified Self-Test
-
-For the built-in loopback test, connect:
+The generator was expanded from the original 1/2/5 Hz presets to:
 
 ```text
-PA7 / physical pin 2  ->  PC1 / physical pin 15
+1 Hz
+2 Hz
+5 Hz
+10 Hz
+20 Hz
+50 Hz
+100 Hz
+200 Hz
+500 Hz
+1 kHz
+2 kHz
+5 kHz
+10 kHz
+20 kHz
+50 kHz
 ```
 
-Then start the Signal Generator and open Frequency Meter.
+Current generation uses Flipper hardware PWM on **PA7 / TIM1** with a **50% duty cycle**, removing the need for a per-edge generator ISR.
 
-Verified results on the tested build:
+The generator can continue running while returning to the LabMate menu and can be stopped again from the Generator screen.
 
-| Generator | Frequency Meter |
-|---:|---:|
-| 1 Hz | 1.00 Hz |
-| 2 Hz | 2.00 Hz |
-| 5 Hz | 5.00 Hz |
+## v1.2 UI Work
 
-The Pulse Analyzer was also verified with the same generated square-wave signal.
+The v1.2 development pass focuses on making LabMate feel like a finished instrument instead of a debug utility.
+
+Current UI work includes:
+
+- compact dashboard-style main menu
+- per-tool pixel icons
+- stronger selected-row highlighting
+- version indicator in the header
+- outlined/inverted state badges
+- clearer `LIVE`, `HOLD`, `RUN`, `STOP`, `LOW`, and `HIGH` states
+- compact key/action hints in the footer
+- improved Frequency Meter hierarchy with measurement mode and main frequency value separated visually
+- improved Signal Generator hierarchy with output, run state, frequency and duty cycle separated visually
+- simplified About screen designed around stable text/line primitives on the tested build
 
 ## Architecture
 
 ```text
+Frequency LOW mode:
+PC1 rising-edge IRQ
+    -> DWT->CYCCNT
+    -> period measurement
+    -> frequency
+
+Frequency HIGH mode:
+PB3 / TIM2_CH2
+    -> hardware edge counter
+    -> timed counter delta
+    -> frequency
+
 Signal generation:
-TIM2 -> PA7
-
-Frequency measurement:
-PC1 rising-edge IRQ -> DWT->CYCCNT -> period averaging -> frequency
+Flipper hardware PWM
+    -> TIM1
+    -> PA7
+    -> 50% duty square wave
 ```
 
-## Installation
+## Controls
 
-LabMate is an external Flipper Zero application.
+- **Up / Down** — navigate menu items
+- **Left / Right** — change supported options or frequency mode
+- **OK** — open, hold/resume, start or stop depending on screen
+- **Back** — return to the previous screen
 
-The compiled application is installed as:
+### Frequency Meter
 
 ```text
-/ext/apps/Tools/labmate.fap
+LEFT  -> LOW / PC1
+RIGHT -> HIGH / PB3
+OK    -> HOLD / LIVE
 ```
 
-On Flipper Zero it can be opened from:
+### Signal Generator
 
 ```text
-Apps -> Tools -> LabMate
+LEFT / RIGHT -> change frequency preset
+OK           -> start / stop generator
+BACK         -> return to menu; generator may remain active
 ```
 
 ## Build From Source
 
-Place the LabMate files inside your Momentum Firmware tree:
+Place the application in the Momentum Firmware tree:
 
 ```text
 applications_user/labmate/
@@ -135,74 +130,48 @@ applications_user/labmate/
 └── labmate_10px.png
 ```
 
-Build the application:
+Build:
 
 ```powershell
 .\fbt APPSRC=applications_user\labmate
 ```
 
-Build, install and launch directly on a connected Flipper Zero:
+Build, install and launch on a connected Flipper Zero:
 
 ```powershell
 .\fbt launch APPSRC=applications_user\labmate
 ```
 
-The generated FAP can be found under the firmware build directory:
+Installed application path:
 
 ```text
-build\f7-firmware-C\.extapps\labmate.fap
+/ext/apps/Tools/labmate.fap
 ```
 
-## Controls
-
-LabMate uses the standard Flipper Zero directional controls.
-
-- **Up / Down** — navigate menu items or available options
-- **Left / Right** — change selectable values where supported
-- **OK** — select, start, stop or toggle an action
-- **Back** — return to the previous screen
-- **HOLD** — available in measurement tools where applicable
-
-## Hardware Safety
-
-Flipper Zero GPIO operates at **3.3 V logic levels**.
-
-Do not directly connect:
-
-- 5 V logic
-- 12 V signals
-- Automotive electrical lines
-- Mains voltage
-- Unknown-voltage sources
-
-Use appropriate protection, level shifting, isolation or signal conditioning when measuring external circuits.
-
 ## Tested Platform
-
-LabMate v1.0 was tested with:
 
 - **Device:** Flipper Zero
 - **Firmware:** Momentum Firmware
 - **Firmware API:** 87.1
 - **Application type:** External FAP
 
-## v1.0 Stability Notes
+## Development Status
 
-The Signal Generator was moved from software/polling timing to the **TIM2 hardware timer**.
+### v1.1 backend
 
-This produced stable loopback measurements:
+Stable milestone reached for:
 
-- **1 Hz → 1.00 Hz**
-- **2 Hz → 2.00 Hz**
-- **5 Hz → 5.00 Hz**
+- GPIO Monitor
+- LOW-frequency meter mode on PC1
+- HIGH-frequency hardware counter mode on PB3
+- Pulse Analyzer
+- PA7 hardware PWM generator
+- generator presets through 50 kHz
+- application navigation and resource cleanup
 
-Frequency measurement uses GPIO rising-edge interrupts together with the ARM DWT cycle counter.
+### v1.2 UI
 
-Runtime Frequency Meter pin switching was intentionally disabled after testing showed instability when dynamically reconfiguring the GPIO interrupt on the tested Momentum build.
-
-For this reason, Frequency Meter uses **PC1** in v1.0.
-
-GPIO Monitor and Pulse Analyzer retain their selectable-pin behavior.
+UI polish is currently being validated on-device. The redesign keeps the measurement and generator backend separate from the rendering layer so visual changes do not intentionally alter signal-processing behavior.
 
 ## Project Structure
 
@@ -215,25 +184,10 @@ flipper-labmate/
 ├── docs/
 ├── CHANGELOG.md
 ├── RELEASE_NOTES_v1.0.md
+├── RELEASE_NOTES_v1.2.md
 ├── LICENSE
 └── README.md
 ```
-
-## Status
-
-**LabMate v1.0 — Stable**
-
-Validated functionality:
-
-- GPIO Monitor
-- Frequency Meter
-- Pulse Analyzer
-- Signal Generator
-- LIVE / HOLD behavior
-- GPIO cleanup
-- Frequency measurement stability
-- Hardware-timer signal generation
-- Application navigation
 
 ## Author
 
@@ -243,6 +197,4 @@ LabMate was developed as a portable GPIO and digital-signal diagnostic utility f
 
 ## License
 
-This project is released under the **MIT License**.
-
-See `LICENSE` for details.
+This project is released under the **MIT License**. See `LICENSE` for details.
