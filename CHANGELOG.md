@@ -1,5 +1,59 @@
 # Changelog
 
+## [1.2] - 2026-10-05
+
+### UI / UX
+- Added compact dashboard-style main menu.
+- Added per-tool pixel icons.
+- Added stronger selected-row highlighting.
+- Added version indicator to the menu header.
+- Added outlined/inverted state badges for LIVE/HOLD and RUN/STOP style states.
+- Improved footer key/action hints.
+- Improved Frequency Meter visual hierarchy.
+- Improved Signal Generator visual hierarchy.
+- Reworked About screen during on-device stability testing; current safe layout intentionally uses simple text/line primitives.
+
+### Notes
+- v1.2 work is focused on presentation and interaction polish.
+- Measurement and generator backend behavior is intentionally kept separate from the UI redesign.
+
+## [1.1] - 2026-10-05
+
+### Frequency Meter
+- Added dual measurement modes.
+- **LOW mode:** PC1 period measurement using GPIO interrupt timing and `DWT->CYCCNT`.
+- **HIGH mode:** PB3 / TIM2_CH2 hardware edge counter.
+- Added left/right switching between LOW and HIGH frequency modes.
+- Added mode-specific GPIO cleanup and measurement reset handling.
+- Improved high-frequency measurement path by avoiding per-edge GPIO interrupt overhead.
+
+### Signal Generator
+- Expanded presets to:
+  - 1 Hz
+  - 2 Hz
+  - 5 Hz
+  - 10 Hz
+  - 20 Hz
+  - 50 Hz
+  - 100 Hz
+  - 200 Hz
+  - 500 Hz
+  - 1 kHz
+  - 2 kHz
+  - 5 kHz
+  - 10 kHz
+  - 20 kHz
+  - 50 kHz
+- Migrated signal generation to Flipper hardware PWM on **PA7 / TIM1**.
+- Generator remains 50% duty cycle.
+- Removed the need for a per-edge generator ISR.
+- Generator can remain active while returning to the menu.
+
+### Stability / Validation
+- Created a stable backup milestone after successful build/install of the 50 kHz hardware-counter stage.
+- Tested against Momentum Firmware API 87.1.
+- Continued using Flipper Zero GPIO at 3.3 V logic levels only.
+
 ## [1.0] - 2026-10-01
 
 ### Added
