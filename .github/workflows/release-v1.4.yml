@@ -39,6 +39,14 @@ jobs:
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Synchronize notes for the already-published v1.4
+        if: steps.existing.outputs.exists == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release edit v1.4 --repo "${{ github.repository }}" --notes-file RELEASE_NOTES_v1.4.md
+          echo "Verified v1.4 notes are now visible on GitHub Releases."
+
       - name: Compile against Momentum Firmware SDK
         id: compile
         if: steps.existing.outputs.exists == 'false'
