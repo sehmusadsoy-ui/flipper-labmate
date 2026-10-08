@@ -60,6 +60,26 @@ cd "$env:USERPROFILE\Momentum-Firmware"
 .\fbt launch APPSRC=applications_user\labmate
 ```
 
+## START/STOP responsiveness fix (development, pending device check)
+
+- When starting a new recording, check for already-existing filenames and reuse
+  a session-local next-number cursor. Only try to open candidate files that
+  do not already exist; CREATE_NEW still prevents overwriting existing data.
+- Perform START and STOP file operations after releasing the GUI mutex, showing
+  an OPENING/SAVING wait indicator. This prevents storage latency from holding
+  the UI drawing lock, but slow microSD calls can still briefly delay button
+  handling because the storage operations share the application thread.
+- Defer storage cleanup after CSV formatting/write failures until outside the
+  GUI mutex.
+- If the app still hangs on repeat START, capture the exact stage and investigate
+  storage blocking, file handles and whether an asynchronous worker is needed.
+
+**Regression test:** start a PC1 1 kHz recording; STOP after 5 seconds; press
+OK again to START a second recording without leaving the screen; STOP again.
+Verify two different CSV filenames and readable content, then repeat at least
+five START/STOP cycles. Test BACK and re-entry, SD error display, and other
+v1.4 measurement screens. Do not consider this fix verified by CI alone.
+
 ## On-device acceptance tests (pending)
 
 - [ ] Build against the installed Momentum API; launch without crashes
