@@ -87,6 +87,31 @@ repeat-START responsiveness smoke test on the physical Flipper after the fix.
 The longer five-cycle and other regression tests above remain open; do not
 infer they passed from this report alone.
 
+## Log History browser (new in v1.5-dev; on-device check pending)
+
+- Main-menu item: **Log History** (separate from the live Data Logger).
+- Show up to **32 most recent** filenames matching `log_NNNN.csv`, sorted by
+  descending numeric ID. Older files remain safe on microSD but are not shown
+  in this first bounded browser. No filesystem deletion or modification.
+- **UP/DOWN** selects a file; **OK** opens read-only details; **BACK** returns
+  to the list/menu. Details show the detected source (FREQ/PC1, FREQ/PB3,
+  PULSE/PC1), number of complete CSV measurement rows, and last logged
+  elapsed time in seconds. Empty files show zero rows and unknown source.
+- CSV detail parsing reads at most 256 bytes per application-loop pass. The
+  directory scan, open, read, and close run outside the GUI mutex. Slow or
+  failing SD operations may still delay the application's event loop; no
+  nonblocking worker is claimed yet.
+- No timestamp/date is inferred from `elapsed_ms` because it is time since
+  START, not a wall-clock timestamp.
+
+**On-device validation still needed:** Open history with existing FREQ and
+PULSE logs; confirm descending order, arrow navigation and back navigation.
+Check `log_0001.csv` (empty/header-only), a 10-row PULSE capture, and a
+15-row FREQ capture. Check that a newly created file becomes visible after
+re-entering history, that older CSVs are unchanged, and that an absent or
+unmounted microSD displays a safe error. Repeat START/STOP recording after
+leaving history to watch for regressions.
+
 ## On-device acceptance tests (in progress)
 
 - [x] Build against the installed Momentum API; launch without crashes
