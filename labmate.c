@@ -7,8 +7,11 @@
 #include <stm32wbxx_ll_exti.h>
 #include <gui/gui.h>
 #include <input/input.h>
+#include <storage/storage.h>
 
-#define MENU_COUNT 5
+#define MENU_COUNT 6
+#define LOGGER_DIR "/ext/apps_data/labmate"
+#define LOGGER_INTERVAL_MS 1000U
 #define GPIO_COUNT 8
 /* High-speed Pulse MIN/MAX uses the median of five spaced captures.
  * This changes statistics only; LIVE values and IRQ timing are untouched. */
@@ -21,8 +24,16 @@ typedef enum {
     LabMateScreenFrequency,
     LabMateScreenPulse,
     LabMateScreenGenerator,
+    LabMateScreenLogger,
     LabMateScreenAbout,
 } LabMateScreen;
+
+typedef enum {
+    LoggerFrequencyLow,
+    LoggerFrequencyHigh,
+    LoggerPulse,
+    LoggerSourceCount,
+} LabMateLoggerSource;
 
 typedef struct {
     uint32_t high_cycles;
@@ -129,6 +140,17 @@ typedef struct {
     uint8_t generator_freq_index;
     uint32_t generator_last_toggle;
 
+    /* v1.5: SD logging uses app-thread snapshots, never GPIO IRQ writes. */
+    LabMateLoggerSource logger_source;
+    bool logger_recording;
+    bool logger_error;
+    uint32_t logger_start_tick;
+    uint32_t logger_last_tick;
+    uint32_t logger_rows;
+    char logger_path[96];
+    Storage* logger_storage;
+    File* logger_file;
+
     FuriMutex* mutex;
 } LabMateApp;
 
@@ -137,6 +159,7 @@ static const char* menu_items[MENU_COUNT] = {
     "Frequency Meter",
     "Pulse Analyzer",
     "Signal Generator",
+    "Data Logger",
     "About",
 };
 
@@ -903,7 +926,8 @@ static void measurement_update(LabMateApp* app) {
      * The main loop only consumes the period measured
      * by the ISR and performs filtering/calculation.
      */
-    if(app->screen == LabMateScreenFrequency) {
+    if(app->screen == LabMateScreenFrequency ||
+       (app->screen == LabMateScreenLogger && app->logger_source != LoggerPulse)) {
 
         /*
          * High-frequency hardware counter mode.
@@ -1093,7 +1117,8 @@ static void measurement_update(LabMateApp* app) {
     }
 
     /* PULSE ANALYZER: copy one coherent IRQ snapshot. */
-    if(app->screen == LabMateScreenPulse) {
+    if(app->screen == LabMateScreenPulse ||
+       (app->screen == LabMateScreenLogger && app->logger_source == LoggerPulse)) {
         uint32_t hi, lo, last_tick, count;
         bool hi_valid, lo_valid;
 
@@ -1146,6 +1171,170 @@ static void measurement_update(LabMateApp* app) {
         app->gpio_previous_state = current;
     }
     app->gpio_state = current;
+}
+
+
+/* ---------- DATA LOGGER v1.5 ---------- */
+/* The capture engine is unchanged; only processed snapshots are persisted.
+ * File writes happen in the main thread AFTER releasing the GUI mutex.
+ */
+static void logger_capture_stop(LabMateApp* app) {
+    frequency_hw_stop(app);
+    frequency_interrupt_stop(app);
+    pulse_interrupt_stop(app);
+    gpio_release(app->gpio_index);
+}
+
+static void logger_capture_start(LabMateApp* app) {
+    app->hold = false;
+    app->gpio_index =
+        (app->logger_source == LoggerFrequencyHigh) ? 4U : 1U;
+    measurement_reset(app);
+
+    if(app->logger_source == LoggerPulse) {
+        pulse_stats_reset(app);
+        pulse_interrupt_start(app);
+    } else {
+        frequency_stats_reset(app);
+        if(app->logger_source == LoggerFrequencyHigh) {
+            frequency_hw_start(app);
+        } else {
+            frequency_interrupt_start(app);
+        }
+    }
+}
+
+static void logger_capture_change(LabMateApp* app, int8_t direction) {
+    if(app->logger_recording) return;
+    logger_capture_stop(app);
+    if(direction > 0) {
+        app->logger_source =
+            (app->logger_source + 1U) % LoggerSourceCount;
+    } else {
+        app->logger_source =
+            (app->logger_source + LoggerSourceCount - 1U) % LoggerSourceCount;
+    }
+    logger_capture_start(app);
+}
+
+static void logger_stop(LabMateApp* app) {
+    app->logger_recording = false;
+    if(app->logger_file) {
+        if(storage_file_is_open(app->logger_file)) {
+            if(!storage_file_sync(app->logger_file)) app->logger_error = true;
+            if(!storage_file_close(app->logger_file)) app->logger_error = true;
+        }
+        storage_file_free(app->logger_file);
+        app->logger_file = NULL;
+    }
+    if(app->logger_storage) {
+        furi_record_close(RECORD_STORAGE);
+        app->logger_storage = NULL;
+    }
+}
+
+static bool logger_start(LabMateApp* app) {
+    if(app->logger_recording) return true;
+    app->logger_error = false;
+    app->logger_rows = 0U;
+    app->logger_path[0] = '\0';
+
+    app->logger_storage = furi_record_open(RECORD_STORAGE);
+    if(!app->logger_storage ||
+       storage_sd_status(app->logger_storage) != FSE_OK ||
+       !storage_simply_mkdir(app->logger_storage, LOGGER_DIR)) {
+        app->logger_error = true;
+        logger_stop(app);
+        return false;
+    }
+
+    app->logger_file = storage_file_alloc(app->logger_storage);
+    if(!app->logger_file) {
+        app->logger_error = true;
+        logger_stop(app);
+        return false;
+    }
+
+    bool opened = false;
+    for(uint32_t i = 1U; i <= 9999U; ++i) {
+        snprintf(
+            app->logger_path, sizeof(app->logger_path),
+            LOGGER_DIR "/log_%04lu.csv", (unsigned long)i);
+        /* CREATE_NEW prevents accidental replacement of existing logs. */
+        if(storage_file_open(
+               app->logger_file, app->logger_path, FSAM_WRITE, FSOM_CREATE_NEW)) {
+            opened = true;
+            break;
+        }
+        if(storage_file_get_error(app->logger_file) != FSE_EXIST) break;
+    }
+
+    if(!opened) {
+        app->logger_error = true;
+        logger_stop(app);
+        return false;
+    }
+
+    const char* header =
+        "elapsed_ms,source,pin,valid,frequency_hz,high_us,low_us,period_us,duty_pct\n";
+    const size_t header_size = strlen(header);
+    if(storage_file_write(app->logger_file, header, header_size) != header_size) {
+        app->logger_error = true;
+        logger_stop(app);
+        return false;
+    }
+
+    app->logger_start_tick = furi_get_tick();
+    app->logger_last_tick = app->logger_start_tick;
+    app->logger_recording = true;
+    return true;
+}
+
+/* Called with the app mutex held; does not perform storage operations. */
+static bool logger_prepare_row(LabMateApp* app, char* row, size_t capacity) {
+    if(!app->logger_recording) return false;
+    const uint32_t now = furi_get_tick();
+    const uint32_t hz = furi_kernel_get_tick_frequency();
+    const uint32_t interval =
+        (uint32_t)(((uint64_t)hz * LOGGER_INTERVAL_MS + 999ULL) / 1000ULL);
+    if((uint32_t)(now - app->logger_last_tick) < (interval ? interval : 1U)) {
+        return false;
+    }
+    app->logger_last_tick = now;
+    const uint32_t elapsed_ms =
+        hz ? (uint32_t)(((uint64_t)(now - app->logger_start_tick) * 1000ULL) / hz) : 0U;
+
+    int length;
+    if(app->logger_source == LoggerPulse) {
+        const bool valid = app->pulse_period_valid;
+        length = snprintf(
+            row, capacity,
+            "%lu,PULSE,PC1,%u,,%lu,%lu,%lu,%lu.%01lu\n",
+            (unsigned long)elapsed_ms, valid ? 1U : 0U,
+            (unsigned long)(valid ? pulse_cycles_to_us(app->pulse_high_cycles) : 0U),
+            (unsigned long)(valid ? pulse_cycles_to_us(app->pulse_low_cycles) : 0U),
+            (unsigned long)(valid ? pulse_cycles_to_us(app->pulse_period_cycles) : 0U),
+            (unsigned long)(valid ? app->pulse_duty_permille / 10U : 0U),
+            (unsigned long)(valid ? app->pulse_duty_permille % 10U : 0U));
+    } else {
+        const bool valid = app->frequency_valid;
+        const uint32_t mhz = valid ? app->frequency_millihz : 0U;
+        length = snprintf(
+            row, capacity,
+            "%lu,FREQ,%s,%u,%lu.%03lu,,,,\n",
+            (unsigned long)elapsed_ms,
+            app->logger_source == LoggerFrequencyHigh ? "PB3" : "PC1",
+            valid ? 1U : 0U,
+            (unsigned long)(mhz / 1000U),
+            (unsigned long)(mhz % 1000U));
+    }
+
+    if(length <= 0 || (size_t)length >= capacity) {
+        app->logger_error = true;
+        logger_stop(app);
+        return false;
+    }
+    return true;
 }
 
 /* ---------- SIGNAL GENERATOR ---------- */
@@ -1332,6 +1521,9 @@ static void ui_draw_menu_icon(
         ui_icon_generator(canvas, x, y);
         break;
     case 4:
+        ui_icon_frequency(canvas, x, y);
+        break;
+    case 5:
         ui_icon_info(canvas, x, y);
         break;
     }
@@ -1373,7 +1565,7 @@ static void draw_menu(
         99,
         1,
         27,
-        "v1.4d",
+        "v1.5d",
         false);
 
     canvas_draw_line(
@@ -1886,6 +2078,57 @@ static void draw_about(
         60,
         "3.3V GPIO ONLY");
 }
+
+static void draw_logger(Canvas* canvas, LabMateApp* app) {
+    char mode[30];
+    char live[40];
+    char state[40];
+
+    draw_header(canvas, "DATA LOGGER");
+    canvas_set_font(canvas, FontSecondary);
+    if(app->logger_source == LoggerPulse) {
+        snprintf(mode, sizeof(mode), "PULSE / PC1");
+        if(app->pulse_period_valid) {
+            snprintf(
+                live, sizeof(live), "PER %lu us  DUTY %lu.%01lu%%",
+                (unsigned long)pulse_cycles_to_us(app->pulse_period_cycles),
+                (unsigned long)(app->pulse_duty_permille / 10U),
+                (unsigned long)(app->pulse_duty_permille % 10U));
+        } else {
+            snprintf(live, sizeof(live), "NO VALID PULSE");
+        }
+    } else {
+        snprintf(
+            mode, sizeof(mode), "FREQ / %s",
+            app->logger_source == LoggerFrequencyHigh ? "PB3 HIGH" : "PC1 LOW");
+        if(app->frequency_valid) {
+            snprintf(
+                live, sizeof(live), "FREQ %lu.%03lu Hz",
+                (unsigned long)(app->frequency_millihz / 1000U),
+                (unsigned long)(app->frequency_millihz % 1000U));
+        } else {
+            snprintf(live, sizeof(live), "NO VALID FREQ");
+        }
+    }
+
+    if(app->logger_error) {
+        snprintf(state, sizeof(state), "SD / WRITE ERROR");
+    } else if(app->logger_recording) {
+        snprintf(state, sizeof(state), "REC: %lu rows", (unsigned long)app->logger_rows);
+    } else if(app->logger_path[0]) {
+        snprintf(state, sizeof(state), "SAVED: %lu rows", (unsigned long)app->logger_rows);
+    } else {
+        snprintf(state, sizeof(state), "READY / 1 second");
+    }
+
+    canvas_draw_str(canvas, 2, 24, mode);
+    canvas_draw_str(canvas, 2, 36, live);
+    canvas_draw_str(canvas, 2, 48, state);
+    canvas_draw_str(
+        canvas, 2, 61,
+        app->logger_recording ? "OK STOP  BACK SAVE" : "< > MODE  OK REC");
+}
+
 static void render_callback(
     Canvas* canvas,
     void* ctx) {
@@ -1919,6 +2162,10 @@ static void render_callback(
         draw_generator(canvas, app);
         break;
 
+    case LabMateScreenLogger:
+        draw_logger(canvas, app);
+        break;
+
     case LabMateScreenAbout:
         draw_about(canvas);
         break;
@@ -1947,7 +2194,8 @@ static bool screen_uses_gpio(
     return
         screen == LabMateScreenGpio ||
         screen == LabMateScreenFrequency ||
-        screen == LabMateScreenPulse;
+        screen == LabMateScreenPulse ||
+        screen == LabMateScreenLogger;
 }
 
 int32_t labmate_app(void* p) {
@@ -2120,14 +2368,36 @@ int32_t labmate_app(void* p) {
                         break;
 
                     case 4:
-                        app->screen =
-                            LabMateScreenAbout;
+                        app->screen = LabMateScreenLogger;
+                        app->logger_source = LoggerFrequencyLow;
+                        app->logger_error = false;
+                        app->logger_rows = 0U;
+                        app->logger_path[0] = '\0';
+                        logger_capture_start(app);
+                        break;
+
+                    case 5:
+                        app->screen = LabMateScreenAbout;
                         break;
                     }
 
                 } else if(
                     event.key == InputKeyBack) {
                     app->running = false;
+                }
+
+            } else if(app->screen == LabMateScreenLogger) {
+                if(event.key == InputKeyLeft) {
+                    logger_capture_change(app, -1);
+                } else if(event.key == InputKeyRight) {
+                    logger_capture_change(app, 1);
+                } else if(event.key == InputKeyOk) {
+                    if(app->logger_recording) logger_stop(app);
+                    else logger_start(app);
+                } else if(event.key == InputKeyBack) {
+                    logger_stop(app);
+                    logger_capture_stop(app);
+                    app->screen = LabMateScreenMenu;
                 }
 
             } else if(
@@ -2246,13 +2516,34 @@ int32_t labmate_app(void* p) {
             }
         }
 
+        char pending_log_row[160];
+        bool pending_log = false;
+        if(app->screen == LabMateScreenLogger && app->logger_recording) {
+            pending_log = logger_prepare_row(app, pending_log_row, sizeof(pending_log_row));
+        }
         furi_mutex_release(
             app->mutex);
+
+        /* SD writes stay outside the mutex and never occur in capture IRQs. */
+        if(pending_log) {
+            size_t bytes = strlen(pending_log_row);
+            bool ok = app->logger_file &&
+                storage_file_write(app->logger_file, pending_log_row, bytes) == bytes;
+            furi_mutex_acquire(app->mutex, FuriWaitForever);
+            if(ok) {
+                app->logger_rows++;
+            } else {
+                app->logger_error = true;
+                logger_stop(app);
+            }
+            furi_mutex_release(app->mutex);
+        }
 
         /* Under heavy IRQ load, use a calmer LCD refresh rate while
          * preserving immediate response to keys and all captured edges.
          */
-        if(app->screen == LabMateScreenPulse) {
+        if(app->screen == LabMateScreenPulse ||
+           (app->screen == LabMateScreenLogger && app->logger_source == LoggerPulse)) {
             uint32_t tick = furi_get_tick();
             bool key_press =
                 (status == FuriStatusOk && event.type == InputTypePress);
@@ -2280,8 +2571,14 @@ int32_t labmate_app(void* p) {
         generator_stop(app);
     }
 
+    if(app->logger_recording || app->logger_file || app->logger_storage) {
+        logger_stop(app);
+    }
+
     if(screen_uses_gpio(app->screen)) {
-        if(app->screen == LabMateScreenPulse) {
+        if(app->screen == LabMateScreenLogger) {
+            logger_capture_stop(app);
+        } else if(app->screen == LabMateScreenPulse) {
             pulse_interrupt_stop(app);
         } else if(app->screen == LabMateScreenFrequency) {
             frequency_hw_stop(app);
