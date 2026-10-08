@@ -4,6 +4,7 @@
 #include <furi_hal_pwm.h>
 #include <furi_hal_bus.h>
 #include <stm32wbxx_ll_tim.h>
+#include <stm32wbxx_ll_exti.h>
 #include <gui/gui.h>
 #include <input/input.h>
 
@@ -335,6 +336,16 @@ static void __attribute__((unused)) frequency_interrupt_start(LabMateApp* app) {
     app->frequency_irq_edges = 0;
     app->frequency_irq_new_period = false;
 
+    /* Explicitly clear the old falling-edge trigger. Momentum's GPIO init
+     * enables rising interrupts but does not always clear falling triggers
+     * left by Pulse Analyzer's previous rise/fall EXTI configuration.
+     * Without this, a 1 kHz square wave may appear as 2 kHz here.
+     */
+    FURI_CRITICAL_ENTER();
+    LL_EXTI_DisableFallingTrig_0_31(LL_EXTI_LINE_1);
+    LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_1);
+    FURI_CRITICAL_EXIT();
+
     furi_hal_gpio_init(
         pin,
         GpioModeInterruptRise,
@@ -397,6 +408,16 @@ static void pulse_interrupt_stop(LabMateApp* app) {
     const GpioPin* pin = labmate_gpio_pins[app->gpio_index];
     furi_hal_gpio_disable_int_callback(pin);
     furi_hal_gpio_remove_int_callback(pin);
+
+    /* Release both EXTI edge triggers as well as the callback. Merely
+     * removing an interrupt callback leaves the rising/falling trigger
+     * configuration behind on this firmware version.
+     */
+    FURI_CRITICAL_ENTER();
+    LL_EXTI_DisableRisingTrig_0_31((uint32_t)pin->pin);
+    LL_EXTI_DisableFallingTrig_0_31((uint32_t)pin->pin);
+    LL_EXTI_ClearFlag_0_31((uint32_t)pin->pin);
+    FURI_CRITICAL_EXIT();
     app->pulse_irq_active = false;
 }
 
@@ -890,12 +911,15 @@ static void generator_change_frequency(
     }
 
     /*
-     * Restart timing cleanly when frequency
-     * changes while generator is running.
+     * Update TIM1 PWM parameters in place while running.
+     * Do not stop and re-enable TIM1 for each key press.
+     * This keeps PA7 configured and avoids repeated timer/bus resets.
      */
     if(app->generator_running) {
-        generator_stop(app);
-        generator_start(app);
+        furi_hal_pwm_set_params(
+            FuriHalPwmOutputIdTim1PA7,
+            generator_frequencies[app->generator_freq_index],
+            50U);
     }
 }
 
@@ -1255,163 +1279,53 @@ static void draw_menu(
     ui_key(canvas, 70, "OK", "HOLD");
 }
 
-static void draw_frequency(
-    Canvas* canvas,
-    LabMateApp* app) {
+static void draw_frequency(Canvas* canvas, LabMateApp* app) {
+    char value[32];
+    char edges_label[32];
+    const bool high_mode = app->gpio_index == 4U;
 
-    char buffer[32];
+    /* Compact status bar, matching the Pulse Analyzer layout. */
+    canvas_set_font(canvas, FontPrimary);
+    canvas_draw_str(canvas, 2, 10, "FREQ");
+    ui_badge(canvas, 34, 1, 55, high_mode ? "HIGH PB3" : "LOW PC1", false);
+    ui_badge(canvas, 91, 1, 35, app->hold ? "HOLD" : "LIVE", !app->hold);
+    canvas_draw_line(canvas, 0, 13, 127, 13);
 
-    draw_header(
-        canvas,
-        "FREQUENCY METER");
-
-    bool high_mode =
-        app->gpio_index == 4U;
-
-    /*
-     * Measurement mode badge.
-     */
-    ui_badge(
-        canvas,
-        2,
-        16,
-        48,
-        high_mode ?
-            "HIGH PB3" :
-            "LOW PC1",
-        high_mode);
-
-    /*
-     * LIVE / HOLD badge.
-     */
-    ui_badge(
-        canvas,
-        91,
-        16,
-        35,
-        app->hold ?
-            "HOLD" :
-            "LIVE",
-        !app->hold);
-
-    /*
-     * Format primary measurement.
-     */
     if(app->frequency_valid) {
-
-        uint32_t hz =
-            app->frequency_millihz /
-            1000U;
-
-        uint32_t decimal =
-            (app->frequency_millihz %
-             1000U) /
-            10U;
+        uint32_t hz = app->frequency_millihz / 1000U;
+        uint32_t decimal = (app->frequency_millihz % 1000U) / 10U;
 
         if(hz >= 1000U) {
-
-            uint32_t khz_whole =
-                hz / 1000U;
-
-            uint32_t khz_decimal =
-                (hz % 1000U) /
-                10U;
-
-            snprintf(
-                buffer,
-                sizeof(buffer),
-                "%lu.%02lu kHz",
-                (unsigned long)
-                    khz_whole,
-                (unsigned long)
-                    khz_decimal);
-
+            /* Keep the existing measured frequency formatting unchanged. */
+            uint32_t khz_whole = hz / 1000U;
+            uint32_t khz_decimal = (hz % 1000U) / 10U;
+            snprintf(value, sizeof(value), "%lu.%02lu kHz",
+                     (unsigned long)khz_whole,
+                     (unsigned long)khz_decimal);
         } else {
-
-            snprintf(
-                buffer,
-                sizeof(buffer),
-                "%lu.%02lu Hz",
-                (unsigned long)hz,
-                (unsigned long)decimal);
+            snprintf(value, sizeof(value), "%lu.%02lu Hz",
+                     (unsigned long)hz,
+                     (unsigned long)decimal);
         }
-
     } else {
-
-        snprintf(
-            buffer,
-            sizeof(buffer),
-            "--- Hz");
+        snprintf(value, sizeof(value), "--- Hz");
     }
 
-    /*
-     * Main measurement.
-     */
-    canvas_set_font(
-        canvas,
-        FontPrimary);
+    canvas_set_font(canvas, FontSecondary);
+    canvas_draw_str(canvas, 3, 24, "MEASURED FREQUENCY");
+    canvas_set_font(canvas, FontPrimary);
+    canvas_draw_str(canvas, 4, 38, value);
 
-    canvas_draw_str(
-        canvas,
-        8,
-        41,
-        buffer);
+    snprintf(edges_label, sizeof(edges_label), "EDGES %lu",
+             (unsigned long)app->edges);
+    canvas_set_font(canvas, FontSecondary);
+    canvas_draw_str(canvas, 4, 49, edges_label);
 
-    /*
-     * Edge counter as secondary data.
-     */
-    canvas_set_font(
-        canvas,
-        FontSecondary);
-
-    snprintf(
-        buffer,
-        sizeof(buffer),
-        "EDGES %lu",
-        (unsigned long)
-            app->edges);
-
-    canvas_draw_str(
-        canvas,
-        74,
-        49,
-        buffer);
-
-    canvas_draw_line(
-        canvas,
-        0,
-        52,
-        127,
-        52);
-
-    /*
-     * Three logical controls:
-     *
-     * LEFT = LOW
-     * OK   = HOLD
-     * RIGHT= HIGH
-     */
-    ui_key(
-        canvas,
-        2,
-        "<",
-        "LOW");
-
-    canvas_set_font(
-        canvas,
-        FontSecondary);
-
-    canvas_draw_str(
-        canvas,
-        49,
-        61,
-        "OK HOLD");
-
-    ui_key(
-        canvas,
-        91,
-        ">",
-        "HI");
+    /* The middle button freezes the reading; left/right select mode. */
+    canvas_draw_line(canvas, 0, 52, 127, 52);
+    ui_key(canvas, 2, "<", "LOW");
+    ui_key(canvas, 46, "OK", app->hold ? "LIVE" : "HOLD");
+    ui_key(canvas, 91, ">", "HI");
 }
 
 static void pulse_ui_metric(
@@ -1472,128 +1386,42 @@ static void draw_pulse(Canvas* canvas, LabMateApp* app) {
     ui_key(canvas, 70, "OK", app->hold ? "LIVE" : "HOLD");
 }
 
-static void draw_generator(
-    Canvas* canvas,
-    LabMateApp* app) {
+static void draw_generator(Canvas* canvas, LabMateApp* app) {
+    char value[32];
+    const uint32_t freq = generator_frequencies[app->generator_freq_index];
 
-    char buffer[32];
+    /* Output and RUN/STOP are visible even when switching presets. */
+    canvas_set_font(canvas, FontPrimary);
+    canvas_draw_str(canvas, 2, 10, "GEN");
+    ui_badge(canvas, 34, 1, 55, "OUT PA7", false);
+    ui_badge(canvas, 91, 1, 35, app->generator_running ? "RUN" : "STOP",
+             app->generator_running);
+    canvas_draw_line(canvas, 0, 13, 127, 13);
 
-    draw_header(
-        canvas,
-        "SIGNAL GENERATOR");
-
-    /*
-     * Output badge.
-     */
-    ui_badge(
-        canvas,
-        2,
-        16,
-        43,
-        "OUT PA7",
-        false);
-
-    /*
-     * Generator state badge.
-     */
-    ui_badge(
-        canvas,
-        91,
-        16,
-        35,
-        app->generator_running ?
-            "RUN" :
-            "STOP",
-        app->generator_running);
-
-    uint32_t freq =
-        generator_frequencies[
-            app->
-            generator_freq_index];
-
-    /*
-     * Human-friendly frequency format.
-     */
-    canvas_set_font(
-        canvas,
-        FontPrimary);
-
-    if(freq >= 1000U &&
-       (freq % 1000U) == 0U) {
-
-        snprintf(
-            buffer,
-            sizeof(buffer),
-            "%lu kHz",
-            (unsigned long)
-                (freq / 1000U));
-
+    /* Only the visual presentation changes: PWM remains TIM1/PA7. */
+    if(freq >= 1000U && (freq % 1000U) == 0U) {
+        snprintf(value, sizeof(value), "%lu kHz", (unsigned long)(freq / 1000U));
     } else {
-
-        snprintf(
-            buffer,
-            sizeof(buffer),
-            "%lu Hz",
-            (unsigned long)
-                freq);
+        snprintf(value, sizeof(value), "%lu Hz", (unsigned long)freq);
     }
 
-    /*
-     * Primary value.
-     */
-    canvas_draw_str(
-        canvas,
-        10,
-        41,
-        buffer);
+    canvas_set_font(canvas, FontSecondary);
+    canvas_draw_str(canvas, 3, 24, "OUTPUT FREQ");
+    canvas_set_font(canvas, FontPrimary);
+    canvas_draw_str(canvas, 4, 40, value);
 
-    /*
-     * Duty information.
-     */
-    canvas_set_font(
-        canvas,
-        FontSecondary);
+    canvas_draw_line(canvas, 84, 17, 84, 50);
+    canvas_set_font(canvas, FontSecondary);
+    canvas_draw_str(canvas, 90, 27, "DUTY");
+    canvas_set_font(canvas, FontPrimary);
+    canvas_draw_str(canvas, 90, 41, "50%");
 
-    canvas_draw_str(
-        canvas,
-        89,
-        37,
-        "DUTY");
+    canvas_draw_line(canvas, 0, 52, 127, 52);
+    ui_key(canvas, 2, "<>", "FREQ");
+    ui_key(canvas, 70, "OK", app->generator_running ? "STOP" : "START");
+}
 
-    canvas_set_font(
-        canvas,
-        FontPrimary);
-
-    canvas_draw_str(
-        canvas,
-        89,
-        48,
-        "50%");
-
-    canvas_draw_line(
-        canvas,
-        0,
-        52,
-        127,
-        52);
-
-    /*
-     * Footer controls.
-     */
-    ui_key(
-        canvas,
-        2,
-        "<>",
-        "FREQ");
-
-    ui_key(
-        canvas,
-        70,
-        "OK",
-        app->generator_running ?
-            "STOP" :
-            "START");
-}static void draw_about(
+static void draw_about(
     Canvas* canvas) {
 
     canvas_set_font(
