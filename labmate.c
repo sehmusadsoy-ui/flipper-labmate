@@ -10,6 +10,9 @@
 
 #define MENU_COUNT 5
 #define GPIO_COUNT 8
+/* High-speed Pulse MIN/MAX uses the median of five spaced captures.
+ * This changes statistics only; LIVE values and IRQ timing are untouched. */
+#define PULSE_STATS_FILTER_SAMPLES 5U
 
 
 typedef enum {
@@ -20,6 +23,13 @@ typedef enum {
     LabMateScreenGenerator,
     LabMateScreenAbout,
 } LabMateScreen;
+
+typedef struct {
+    uint32_t high_cycles;
+    uint32_t low_cycles;
+    uint32_t period_cycles;
+    uint32_t duty_permille;
+} PulseStatsSample;
 
 typedef struct {
     bool running;
@@ -100,6 +110,10 @@ typedef struct {
     bool pulse_stats_last_valid;
     uint32_t pulse_stats_last_high_cycles;
     uint32_t pulse_stats_last_low_cycles;
+    PulseStatsSample pulse_stats_recent[PULSE_STATS_FILTER_SAMPLES];
+    uint8_t pulse_stats_recent_count;
+    uint8_t pulse_stats_recent_next;
+    uint32_t pulse_stats_recent_tick;
     uint32_t pulse_min_high_cycles;
     uint32_t pulse_max_high_cycles;
     uint32_t pulse_min_low_cycles;
@@ -715,14 +729,40 @@ static void pulse_recalculate(LabMateApp* app) {
     app->pulse_period_valid = true;
 }
 
+/* Keep running extrema across HOLD and signal loss, but discard an
+ * incomplete smoothing window whenever the capture source restarts. */
+static void pulse_stats_window_reset(LabMateApp* app) {
+    app->pulse_stats_recent_count = 0U;
+    app->pulse_stats_recent_next = 0U;
+    app->pulse_stats_recent_tick = 0U;
+}
+
+/* A five-element insertion sort runs in the app thread (not the IRQ).
+ * Median values are selected from genuine captured measurements; they
+ * are not synthetic target values and the result is not clamped to 50%. */
+static uint32_t pulse_stats_median5(const uint32_t values[PULSE_STATS_FILTER_SAMPLES]) {
+    uint32_t sorted[PULSE_STATS_FILTER_SAMPLES];
+    for(uint8_t i = 0U; i < PULSE_STATS_FILTER_SAMPLES; ++i) {
+        uint32_t value = values[i];
+        uint8_t j = i;
+        while(j > 0U && sorted[j - 1U] > value) {
+            sorted[j] = sorted[j - 1U];
+            --j;
+        }
+        sorted[j] = value;
+    }
+    return sorted[PULSE_STATS_FILTER_SAMPLES / 2U];
+}
+
 /* The extrema summarize published/averaged HIGH+LOW readings, not
  * individual high-speed edges. Keeping this outside the IRQ preserves
- * the v1.3 capture timing and the 50 kHz duty filtering behavior. */
+ * the v1.3 capture timing and 50 kHz live duty filtering behavior. */
 static void pulse_stats_reset(LabMateApp* app) {
     app->pulse_stats_valid = false;
     app->pulse_stats_last_valid = false;
     app->pulse_stats_last_high_cycles = 0U;
     app->pulse_stats_last_low_cycles = 0U;
+    pulse_stats_window_reset(app);
     app->pulse_min_high_cycles = 0U;
     app->pulse_max_high_cycles = 0U;
     app->pulse_min_low_cycles = 0U;
@@ -733,25 +773,77 @@ static void pulse_stats_reset(LabMateApp* app) {
     app->pulse_max_duty_permille = 0U;
 }
 
-static void pulse_stats_record(LabMateApp* app) {
+static void pulse_stats_record(LabMateApp* app, uint32_t now) {
     if(!app->pulse_period_valid) return;
 
-    const uint32_t high = app->pulse_high_cycles;
-    const uint32_t low = app->pulse_low_cycles;
+    uint32_t high = app->pulse_high_cycles;
+    uint32_t low = app->pulse_low_cycles;
+    uint32_t period = app->pulse_period_cycles;
+    uint32_t duty = app->pulse_duty_permille;
 
-    /* A 10 ms redraw must not count an unchanged IRQ snapshot again. */
-    if(app->pulse_stats_last_valid &&
-       high == app->pulse_stats_last_high_cycles &&
-       low == app->pulse_stats_last_low_cycles) {
-        return;
+    /* At 8 kHz and above, isolated IRQ timestamp jitter must not become
+     * a permanent MIN/MAX. Accept one averaged snapshot every 100 ms,
+     * then record the MEDIAN of five successive readings for each field.
+     * Persistent real changes are retained after the short window fills.
+     * At slower speeds preserve the existing unfiltered MIN/MAX. */
+    const uint32_t fast_limit_cycles = SystemCoreClock / 8000U;
+    const bool fast = fast_limit_cycles > 0U && period <= fast_limit_cycles;
+
+    if(fast) {
+        uint32_t interval = furi_kernel_get_tick_frequency() / 10U;
+        if(interval == 0U) interval = 1U;
+
+        if(app->pulse_stats_recent_count > 0U &&
+           (uint32_t)(now - app->pulse_stats_recent_tick) < interval) {
+            return;
+        }
+
+        app->pulse_stats_recent_tick = now;
+        PulseStatsSample* entry =
+            &app->pulse_stats_recent[app->pulse_stats_recent_next];
+        entry->high_cycles = high;
+        entry->low_cycles = low;
+        entry->period_cycles = period;
+        entry->duty_permille = duty;
+
+        app->pulse_stats_recent_next =
+            (uint8_t)((app->pulse_stats_recent_next + 1U) %
+                      PULSE_STATS_FILTER_SAMPLES);
+        if(app->pulse_stats_recent_count < PULSE_STATS_FILTER_SAMPLES) {
+            ++app->pulse_stats_recent_count;
+        }
+        if(app->pulse_stats_recent_count < PULSE_STATS_FILTER_SAMPLES) return;
+
+        uint32_t highs[PULSE_STATS_FILTER_SAMPLES];
+        uint32_t lows[PULSE_STATS_FILTER_SAMPLES];
+        uint32_t periods[PULSE_STATS_FILTER_SAMPLES];
+        uint32_t duties[PULSE_STATS_FILTER_SAMPLES];
+        for(uint8_t i = 0U; i < PULSE_STATS_FILTER_SAMPLES; ++i) {
+            const PulseStatsSample* sample = &app->pulse_stats_recent[i];
+            highs[i] = sample->high_cycles;
+            lows[i] = sample->low_cycles;
+            periods[i] = sample->period_cycles;
+            duties[i] = sample->duty_permille;
+        }
+        high = pulse_stats_median5(highs);
+        low = pulse_stats_median5(lows);
+        period = pulse_stats_median5(periods);
+        duty = pulse_stats_median5(duties);
+    } else {
+        /* A slow reading is already an averaged capture and remains exact.
+         * Do not mix slow measurements into the fast 5-sample window. */
+        pulse_stats_window_reset(app);
+
+        /* Polling without new IRQ results must not duplicate samples. */
+        if(app->pulse_stats_last_valid &&
+           high == app->pulse_stats_last_high_cycles &&
+           low == app->pulse_stats_last_low_cycles) {
+            return;
+        }
+        app->pulse_stats_last_high_cycles = high;
+        app->pulse_stats_last_low_cycles = low;
+        app->pulse_stats_last_valid = true;
     }
-
-    app->pulse_stats_last_high_cycles = high;
-    app->pulse_stats_last_low_cycles = low;
-    app->pulse_stats_last_valid = true;
-
-    const uint32_t period = app->pulse_period_cycles;
-    const uint32_t duty = app->pulse_duty_permille;
 
     if(!app->pulse_stats_valid) {
         app->pulse_min_high_cycles = high;
@@ -1032,6 +1124,9 @@ static void measurement_update(LabMateApp* app) {
             FURI_CRITICAL_EXIT();
             hi_valid = false;
             lo_valid = false;
+            /* Signal returned later must start a fresh fast median window.
+             * Preserve previous MIN/MAX until the user resets them. */
+            pulse_stats_window_reset(app);
         }
 
         app->edges = count;
@@ -1040,7 +1135,7 @@ static void measurement_update(LabMateApp* app) {
         app->pulse_high_cycles = hi;
         app->pulse_low_cycles = lo;
         pulse_recalculate(app);
-        pulse_stats_record(app);
+        pulse_stats_record(app, now);
         return;
     }
 
@@ -2063,7 +2158,9 @@ int32_t labmate_app(void* p) {
 
                     if(app->screen == LabMateScreenPulse) {
                         if(app->hold) {
-                            /* Resume with a fresh IRQ capture window. */
+                            /* Resume with a fresh IRQ and statistics window.
+                             * Keep prior recorded extrema across HOLD/LIVE. */
+                            pulse_stats_window_reset(app);
                             measurement_reset(app);
                             pulse_interrupt_start(app);
                             app->hold = false;
