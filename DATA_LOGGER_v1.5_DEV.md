@@ -60,7 +60,7 @@ cd "$env:USERPROFILE\Momentum-Firmware"
 .\fbt launch APPSRC=applications_user\labmate
 ```
 
-## START/STOP responsiveness fix (development, pending device check)
+## START/STOP responsiveness fix (repeat-cycle device check passed)
 
 - When starting a new recording, check for already-existing filenames and reuse
   a session-local next-number cursor. Only try to open candidate files that
@@ -80,16 +80,23 @@ Verify two different CSV filenames and readable content, then repeat at least
 five START/STOP cycles. Test BACK and re-entry, SD error display, and other
 v1.4 measurement screens. Do not consider this fix verified by CI alone.
 
-## On-device acceptance tests (pending)
+**Device feedback — 2026-10-09:** The user confirmed that three consecutive
+START -> approximately 5 seconds -> STOP cycles and BACK/menu re-entry were
+performed without the previously reported freeze. This is a successful
+repeat-START responsiveness smoke test on the physical Flipper after the fix.
+The longer five-cycle and other regression tests above remain open; do not
+infer they passed from this report alone.
 
-- [ ] Build against the installed Momentum API; launch without crashes
+## On-device acceptance tests (in progress)
+
+- [x] Build against the installed Momentum API; launch without crashes
 - [ ] Verify existing v1.4 meter and generator screens still work
-- [ ] Insert microSD and record at least 5 samples on PC1 with internal PA7
+- [x] Insert microSD and record at least 5 samples on PC1 with internal PA7
       generator loopback; check format, timestamps and values
 - [ ] Switch to PB3 and repeat at 1, 20, and 50 kHz
 - [ ] Switch to PULSE/PC1 and repeat at 1 kHz; inspect periods/duty
 - [ ] STOP, BACK and exit close files; existing CSVs are not overwritten
-- [ ] Record at least 12 rows; ensure periodic sync does not freeze the UI
+- [x] Record at least 12 rows; ensure periodic sync does not freeze the UI
 - [ ] Remove/unmount SD before starting; ensure UI reports an error safely
 - [ ] Test sudden signal loss: valid flag returns 0 after timeout
 - [ ] Test continuous logging for at least 10 minutes and USB navigation
