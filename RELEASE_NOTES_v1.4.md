@@ -38,9 +38,9 @@ These are **functional self-tests**, not independent calibration. The internal s
 
 ## Compatibility and installation
 
-Download `labmate-v1.4.fap` from the v1.4 GitHub Release *if the downloadable asset has been published successfully*. Copy it to `/ext/apps/Tools/labmate.fap`, then open **Apps > Tools > LabMate**.
+Download the published [`labmate-v1.4.fap`](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/download/v1.4/labmate-v1.4.fap) from [LabMate v1.4 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.4). Copy it to `/ext/apps/Tools/labmate.fap`, then open **Apps > Tools > LabMate**.
 
-The on-device development builds were tested against Momentum Firmware **API 87.1**. The GitHub Actions release workflow uses a Momentum SDK; check the build's reported API version, because a binary built against another API might not run on your firmware. Rebuild with your installed Momentum Firmware checkout if needed:
+The on-device development builds and the GitHub Actions binary both used Momentum Firmware **API 87.1**, verified in the successful release workflow logs. A future firmware/API update may require rebuilding from source. Rebuild with your installed Momentum Firmware checkout if needed:
 
 ```powershell
 Copy-Item .\labmate.c "$env:USERPROFILE\Momentum-Firmware\applications_user\labmate\labmate.c" -Force
@@ -54,4 +54,8 @@ cd "$env:USERPROFILE\Momentum-Firmware"
 
 **3.3 V logic GPIO only.** Never directly connect 5 V, 12 V, automotive wiring, mains or signals of unknown voltage to Flipper GPIO. Use appropriately engineered input protection and signal conditioning for other systems.
 
-The v1.3 Stable tag and release remain available as a fallback.
+The release includes `SHA256SUMS.txt`; GitHub also reports the published v1.4 FAP SHA-256 as `b5be0a27709ea2c4fe8d63269404d50a4e7d8863c1e8e773063764f9f607cf25`. The v1.3 Stable tag and release remain available as a fallback.
+
+### Release artifact provenance
+
+The official v1.4 FAP (18,692 bytes) was built successfully from the `v1.4` source on GitHub Actions with Momentum Firmware dev SDK (API **87.1**), not copied from an older build. Source-to-device loopback tests were done with the developer's local Momentum API 87.1 checkout. CI build success verifies compilation, but the CI-produced downloadable binary itself was not separately installed on the device during this session.
