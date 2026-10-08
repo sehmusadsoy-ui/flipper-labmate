@@ -566,23 +566,24 @@ static void pulse_recalculate(LabMateApp* app) {
     app->pulse_period_valid = true;
 }
 
-/* Fits each half of the 128px display. Sub-10ms values keep
- * fractional milliseconds; sub-1ms values are shown in us.
+/*
+ * Pulse Analyzer v1.3: presentation-only formatter.
+ * Keep the IRQ capture and the measurement calculations untouched.
+ * Use short values that fit within a 60-pixel metric column.
  */
-static void pulse_format_time(
-    char* buffer, size_t size,
-    const char* long_label, const char* short_label,
-    uint32_t cycles) {
+static void pulse_ui_format_value(char* text, size_t size, uint32_t cycles) {
     const uint64_t us = pulse_cycles_to_us(cycles);
+
     if(us < 1000ULL) {
-        snprintf(buffer, size, "%s %luus", long_label, (unsigned long)us);
+        snprintf(text, size, "%luus", (unsigned long)us);
     } else if(us < 10000ULL) {
-        snprintf(buffer, size, "%s %lu.%02lums", short_label,
+        snprintf(text, size, "%lu.%02lums",
                  (unsigned long)(us / 1000ULL),
                  (unsigned long)((us % 1000ULL) / 10ULL));
+    } else if(us < 10000000ULL) {
+        snprintf(text, size, "%lums", (unsigned long)((us + 500ULL) / 1000ULL));
     } else {
-        snprintf(buffer, size, "%s %lums", long_label,
-                 (unsigned long)((us + 500ULL) / 1000ULL));
+        snprintf(text, size, "%lus", (unsigned long)((us + 500000ULL) / 1000000ULL));
     }
 }
 
@@ -1411,49 +1412,66 @@ static void draw_frequency(
         91,
         ">",
         "HI");
-}static void draw_pulse(
+}
+
+static void pulse_ui_metric(
     Canvas* canvas,
-    LabMateApp* app) {
+    uint8_t x,
+    uint8_t label_y,
+    uint8_t value_y,
+    const char* label,
+    const char* value) {
 
-    char buffer[32];
-
-    draw_header(canvas, "PULSE ANALYZER");
-    ui_badge(canvas, 2, 16, 38, gpio_names[app->gpio_index], false);
-    ui_badge(canvas, 91, 16, 35, app->hold ? "HOLD" : "LIVE", !app->hold);
     canvas_set_font(canvas, FontSecondary);
+    canvas_draw_str(canvas, x, label_y, label);
+    canvas_set_font(canvas, FontPrimary);
+    canvas_draw_str(canvas, x, value_y, value);
+}
+
+static void draw_pulse(Canvas* canvas, LabMateApp* app) {
+    char high[24] = "---";
+    char low[24] = "---";
+    char period[24] = "---";
+    char duty[24] = "---";
+
+    /* Compact instrument header with input and capture state. */
+    canvas_set_font(canvas, FontPrimary);
+    canvas_draw_str(canvas, 2, 10, "PULSE");
+    ui_badge(canvas, 56, 1, 33, gpio_names[app->gpio_index], false);
+    ui_badge(canvas, 91, 1, 35, app->hold ? "HOLD" : "LIVE", !app->hold);
+    canvas_draw_line(canvas, 0, 13, 127, 13);
 
     if(app->pulse_high_valid) {
-        pulse_format_time(buffer, sizeof(buffer), "HIGH", "H", app->pulse_high_cycles);
-    } else {
-        snprintf(buffer, sizeof(buffer), "HIGH ---");
+        pulse_ui_format_value(high, sizeof(high), app->pulse_high_cycles);
     }
-    canvas_draw_str(canvas, 2, 35, buffer);
-
     if(app->pulse_low_valid) {
-        pulse_format_time(buffer, sizeof(buffer), "LOW", "L", app->pulse_low_cycles);
-    } else {
-        snprintf(buffer, sizeof(buffer), "LOW ---");
+        pulse_ui_format_value(low, sizeof(low), app->pulse_low_cycles);
     }
-    canvas_draw_str(canvas, 65, 35, buffer);
-
     if(app->pulse_period_valid) {
-        pulse_format_time(buffer, sizeof(buffer), "PER", "P", app->pulse_period_cycles);
-        canvas_draw_str(canvas, 2, 48, buffer);
-
-        uint32_t duty_whole = app->pulse_duty_permille / 10U;
-        uint32_t duty_decimal = app->pulse_duty_permille % 10U;
-        snprintf(buffer, sizeof(buffer), "DUTY %lu.%lu%%",
-                 (unsigned long)duty_whole,
-                 (unsigned long)duty_decimal);
-        canvas_draw_str(canvas, 65, 48, buffer);
-    } else {
-        canvas_draw_str(canvas, 2, 48, "PER ---");
-        canvas_draw_str(canvas, 65, 48, "DUTY ---");
+        pulse_ui_format_value(period, sizeof(period), app->pulse_period_cycles);
+        snprintf(duty, sizeof(duty), "%lu.%lu%%",
+                 (unsigned long)(app->pulse_duty_permille / 10U),
+                 (unsigned long)(app->pulse_duty_permille % 10U));
     }
 
+    /* 2 x 2 measurement grid.
+     * Use separate baselines for text and separators: on the 128x64
+     * display, even a one-pixel collision cuts the labels visibly.
+     * The measurement values and IRQ engine are unchanged.
+     */
+    canvas_draw_line(canvas, 64, 15, 64, 51);
+    canvas_draw_line(canvas, 2, 33, 126, 33);
+    pulse_ui_metric(canvas, 3, 21, 31, "HIGH", high);
+    pulse_ui_metric(canvas, 68, 21, 31, "LOW", low);
+    pulse_ui_metric(canvas, 3, 42, 50, "PERIOD", period);
+    pulse_ui_metric(canvas, 68, 42, 50, "DUTY", duty);
+
+    /* Navigation instructions in the existing control style. */
+    canvas_draw_line(canvas, 0, 52, 127, 52);
     ui_key(canvas, 2, "<>", "PIN");
-    ui_key(canvas, 70, "OK", "HOLD");
+    ui_key(canvas, 70, "OK", app->hold ? "LIVE" : "HOLD");
 }
+
 static void draw_generator(
     Canvas* canvas,
     LabMateApp* app) {
