@@ -93,6 +93,22 @@ typedef struct {
     bool pulse_low_valid;
     bool pulse_period_valid;
 
+    /* v1.4: Pulse Analyzer extrema come from completed display-side
+     * measurements. Never update this history from the GPIO interrupt. */
+    bool pulse_stats_view;
+    bool pulse_stats_valid;
+    bool pulse_stats_last_valid;
+    uint32_t pulse_stats_last_high_cycles;
+    uint32_t pulse_stats_last_low_cycles;
+    uint32_t pulse_min_high_cycles;
+    uint32_t pulse_max_high_cycles;
+    uint32_t pulse_min_low_cycles;
+    uint32_t pulse_max_low_cycles;
+    uint32_t pulse_min_period_cycles;
+    uint32_t pulse_max_period_cycles;
+    uint32_t pulse_min_duty_permille;
+    uint32_t pulse_max_duty_permille;
+
     /* Signal generator */
     bool generator_running;
     bool generator_state;
@@ -648,6 +664,8 @@ static void gpio_change(
         gpio_release(app->gpio_index);
         app->gpio_index = next_index;
         app->hold = false;
+        app->pulse_stats_view = false;
+        pulse_stats_reset(app);
         measurement_reset(app);
         pulse_interrupt_start(app);
         return;
@@ -692,6 +710,67 @@ static void pulse_recalculate(LabMateApp* app) {
         ((uint64_t)app->pulse_high_cycles * 1000ULL + period / 2ULL) /
         period);
     app->pulse_period_valid = true;
+}
+
+/* The extrema summarize published/averaged HIGH+LOW readings, not
+ * individual high-speed edges. Keeping this outside the IRQ preserves
+ * the v1.3 capture timing and the 50 kHz duty filtering behavior. */
+static void pulse_stats_reset(LabMateApp* app) {
+    app->pulse_stats_valid = false;
+    app->pulse_stats_last_valid = false;
+    app->pulse_stats_last_high_cycles = 0U;
+    app->pulse_stats_last_low_cycles = 0U;
+    app->pulse_min_high_cycles = 0U;
+    app->pulse_max_high_cycles = 0U;
+    app->pulse_min_low_cycles = 0U;
+    app->pulse_max_low_cycles = 0U;
+    app->pulse_min_period_cycles = 0U;
+    app->pulse_max_period_cycles = 0U;
+    app->pulse_min_duty_permille = 0U;
+    app->pulse_max_duty_permille = 0U;
+}
+
+static void pulse_stats_record(LabMateApp* app) {
+    if(!app->pulse_period_valid) return;
+
+    const uint32_t high = app->pulse_high_cycles;
+    const uint32_t low = app->pulse_low_cycles;
+
+    /* A 10 ms redraw must not count an unchanged IRQ snapshot again. */
+    if(app->pulse_stats_last_valid &&
+       high == app->pulse_stats_last_high_cycles &&
+       low == app->pulse_stats_last_low_cycles) {
+        return;
+    }
+
+    app->pulse_stats_last_high_cycles = high;
+    app->pulse_stats_last_low_cycles = low;
+    app->pulse_stats_last_valid = true;
+
+    const uint32_t period = app->pulse_period_cycles;
+    const uint32_t duty = app->pulse_duty_permille;
+
+    if(!app->pulse_stats_valid) {
+        app->pulse_min_high_cycles = high;
+        app->pulse_max_high_cycles = high;
+        app->pulse_min_low_cycles = low;
+        app->pulse_max_low_cycles = low;
+        app->pulse_min_period_cycles = period;
+        app->pulse_max_period_cycles = period;
+        app->pulse_min_duty_permille = duty;
+        app->pulse_max_duty_permille = duty;
+        app->pulse_stats_valid = true;
+        return;
+    }
+
+    if(high < app->pulse_min_high_cycles) app->pulse_min_high_cycles = high;
+    if(high > app->pulse_max_high_cycles) app->pulse_max_high_cycles = high;
+    if(low < app->pulse_min_low_cycles) app->pulse_min_low_cycles = low;
+    if(low > app->pulse_max_low_cycles) app->pulse_max_low_cycles = low;
+    if(period < app->pulse_min_period_cycles) app->pulse_min_period_cycles = period;
+    if(period > app->pulse_max_period_cycles) app->pulse_max_period_cycles = period;
+    if(duty < app->pulse_min_duty_permille) app->pulse_min_duty_permille = duty;
+    if(duty > app->pulse_max_duty_permille) app->pulse_max_duty_permille = duty;
 }
 
 /*
@@ -958,6 +1037,7 @@ static void measurement_update(LabMateApp* app) {
         app->pulse_high_cycles = hi;
         app->pulse_low_cycles = lo;
         pulse_recalculate(app);
+        pulse_stats_record(app);
         return;
     }
 
@@ -1505,6 +1585,62 @@ static void pulse_ui_metric(
     canvas_draw_str(canvas, x, value_y, value);
 }
 
+/* Second Pulse Analyzer page: four rows, MIN and MAX columns.
+ * The 128x64 LCD cannot show twelve detailed values in the LIVE grid.
+ * Keep the existing live 2x2 display untouched. */
+static void draw_pulse_stats(Canvas* canvas, LabMateApp* app) {
+    char hi_min[24] = "---";
+    char hi_max[24] = "---";
+    char lo_min[24] = "---";
+    char lo_max[24] = "---";
+    char per_min[24] = "---";
+    char per_max[24] = "---";
+    char duty_min[24] = "---";
+    char duty_max[24] = "---";
+
+    if(app->pulse_stats_valid) {
+        pulse_ui_format_value(hi_min, sizeof(hi_min), app->pulse_min_high_cycles);
+        pulse_ui_format_value(hi_max, sizeof(hi_max), app->pulse_max_high_cycles);
+        pulse_ui_format_value(lo_min, sizeof(lo_min), app->pulse_min_low_cycles);
+        pulse_ui_format_value(lo_max, sizeof(lo_max), app->pulse_max_low_cycles);
+        pulse_ui_format_value(per_min, sizeof(per_min), app->pulse_min_period_cycles);
+        pulse_ui_format_value(per_max, sizeof(per_max), app->pulse_max_period_cycles);
+        snprintf(duty_min, sizeof(duty_min), "%lu.%lu%%",
+                 (unsigned long)(app->pulse_min_duty_permille / 10U),
+                 (unsigned long)(app->pulse_min_duty_permille % 10U));
+        snprintf(duty_max, sizeof(duty_max), "%lu.%lu%%",
+                 (unsigned long)(app->pulse_max_duty_permille / 10U),
+                 (unsigned long)(app->pulse_max_duty_permille % 10U));
+    }
+
+    canvas_set_font(canvas, FontSecondary);
+    canvas_draw_str(canvas, 3, 21, "TYPE");
+    canvas_draw_str(canvas, 43, 21, "MIN");
+    canvas_draw_str(canvas, 88, 21, "MAX");
+    canvas_draw_line(canvas, 0, 23, 127, 23);
+
+    canvas_draw_str(canvas, 3, 30, "HIGH");
+    canvas_draw_str(canvas, 40, 30, hi_min);
+    canvas_draw_str(canvas, 85, 30, hi_max);
+
+    canvas_draw_str(canvas, 3, 38, "LOW");
+    canvas_draw_str(canvas, 40, 38, lo_min);
+    canvas_draw_str(canvas, 85, 38, lo_max);
+
+    canvas_draw_str(canvas, 3, 46, "PER");
+    canvas_draw_str(canvas, 40, 46, per_min);
+    canvas_draw_str(canvas, 85, 46, per_max);
+
+    canvas_draw_str(canvas, 3, 54, "DUTY");
+    canvas_draw_str(canvas, 40, 54, duty_min);
+    canvas_draw_str(canvas, 85, 54, duty_max);
+
+    canvas_draw_line(canvas, 0, 56, 127, 56);
+    canvas_draw_str(canvas, 2, 63, "v RESET");
+    canvas_draw_str(canvas, 45, 63, app->hold ? "OK LIVE" : "OK HOLD");
+    canvas_draw_str(canvas, 97, 63, "^ BACK");
+}
+
 static void draw_pulse(Canvas* canvas, LabMateApp* app) {
     char high[24] = "---";
     char low[24] = "---";
@@ -1517,6 +1653,11 @@ static void draw_pulse(Canvas* canvas, LabMateApp* app) {
     ui_badge(canvas, 56, 1, 33, gpio_names[app->gpio_index], false);
     ui_badge(canvas, 91, 1, 35, app->hold ? "HOLD" : "LIVE", !app->hold);
     canvas_draw_line(canvas, 0, 13, 127, 13);
+
+    if(app->pulse_stats_view) {
+        draw_pulse_stats(canvas, app);
+        return;
+    }
 
     if(app->pulse_high_valid) {
         pulse_ui_format_value(high, sizeof(high), app->pulse_high_cycles);
@@ -1543,10 +1684,12 @@ static void draw_pulse(Canvas* canvas, LabMateApp* app) {
     pulse_ui_metric(canvas, 3, 42, 50, "PERIOD", period);
     pulse_ui_metric(canvas, 68, 42, 50, "DUTY", duty);
 
-    /* Navigation instructions in the existing control style. */
+    /* Navigation: UP opens the separate MIN/MAX statistics view. */
     canvas_draw_line(canvas, 0, 52, 127, 52);
-    ui_key(canvas, 2, "<>", "PIN");
-    ui_key(canvas, 70, "OK", app->hold ? "LIVE" : "HOLD");
+    canvas_set_font(canvas, FontSecondary);
+    canvas_draw_str(canvas, 2, 61, "<> PIN");
+    canvas_draw_str(canvas, 45, 61, app->hold ? "OK LIVE" : "OK HOLD");
+    canvas_draw_str(canvas, 95, 61, "^ STATS");
 }
 
 static void draw_generator(Canvas* canvas, LabMateApp* app) {
@@ -1860,6 +2003,8 @@ int32_t labmate_app(void* p) {
                         app->hold = false;
                         /* Previous tools may have left PB3/PC3 selected. */
                         app->gpio_index = 1U; /* PC1, a safe EXTI line */
+                        app->pulse_stats_view = false;
+                        pulse_stats_reset(app);
                         measurement_reset(app);
                         pulse_interrupt_start(app);
                         break;
@@ -1887,6 +2032,14 @@ int32_t labmate_app(void* p) {
                 if(app->screen == LabMateScreenFrequency &&
                    event.key == InputKeyUp) {
                     if(!app->hold) frequency_stats_reset(app);
+
+                } else if(app->screen == LabMateScreenPulse &&
+                          event.key == InputKeyUp) {
+                    app->pulse_stats_view = !app->pulse_stats_view;
+
+                } else if(app->screen == LabMateScreenPulse &&
+                          event.key == InputKeyDown) {
+                    if(!app->hold) pulse_stats_reset(app);
 
                 } else if(event.key == InputKeyLeft) {
                     gpio_change(app, -1);
