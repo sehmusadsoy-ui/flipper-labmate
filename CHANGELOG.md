@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.4] - 2026-10-08
+
+### Frequency Meter
+- Added live MIN/MAX statistics for LOW/PC1 and HIGH/PB3, with UP reset and HOLD/LIVE history preservation.
+- Preserved history across signal loss, but reset on entering a new measurement session or changing input modes.
+- Fixed value formatting so live readings and MIN/MAX truncate consistently at Hz/kHz boundaries.
+- Added breathing room after the MAX label.
+
+### Pulse Analyzer
+- Added a separate HIGH, LOW, PERIOD and DUTY MIN/MAX page (UP to toggle, DOWN reset).
+- Preserved history across HOLD/LIVE; retained the v1.3 IRQ capture and live measurement path.
+- Added a five-snapshot median filter for high-speed Pulse MIN/MAX statistics to reduce transient outliers.
+- Refined labels, row spacing and footer layout to avoid overlapping 128x64 text.
+
+### Stability and tests
+- Reduced unnecessary redraws in non-Pulse views, improving USB-connected menu stability.
+- On-device loopback checks at 1 kHz, 20 kHz and 50 kHz; high-speed filtered DUTY MIN/MAX approximately 49.5%-50.1% at 50 kHz in the observed test.
+- Verified selected MIN/MAX reset and HOLD/LIVE behaviors, lost-signal history retention, and a five-minute USB-connected navigation test.
+- Observed LOW/PC1 999.82 Hz for a nominal 1 kHz internal generator output. The self-test does not constitute independent calibration.
+- Compatible binary requires a matching Momentum Firmware API; see v1.4 release notes.
+
 ## [1.3] - 2026-10-08
 
 ### Pulse Analyzer
