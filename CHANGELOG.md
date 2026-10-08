@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.3] - 2026-10-08
+
+### Pulse Analyzer
+- Replaced short-pulse polling with rising/falling GPIO interrupt capture and high-resolution cycle timing.
+- Added multi-sample averaging for high-frequency HIGH/LOW/PERIOD/DUTY measurements, improving stability around 50 kHz on the tested unit.
+- Restricted interrupt-based pin selection to PC0, PC1, PB2 and PA4 to avoid reserved EXTI lines and crashes.
+- Limited/redesigned display refresh to improve readability under interrupt load.
+
+### Frequency Meter
+- Reduced HIGH/PB3 hardware-counter refresh interval from approximately 500 ms to 100 ms.
+- Corrected stray falling-edge EXTI triggering so LOW/PC1 no longer counts both edges after switching from Pulse Analyzer.
+
+### Signal Generator
+- Changed RUN frequency switching to update TIM1 PWM parameters in place, avoiding stop/restart freezes.
+
+### UI / Stability
+- Redesigned GPIO Monitor, Frequency Meter, Pulse Analyzer and Signal Generator measurement layouts.
+- Updated v1.3 app-version metadata and on-device version labels.
+- On-device 3.3 V PA7 loopback tests exercised measurement paths up to 50 kHz; the observed 50 kHz duty ranged about 49.8%–50.2% after filtering.
+- Functional validation only; not independently calibrated or certified for arbitrary external signals.
+
 ## [1.2] - 2026-10-05
 
 ### UI / UX
