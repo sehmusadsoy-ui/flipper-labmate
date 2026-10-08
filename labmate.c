@@ -58,13 +58,23 @@ typedef struct {
     uint8_t frequency_sample_index;
     uint8_t frequency_sample_count;
 
-    /* Pulse analyzer */
-    uint32_t pulse_last_edge;
-    uint32_t pulse_high_ticks;
-    uint32_t pulse_low_ticks;
-    uint32_t pulse_period_ticks;
-    uint32_t pulse_duty_permille;
+    /* Pulse analyzer: edge timestamps captured in GPIO IRQ. */
+    bool pulse_irq_active;
+    volatile bool pulse_irq_level;
+    volatile bool pulse_irq_seen;
+    volatile bool pulse_irq_high_valid;
+    volatile bool pulse_irq_low_valid;
+    volatile uint32_t pulse_irq_last_cycle;
+    volatile uint32_t pulse_irq_last_tick;
+    volatile uint32_t pulse_irq_high_cycles;
+    volatile uint32_t pulse_irq_low_cycles;
+    volatile uint32_t pulse_irq_edges;
 
+    /* Display-side snapshot: no IRQ writes to these fields. */
+    uint32_t pulse_high_cycles;
+    uint32_t pulse_low_cycles;
+    uint32_t pulse_period_cycles;
+    uint32_t pulse_duty_permille;
     bool pulse_high_valid;
     bool pulse_low_valid;
     bool pulse_period_valid;
@@ -107,6 +117,33 @@ static const char* gpio_names[GPIO_COUNT] = {
     "PA6",
     "PA7",
 };
+
+/* Pulse Analyzer uses GPIO edge interrupts, not polling.
+ * STM32 EXTI lines are shared across GPIO ports, and the firmware already
+ * uses EXTI3 for the OK button and EXTI6 for the DOWN button.
+ * Therefore PC3/PB3 (line 3) and PA6 (line 6) MUST NOT be armed as IRQ
+ * sources by this app. PA7 is also reserved for the signal generator.
+ * GPIO Monitor retains all eight pins because it uses polling.
+ *
+ * Valid Pulse Analyzer input pins: PC0, PC1, PB2, PA4.
+ */
+static const uint8_t pulse_gpio_indices[] = {0U, 1U, 3U, 5U};
+#define PULSE_GPIO_COUNT (sizeof(pulse_gpio_indices) / sizeof(pulse_gpio_indices[0]))
+
+static uint8_t pulse_gpio_next_index(uint8_t current, int8_t direction) {
+    size_t i = 0;
+    for(; i < PULSE_GPIO_COUNT; i++) {
+        if(pulse_gpio_indices[i] == current) break;
+    }
+    /* A previous tool may have selected a pin unavailable for IRQ capture. */
+    if(i == PULSE_GPIO_COUNT) return 1U; /* PC1 */
+    if(direction > 0) {
+        i = (i + 1U) % PULSE_GPIO_COUNT;
+    } else {
+        i = (i + PULSE_GPIO_COUNT - 1U) % PULSE_GPIO_COUNT;
+    }
+    return pulse_gpio_indices[i];
+}
 
 /*
  * Conservative self-test frequencies.
@@ -313,6 +350,68 @@ static void __attribute__((unused)) frequency_interrupt_start(LabMateApp* app) {
     app->frequency_irq_active = true;
 }
 
+/* Pulse Analyzer uses BOTH edges and the CPU cycle counter.
+ * ISR only captures timestamps; all arithmetic stays in the app thread.
+ * Like other GPIO tools, it is intended for 3.3V digital signals only.
+ */
+static void pulse_gpio_callback(void* context) {
+    LabMateApp* app = context;
+    const GpioPin* pin = labmate_gpio_pins[app->gpio_index];
+    const uint32_t cycle = DWT->CYCCNT;
+    const bool level = furi_hal_gpio_read(pin);
+
+    if(level == app->pulse_irq_level) return;
+
+    if(app->pulse_irq_seen) {
+        uint32_t delta = cycle - app->pulse_irq_last_cycle;
+        if(delta > 0) {
+            if(app->pulse_irq_level) {
+                app->pulse_irq_high_cycles = delta;
+                app->pulse_irq_high_valid = true;
+            } else {
+                app->pulse_irq_low_cycles = delta;
+                app->pulse_irq_low_valid = true;
+            }
+        }
+    }
+
+    app->pulse_irq_level = level;
+    app->pulse_irq_seen = true;
+    app->pulse_irq_last_cycle = cycle;
+    app->pulse_irq_last_tick = furi_get_tick();
+    app->pulse_irq_edges++;
+}
+
+static void pulse_interrupt_stop(LabMateApp* app) {
+    if(!app->pulse_irq_active) return;
+    const GpioPin* pin = labmate_gpio_pins[app->gpio_index];
+    furi_hal_gpio_disable_int_callback(pin);
+    furi_hal_gpio_remove_int_callback(pin);
+    app->pulse_irq_active = false;
+}
+
+static void pulse_interrupt_start(LabMateApp* app) {
+    const GpioPin* pin = labmate_gpio_pins[app->gpio_index];
+    if(app->pulse_irq_active) return;
+
+    app->pulse_irq_seen = false;
+    app->pulse_irq_high_valid = false;
+    app->pulse_irq_low_valid = false;
+    app->pulse_irq_high_cycles = 0;
+    app->pulse_irq_low_cycles = 0;
+    app->pulse_irq_edges = 0;
+
+    furi_hal_gpio_init(
+        pin, GpioModeInterruptRiseFall, GpioPullNo, GpioSpeedVeryHigh);
+    app->pulse_irq_level = furi_hal_gpio_read(pin);
+    app->pulse_irq_last_cycle = DWT->CYCCNT;
+    app->pulse_irq_last_tick = furi_get_tick();
+
+    furi_hal_gpio_add_int_callback(pin, pulse_gpio_callback, app);
+    furi_hal_gpio_enable_int_callback(pin);
+    app->pulse_irq_active = true;
+}
+
 static void gpio_release(uint8_t index) {
     furi_hal_gpio_init_simple(
         labmate_gpio_pins[index],
@@ -340,10 +439,9 @@ static void measurement_reset(LabMateApp* app) {
     app->frequency_irq_cycle_accumulator = 0;
     app->frequency_irq_accumulated_periods = 0;
 
-    app->pulse_last_edge = now;
-    app->pulse_high_ticks = 0;
-    app->pulse_low_ticks = 0;
-    app->pulse_period_ticks = 0;
+    app->pulse_high_cycles = 0;
+    app->pulse_low_cycles = 0;
+    app->pulse_period_cycles = 0;
     app->pulse_duty_permille = 0;
 
     app->pulse_high_valid = false;
@@ -403,6 +501,19 @@ static void gpio_change(
         return;
     }
 
+    if(app->screen == LabMateScreenPulse) {
+        const uint8_t next_index = pulse_gpio_next_index(app->gpio_index, direction);
+        if(next_index == app->gpio_index) return;
+        /* Detach the old EXTI callback before changing pin or IRQ state. */
+        pulse_interrupt_stop(app);
+        gpio_release(app->gpio_index);
+        app->gpio_index = next_index;
+        app->hold = false;
+        measurement_reset(app);
+        pulse_interrupt_start(app);
+        return;
+    }
+
     gpio_release(app->gpio_index);
 
     if(direction > 0) {
@@ -422,45 +533,46 @@ static void gpio_change(
     gpio_activate(app);
 }
 
-static uint32_t ticks_to_ms(uint32_t ticks) {
-    uint32_t frequency =
-        furi_kernel_get_tick_frequency();
-
-    if(frequency == 0) {
-        return 0;
-    }
-
-    return (uint32_t)(
-        ((uint64_t)ticks * 1000ULL) /
-        frequency);
+/* Convert captured CPU cycles with 64-bit intermediates. */
+static uint64_t pulse_cycles_to_us(uint32_t cycles) {
+    if(SystemCoreClock == 0U) return 0;
+    return (((uint64_t)cycles * 1000000ULL) +
+            (SystemCoreClock / 2U)) / SystemCoreClock;
 }
 
 static void pulse_recalculate(LabMateApp* app) {
-    if(!app->pulse_high_valid ||
-       !app->pulse_low_valid) {
-        return;
-    }
+    app->pulse_period_valid = false;
+    if(!app->pulse_high_valid || !app->pulse_low_valid) return;
 
     uint64_t period =
-        (uint64_t)app->pulse_high_ticks +
-        (uint64_t)app->pulse_low_ticks;
+        (uint64_t)app->pulse_high_cycles + app->pulse_low_cycles;
+    if(period == 0 || period > UINT32_MAX) return;
 
-    if(period == 0 ||
-       period > UINT32_MAX) {
-        app->pulse_period_valid = false;
-        return;
-    }
-
-    app->pulse_period_ticks =
-        (uint32_t)period;
-
-    app->pulse_duty_permille =
-        (uint32_t)(
-            ((uint64_t)app->pulse_high_ticks *
-             1000ULL) /
-            period);
-
+    app->pulse_period_cycles = (uint32_t)period;
+    app->pulse_duty_permille = (uint32_t)(
+        ((uint64_t)app->pulse_high_cycles * 1000ULL + period / 2ULL) /
+        period);
     app->pulse_period_valid = true;
+}
+
+/* Fits each half of the 128px display. Sub-10ms values keep
+ * fractional milliseconds; sub-1ms values are shown in us.
+ */
+static void pulse_format_time(
+    char* buffer, size_t size,
+    const char* long_label, const char* short_label,
+    uint32_t cycles) {
+    const uint64_t us = pulse_cycles_to_us(cycles);
+    if(us < 1000ULL) {
+        snprintf(buffer, size, "%s %luus", long_label, (unsigned long)us);
+    } else if(us < 10000ULL) {
+        snprintf(buffer, size, "%s %lu.%02lums", short_label,
+                 (unsigned long)(us / 1000ULL),
+                 (unsigned long)((us % 1000ULL) / 10ULL));
+    } else {
+        snprintf(buffer, size, "%s %lums", long_label,
+                 (unsigned long)((us + 500ULL) / 1000ULL));
+    }
 }
 
 static void measurement_update(LabMateApp* app) {
@@ -664,46 +776,50 @@ static void measurement_update(LabMateApp* app) {
         return;
     }
 
-    /*
-     * GPIO MONITOR / PULSE ANALYZER
-     *
-     * Keep the original polling implementation.
-     */
-    bool current =
-        furi_hal_gpio_read(
-            labmate_gpio_pins[
-                app->gpio_index]);
+    /* PULSE ANALYZER: copy one coherent IRQ snapshot. */
+    if(app->screen == LabMateScreenPulse) {
+        uint32_t hi, lo, last_tick, count;
+        bool hi_valid, lo_valid;
 
-    if(current != app->gpio_previous_state) {
+        FURI_CRITICAL_ENTER();
+        hi = app->pulse_irq_high_cycles;
+        lo = app->pulse_irq_low_cycles;
+        hi_valid = app->pulse_irq_high_valid;
+        lo_valid = app->pulse_irq_low_valid;
+        last_tick = app->pulse_irq_last_tick;
+        count = app->pulse_irq_edges;
+        FURI_CRITICAL_EXIT();
 
-        uint32_t duration =
-            now - app->pulse_last_edge;
-
-        app->edges++;
-
-        if(app->gpio_previous_state) {
-
-            app->pulse_high_ticks =
-                duration;
-
-            app->pulse_high_valid = true;
-
-        } else {
-
-            app->pulse_low_ticks =
-                duration;
-
-            app->pulse_low_valid = true;
+        /* A disconnected or stopped source must not display stale data.
+         * Restart synchronization after a long quiet interval.
+         */
+        if(tick_frequency > 0U &&
+           (now - last_tick) > (tick_frequency * 3U)) {
+            FURI_CRITICAL_ENTER();
+            app->pulse_irq_seen = false;
+            app->pulse_irq_high_valid = false;
+            app->pulse_irq_low_valid = false;
+            app->pulse_irq_last_tick = now;
+            FURI_CRITICAL_EXIT();
+            hi_valid = false;
+            lo_valid = false;
         }
 
-        app->pulse_last_edge = now;
-
+        app->edges = count;
+        app->pulse_high_valid = hi_valid;
+        app->pulse_low_valid = lo_valid;
+        app->pulse_high_cycles = hi;
+        app->pulse_low_cycles = lo;
         pulse_recalculate(app);
-
-        app->gpio_previous_state =
-            current;
+        return;
     }
 
+    /* GPIO Monitor retains its simple state/edge polling path. */
+    bool current = furi_hal_gpio_read(labmate_gpio_pins[app->gpio_index]);
+    if(current != app->gpio_previous_state) {
+        app->edges++;
+        app->gpio_previous_state = current;
+    }
     app->gpio_state = current;
 }
 
@@ -1291,79 +1407,35 @@ static void draw_frequency(
     char buffer[32];
 
     draw_header(canvas, "PULSE ANALYZER");
-
-    ui_badge(
-        canvas,
-        2,
-        16,
-        38,
-        gpio_names[app->gpio_index],
-        false);
-
-    ui_badge(
-        canvas,
-        91,
-        16,
-        35,
-        app->hold ? "HOLD" : "LIVE",
-        !app->hold);
-
+    ui_badge(canvas, 2, 16, 38, gpio_names[app->gpio_index], false);
+    ui_badge(canvas, 91, 16, 35, app->hold ? "HOLD" : "LIVE", !app->hold);
     canvas_set_font(canvas, FontSecondary);
 
     if(app->pulse_high_valid) {
-        snprintf(
-            buffer,
-            sizeof(buffer),
-            "HIGH %lu ms",
-            (unsigned long)
-                ticks_to_ms(app->pulse_high_ticks));
+        pulse_format_time(buffer, sizeof(buffer), "HIGH", "H", app->pulse_high_cycles);
     } else {
         snprintf(buffer, sizeof(buffer), "HIGH ---");
     }
-
     canvas_draw_str(canvas, 2, 35, buffer);
 
     if(app->pulse_low_valid) {
-        snprintf(
-            buffer,
-            sizeof(buffer),
-            "LOW  %lu ms",
-            (unsigned long)
-                ticks_to_ms(app->pulse_low_ticks));
+        pulse_format_time(buffer, sizeof(buffer), "LOW", "L", app->pulse_low_cycles);
     } else {
-        snprintf(buffer, sizeof(buffer), "LOW  ---");
+        snprintf(buffer, sizeof(buffer), "LOW ---");
     }
-
     canvas_draw_str(canvas, 65, 35, buffer);
 
     if(app->pulse_period_valid) {
-
-        snprintf(
-            buffer,
-            sizeof(buffer),
-            "PER %lu",
-            (unsigned long)
-                ticks_to_ms(app->pulse_period_ticks));
-
+        pulse_format_time(buffer, sizeof(buffer), "PER", "P", app->pulse_period_cycles);
         canvas_draw_str(canvas, 2, 48, buffer);
 
-        uint32_t duty_whole =
-            app->pulse_duty_permille / 10U;
-
-        uint32_t duty_decimal =
-            app->pulse_duty_permille % 10U;
-
-        snprintf(
-            buffer,
-            sizeof(buffer),
-            "DUTY %lu.%lu%%",
-            (unsigned long)duty_whole,
-            (unsigned long)duty_decimal);
-
+        uint32_t duty_whole = app->pulse_duty_permille / 10U;
+        uint32_t duty_decimal = app->pulse_duty_permille % 10U;
+        snprintf(buffer, sizeof(buffer), "DUTY %lu.%lu%%",
+                 (unsigned long)duty_whole,
+                 (unsigned long)duty_decimal);
         canvas_draw_str(canvas, 65, 48, buffer);
-
     } else {
-
         canvas_draw_str(canvas, 2, 48, "PER ---");
         canvas_draw_str(canvas, 65, 48, "DUTY ---");
     }
@@ -1371,7 +1443,6 @@ static void draw_frequency(
     ui_key(canvas, 2, "<>", "PIN");
     ui_key(canvas, 70, "OK", "HOLD");
 }
-
 static void draw_generator(
     Canvas* canvas,
     LabMateApp* app) {
@@ -1749,7 +1820,10 @@ int32_t labmate_app(void* p) {
                         app->screen =
                             LabMateScreenPulse;
                         app->hold = false;
-                        gpio_activate(app);
+                        /* Previous tools may have left PB3/PC3 selected. */
+                        app->gpio_index = 1U; /* PC1, a safe EXTI line */
+                        measurement_reset(app);
+                        pulse_interrupt_start(app);
                         break;
 
                     case 3:
@@ -1782,19 +1856,25 @@ int32_t labmate_app(void* p) {
                 } else if(
                     event.key == InputKeyOk) {
 
-                    app->hold =
-                        !app->hold;
-
-                    if(!app->hold) {
-                        app->gpio_state =
-                            furi_hal_gpio_read(
-                                labmate_gpio_pins[
-                                    app->gpio_index]);
-
-                        app->gpio_previous_state =
-                            app->gpio_state;
-
-                        measurement_reset(app);
+                    if(app->screen == LabMateScreenPulse) {
+                        if(app->hold) {
+                            /* Resume with a fresh IRQ capture window. */
+                            measurement_reset(app);
+                            pulse_interrupt_start(app);
+                            app->hold = false;
+                        } else {
+                            /* Freeze displayed values and stop IRQ load. */
+                            pulse_interrupt_stop(app);
+                            app->hold = true;
+                        }
+                    } else {
+                        app->hold = !app->hold;
+                        if(!app->hold) {
+                            app->gpio_state = furi_hal_gpio_read(
+                                labmate_gpio_pins[app->gpio_index]);
+                            app->gpio_previous_state = app->gpio_state;
+                            measurement_reset(app);
+                        }
                     }
 
                 } else if(
@@ -1804,6 +1884,8 @@ int32_t labmate_app(void* p) {
                        LabMateScreenFrequency) {
                         frequency_hw_stop(app);
                         frequency_interrupt_stop(app);
+                    } else if(app->screen == LabMateScreenPulse) {
+                        pulse_interrupt_stop(app);
                     }
 
                     gpio_release(
@@ -1868,10 +1950,14 @@ int32_t labmate_app(void* p) {
         generator_stop(app);
     }
 
-    if(screen_uses_gpio(
-           app->screen)) {
-        gpio_release(
-            app->gpio_index);
+    if(screen_uses_gpio(app->screen)) {
+        if(app->screen == LabMateScreenPulse) {
+            pulse_interrupt_stop(app);
+        } else if(app->screen == LabMateScreenFrequency) {
+            frequency_hw_stop(app);
+            frequency_interrupt_stop(app);
+        }
+        gpio_release(app->gpio_index);
     }
 
     gui_remove_view_port(
