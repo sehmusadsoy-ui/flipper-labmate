@@ -140,6 +140,15 @@ The uploaded CSV was inspected: 5 of 5 measurement records have
 This verifies no-signal-at-start logging, **not** an in-progress signal-loss
 transition. Test stopping the generator during an active recording separately.
 
+**Device feedback — 2026-10-09 (no-input Pulse CSV):** With Signal
+Generator stopped, a five-second PULSE/PC1 recording created
+`log_0021.csv`. The uploaded CSV was inspected: 5 of 5 measurement
+records have `valid=0`, `high_us=0`, `low_us=0`,
+`period_us=0`, `duty_pct=0.0`; elapsed times are 1001,
+2001, 3001, 4001, and 5001 ms. Log History showed 5 rows / 5 s.
+The no-signal-at-start Pulse logging case passed; this does **not**
+cover signal loss during an active capture.
+
 ## On-device acceptance tests (in progress)
 
 - [x] Build against the installed Momentum API; launch without crashes
