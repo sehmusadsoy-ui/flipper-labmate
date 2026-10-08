@@ -9,7 +9,7 @@
 
 LabMate combines four practical GPIO and digital signal instruments into one Flipper Zero external app: **GPIO Monitor, Frequency Meter, Pulse Analyzer, and Signal Generator**.
 
-**[Download LabMate v1.3 Stable (.fap)](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/download/v1.3/labmate-v1.3.fap)** · [Release notes](RELEASE_NOTES_v1.3.md) · [All releases](https://github.com/sehmusadsoy-ui/flipper-labmate/releases) · [Changelog](CHANGELOG.md)
+**[Download latest Stable (.fap via GitHub Releases)](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/latest)** · [v1.4 release notes](RELEASE_NOTES_v1.4.md) · [v1.3 fallback](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.3) · [All releases](https://github.com/sehmusadsoy-ui/flipper-labmate/releases) · [Changelog](CHANGELOG.md)
 
 > [!IMPORTANT]
 > **3.3 V GPIO ONLY.** Never directly connect 5 V, 12 V, automotive wiring, mains voltage, or unknown-voltage signals to Flipper Zero GPIO. External signals require appropriate conditioning and protection.
@@ -23,24 +23,24 @@ LabMate combines four practical GPIO and digital signal instruments into one Fli
 | **Pulse Analyzer** | Displays HIGH time, LOW time, period and duty cycle | **PC0, PC1, PB2, PA4** |
 | **Signal Generator** | Generates a 50% duty-cycle square wave using hardware PWM | Output: **PA7** |
 
-### What's new in v1.3
+### What's new in v1.4
 
-- **Pulse Analyzer:** interrupt-based rising/falling edge capture and improved smoothing of short-pulse HIGH/LOW/DUTY readings.
-- **Frequency Meter:** HIGH/PB3 hardware counter refresh improved to approximately 100 ms; corrected interrupt-edge cleanup when switching tools.
-- **Signal Generator:** change the selected frequency while RUN without stopping/restarting the PWM peripheral.
-- **Interface:** revised instrument screens, clearer measurement presentation and reduced redraw pressure at higher frequencies.
-- **Stability:** safer Pulse Analyzer input selection and fixes for crashes or freezes observed during testing.
+- **Frequency Meter MIN/MAX:** record real minimum and maximum measured frequencies in LOW/PC1 and HIGH/PB3 modes; reset via UP and preserve history during HOLD/LIVE and signal loss.
+- **Pulse Analyzer MIN/MAX:** second display with HIGH, LOW, PERIOD and DUTY minima and maxima. UP switches pages; DOWN resets statistics in LIVE mode.
+- **High-frequency stability:** Pulse Analyzer statistics above approximately 8 kHz use a median filter over five sampled measurement snapshots to reject isolated transients; the live IRQ capture remains unchanged. These are *filtered* extrema rather than raw outliers.
+- **UI:** aligned statistics rows, corrected frequency MIN/MAX formatting, improved padding and shorter hints on the 128x64 display.
+- **Stability:** reduced unnecessary GUI redraws with USB connected. Retains the v1.3 hardware PWM and capture engine.
 
-**Tested loopback result:** with LabMate's PA7 PWM output connected to PC1 as a **3.3 V logic loopback**, the 50 kHz Pulse Analyzer displayed nominally **HIGH 10 µs · LOW 10 µs · PERIOD 20 µs**, and the displayed DUTY varied approximately **49.8%–50.2%** on the tested unit. This is a functional self-test, **not independent calibration**.
+**Observed 50 kHz loopback:** nominal HIGH 10 µs / LOW 10 µs / PERIOD 20 µs, with Pulse Analyzer filtered DUTY MIN/MAX around **49.5%–50.1%** in one test. A 1 kHz LOW/PC1 meter test displayed 999.82 Hz from the nominal 1 kHz internal generator. This is a **functional self-test, not independent calibration**.
 
 ## Get started
 
-1. Download **[labmate-v1.3.fap](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/download/v1.3/labmate-v1.3.fap)** from the stable release.
+1. Open the **[latest GitHub Release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/latest)** and download its matching `.fap` asset. If the v1.4 workflow is still building, the latest published binary may be v1.3; do not rename an older FAP as v1.4.
 2. Copy the file to `/ext/apps/Tools/labmate.fap` on a compatible Flipper Zero running Momentum Firmware.
 3. On your Flipper Zero, open **Apps → Tools → LabMate**.
 4. Select an instrument from the main menu. For a safe initial test, use a **single GPIO jumper from PA7 to PC1** and the built-in Signal Generator; do not attach external voltage.
 
-**Tested environment:** Flipper Zero · Momentum Firmware · external FAP · **API 87.1**. A binary built for one firmware/API version may not run on another; rebuild from source if needed. Compare the downloaded binary's SHA-256 against [dist/SHA256SUMS.txt](dist/SHA256SUMS.txt).
+**Tested environment:** Flipper Zero · Momentum Firmware · local external FAP build · **API 87.1**. GitHub Actions release binaries can use a newer Momentum SDK/API. Verify the API shown in the release notes and rebuild from source if it differs. Compare a v1.4 release binary with the `SHA256SUMS.txt` uploaded **alongside that release**; the [dist/](dist/) archive currently contains older release binaries.
 
 ## Instrument details
 
@@ -50,13 +50,13 @@ LabMate combines four practical GPIO and digital signal instruments into one Fli
 
 **HIGH / PB3:** `TIM2_CH2` hardware edge counter, avoiding CPU interrupts for every edge.
 
-Controls: **LEFT** = LOW/PC1 · **RIGHT** = HIGH/PB3 · **OK** = HOLD/LIVE.
+Controls: **LEFT** = LOW/PC1 · **RIGHT** = HIGH/PB3 · **OK** = HOLD/LIVE · **UP** = reset recorded MIN/MAX. MIN/MAX survive HOLD and lost input; changing modes or reopening the meter begins a new history.
 
 ### Pulse Analyzer
 
 Measures HIGH time, LOW time, period and duty cycle using rising/falling GPIO interrupts. Supported capture inputs are **PC0, PC1, PB2 and PA4**; other GPIOs are not offered in this mode due to interrupt-line and peripheral constraints. High-frequency values are averaged for display stability.
 
-Controls: **LEFT/RIGHT** = select supported capture pin · **OK** = HOLD/LIVE · **BACK** = return to menu.
+Controls: **LEFT/RIGHT** = select supported capture pin · **OK** = HOLD/LIVE · **UP** = show/hide statistics · **DOWN** = reset statistics in LIVE mode · **BACK** = return to menu. A five-sample median reduces one-off timing spikes in high-frequency MIN/MAX (not in live readings).
 
 ### Signal Generator
 
@@ -71,21 +71,22 @@ Observe digital HIGH/LOW state and edge activity on selectable GPIO pins. This v
 
 ## Hardware and validation
 
-| Check | v1.3 on-device observation |
+| Check | v1.4 on-device observation |
 | --- | --- |
-| App build / launch | Passed using Momentum Firmware API 87.1 |
-| GPIO Monitor and navigation | Exercised on-device |
-| Frequency Meter LOW/PC1 | Exercised with generator loopback |
-| Frequency Meter HIGH/PB3 | Exercised up to 50 kHz loopback |
-| Pulse Analyzer | Expected nominal timings at 1 Hz, 20 kHz and 50 kHz loopback |
-| 50 kHz Pulse Analyzer duty | Approximately 49.8%–50.2% on the tested unit |
-| Generator RUN frequency changes | Re-tested after freeze fix |
+| App build / launch | Passed using local Momentum Firmware; prior API 87.1 development environment |
+| Frequency Meter LOW/PC1 MIN/MAX | Tested at 1 kHz; displayed 999.82 Hz nominal 1 kHz loopback in one observation |
+| Frequency Meter HIGH/PB3 MIN/MAX | Tested at 1 kHz, 20 kHz and 50 kHz with loopback |
+| Frequency MIN/MAX history | UP reset, HOLD/LIVE, mode changes, signal removal checked |
+| Pulse Analyzer MIN/MAX | Nominal timings at 1 kHz, 20 kHz and 50 kHz loopback |
+| 50 kHz filtered duty MIN/MAX | Approximately 49.5%–50.1% on the tested unit |
+| USB navigation | Five minutes without reported freezes |
+| Generator and GPIO Monitor | Continued from v1.3; no new independent full-range validation |
 
 These checks do **not** establish calibrated accuracy across the full frequency range or compatibility with all firmware builds. Long-duration stress testing and external reference-instrument calibration are not yet complete.
 
 ### Screenshots
 
-The repository currently retains **[v1.2 screenshots](screenshots/v1.2/)** as an archived UI reference. **Updated v1.3 screenshots have not yet been added**; the older screenshots are not presented as the current interface.
+The repository retains **[v1.2 screenshots](screenshots/v1.2/)** as an archived UI reference. The v1.4 UI is different; the old screenshots are **not** presented as current.
 
 ## Build from source
 
@@ -117,8 +118,8 @@ For a basic hookup reference, see [docs/wiring_example.md](docs/wiring_example.m
 ## Project files
 
 - [Source: labmate.c](labmate.c) · [App manifest](application.fam)
-- [v1.3 Release Notes](RELEASE_NOTES_v1.3.md) · [Changelog](CHANGELOG.md)
-- [Prebuilt FAP and SHA-256](dist/) · [Archived v1.2 screenshots](screenshots/v1.2/)
+- [v1.4 Release Notes](RELEASE_NOTES_v1.4.md) · [v1.3 Release Notes](RELEASE_NOTES_v1.3.md) · [Changelog](CHANGELOG.md)
+- [GitHub Releases and current binary downloads](https://github.com/sehmusadsoy-ui/flipper-labmate/releases) · [Older FAP archive](dist/) · [Archived v1.2 screenshots](screenshots/v1.2/)
 - [MIT License](LICENSE)
 
 ## Author and license
