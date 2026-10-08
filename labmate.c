@@ -494,7 +494,7 @@ static void measurement_update(LabMateApp* app) {
              */
             if(SystemCoreClock > 0 &&
                elapsed_cycles >=
-                   (SystemCoreClock / 2U)) {
+                   (SystemCoreClock / 10U)) {
 
                 uint32_t current_count =
                     LL_TIM_GetCounter(TIM2);
