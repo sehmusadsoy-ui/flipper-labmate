@@ -1582,9 +1582,11 @@ static void pulse_ui_metric(
     const char* label,
     const char* value) {
 
+    /* Both labels and values use the compact 6x8 font. The large
+     * FontPrimary glyphs extend upwards into the label row inside
+     * the LCD's 18-pixel metric cells, hiding parts of both strings. */
     canvas_set_font(canvas, FontSecondary);
     canvas_draw_str(canvas, x, label_y, label);
-    canvas_set_font(canvas, FontPrimary);
     canvas_draw_str(canvas, x, value_y, value);
 }
 
@@ -1617,31 +1619,35 @@ static void draw_pulse_stats(Canvas* canvas, LabMateApp* app) {
     }
 
     canvas_set_font(canvas, FontSecondary);
+    /* Fixed table cells leave room for seven-character values in each
+     * numeric column. The row baselines are >= 8px apart. */
     canvas_draw_str(canvas, 3, 21, "TYPE");
-    canvas_draw_str(canvas, 43, 21, "MIN");
-    canvas_draw_str(canvas, 88, 21, "MAX");
+    canvas_draw_str(canvas, 42, 21, "MIN");
+    canvas_draw_str(canvas, 87, 21, "MAX");
     canvas_draw_line(canvas, 0, 23, 127, 23);
 
-    canvas_draw_str(canvas, 3, 30, "HIGH");
-    canvas_draw_str(canvas, 40, 30, hi_min);
-    canvas_draw_str(canvas, 85, 30, hi_max);
+    canvas_draw_str(canvas, 3, 31, "HIGH");
+    canvas_draw_str(canvas, 40, 31, hi_min);
+    canvas_draw_str(canvas, 85, 31, hi_max);
 
-    canvas_draw_str(canvas, 3, 38, "LOW");
-    canvas_draw_str(canvas, 40, 38, lo_min);
-    canvas_draw_str(canvas, 85, 38, lo_max);
+    canvas_draw_str(canvas, 3, 39, "LOW");
+    canvas_draw_str(canvas, 40, 39, lo_min);
+    canvas_draw_str(canvas, 85, 39, lo_max);
 
-    canvas_draw_str(canvas, 3, 46, "PER");
-    canvas_draw_str(canvas, 40, 46, per_min);
-    canvas_draw_str(canvas, 85, 46, per_max);
+    canvas_draw_str(canvas, 3, 47, "PER");
+    canvas_draw_str(canvas, 40, 47, per_min);
+    canvas_draw_str(canvas, 85, 47, per_max);
 
     canvas_draw_str(canvas, 3, 54, "DUTY");
     canvas_draw_str(canvas, 40, 54, duty_min);
     canvas_draw_str(canvas, 85, 54, duty_max);
 
+    /* Short footer labels fit across all 128 pixels; avoid text
+     * beyond x=127 and a baseline on the bottommost pixel. */
     canvas_draw_line(canvas, 0, 56, 127, 56);
-    canvas_draw_str(canvas, 2, 63, "v RESET");
-    canvas_draw_str(canvas, 45, 63, app->hold ? "OK LIVE" : "OK HOLD");
-    canvas_draw_str(canvas, 97, 63, "^LIVE");
+    canvas_draw_str(canvas, 3, 62, "vRST");
+    canvas_draw_str(canvas, 45, 62, app->hold ? "OK LIVE" : "OK HOLD");
+    canvas_draw_str(canvas, 95, 62, "^BACK");
 }
 
 static void draw_pulse(Canvas* canvas, LabMateApp* app) {
@@ -1684,15 +1690,15 @@ static void draw_pulse(Canvas* canvas, LabMateApp* app) {
     canvas_draw_line(canvas, 2, 33, 126, 33);
     pulse_ui_metric(canvas, 3, 21, 31, "HIGH", high);
     pulse_ui_metric(canvas, 68, 21, 31, "LOW", low);
-    pulse_ui_metric(canvas, 3, 42, 50, "PERIOD", period);
-    pulse_ui_metric(canvas, 68, 42, 50, "DUTY", duty);
+    pulse_ui_metric(canvas, 3, 41, 50, "PERIOD", period);
+    pulse_ui_metric(canvas, 68, 41, 50, "DUTY", duty);
 
-    /* Navigation: UP opens the separate MIN/MAX statistics view. */
+    /* Navigation: short captions fit the actual 128px viewport. */
     canvas_draw_line(canvas, 0, 52, 127, 52);
     canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 2, 61, "<> PIN");
+    canvas_draw_str(canvas, 3, 61, "<>PIN");
     canvas_draw_str(canvas, 45, 61, app->hold ? "OK LIVE" : "OK HOLD");
-    canvas_draw_str(canvas, 95, 61, "^ STATS");
+    canvas_draw_str(canvas, 96, 61, "^STAT");
 }
 
 static void draw_generator(Canvas* canvas, LabMateApp* app) {
