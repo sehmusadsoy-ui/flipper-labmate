@@ -1843,7 +1843,7 @@ static void draw_about(
         canvas,
         2,
         10,
-        "LABMATE v1.4d");
+        "LABMATE v1.4");
 
     canvas_draw_line(
         canvas,
