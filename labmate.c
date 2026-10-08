@@ -603,6 +603,9 @@ static void frequency_stats_record(LabMateApp* app) {
     }
 }
 
+/* Forward declaration: pin selection can reset statistics before their helper definition. */
+static void pulse_stats_reset(LabMateApp* app);
+
 static void gpio_activate(LabMateApp* app) {
     furi_hal_gpio_init_simple(
         labmate_gpio_pins[app->gpio_index],
