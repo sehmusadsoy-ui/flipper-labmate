@@ -5,7 +5,7 @@ Momentum firmware test has passed. v1.4 Stable remains the release baseline.
 
 ## Scope
 
-The Data Logger is a sixth main-menu entry. It reuses the existing capture
+The Data Logger remains a main-menu entry, followed by Log History. It reuses the existing capture
 engines (not separate GPIO interrupts) and stores one processed measurement
 snapshot per second in CSV on the microSD card.
 
@@ -25,7 +25,12 @@ Directory: `/ext/apps_data/labmate/`
 
 Example filename: `log_0001.csv`, then `log_0002.csv` and so on. Files
 are created with `FSOM_CREATE_NEW`; no existing log is overwritten. Up to
-9,999 numeric names are supported.
+9,999 numeric names are supported. On the first START after launching the app,
+the logger scans existing CSV filenames once and chooses the highest existing
+ID + 1, rather than reusing gaps from deleted files. Within the same app
+session, the next ID keeps increasing. If all CSV files are deleted and the
+app is restarted, numbering begins again at 0001. If 9999 already exists,
+a new recording fails safely instead of overwriting a file.
 
 CSV columns:
 
@@ -87,7 +92,7 @@ repeat-START responsiveness smoke test on the physical Flipper after the fix.
 The longer five-cycle and other regression tests above remain open; do not
 infer they passed from this report alone.
 
-## Log History browser (new in v1.5-dev; on-device check pending)
+## Log History browser (new in v1.5-dev; partial on-device checks passed)
 
 - Main-menu item: **Log History** (separate from the live Data Logger).
 - Show up to **32 most recent** filenames matching `log_NNNN.csv`, sorted by
@@ -103,6 +108,13 @@ infer they passed from this report alone.
   nonblocking worker is claimed yet.
 - No timestamp/date is inferred from `elapsed_ms` because it is time since
   START, not a wall-clock timestamp.
+
+**Device feedback — 2026-10-09:** On-device Log History displayed a
+PULSE/PC1 10-row session and the user also confirmed newly created
+`log_0008.csv` (5 rows) and `log_0009.csv` (10 rows) were visible with
+their respective counts. This confirms initial list/detail reading, but
+does not prove absent-SD handling, large-list scanning or that no other
+navigation bugs exist.
 
 **On-device validation still needed:** Open history with existing FREQ and
 PULSE logs; confirm descending order, arrow navigation and back navigation.
