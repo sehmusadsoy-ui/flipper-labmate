@@ -12,6 +12,8 @@
 #define MENU_COUNT 6
 #define LOGGER_DIR "/ext/apps_data/labmate"
 #define LOGGER_INTERVAL_MS 1000U
+/* Flush buffered records every ten 1-second samples to limit data loss. */
+#define LOGGER_SYNC_EVERY_ROWS 10U
 #define GPIO_COUNT 8
 /* High-speed Pulse MIN/MAX uses the median of five spaced captures.
  * This changes statistics only; LIVE values and IRQ timing are untouched. */
@@ -2529,6 +2531,11 @@ int32_t labmate_app(void* p) {
             size_t bytes = strlen(pending_log_row);
             bool ok = app->logger_file &&
                 storage_file_write(app->logger_file, pending_log_row, bytes) == bytes;
+            /* Periodic sync happens outside the GUI mutex and outside IRQs.
+             * STOP/BACK still syncs and closes the file immediately. */
+            if(ok && ((app->logger_rows + 1U) % LOGGER_SYNC_EVERY_ROWS) == 0U) {
+                ok = storage_file_sync(app->logger_file);
+            }
             furi_mutex_acquire(app->mutex, FuriWaitForever);
             if(ok) {
                 app->logger_rows++;
