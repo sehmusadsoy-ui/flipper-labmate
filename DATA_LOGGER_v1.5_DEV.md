@@ -132,6 +132,14 @@ on-device regression pass; the five new CSV files have not been
 independently inspected here. SD-absent and other remaining acceptance
 tests are still pending.
 
+**Device feedback — 2026-10-09 (no-input CSV):** With Signal Generator
+stopped, a five-second FREQ/PC1 recording created `log_0020.csv`.
+The uploaded CSV was inspected: 5 of 5 measurement records have
+`valid=0`, `frequency_hz=0.000`, and elapsed times of
+1005, 2011, 3019, 4023 and 5023 ms. Log History reported 5 rows / 5 s.
+This verifies no-signal-at-start logging, **not** an in-progress signal-loss
+transition. Test stopping the generator during an active recording separately.
+
 ## On-device acceptance tests (in progress)
 
 - [x] Build against the installed Momentum API; launch without crashes
