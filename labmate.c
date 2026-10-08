@@ -40,6 +40,11 @@ typedef struct {
     uint32_t frequency_millihz;
     bool frequency_edge_seen;
     bool frequency_valid;
+    /* v1.4-dev: running minimum and maximum of valid frequency readings.
+     * Units are millihertz (same as frequency_millihz). */
+    uint32_t frequency_min_millihz;
+    uint32_t frequency_max_millihz;
+    bool frequency_stats_valid;
 
     volatile uint32_t frequency_irq_last_cycle;
     volatile uint32_t frequency_irq_period_cycles;
@@ -559,6 +564,29 @@ static void measurement_reset(LabMateApp* app) {
     app->pulse_period_valid = false;
 }
 
+/* Frequency extrema are scoped to one meter session and one input mode.
+ * HOLD and signal loss keep extrema; UP or mode re-entry clears them. */
+static void frequency_stats_reset(LabMateApp* app) {
+    app->frequency_min_millihz = 0U;
+    app->frequency_max_millihz = 0U;
+    app->frequency_stats_valid = false;
+}
+
+/* Called once per new valid measurement, never on an old/stale reading. */
+static void frequency_stats_record(LabMateApp* app) {
+    if(!app->frequency_valid || app->frequency_millihz == 0U) return;
+
+    const uint32_t sample = app->frequency_millihz;
+    if(!app->frequency_stats_valid) {
+        app->frequency_min_millihz = sample;
+        app->frequency_max_millihz = sample;
+        app->frequency_stats_valid = true;
+    } else {
+        if(sample < app->frequency_min_millihz) app->frequency_min_millihz = sample;
+        if(sample > app->frequency_max_millihz) app->frequency_max_millihz = sample;
+    }
+}
+
 static void gpio_activate(LabMateApp* app) {
     furi_hal_gpio_init_simple(
         labmate_gpio_pins[app->gpio_index],
@@ -600,6 +628,7 @@ static void gpio_change(
         app->gpio_index = target_index;
         app->hold = false;
 
+        frequency_stats_reset(app);
         measurement_reset(app);
 
         if(app->gpio_index == 4U) {
@@ -745,6 +774,7 @@ static void measurement_update(LabMateApp* app) {
 
                     app->frequency_valid = true;
                     app->frequency_last_edge = now;
+                    frequency_stats_record(app);
 
                 } else if(
                     tick_frequency > 0 &&
@@ -842,6 +872,7 @@ static void measurement_update(LabMateApp* app) {
                             average_period);
 
                     app->frequency_valid = true;
+                    frequency_stats_record(app);
                 }
             }
         }
@@ -1164,7 +1195,7 @@ static void draw_menu(
         99,
         1,
         27,
-        "v1.3",
+        "v1.4d",
         false);
 
     canvas_draw_line(
@@ -1340,9 +1371,73 @@ static void draw_gpio(Canvas* canvas, LabMateApp* app) {
     ui_key(canvas, 70, "OK", app->hold ? "LIVE" : "HOLD");
 }
 
+/* Compact MIN/MAX display in two fixed-width cells.
+ * 999.5 .. 999.99 Hz previously rounded up to "1.000k", hiding a
+ * real sub-1 kHz minimum. Use Hz below exactly 1000 Hz, with 0.1 Hz
+ * truncated precision for 100 .. 999.99 Hz to avoid crossing units.
+ * Seven FontSecondary glyphs (7 * 6 px) fit in each 42 px value area.
+ * Stored millihertz samples and the frequency calculation are unchanged.
+ */
+static void frequency_format_compact(char* text, size_t size, uint32_t mhz, bool valid) {
+    if(!valid) {
+        snprintf(text, size, "---");
+        return;
+    }
+
+    if(mhz >= 999950000U) {
+        /* MHz (the uint32_t millihertz counter tops out at ~4.29 MHz). */
+        uint32_t v = (uint32_t)(((uint64_t)mhz + 5000000ULL) / 10000000ULL);
+        snprintf(text, size, "%lu.%02luM", (unsigned long)(v / 100U),
+                 (unsigned long)(v % 100U));
+    } else if(mhz >= 99995000U) {
+        /* 100.0 kHz .. 999.9 kHz (six characters incl. k). */
+        uint32_t v = (uint32_t)(((uint64_t)mhz + 50000ULL) / 100000ULL);
+        snprintf(text, size, "%lu.%01luk", (unsigned long)(v / 10U),
+                 (unsigned long)(v % 10U));
+    } else if(mhz >= 9999500U) {
+        /* 10.00 kHz .. 99.99 kHz. */
+        uint32_t v = (uint32_t)(((uint64_t)mhz + 5000ULL) / 10000ULL);
+        snprintf(text, size, "%lu.%02luk", (unsigned long)(v / 100U),
+                 (unsigned long)(v % 100U));
+    } else if(mhz >= 1000000U) {
+        /* Only switch to kHz at 1000.00 Hz, not at 999.50 Hz. */
+        uint32_t v = (uint32_t)(((uint64_t)mhz + 500ULL) / 1000ULL);
+        snprintf(text, size, "%lu.%03luk", (unsigned long)(v / 1000U),
+                 (unsigned long)(v % 1000U));
+    } else if(mhz >= 100000U) {
+        /* 100.0 .. 999.9 Hz: use 0.1 Hz precision (never round to kHz). */
+        uint32_t v = mhz / 100U;
+        snprintf(text, size, "%lu.%01luHz", (unsigned long)(v / 10U),
+                 (unsigned long)(v % 10U));
+    } else if(mhz >= 10000U) {
+        /* 10.0 .. 99.9 Hz. */
+        uint32_t v = mhz / 100U;
+        snprintf(text, size, "%lu.%01luHz", (unsigned long)(v / 10U),
+                 (unsigned long)(v % 10U));
+    } else {
+        /* 0.00 .. 9.99 Hz. */
+        uint32_t v = mhz / 10U;
+        snprintf(text, size, "%lu.%02luHz", (unsigned long)(v / 100U),
+                 (unsigned long)(v % 100U));
+    }
+}
+
+/* Edge count is intentionally abbreviated to retain an on-screen indicator. */
+static void frequency_format_edges(char* text, size_t size, uint32_t edges) {
+    if(edges >= 1000000U) {
+        snprintf(text, size, "E:%luM", (unsigned long)(edges / 1000000U));
+    } else if(edges >= 10000U) {
+        snprintf(text, size, "E:%luk", (unsigned long)(edges / 1000U));
+    } else {
+        snprintf(text, size, "E:%lu", (unsigned long)edges);
+    }
+}
+
 static void draw_frequency(Canvas* canvas, LabMateApp* app) {
     char value[32];
-    char edges_label[32];
+    char edges_label[20];
+    char min_value[20];
+    char max_value[20];
     const bool high_mode = app->gpio_index == 4U;
 
     /* Compact status bar, matching the Pulse Analyzer layout. */
@@ -1373,20 +1468,31 @@ static void draw_frequency(Canvas* canvas, LabMateApp* app) {
     }
 
     canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 3, 24, "MEASURED FREQUENCY");
+    canvas_draw_str(canvas, 3, 24, "FREQUENCY");
+    frequency_format_edges(edges_label, sizeof(edges_label), app->edges);
+    canvas_draw_str(canvas, 83, 24, edges_label);
+
     canvas_set_font(canvas, FontPrimary);
     canvas_draw_str(canvas, 4, 38, value);
 
-    snprintf(edges_label, sizeof(edges_label), "EDGES %lu",
-             (unsigned long)app->edges);
+    frequency_format_compact(min_value, sizeof(min_value),
+        app->frequency_min_millihz, app->frequency_stats_valid);
+    frequency_format_compact(max_value, sizeof(max_value),
+        app->frequency_max_millihz, app->frequency_stats_valid);
     canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 4, 49, edges_label);
+    /* Two fixed-width cells: MIN 0..64, MAX 66..127.
+     * Seven 6px FontSecondary characters fit within each value area. */
+    canvas_draw_str(canvas, 2, 49, "MIN");
+    canvas_draw_str(canvas, 22, 49, min_value);
+    canvas_draw_str(canvas, 66, 49, "MAX");
+    canvas_draw_str(canvas, 85, 49, max_value);
 
-    /* The middle button freezes the reading; left/right select mode. */
+    /* Keep the three action hints separate at 128x64 resolution. */
     canvas_draw_line(canvas, 0, 52, 127, 52);
-    ui_key(canvas, 2, "<", "LOW");
-    ui_key(canvas, 46, "OK", app->hold ? "LIVE" : "HOLD");
-    ui_key(canvas, 91, ">", "HI");
+    canvas_set_font(canvas, FontSecondary);
+    canvas_draw_str(canvas, 2, 61, "<> MODE");
+    canvas_draw_str(canvas, 49, 61, app->hold ? "OK LIVE" : "OK HOLD");
+    canvas_draw_str(canvas, 102, 61, "^RST");
 }
 
 static void pulse_ui_metric(
@@ -1493,7 +1599,7 @@ static void draw_about(
         canvas,
         2,
         10,
-        "LABMATE v1.3");
+        "LABMATE v1.4d");
 
     canvas_draw_line(
         canvas,
@@ -1683,6 +1789,13 @@ int32_t labmate_app(void* p) {
     const uint32_t pulse_fast_period_cycles = SystemCoreClock / 8000U;
     uint32_t pulse_redraw_last_tick = furi_get_tick();
 
+    /* Diagnostic v1.4: avoid unnecessary 100 Hz repaint of the main menu
+     * while attached to the USB host. Keys still trigger an immediate redraw.
+     * Pulse Analyzer retains its separately throttled redraw policy. */
+    uint32_t normal_redraw_interval = furi_kernel_get_tick_frequency() / 10U;
+    if(normal_redraw_interval == 0U) normal_redraw_interval = 1U;
+    uint32_t normal_redraw_last_tick = furi_get_tick();
+
     while(app->running) {
         FuriStatus status =
             furi_message_queue_get(
@@ -1740,6 +1853,7 @@ int32_t labmate_app(void* p) {
                         app->hold = false;
 
                         app->gpio_index = 4U; /* PB3 / HIGH mode */
+                        frequency_stats_reset(app);
                         measurement_reset(app);
                         frequency_hw_start(app);
                         break;
@@ -1774,7 +1888,11 @@ int32_t labmate_app(void* p) {
                 screen_uses_gpio(
                     app->screen)) {
 
-                if(event.key == InputKeyLeft) {
+                if(app->screen == LabMateScreenFrequency &&
+                   event.key == InputKeyUp) {
+                    if(!app->hold) frequency_stats_reset(app);
+
+                } else if(event.key == InputKeyLeft) {
                     gpio_change(app, -1);
 
                 } else if(
@@ -1802,6 +1920,11 @@ int32_t labmate_app(void* p) {
                                 labmate_gpio_pins[app->gpio_index]);
                             app->gpio_previous_state = app->gpio_state;
                             measurement_reset(app);
+                            if(app->screen == LabMateScreenFrequency &&
+                               app->frequency_hw_active) {
+                                app->frequency_hw_last_count = LL_TIM_GetCounter(TIM2);
+                                app->frequency_hw_last_cycle = DWT->CYCCNT;
+                            }
                         }
                     }
 
@@ -1888,7 +2011,12 @@ int32_t labmate_app(void* p) {
                 pulse_redraw_last_tick = tick;
             }
         } else {
-            view_port_update(viewport);
+            const uint32_t redraw_tick = furi_get_tick();
+            if(status == FuriStatusOk ||
+               (uint32_t)(redraw_tick - normal_redraw_last_tick) >= normal_redraw_interval) {
+                view_port_update(viewport);
+                normal_redraw_last_tick = redraw_tick;
+            }
         }
     }
 
