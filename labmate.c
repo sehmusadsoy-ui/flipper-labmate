@@ -146,6 +146,9 @@ typedef struct {
     LabMateLoggerSource logger_source;
     bool logger_recording;
     bool logger_error;
+    bool logger_busy;
+    bool logger_busy_stopping;
+    uint32_t logger_next_file_index;
     uint32_t logger_start_tick;
     uint32_t logger_last_tick;
     uint32_t logger_rows;
@@ -1258,16 +1261,25 @@ static bool logger_start(LabMateApp* app) {
     }
 
     bool opened = false;
-    for(uint32_t i = 1U; i <= 9999U; ++i) {
+    /* Remember the next unused name during this app session. Do not try
+     * opening known-existing files: on some firmware builds an open attempt
+     * can block while a different owner has that path open. */
+    uint32_t first_index = app->logger_next_file_index;
+    if(first_index == 0U) first_index = 1U;
+    for(uint32_t i = first_index; i <= 9999U; ++i) {
         snprintf(
             app->logger_path, sizeof(app->logger_path),
             LOGGER_DIR "/log_%04lu.csv", (unsigned long)i);
-        /* CREATE_NEW prevents accidental replacement of existing logs. */
+        if(storage_file_exists(app->logger_storage, app->logger_path)) continue;
+        /* CREATE_NEW is still essential for no-overwrite safety. */
         if(storage_file_open(
                app->logger_file, app->logger_path, FSAM_WRITE, FSOM_CREATE_NEW)) {
             opened = true;
+            app->logger_next_file_index = i + 1U;
             break;
         }
+        /* Handle the rare case another app created the file after our
+         * existence check; all other errors should stop the search. */
         if(storage_file_get_error(app->logger_file) != FSE_EXIST) break;
     }
 
@@ -1333,7 +1345,10 @@ static bool logger_prepare_row(LabMateApp* app, char* row, size_t capacity) {
 
     if(length <= 0 || (size_t)length >= capacity) {
         app->logger_error = true;
-        logger_stop(app);
+        app->logger_recording = false;
+        app->logger_busy = true;
+        app->logger_busy_stopping = true;
+        /* The application loop closes the file after releasing the UI mutex. */
         return false;
     }
     return true;
@@ -2113,7 +2128,10 @@ static void draw_logger(Canvas* canvas, LabMateApp* app) {
         }
     }
 
-    if(app->logger_error) {
+    if(app->logger_busy) {
+        snprintf(state, sizeof(state),
+                 app->logger_busy_stopping ? "SAVING / WAIT" : "OPENING / WAIT");
+    } else if(app->logger_error) {
         snprintf(state, sizeof(state), "SD / WRITE ERROR");
     } else if(app->logger_recording) {
         snprintf(state, sizeof(state), "REC: %lu rows", (unsigned long)app->logger_rows);
@@ -2128,7 +2146,8 @@ static void draw_logger(Canvas* canvas, LabMateApp* app) {
     canvas_draw_str(canvas, 2, 48, state);
     canvas_draw_str(
         canvas, 2, 61,
-        app->logger_recording ? "OK STOP  BACK SAVE" : "< > MODE  OK REC");
+        app->logger_busy ? "PLEASE WAIT" :
+        (app->logger_recording ? "OK STOP  BACK SAVE" : "< > MODE  OK REC"));
 }
 
 static void render_callback(
@@ -2291,6 +2310,9 @@ int32_t labmate_app(void* p) {
     uint32_t normal_redraw_last_tick = furi_get_tick();
 
     while(app->running) {
+        /* Defer slow microSD START/STOP work until after UI mutex release. */
+        bool logger_start_requested = false;
+        bool logger_stop_requested = false;
         FuriStatus status =
             furi_message_queue_get(
                 queue,
@@ -2394,10 +2416,18 @@ int32_t labmate_app(void* p) {
                 } else if(event.key == InputKeyRight) {
                     logger_capture_change(app, 1);
                 } else if(event.key == InputKeyOk) {
-                    if(app->logger_recording) logger_stop(app);
-                    else logger_start(app);
+                    logger_stop_requested = app->logger_recording;
+                    logger_start_requested = !app->logger_recording;
+                    app->logger_busy = true;
+                    app->logger_busy_stopping = logger_stop_requested;
+                    if(logger_stop_requested) app->logger_recording = false;
                 } else if(event.key == InputKeyBack) {
-                    logger_stop(app);
+                    if(app->logger_recording || app->logger_file || app->logger_storage) {
+                        logger_stop_requested = true;
+                        app->logger_recording = false;
+                        app->logger_busy = true;
+                        app->logger_busy_stopping = true;
+                    }
                     logger_capture_stop(app);
                     app->screen = LabMateScreenMenu;
                 }
@@ -2523,8 +2553,24 @@ int32_t labmate_app(void* p) {
         if(app->screen == LabMateScreenLogger && app->logger_recording) {
             pending_log = logger_prepare_row(app, pending_log_row, sizeof(pending_log_row));
         }
+        if(app->logger_busy && app->logger_error &&
+           !logger_start_requested && !logger_stop_requested &&
+           (app->logger_file || app->logger_storage)) {
+            logger_stop_requested = true;
+        }
         furi_mutex_release(
             app->mutex);
+
+        if(logger_start_requested || logger_stop_requested) {
+            /* Display OPENING/SAVING without holding the drawing mutex
+             * while storage blocks. The main loop may still wait for SD. */
+            view_port_update(viewport);
+            if(logger_stop_requested) logger_stop(app);
+            else logger_start(app);
+            furi_mutex_acquire(app->mutex, FuriWaitForever);
+            app->logger_busy = false;
+            furi_mutex_release(app->mutex);
+        }
 
         /* SD writes stay outside the mutex and never occur in capture IRQs. */
         if(pending_log) {
@@ -2541,9 +2587,17 @@ int32_t labmate_app(void* p) {
                 app->logger_rows++;
             } else {
                 app->logger_error = true;
-                logger_stop(app);
+                app->logger_recording = false;
+                app->logger_busy = true;
+                app->logger_busy_stopping = true;
             }
             furi_mutex_release(app->mutex);
+            if(!ok) {
+                logger_stop(app);
+                furi_mutex_acquire(app->mutex, FuriWaitForever);
+                app->logger_busy = false;
+                furi_mutex_release(app->mutex);
+            }
         }
 
         /* Under heavy IRQ load, use a calmer LCD refresh rate while
