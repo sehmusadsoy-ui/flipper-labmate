@@ -9,7 +9,7 @@
 
 LabMate combines four practical GPIO and digital signal instruments into one Flipper Zero external app: **GPIO Monitor, Frequency Meter, Pulse Analyzer, and Signal Generator**.
 
-**[Download latest Stable (.fap via GitHub Releases)](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/latest)** · [v1.4 release notes](RELEASE_NOTES_v1.4.md) · [v1.3 fallback](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.3) · [All releases](https://github.com/sehmusadsoy-ui/flipper-labmate/releases) · [Changelog](CHANGELOG.md)
+**[Download LabMate v1.4 Stable (.fap)](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/download/v1.4/labmate-v1.4.fap)** · [v1.4 release notes](RELEASE_NOTES_v1.4.md) · [SHA-256 verification file](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/download/v1.4/SHA256SUMS.txt) · [v1.3 fallback](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.3) · [All releases](https://github.com/sehmusadsoy-ui/flipper-labmate/releases) · [Changelog](CHANGELOG.md)
 
 > [!IMPORTANT]
 > **3.3 V GPIO ONLY.** Never directly connect 5 V, 12 V, automotive wiring, mains voltage, or unknown-voltage signals to Flipper Zero GPIO. External signals require appropriate conditioning and protection.
@@ -35,12 +35,12 @@ LabMate combines four practical GPIO and digital signal instruments into one Fli
 
 ## Get started
 
-1. Open the **[latest GitHub Release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/latest)** and download its matching `.fap` asset. If the v1.4 workflow is still building, the latest published binary may be v1.3; do not rename an older FAP as v1.4.
+1. Download the published **[LabMate v1.4 Stable FAP](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/download/v1.4/labmate-v1.4.fap)** (and optionally [verify its SHA-256](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/download/v1.4/SHA256SUMS.txt)).
 2. Copy the file to `/ext/apps/Tools/labmate.fap` on a compatible Flipper Zero running Momentum Firmware.
 3. On your Flipper Zero, open **Apps → Tools → LabMate**.
 4. Select an instrument from the main menu. For a safe initial test, use a **single GPIO jumper from PA7 to PC1** and the built-in Signal Generator; do not attach external voltage.
 
-**Tested environment:** Flipper Zero · Momentum Firmware · local external FAP build · **API 87.1**. GitHub Actions release binaries can use a newer Momentum SDK/API. Verify the API shown in the release notes and rebuild from source if it differs. Compare a v1.4 release binary with the `SHA256SUMS.txt` uploaded **alongside that release**; the [dist/](dist/) archive currently contains older release binaries.
+**Tested environment:** Flipper Zero · Momentum Firmware · local external FAP build · **API 87.1**. The v1.4 GitHub Actions binary was also compiled against Momentum API 87.1 (verified in the workflow log). If your firmware uses another API, rebuild from source. Compare a v1.4 release binary with the `SHA256SUMS.txt` uploaded **alongside that release**; the [dist/](dist/) archive currently contains older release binaries.
 
 ## Instrument details
 
