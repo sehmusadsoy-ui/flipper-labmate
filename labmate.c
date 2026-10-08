@@ -71,6 +71,13 @@ typedef struct {
     volatile uint32_t pulse_irq_high_cycles;
     volatile uint32_t pulse_irq_low_cycles;
     volatile uint32_t pulse_irq_edges;
+    /* Short block averages suppress high-frequency ISR timestamp jitter.
+     * Only used when the measured half-period is <= 1 ms. */
+    volatile uint32_t pulse_irq_high_sum;
+    volatile uint32_t pulse_irq_low_sum;
+    volatile uint8_t pulse_irq_high_samples;
+    volatile uint8_t pulse_irq_low_samples;
+    volatile bool pulse_irq_wide_window;
 
     /* Display-side snapshot: no IRQ writes to these fields. */
     uint32_t pulse_high_cycles;
@@ -375,14 +382,80 @@ static void pulse_gpio_callback(void* context) {
     if(level == app->pulse_irq_level) return;
 
     if(app->pulse_irq_seen) {
-        uint32_t delta = cycle - app->pulse_irq_last_cycle;
-        if(delta > 0) {
-            if(app->pulse_irq_level) {
-                app->pulse_irq_high_cycles = delta;
-                app->pulse_irq_high_valid = true;
+        const uint32_t delta = cycle - app->pulse_irq_last_cycle;
+        if(delta > 0U) {
+            /* At ordinary frequencies preserve the 16-sample response.
+             * For very short pulses, collect 128 HIGH and 128 LOW widths
+             * and publish them TOGETHER. Independent publications could
+             * otherwise mix widths from different moments on the LCD.
+             * This reduces random timing jitter, not systematic latency.
+             */
+            const uint32_t fast_half_period = SystemCoreClock / 1000U;
+            const uint32_t short_half_period = SystemCoreClock / 25000U;
+            const bool wide_window =
+                short_half_period > 0U && delta <= short_half_period;
+
+            if(app->pulse_irq_wide_window != wide_window) {
+                app->pulse_irq_high_sum = 0U;
+                app->pulse_irq_low_sum = 0U;
+                app->pulse_irq_high_samples = 0U;
+                app->pulse_irq_low_samples = 0U;
+                app->pulse_irq_wide_window = wide_window;
+            }
+
+            if(fast_half_period > 0U && delta <= fast_half_period) {
+                if(app->pulse_irq_level) {
+                    app->pulse_irq_high_sum += delta;
+                    ++app->pulse_irq_high_samples;
+                    if(!wide_window && app->pulse_irq_high_samples >= 16U) {
+                        app->pulse_irq_high_cycles =
+                            (app->pulse_irq_high_sum + 8U) >> 4;
+                        app->pulse_irq_high_valid = true;
+                        app->pulse_irq_high_sum = 0U;
+                        app->pulse_irq_high_samples = 0U;
+                    }
+                } else {
+                    app->pulse_irq_low_sum += delta;
+                    ++app->pulse_irq_low_samples;
+                    if(!wide_window && app->pulse_irq_low_samples >= 16U) {
+                        app->pulse_irq_low_cycles =
+                            (app->pulse_irq_low_sum + 8U) >> 4;
+                        app->pulse_irq_low_valid = true;
+                        app->pulse_irq_low_sum = 0U;
+                        app->pulse_irq_low_samples = 0U;
+                    }
+                }
+
+                if(wide_window &&
+                   app->pulse_irq_high_samples >= 128U &&
+                   app->pulse_irq_low_samples >= 128U) {
+                    app->pulse_irq_high_cycles =
+                        (app->pulse_irq_high_sum +
+                         app->pulse_irq_high_samples / 2U) /
+                        app->pulse_irq_high_samples;
+                    app->pulse_irq_low_cycles =
+                        (app->pulse_irq_low_sum +
+                         app->pulse_irq_low_samples / 2U) /
+                        app->pulse_irq_low_samples;
+                    app->pulse_irq_high_valid = true;
+                    app->pulse_irq_low_valid = true;
+                    app->pulse_irq_high_sum = 0U;
+                    app->pulse_irq_low_sum = 0U;
+                    app->pulse_irq_high_samples = 0U;
+                    app->pulse_irq_low_samples = 0U;
+                }
             } else {
-                app->pulse_irq_low_cycles = delta;
-                app->pulse_irq_low_valid = true;
+                app->pulse_irq_high_sum = 0U;
+                app->pulse_irq_low_sum = 0U;
+                app->pulse_irq_high_samples = 0U;
+                app->pulse_irq_low_samples = 0U;
+                if(app->pulse_irq_level) {
+                    app->pulse_irq_high_cycles = delta;
+                    app->pulse_irq_high_valid = true;
+                } else {
+                    app->pulse_irq_low_cycles = delta;
+                    app->pulse_irq_low_valid = true;
+                }
             }
         }
     }
@@ -431,6 +504,11 @@ static void pulse_interrupt_start(LabMateApp* app) {
     app->pulse_irq_high_cycles = 0;
     app->pulse_irq_low_cycles = 0;
     app->pulse_irq_edges = 0;
+    app->pulse_irq_high_sum = 0;
+    app->pulse_irq_low_sum = 0;
+    app->pulse_irq_high_samples = 0;
+    app->pulse_irq_low_samples = 0;
+    app->pulse_irq_wide_window = false;
 
     furi_hal_gpio_init(
         pin, GpioModeInterruptRiseFall, GpioPullNo, GpioSpeedVeryHigh);
@@ -832,6 +910,11 @@ static void measurement_update(LabMateApp* app) {
             app->pulse_irq_seen = false;
             app->pulse_irq_high_valid = false;
             app->pulse_irq_low_valid = false;
+            app->pulse_irq_high_sum = 0;
+            app->pulse_irq_low_sum = 0;
+            app->pulse_irq_high_samples = 0;
+            app->pulse_irq_low_samples = 0;
+            app->pulse_irq_wide_window = false;
             app->pulse_irq_last_tick = now;
             FURI_CRITICAL_EXIT();
             hi_valid = false;
@@ -1206,77 +1289,55 @@ static void draw_menu(
         70,
         "OK",
         "OPEN");
-}static void draw_gpio(
-    Canvas* canvas,
-    LabMateApp* app) {
+}
 
-    char buffer[32];
+static void draw_gpio(Canvas* canvas, LabMateApp* app) {
+    char edges_text[32];
+    const uint32_t edges = app->edges;
 
-    draw_header(canvas, "GPIO MONITOR");
+    /* Compact instrument header, consistent with Frequency and Pulse screens. */
+    draw_header(canvas, "GPIO");
+    ui_badge(canvas, 35, 1, 34, gpio_names[app->gpio_index], false);
+    ui_badge(canvas, 91, 1, 35, app->hold ? "HOLD" : "LIVE", !app->hold);
 
+    /* Separate the live logic level from the transition counter. */
     canvas_set_font(canvas, FontSecondary);
+    canvas_draw_str(canvas, 4, 24, "LEVEL");
+    canvas_draw_str(canvas, 70, 24, "EDGES");
+    canvas_draw_line(canvas, 64, 18, 64, 50);
 
-    snprintf(
-        buffer,
-        sizeof(buffer),
-        "%s",
-        gpio_names[app->gpio_index]);
-
-    ui_badge(
-        canvas,
-        2,
-        16,
-        34,
-        buffer,
-        false);
-
-    ui_badge(
-        canvas,
-        91,
-        16,
-        35,
-        app->hold ? "HOLD" : "LIVE",
-        !app->hold);
-
-    canvas_draw_frame(
-        canvas,
-        2,
-        30,
-        58,
-        20);
-
+    /* Invert the level field only when HIGH; LOW remains outlined. */
+    if(app->gpio_state) {
+        canvas_draw_box(canvas, 2, 28, 58, 22);
+        canvas_set_color(canvas, ColorWhite);
+    } else {
+        canvas_draw_frame(canvas, 2, 28, 58, 22);
+    }
     canvas_set_font(canvas, FontPrimary);
+    canvas_draw_str(canvas, app->gpio_state ? 16 : 20, 44,
+                    app->gpio_state ? "HIGH" : "LOW");
+    if(app->gpio_state) canvas_set_color(canvas, ColorBlack);
 
-    canvas_draw_str(
-        canvas,
-        app->gpio_state ? 12 : 17,
-        45,
-        app->gpio_state ? "HIGH" : "LOW");
-
+    /* Keep large edge counts inside the 58-pixel value column. */
+    if(edges >= 1000000U) {
+        snprintf(edges_text, sizeof(edges_text), "%lu.%luM",
+                 (unsigned long)(edges / 1000000U),
+                 (unsigned long)((edges % 1000000U) / 100000U));
+    } else if(edges >= 10000U) {
+        snprintf(edges_text, sizeof(edges_text), "%lu.%luk",
+                 (unsigned long)(edges / 1000U),
+                 (unsigned long)((edges % 1000U) / 100U));
+    } else {
+        snprintf(edges_text, sizeof(edges_text), "%lu", (unsigned long)edges);
+    }
+    canvas_set_font(canvas, FontPrimary);
+    canvas_draw_str(canvas, 70, 41, edges_text);
     canvas_set_font(canvas, FontSecondary);
+    canvas_draw_str(canvas, 70, 49, "POLL");
 
-    canvas_draw_str(
-        canvas,
-        68,
-        36,
-        "EDGES");
-
-    snprintf(
-        buffer,
-        sizeof(buffer),
-        "%lu",
-        (unsigned long)app->edges);
-
-    canvas_set_font(canvas, FontPrimary);
-
-    canvas_draw_str(
-        canvas,
-        68,
-        49,
-        buffer);
-
+    canvas_draw_line(canvas, 0, 52, 127, 52);
     ui_key(canvas, 2, "<>", "PIN");
-    ui_key(canvas, 70, "OK", "HOLD");
+    ui_key(canvas, 70, "OK", app->hold ? "LIVE" : "HOLD");
 }
 
 static void draw_frequency(Canvas* canvas, LabMateApp* app) {
