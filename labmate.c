@@ -66,6 +66,7 @@ typedef struct {
     volatile bool pulse_irq_low_valid;
     volatile uint32_t pulse_irq_last_cycle;
     volatile uint32_t pulse_irq_last_tick;
+    volatile uint32_t pulse_irq_tick_cycle;
     volatile uint32_t pulse_irq_high_cycles;
     volatile uint32_t pulse_irq_low_cycles;
     volatile uint32_t pulse_irq_edges;
@@ -378,7 +379,16 @@ static void pulse_gpio_callback(void* context) {
     app->pulse_irq_level = level;
     app->pulse_irq_seen = true;
     app->pulse_irq_last_cycle = cycle;
-    app->pulse_irq_last_tick = furi_get_tick();
+    /* Avoid a kernel tick call on every edge (20,000 IRQ/s at 10 kHz).
+     * Refresh the stale-signal timestamp at most once every 10 ms.
+     * A slow signal still updates it on each edge.
+     */
+    const uint32_t tick_gap_cycles = SystemCoreClock / 100U;
+    if(tick_gap_cycles == 0U ||
+       (uint32_t)(cycle - app->pulse_irq_tick_cycle) >= tick_gap_cycles) {
+        app->pulse_irq_last_tick = furi_get_tick();
+        app->pulse_irq_tick_cycle = cycle;
+    }
     app->pulse_irq_edges++;
 }
 
@@ -405,6 +415,7 @@ static void pulse_interrupt_start(LabMateApp* app) {
         pin, GpioModeInterruptRiseFall, GpioPullNo, GpioSpeedVeryHigh);
     app->pulse_irq_level = furi_hal_gpio_read(pin);
     app->pulse_irq_last_cycle = DWT->CYCCNT;
+    app->pulse_irq_tick_cycle = app->pulse_irq_last_cycle;
     app->pulse_irq_last_tick = furi_get_tick();
 
     furi_hal_gpio_add_int_callback(pin, pulse_gpio_callback, app);
@@ -1755,11 +1766,14 @@ int32_t labmate_app(void* p) {
 
     InputEvent event;
 
-    /* The pulse IRQ capture remains active at full speed. Only LCD redraws
-     * are capped at 10 Hz so fast-changing digits remain readable.
+    /* GUI refresh is 10 Hz normally, 5 Hz from 8 kHz upward.
+     * Measurement remains interrupt-driven at every signal edge.
      */
     uint32_t pulse_redraw_interval = furi_kernel_get_tick_frequency() / 10U;
+    uint32_t pulse_busy_redraw_interval = furi_kernel_get_tick_frequency() / 5U;
     if(pulse_redraw_interval == 0U) pulse_redraw_interval = 1U;
+    if(pulse_busy_redraw_interval == 0U) pulse_busy_redraw_interval = 1U;
+    const uint32_t pulse_fast_period_cycles = SystemCoreClock / 8000U;
     uint32_t pulse_redraw_last_tick = furi_get_tick();
 
     while(app->running) {
@@ -1949,16 +1963,20 @@ int32_t labmate_app(void* p) {
         furi_mutex_release(
             app->mutex);
 
-        /* The former 10 ms loop requested up to 100 full redraws/second.
-         * Keep measurement sampling unchanged, but redraw Pulse Analyzer
-         * at 10 Hz (or immediately for a button press / screen change).
+        /* Under heavy IRQ load, use a calmer LCD refresh rate while
+         * preserving immediate response to keys and all captured edges.
          */
         if(app->screen == LabMateScreenPulse) {
             uint32_t tick = furi_get_tick();
             bool key_press =
                 (status == FuriStatusOk && event.type == InputTypePress);
+            const uint32_t redraw_interval =
+                (app->pulse_period_valid && pulse_fast_period_cycles > 0U &&
+                 app->pulse_period_cycles <= pulse_fast_period_cycles)
+                    ? pulse_busy_redraw_interval
+                    : pulse_redraw_interval;
             if(key_press ||
-               (uint32_t)(tick - pulse_redraw_last_tick) >= pulse_redraw_interval) {
+               (uint32_t)(tick - pulse_redraw_last_tick) >= redraw_interval) {
                 view_port_update(viewport);
                 pulse_redraw_last_tick = tick;
             }
