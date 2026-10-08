@@ -124,6 +124,14 @@ re-entering history, that older CSVs are unchanged, and that an absent or
 unmounted microSD displays a safe error. Repeat START/STOP recording after
 leaving history to watch for regressions.
 
+
+**Device feedback — 2026-10-09 (repeat START/STOP):** The user reports
+five consecutive START/STOP recordings without freezes and confirms that
+all five recordings are visible in Log History. This is a user-reported
+on-device regression pass; the five new CSV files have not been
+independently inspected here. SD-absent and other remaining acceptance
+tests are still pending.
+
 ## On-device acceptance tests (in progress)
 
 - [x] Build against the installed Momentum API; launch without crashes
