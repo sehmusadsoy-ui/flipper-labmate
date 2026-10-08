@@ -42,9 +42,11 @@ not produced a valid result (frequency becomes 0; pulse widths become 0).
 
 The logger snapshots at 1-second intervals, **not one row per GPIO edge**.
 SD writes happen in the application loop, outside GPIO interrupt handlers and
-outside the UI mutex. A failed SD operation stops recording and sets an error
-message; normal STOP/BACK synchronizes, closes and frees the log file. Any
-unexpected power loss may still lose buffered data.
+outside the UI mutex. After every 10 successfully written measurement rows, the
+logger also synchronizes the CSV file to microSD; STOP/BACK synchronizes and
+closes it. A failed write or sync stops recording and sets an error message.
+Unexpected power loss or microSD removal may still cause lost data; periodic
+sync is damage mitigation, not a guarantee.
 
 ## Build in the existing Momentum checkout
 
@@ -67,6 +69,7 @@ cd "$env:USERPROFILE\Momentum-Firmware"
 - [ ] Switch to PB3 and repeat at 1, 20, and 50 kHz
 - [ ] Switch to PULSE/PC1 and repeat at 1 kHz; inspect periods/duty
 - [ ] STOP, BACK and exit close files; existing CSVs are not overwritten
+- [ ] Record at least 12 rows; ensure periodic sync does not freeze the UI
 - [ ] Remove/unmount SD before starting; ensure UI reports an error safely
 - [ ] Test sudden signal loss: valid flag returns 0 after timeout
 - [ ] Test continuous logging for at least 10 minutes and USB navigation
