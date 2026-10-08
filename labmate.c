@@ -1372,11 +1372,11 @@ static void draw_gpio(Canvas* canvas, LabMateApp* app) {
 }
 
 /* Compact MIN/MAX display in two fixed-width cells.
- * 999.5 .. 999.99 Hz previously rounded up to "1.000k", hiding a
- * real sub-1 kHz minimum. Use Hz below exactly 1000 Hz, with 0.1 Hz
- * truncated precision for 100 .. 999.99 Hz to avoid crossing units.
- * Seven FontSecondary glyphs (7 * 6 px) fit in each 42 px value area.
- * Stored millihertz samples and the frequency calculation are unchanged.
+ * Use the SAME truncation policy as the main frequency reading:
+ * e.g. an actual 49.996 kHz displays as 49.99 kHz above and 49.99k
+ * in MIN/MAX, rather than incorrectly appearing as 50.00k below.
+ * Never switch units before the true 1 kHz / 10 kHz / 100 kHz boundary.
+ * The stored millihertz measurements and recording logic are unchanged.
  */
 static void frequency_format_compact(char* text, size_t size, uint32_t mhz, bool valid) {
     if(!valid) {
@@ -1384,33 +1384,28 @@ static void frequency_format_compact(char* text, size_t size, uint32_t mhz, bool
         return;
     }
 
-    if(mhz >= 999950000U) {
-        /* MHz (the uint32_t millihertz counter tops out at ~4.29 MHz). */
-        uint32_t v = (uint32_t)(((uint64_t)mhz + 5000000ULL) / 10000000ULL);
+    if(mhz >= 1000000000U) {
+        /* 1.00 MHz and above. */
+        uint32_t v = mhz / 10000000U;
         snprintf(text, size, "%lu.%02luM", (unsigned long)(v / 100U),
                  (unsigned long)(v % 100U));
-    } else if(mhz >= 99995000U) {
-        /* 100.0 kHz .. 999.9 kHz (six characters incl. k). */
-        uint32_t v = (uint32_t)(((uint64_t)mhz + 50000ULL) / 100000ULL);
+    } else if(mhz >= 100000000U) {
+        /* 100.0 kHz .. 999.9 kHz. */
+        uint32_t v = mhz / 100000U;
         snprintf(text, size, "%lu.%01luk", (unsigned long)(v / 10U),
                  (unsigned long)(v % 10U));
-    } else if(mhz >= 9999500U) {
-        /* 10.00 kHz .. 99.99 kHz. */
-        uint32_t v = (uint32_t)(((uint64_t)mhz + 5000ULL) / 10000ULL);
+    } else if(mhz >= 10000000U) {
+        /* 10.00 kHz .. 99.99 kHz: same 10 Hz steps as the main reading. */
+        uint32_t v = mhz / 10000U;
         snprintf(text, size, "%lu.%02luk", (unsigned long)(v / 100U),
                  (unsigned long)(v % 100U));
     } else if(mhz >= 1000000U) {
-        /* Only switch to kHz at 1000.00 Hz, not at 999.50 Hz. */
-        uint32_t v = (uint32_t)(((uint64_t)mhz + 500ULL) / 1000ULL);
+        /* 1.000 kHz .. 9.999 kHz. */
+        uint32_t v = mhz / 1000U;
         snprintf(text, size, "%lu.%03luk", (unsigned long)(v / 1000U),
                  (unsigned long)(v % 1000U));
-    } else if(mhz >= 100000U) {
-        /* 100.0 .. 999.9 Hz: use 0.1 Hz precision (never round to kHz). */
-        uint32_t v = mhz / 100U;
-        snprintf(text, size, "%lu.%01luHz", (unsigned long)(v / 10U),
-                 (unsigned long)(v % 10U));
     } else if(mhz >= 10000U) {
-        /* 10.0 .. 99.9 Hz. */
+        /* 10.0 .. 999.9 Hz; never round 999.9 Hz up to 1 kHz. */
         uint32_t v = mhz / 100U;
         snprintf(text, size, "%lu.%01luHz", (unsigned long)(v / 10U),
                  (unsigned long)(v % 10U));
