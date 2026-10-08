@@ -1,6 +1,6 @@
 # Flipper LabMate
 
-**LabMate v1.2** is a compact digital-signal diagnostic toolkit for Flipper Zero running Momentum Firmware.
+**LabMate v1.3** is a compact digital-signal diagnostic toolkit for Flipper Zero running Momentum Firmware.
 
 It combines GPIO monitoring, low/high-frequency measurement, pulse analysis, and hardware-PWM signal generation in one external FAP.
 
@@ -14,7 +14,19 @@ It combines GPIO monitoring, low/high-frequency measurement, pulse analysis, and
 - **Signal Generator** — hardware PWM square-wave output on PA7 with 50% duty cycle
 - **Instrument-style UI** — pixel icons, state badges, selected-row highlighting, compact key hints
 
-## Screenshots — v1.2
+## v1.3 highlights
+
+- **Pulse Analyzer:** dual-edge GPIO interrupt capture, high-resolution HIGH/LOW/PERIOD/DUTY readings and multi-sample filtering for short pulses.
+- **Frequency Meter:** LOW/PC1 period measurement and HIGH/PB3 TIM2 hardware edge counting; the HIGH mode refreshes approximately every 100 ms.
+- **Signal Generator:** changes PWM frequency while RUN without repeatedly disabling and restarting TIM1.
+- **UI:** refreshed GPIO Monitor, Frequency Meter, Pulse Analyzer and Signal Generator layouts; steadier measurement-screen redraws.
+- **Stability:** guarded Pulse Analyzer pin switching to avoid firmware-reserved EXTI lines, plus GPIO rising-edge cleanup when changing tools.
+
+**On-device loopback validation (PA7 output to a selected 3.3 V GPIO input):** 1 Hz, 1 kHz, 5 kHz, 10 kHz, 20 kHz and 50 kHz were exercised across applicable tools. At 50 kHz, Pulse Analyzer duty was observed around 49.8%–50.2% on the tested unit. These are functional loopback checks, **not independent instrument calibration**; accuracy with external signals is not guaranteed.
+
+## Screenshots — v1.2 (archived reference)
+
+These screenshots document the older v1.2 layout; refreshed v1.3 screenshots will be added separately.
 
 ### Flipper Zero / LabMate menu
 
@@ -40,7 +52,13 @@ It combines GPIO monitoring, low/high-frequency measurement, pulse analysis, and
 |---|---|
 | ![Frequency LOW](screenshots/v1.2/06_frequency_low_199hz.png) | ![Frequency HIGH](screenshots/v1.2/07_frequency_high_5khz.png) |
 
-### Signal Generator
+### Pulse Analyzer
+
+The v1.3 analyzer uses both rising and falling GPIO interrupts to estimate HIGH, LOW, period and duty cycle. Supported interrupt-input pins are **PC0, PC1, PB2 and PA4**. PC3/PB3 and PA6 use firmware-reserved EXTI lines, while PA7 is reserved for signal generation. At high frequencies, the displayed values are filtered; refer to functional loopback checks above instead of treating the tool as a calibrated oscilloscope.
+
+Controls: LEFT/RIGHT switch supported Pulse Analyzer pins, OK toggles HOLD/LIVE, BACK returns to the main menu.
+
+## Signal Generator
 
 | STOP — 1 Hz | RUN — 5 kHz |
 |---|---|
@@ -52,7 +70,7 @@ It combines GPIO monitoring, low/high-frequency measurement, pulse analysis, and
 
 ## Frequency Meter
 
-LabMate v1.2 provides two dedicated measurement paths.
+LabMate v1.3 provides two dedicated measurement paths.
 
 ### LOW mode — PC1
 
@@ -174,22 +192,14 @@ Installed FAP path:
 - **Firmware API:** 87.1
 - **Application type:** External FAP
 
-## v1.2 Status
+## v1.3 validation status
 
-The current v1.2 build has been exercised on-device with:
-
-- application/menu navigation
-- GPIO Monitor
-- LOW / PC1 Frequency Meter
-- HIGH / PB3 hardware-counter Frequency Meter
-- Pulse Analyzer
-- PA7 generator start/stop
-- generator frequency selection
-- LIVE / HOLD states
-- About screen
-- operation after disconnecting USB from the development PC
-
-Development after this stable checkpoint can continue as **v1.3-dev** while v1.2 remains the rollback/release baseline.
+- Built and launched on Flipper Zero with Momentum Firmware API 87.1.
+- GPIO Monitor, both Frequency Meter modes, Pulse Analyzer, Signal Generator and main navigation exercised on-device.
+- Generator RUN frequency switching and Pulse Analyzer pin switching re-tested after crash/freeze fixes.
+- Pulse Analyzer 50 kHz loopback displayed 10 µs HIGH, 10 µs LOW, 20 µs period, with duty ranging approximately 49.8%–50.2% on the tested unit.
+- No independent calibration, broad hardware compatibility certification, or extensive long-duration stress testing has been completed.
+- **v1.2 Stable** remains available as a rollback release.
 
 ## Project Structure
 
@@ -199,11 +209,16 @@ flipper-labmate/
 ├── labmate.c
 ├── labmate_10px.png
 ├── screenshots/
-│   └── v1.2/
+│   └── v1.2/ (archived screenshots)
+├── dist/
+│   ├── labmate-v1.2.fap
+│   ├── labmate-v1.3.fap
+│   └── SHA256SUMS.txt
 ├── docs/
 ├── CHANGELOG.md
 ├── RELEASE_NOTES_v1.0.md
 ├── RELEASE_NOTES_v1.2.md
+├── RELEASE_NOTES_v1.3.md
 ├── LICENSE
 └── README.md
 ```
