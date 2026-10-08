@@ -1621,22 +1621,22 @@ static void draw_pulse_stats(Canvas* canvas, LabMateApp* app) {
     canvas_set_font(canvas, FontSecondary);
     /* Fixed table cells leave room for seven-character values in each
      * numeric column. The row baselines are >= 8px apart. */
-    canvas_draw_str(canvas, 3, 21, "TYPE");
-    canvas_draw_str(canvas, 42, 21, "MIN");
-    canvas_draw_str(canvas, 87, 21, "MAX");
-    canvas_draw_line(canvas, 0, 23, 127, 23);
+    canvas_draw_str(canvas, 3, 20, "TYPE");
+    canvas_draw_str(canvas, 42, 20, "MIN");
+    canvas_draw_str(canvas, 87, 20, "MAX");
+    canvas_draw_line(canvas, 0, 22, 127, 22);
 
-    canvas_draw_str(canvas, 3, 31, "HIGH");
-    canvas_draw_str(canvas, 40, 31, hi_min);
-    canvas_draw_str(canvas, 85, 31, hi_max);
+    canvas_draw_str(canvas, 3, 30, "HIGH");
+    canvas_draw_str(canvas, 40, 30, hi_min);
+    canvas_draw_str(canvas, 85, 30, hi_max);
 
-    canvas_draw_str(canvas, 3, 39, "LOW");
-    canvas_draw_str(canvas, 40, 39, lo_min);
-    canvas_draw_str(canvas, 85, 39, lo_max);
+    canvas_draw_str(canvas, 3, 38, "LOW");
+    canvas_draw_str(canvas, 40, 38, lo_min);
+    canvas_draw_str(canvas, 85, 38, lo_max);
 
-    canvas_draw_str(canvas, 3, 47, "PER");
-    canvas_draw_str(canvas, 40, 47, per_min);
-    canvas_draw_str(canvas, 85, 47, per_max);
+    canvas_draw_str(canvas, 3, 46, "PER");
+    canvas_draw_str(canvas, 40, 46, per_min);
+    canvas_draw_str(canvas, 85, 46, per_max);
 
     canvas_draw_str(canvas, 3, 54, "DUTY");
     canvas_draw_str(canvas, 40, 54, duty_min);
@@ -1644,7 +1644,8 @@ static void draw_pulse_stats(Canvas* canvas, LabMateApp* app) {
 
     /* Short footer labels fit across all 128 pixels; avoid text
      * beyond x=127 and a baseline on the bottommost pixel. */
-    canvas_draw_line(canvas, 0, 56, 127, 56);
+    /* No rule over this footer: 8px letters start at y=55 while
+     * the last measurement row ends at y=54. */
     canvas_draw_str(canvas, 3, 62, "vRST");
     canvas_draw_str(canvas, 45, 62, app->hold ? "OK LIVE" : "OK HOLD");
     canvas_draw_str(canvas, 95, 62, "^BACK");
