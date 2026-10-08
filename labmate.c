@@ -1641,7 +1641,7 @@ static void draw_pulse_stats(Canvas* canvas, LabMateApp* app) {
     canvas_draw_line(canvas, 0, 56, 127, 56);
     canvas_draw_str(canvas, 2, 63, "v RESET");
     canvas_draw_str(canvas, 45, 63, app->hold ? "OK LIVE" : "OK HOLD");
-    canvas_draw_str(canvas, 97, 63, "^ BACK");
+    canvas_draw_str(canvas, 97, 63, "^LIVE");
 }
 
 static void draw_pulse(Canvas* canvas, LabMateApp* app) {
