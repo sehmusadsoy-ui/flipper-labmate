@@ -1755,6 +1755,13 @@ int32_t labmate_app(void* p) {
 
     InputEvent event;
 
+    /* The pulse IRQ capture remains active at full speed. Only LCD redraws
+     * are capped at 10 Hz so fast-changing digits remain readable.
+     */
+    uint32_t pulse_redraw_interval = furi_kernel_get_tick_frequency() / 10U;
+    if(pulse_redraw_interval == 0U) pulse_redraw_interval = 1U;
+    uint32_t pulse_redraw_last_tick = furi_get_tick();
+
     while(app->running) {
         FuriStatus status =
             furi_message_queue_get(
@@ -1942,8 +1949,22 @@ int32_t labmate_app(void* p) {
         furi_mutex_release(
             app->mutex);
 
-        view_port_update(
-            viewport);
+        /* The former 10 ms loop requested up to 100 full redraws/second.
+         * Keep measurement sampling unchanged, but redraw Pulse Analyzer
+         * at 10 Hz (or immediately for a button press / screen change).
+         */
+        if(app->screen == LabMateScreenPulse) {
+            uint32_t tick = furi_get_tick();
+            bool key_press =
+                (status == FuriStatusOk && event.type == InputTypePress);
+            if(key_press ||
+               (uint32_t)(tick - pulse_redraw_last_tick) >= pulse_redraw_interval) {
+                view_port_update(viewport);
+                pulse_redraw_last_tick = tick;
+            }
+        } else {
+            view_port_update(viewport);
+        }
     }
 
     if(app->generator_running) {
