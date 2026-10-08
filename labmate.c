@@ -1480,7 +1480,8 @@ static void draw_frequency(Canvas* canvas, LabMateApp* app) {
     canvas_draw_str(canvas, 2, 49, "MIN");
     canvas_draw_str(canvas, 22, 49, min_value);
     canvas_draw_str(canvas, 66, 49, "MAX");
-    canvas_draw_str(canvas, 85, 49, max_value);
+    /* Right-align the value to leave a readable gap after MAX without clipping. */
+    canvas_draw_str_aligned(canvas, 127, 49, AlignRight, AlignBottom, max_value);
 
     /* Keep the three action hints separate at 128x64 resolution. */
     canvas_draw_line(canvas, 0, 52, 127, 52);
