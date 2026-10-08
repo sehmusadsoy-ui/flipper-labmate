@@ -1,1 +1,2 @@
 d0c488819abb943b55259abb72e8898a01d82aca380455e827e0ffb244cbe5f0  labmate-v1.2.fap
+d04c54bf0e0a4acd37e627d7cfd656f888168ae20fd9f7cfcd632beb09316cfc  labmate-v1.3.fap

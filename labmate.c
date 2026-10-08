@@ -1164,7 +1164,7 @@ static void draw_menu(
         99,
         1,
         27,
-        "v1.2",
+        "v1.3",
         false);
 
     canvas_draw_line(
@@ -1493,7 +1493,7 @@ static void draw_about(
         canvas,
         2,
         10,
-        "LABMATE v1.2");
+        "LABMATE v1.3");
 
     canvas_draw_line(
         canvas,
