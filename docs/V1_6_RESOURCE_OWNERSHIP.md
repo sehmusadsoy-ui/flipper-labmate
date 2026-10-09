@@ -1,7 +1,6 @@
 # LabMate v1.6 — GPIO, timer and EXTI ownership audit
 
-**Branch:** `v1.6-dev` only. **Status:** source-code inspection and design
-notes; no resource-manager implementation or new hardware test is claimed.
+**Branch:** `v1.6-dev` only. **Status:** first PA7 resource-policy guard implemented; overall GPIO/EXTI/timer ownership manager remains planned. No physical-device test is claimed.
 **Baseline:** LabMate v1.5 Stable remains unchanged.
 
 ## Resources observed in `labmate.c`
@@ -19,19 +18,33 @@ notes; no resource-manager implementation or new hardware test is claimed.
 the board firmware uses EXTI3 for OK and EXTI6 for DOWN; these are
 polling-only GPIO Monitor options as documented in the source.
 
-## Source-level resource conflict to address before v1.6 Stable
+## PA7 background PWM collision — guarded in v1.6-dev (device test pending)
 
 The existing generator intentionally keeps PA7 PWM running after navigating
 BACK to the menu. The GPIO Monitor still offers PA7 among eight selectable
 inputs, and `gpio_activate()` reconfigures the selected pin to input.
 `gpio_release()` likewise configures it analog on exit.
 
-**Potential conflict (not independently reproduced on hardware):**
+**Previously identified conflict (not independently reproduced on hardware):**
 If the generator is running in the background while the user selects PA7
-in GPIO Monitor, the GPIO input/analog reconfiguration may disrupt the TIM1
-PWM pin while `generator_running` still reports active. A future centralized
-pin-resource owner must prevent or explicitly resolve this configuration
-collision. Do **not** simply stop a running generator silently.
+in GPIO Monitor, the GPIO input/analog reconfiguration could disrupt TIM1
+PWM while `generator_running` still reports active.
+
+**v1.6-dev code-level mitigation:**
+- The portable `labmate_resource_policy.c/.h` returns PA7 as unavailable
+  to GPIO Monitor while `generator_running` is true.
+- GPIO Monitor entry falls back to PC1 if PA7 was selected previously.
+- LEFT/RIGHT navigation wraps through the remaining seven pins, skipping PA7.
+- Both `gpio_activate()` and `gpio_release()` are guarded, so an old selected
+  PA7 value cannot silently reconfigure an active PWM output.
+- The GPIO Monitor shows `PA7 BUSY` while PWM owns that pin. Signal Generator
+  continues to run in background until explicitly stopped or the app exits.
+- `tests/test_resource_policy.c` checks policy logic on a desktop C compiler,
+  while CI builds the full development FAP and runs static boundary guards.
+
+This is **not** proof of on-device timing, peripheral-state preservation or
+complete resource management. PA7 still requires a physical regression test;
+remaining PC1 EXTI, TIM2 and concurrent-resource ownership work is planned.
 
 Additional resource handoff invariants:
 - Only one of the LOW PC1 IRQ, HIGH PB3 TIM2 and Pulse IRQ capture modes
@@ -47,19 +60,21 @@ Additional resource handoff invariants:
 - Releasing the app must stop PWM, stop active capture, synchronize/close an
   open log and close history resources.
 
-## Implementation sequence (pending, not yet delivered)
+## Implementation sequence and outstanding checks
 
-1. Add a single explicit owner state for each reservable pin/peripheral,
-   not a set of implicit booleans, while retaining existing resource cleanup.
-2. Decide and document whether GPIO Monitor displays PA7 as BUSY when the
-   generator is active or prompts for an explicit generator stop. Avoid
-   GPIO reconfiguration that silently overrides active PWM.
-3. Centralize capture switching and rollback on failed acquisition, then
-   verify TIME2/EXTI transitions with real device tests.
-4. Regression test Generator BACK → GPIO Monitor → PA7, and repeat
-   while switching Pulse/Frequency/Logger views and exiting the app.
-5. Update `docs/V1_6_ARCHITECTURE.md` only after each small hardware change
-   has passed CI and physical Flipper tests.
+1. **Implemented (development only):** PA7 exclusive-use monitor policy,
+   pin-entry fallback, safe navigation, no-reconfiguration guard and busy UI.
+2. **Implemented (development only):** host-native policy tests and GitHub
+   static boundary checks; the Momentum SDK full-build gate remains active.
+3. **Pending:** explicit owner state and consistent acquire/release semantics
+   for PC1 IRQ, PB3 TIM2 and active generator resources, including handling
+   failed acquisition and cleaning up callbacks on exit.
+4. **Pending device regression:** Generator ON → BACK → GPIO Monitor → navigate
+   across PA7, then Generator OFF → PA7 becomes selectable again; also test
+   switching Frequency/Pulse/Logger views, HOLD/LIVE and app exit. Do not
+   connect unknown or unsafe voltages.
+5. **Pending:** update broader project roadmap only after device-level
+   evidence supports the stability claim.
 
 **Electrical safety:** Flipper Zero GPIO measurements/inputs must use
 3.3 V-compatible digital signals only. No mains, 5 V or unknown voltage
