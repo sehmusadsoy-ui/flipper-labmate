@@ -12,6 +12,8 @@
 /* Shared menu/pin counts: UI and input handling must agree. */
 #define MENU_COUNT 7
 #define GPIO_COUNT 8
+/* Shared immutable GPIO labels, used by both migrated and legacy renderers. */
+extern const char* const labmate_gpio_names[GPIO_COUNT];
 /* Keep only the latest 32 log IDs in RAM; read CSV contents incrementally. */
 #define LOGGER_HISTORY_LIMIT 32U
 /* High-speed pulse extrema use median-of-five sampled readings. */
