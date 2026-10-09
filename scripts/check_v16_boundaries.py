@@ -97,6 +97,25 @@ for name in ["ui_badge", "ui_key", "ui_draw_menu_icon", "ui_draw_header"]:
         f"UI primitive is missing: {name}",
     )
 
+# Capture STOP paths share one idempotent teardown helper; Pulse HOLD is
+# deliberately excluded because it stops only its own IRQ.
+expect(
+    MAIN.count("static void capture_stop_all(LabMateApp* app)") == 1,
+    "Unified capture teardown helper must exist exactly once",
+)
+expect(
+    MAIN.count("capture_stop_all(app);") >= 5,
+    "Mode switching, logger, BACK and exit must share capture teardown",
+)
+expect(
+    "static void logger_capture_stop(LabMateApp* app) {\n    capture_stop_all(app);" in MAIN,
+    "Logger stop must call shared teardown",
+)
+expect(
+    "if(screen_uses_gpio(app->screen)) {\n        capture_stop_all(app);" in MAIN,
+    "App exit must call shared teardown",
+)
+
 for sentinel in [
     "static void frequency_gpio_callback(",
     "static void pulse_gpio_callback(",

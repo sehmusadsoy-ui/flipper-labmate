@@ -68,6 +68,10 @@ This is a development designation, **not** a published v1.6 Stable release.
       the generator's existing background RUN/STOP semantics.
 - [x] Add host-native test cases for both directions, wraparound, generator
       ON/OFF and old PA7 selection; keep the device regression pending.
+- [x] Consolidate the existing capture teardown into `capture_stop_all()`
+      for Frequency switching, Pulse pin changes, Logger capture shutdown,
+      BACK and app exit. Preserve the old active flags, IRQ timing and
+      independent PWM background behavior; compile-only until device tests.
 - [ ] Create explicit ownership and cleanup rules for PC1 EXTI, PB3 TIM2 and
       PA7 TIM1, protecting against pin/timer contention and stale callbacks.
 - [ ] Extract capture code without changing timing behavior; exercise

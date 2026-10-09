@@ -426,6 +426,17 @@ static void pulse_interrupt_start(LabMateApp* app) {
     app->pulse_irq_active = true;
 }
 
+/* Shared capture teardown. Each stop checks the existing active flags.
+ * Detach capture IRQs and stop TIM2 before changing app->gpio_index.
+ * Independent TIM1/PA7 background PWM is deliberately untouched.
+ * Start paths and ISR timing remain unchanged in this first stage.
+ */
+static void capture_stop_all(LabMateApp* app) {
+    frequency_hw_stop(app);
+    frequency_interrupt_stop(app);
+    pulse_interrupt_stop(app);
+}
+
 static void gpio_release(LabMateApp* app, uint8_t index) {
     /* Never reclaim PA7 while the generator owns TIM1 PWM in background.
      * The policy is checked here as a final guard against unsafe releases.
@@ -534,8 +545,7 @@ static void gpio_change(
             return;
         }
 
-        frequency_interrupt_stop(app);
-        frequency_hw_stop(app);
+        capture_stop_all(app);
 
         gpio_release(app, app->gpio_index);
 
@@ -558,7 +568,7 @@ static void gpio_change(
         const uint8_t next_index = pulse_gpio_next_index(app->gpio_index, direction);
         if(next_index == app->gpio_index) return;
         /* Detach the old EXTI callback before changing pin or IRQ state. */
-        pulse_interrupt_stop(app);
+        capture_stop_all(app);
         gpio_release(app, app->gpio_index);
         app->gpio_index = next_index;
         app->hold = false;
@@ -1012,9 +1022,7 @@ static void measurement_update(LabMateApp* app) {
  * File writes happen in the main thread AFTER releasing the GUI mutex.
  */
 static void logger_capture_stop(LabMateApp* app) {
-    frequency_hw_stop(app);
-    frequency_interrupt_stop(app);
-    pulse_interrupt_stop(app);
+    capture_stop_all(app);
     gpio_release(app, app->gpio_index);
 }
 
@@ -1855,14 +1863,8 @@ int32_t labmate_app(void* p) {
                 } else if(
                     event.key == InputKeyBack) {
 
-                    if(app->screen ==
-                       LabMateScreenFrequency) {
-                        frequency_hw_stop(app);
-                        frequency_interrupt_stop(app);
-                    } else if(app->screen == LabMateScreenPulse) {
-                        pulse_interrupt_stop(app);
-                    }
-
+                    /* Release active capture before returning to Menu. */
+                    capture_stop_all(app);
                     gpio_release(app, app->gpio_index);
 
                     app->hold = false;
@@ -2011,14 +2013,7 @@ int32_t labmate_app(void* p) {
     history_close(app);
 
     if(screen_uses_gpio(app->screen)) {
-        if(app->screen == LabMateScreenLogger) {
-            logger_capture_stop(app);
-        } else if(app->screen == LabMateScreenPulse) {
-            pulse_interrupt_stop(app);
-        } else if(app->screen == LabMateScreenFrequency) {
-            frequency_hw_stop(app);
-            frequency_interrupt_stop(app);
-        }
+        capture_stop_all(app);
         gpio_release(app, app->gpio_index);
     }
 

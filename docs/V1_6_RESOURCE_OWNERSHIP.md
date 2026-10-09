@@ -69,14 +69,18 @@ Additional resource handoff invariants:
    pin-entry fallback, safe navigation, no-reconfiguration guard and busy UI.
 2. **Implemented (development only):** host-native policy tests and GitHub
    static boundary checks; the Momentum SDK full-build gate remains active.
-3. **Pending:** explicit owner state and consistent acquire/release semantics
+3. **Implemented (source refactor, device test pending):** the shared
+   `capture_stop_all()` reuses existing LOW PC1 IRQ, HIGH PB3/TIM2 and
+   Pulse EXTI stop implementations. Used by mode changes, Logger capture
+   stop, BACK and app exit. No capture start/ISR or TIM1 PWM logic changed.
+4. **Pending:** explicit owner state and consistent acquire/release semantics
    for PC1 IRQ, PB3 TIM2 and active generator resources, including handling
    failed acquisition and cleaning up callbacks on exit.
-4. **Pending device regression:** Generator ON → BACK → GPIO Monitor → navigate
+5. **Pending device regression:** Generator ON → BACK → GPIO Monitor → navigate
    across PA7, then Generator OFF → PA7 becomes selectable again; also test
    switching Frequency/Pulse/Logger views, HOLD/LIVE and app exit. Do not
    connect unknown or unsafe voltages.
-5. **Pending:** update broader project roadmap only after device-level
+6. **Pending:** update broader project roadmap only after device-level
    evidence supports the stability claim.
 
 **Electrical safety:** Flipper Zero GPIO measurements/inputs must use
