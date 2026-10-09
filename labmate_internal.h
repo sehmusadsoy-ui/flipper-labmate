@@ -181,3 +181,6 @@ typedef struct {
 
     FuriMutex* mutex;
 } LabMateApp;
+
+/* Shared original DWT cycle->us conversion (measurement and passive UI). */
+uint64_t pulse_cycles_to_us(uint32_t cycles);
