@@ -250,3 +250,13 @@ GitHub Actions includes a Windows mock transport test. It confirms script
 argument order and failure propagation WITHOUT a connected Flipper. Physical
 Flipper install and app regressions remain pending; this script has NOT
 been deployed to the user's device.
+
+## Windows mock transport CI caveat
+
+The initial Windows test run verified all intended cases, including a
+SHA256 mismatch and a mocked Python transport exit code 23, but GitHub
+marked the job failed because the intentionally nonzero final native
+exit status remained in PowerShell's LASTEXITCODE. The test now resets
+that native process status **after checking** the failure is nonzero.
+This does not suppress any failed assertion and does not alter the
+installer's failure reporting. Check the latest CI for final results.

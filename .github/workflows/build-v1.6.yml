@@ -132,4 +132,7 @@ jobs:
           & ./scripts/install-labmate.ps1 -FapPath $fap -ExpectedSha256 $hash -FirmwareRoot $env:LABMATE_MOCK_FW
           if ($LASTEXITCODE -eq 0) { throw 'Nonzero transport exit was treated as success.' }
           Remove-Item Env:\LABMATE_MOCK_EXIT
+          # The final nonzero exit was intentional. The pwsh step must not
+          # inherit it after every expected-failure assertion has passed.
+          $global:LASTEXITCODE = 0
           Write-Host 'Mock USB tests passed; no Flipper connected.'
