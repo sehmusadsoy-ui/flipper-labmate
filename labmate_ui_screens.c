@@ -463,3 +463,39 @@ void draw_frequency(Canvas* canvas, LabMateApp* app) {
     canvas_draw_str(canvas, 102, 61, "^RST");
 }
 
+/* Display-only Signal Generator renderer (TIM1 control remains in labmate.c). */
+void draw_generator(Canvas* canvas, LabMateApp* app) {
+    char value[32];
+    const uint32_t freq = labmate_generator_frequencies[app->generator_freq_index];
+
+    /* Output and RUN/STOP are visible even when switching presets. */
+    canvas_set_font(canvas, FontPrimary);
+    canvas_draw_str(canvas, 2, 10, "GEN");
+    ui_badge(canvas, 34, 1, 55, "OUT PA7", false);
+    ui_badge(canvas, 91, 1, 35, app->generator_running ? "RUN" : "STOP",
+             app->generator_running);
+    canvas_draw_line(canvas, 0, 13, 127, 13);
+
+    /* Only the visual presentation changes: PWM remains TIM1/PA7. */
+    if(freq >= 1000U && (freq % 1000U) == 0U) {
+        snprintf(value, sizeof(value), "%lu kHz", (unsigned long)(freq / 1000U));
+    } else {
+        snprintf(value, sizeof(value), "%lu Hz", (unsigned long)freq);
+    }
+
+    canvas_set_font(canvas, FontSecondary);
+    canvas_draw_str(canvas, 3, 24, "OUTPUT FREQ");
+    canvas_set_font(canvas, FontPrimary);
+    canvas_draw_str(canvas, 4, 40, value);
+
+    canvas_draw_line(canvas, 84, 17, 84, 50);
+    canvas_set_font(canvas, FontSecondary);
+    canvas_draw_str(canvas, 90, 27, "DUTY");
+    canvas_set_font(canvas, FontPrimary);
+    canvas_draw_str(canvas, 90, 41, "50%");
+
+    canvas_draw_line(canvas, 0, 52, 127, 52);
+    ui_key(canvas, 2, "<>", "FREQ");
+    ui_key(canvas, 70, "OK", app->generator_running ? "STOP" : "START");
+}
+
