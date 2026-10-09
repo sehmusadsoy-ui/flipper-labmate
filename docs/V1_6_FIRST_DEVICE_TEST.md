@@ -614,3 +614,42 @@ metrological guarantee over a continuous band.
 and empty-slot DELETE no-op visual test if convenient, then review
 v1.6 RC scope with the operator. This record makes no change to
 `main`, Stable `v1.5`, device binaries or CSV contents.
+
+## Final F1/F2 device release gate (user-reported, 2026-10-10)
+
+After the R1-R4 Data Logger regression all passed, the operator
+performed the final requested smoke tests and reported exactly:
+**"F1, F2 PASS"**. This closes the two previously outstanding
+functional checks based on the user's direct physical observations.
+
+| ID | Reported outcome | Tested behavior / scope |
+| --- | --- | --- |
+| F1 | PASS | Generator RUN, GPIO Monitor PA7 BUSY, Generator STOP, PA7 resource released, app exit and relaunch begin with Generator STOP |
+| F2 | PASS | DELETE on an already-EMPTY profile slot shows EMPTY instead of starting another delete-confirmation path; other saved profiles / CSV logs remain accessible |
+
+The F2 report is UI-level evidence, NOT independent instrumentation
+proving zero filesystem write calls. We should not claim that the
+absence of an SD write was physically monitored. F1 likewise
+confirms operator-observed behavior, not external electrical
+measurement of PA7.
+
+**Release candidate status: functionally ready for RC review** on
+the currently installed v1.6-dev binary. HIGH PB3 kHz testing covers
+discrete generator presets 1, 5, 10, 20, 50 kHz; PC1 Pulse Analyzer
+was checked at 100 Hz and 1 kHz. Profile create/load/delete, PWM
+safety interlock, Data Logger and read-only History have operator
+PASS results, with the scope limitations documented above.
+
+Remaining known gaps before a *fully characterized* stable release:
+controlled recovery testing for invalid/full/unavailable microSD,
+unexpected power loss, independent externally calibrated signal
+reference, and accuracy checks for untested alternative Pulse inputs.
+Do NOT demand dangerous or destructive tests from the user. These
+are residual limitations to review, not evidence of a failure in
+passed use cases.
+
+No v1.6 release/tag has been created; stable v1.5 and main
+are unchanged. The latest functionally tested code build was
+commit `4eaf8054d354fb7725617b72df25c0a974daf214`,
+GitHub Actions `38001774685` (pass); subsequent commits to
+`v1.6-dev` have only updated documentation.
