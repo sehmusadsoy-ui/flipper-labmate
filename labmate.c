@@ -1574,7 +1574,7 @@ static void draw_pulse(Canvas* canvas, LabMateApp* app) {
     /* Compact instrument header with input and capture state. */
     canvas_set_font(canvas, FontPrimary);
     canvas_draw_str(canvas, 2, 10, "PULSE");
-    ui_badge(canvas, 56, 1, 33, gpio_names[app->gpio_index], false);
+    ui_badge(canvas, 56, 1, 33, labmate_gpio_names[app->gpio_index], false);
     ui_badge(canvas, 91, 1, 35, app->hold ? "HOLD" : "LIVE", !app->hold);
     canvas_draw_line(canvas, 0, 13, 127, 13);
 
