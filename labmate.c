@@ -1251,9 +1251,15 @@ static void logger_capture_change(LabMateApp* app, int8_t direction) {
 static void logger_stop(LabMateApp* app) {
     app->logger_recording = false;
     if(app->logger_file) {
-        if(storage_file_is_open(app->logger_file)) {
-            if(!storage_file_sync(app->logger_file)) app->logger_error = true;
-            if(!storage_file_close(app->logger_file)) app->logger_error = true;
+        const bool was_open = storage_file_is_open(app->logger_file);
+        if(was_open && !storage_file_sync(app->logger_file)) {
+            app->logger_error = true;
+        }
+        /* Storage requires close even if an earlier open failed. A handle
+         * that was never opened need not turn an existing error into a
+         * second close error. Keep all SD work outside the GUI mutex. */
+        if(!storage_file_close(app->logger_file) && was_open) {
+            app->logger_error = true;
         }
         storage_file_free(app->logger_file);
         app->logger_file = NULL;
