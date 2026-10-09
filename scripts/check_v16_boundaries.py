@@ -114,6 +114,15 @@ for sentinel in [
 
 expect('"v1.6d"' in INTERNAL_H, "Development UI version must remain v1.6d")
 expect('fap_version="1.6"' in MANIFEST, "Development manifest must remain 1.6")
+expect(
+    'sources=["*.c"]' in MANIFEST,
+    "FAP source list must explicitly exclude native C test fixtures",
+)
+expect(
+    (ROOT / "tests/test_resource_policy.c.inc").is_file()
+    and not (ROOT / "tests/test_resource_policy.c").exists(),
+    "Native PA7 tests must not be included as a FAP .c translation unit",
+)
 expect('"3.3V GPIO ONLY"' in SCREENS, "Safety indication missing from About screen")
 
 # A background TIM1 PWM output owns PA7. The GPIO Monitor must not
