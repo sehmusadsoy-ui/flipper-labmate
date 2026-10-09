@@ -2,7 +2,8 @@
 
 **Status:** Agreed development roadmap as of 2026-10-08.  
 **Stable baseline:** v1.4 (published and kept unchanged while new features are developed).  
-**Active development branch:** `v1.5-dev`.
+**Active development branch:** `v1.5-dev`.  
+**Release candidate:** `v1.5-rc` (tested dev functionality, RC build pending final installation).
 
 ## Vision
 
@@ -71,7 +72,7 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
 | --- | --- | --- |
 | v1.3 | Foundational digital instruments | Stable published |
 | v1.4 | Frequency and pulse MIN/MAX, signal-loss behavior, UI stability | Stable published |
-| **v1.5** | **Data Logger** | **Next to implement on `v1.5-dev`** |
+| **v1.5** | **Data Logger** | **Release candidate: final build/installation gate** |
 | v1.6 | Code/UI refactor | Planned |
 | v1.7 | PWM Studio and Counter | Planned |
 | v1.8 | UART, I²C, possible 1-Wire tools | Planned |
