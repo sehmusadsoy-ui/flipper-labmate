@@ -559,3 +559,58 @@ HOLD/LIVE controls now PASS the reported device checks. Other Pulse
 input pins and frequencies were not covered by these two settings.
 No change to pin mapping, IRQ handling, core estimator, PWM, CSV logs,
 or v1.5 Stable was needed; this is a documentation-only update.
+
+## Post-profiles Data Logger R1-R4 regression (user-reported, 2026-10-10)
+
+After the v1.6-dev profile and frequency changes, the operator
+retested the running FAP on the physical Flipper with previously
+verified 3.3 V-compatible setup and an installed microSD card:
+
+| Gate | Action | Operator result |
+| --- | --- | --- |
+| R1 | FREQ PC1 LOW, generator 100 Hz, CSV REC/STOP | PASS |
+| R2 | FREQ PB3 HIGH, generator 5 kHz, CSV REC/STOP | PASS |
+| R3 | PULSE PC1, generator 1 kHz, CSV REC/STOP | PASS |
+| R4 | Log History inspection of new/existing logs and app restart | PASS |
+
+These are operator-reported **functional regression passes**, not a
+forensic parsing of each CSV row and not a proof of uninterrupted SD
+durability under abrupt power removal. All four functional gates
+pass, consistent with the earlier C1-C5 user-reported tests from
+the initial v1.6-dev build. Existing CSV records remained visible
+according to the R4 result; no user file was intentionally deleted.
+
+### v1.6-dev readiness — outstanding or bounded items
+
+Functional smoke checks already reported PASS:
+- Main navigation and instrument opening (A1-A8);
+- Initial GPIO/frequency/pulse and PA7 reservation handoffs (B1-B6);
+- Initial logger/history C1-C5 and latest regression R1-R4;
+- Profile P1-P4, LOAD-with-running-PWM refusal P5, and
+  confirmed DELETE/cancel/persistence P7-A/B/C;
+- HIGH PB3 1/2/10 Hz fix, plus high-mode test points at
+  1/5/10/20/50 kHz; PC1 Pulse Analyzer 100 Hz/1 kHz
+  measurements, MIN/MAX/STATS and user-reported HOLD/LIVE.
+
+Items not reported passed on the **current** feature-integrated FAP:
+- Final PA7 STOP/release and application-exit cleanup
+  (original B7; significant safety/resource regression);
+- Empty-slot DELETE should not create a new write
+  (P7 additional no-op scenario);
+- Corrupt/unavailable microSD A/B profile-file recovery
+  and out-of-space/power-loss behavior (P6/fault tolerance);
+- Independent oscilloscope/frequency reference calibration
+  (generator and meter shared the same Flipper timing source),
+  and physical Pulse accuracy across all alternative pins.
+  
+No unsafe on-device SD corruption or power disruption is requested
+just to mark a test PASS. A/B recovery and genuine media errors
+should be exercised through controlled/off-device tests if the
+project later sets that release requirement. HIGH PB3 performance
+is only confirmed at the tested discrete setpoints, not as a
+metrological guarantee over a continuous band.
+
+**Recommendation:** finish a simple PA7 release/app-exit smoke test
+and empty-slot DELETE no-op visual test if convenient, then review
+v1.6 RC scope with the operator. This record makes no change to
+`main`, Stable `v1.5`, device binaries or CSV contents.
