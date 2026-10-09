@@ -208,3 +208,14 @@ independently verified at the pin by external timing equipment.
 The corrected FAP must be tested on the same Flipper, with the same known
 3.3 V-compatible setup, **before** the physical 1 Hz finding can be closed.
 The physical operator is required to reinstall the newly built FAP.
+
+## PowerShell GitHub install without manual ZIP download
+
+The development workflow packages the app with the consistent filename
+labmate.fap (GitHub Actions artifact: labmate), still installing to
+/ext/apps/Tools/labmate.fap. Run scripts/install-from-github.ps1 in PowerShell
+on Windows after one-time GitHub CLI (gh) installation and authentication.
+The script finds the most recent successful development run, automatically
+retrieves the artifact into a temporary folder, checks SHA256, invokes
+Momentum runfap.py via COM7 by default and cleans up temporary files.
+Stable v1.5, Momentum firmware and existing CSV records are not modified.
