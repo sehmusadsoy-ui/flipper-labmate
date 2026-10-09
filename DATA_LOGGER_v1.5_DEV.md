@@ -208,6 +208,8 @@ standalone regression remains pending.
   following Generator STOP. Because entering the meter resets its state, the
   3-second in-place timeout was not independently measured in that step.
 
+See [v1.5 draft release notes](RELEASE_NOTES_v1.5_DRAFT.md) for the final release gate. No new physical SD removal tests are required; the inability to validate actual storage failure must be disclosed in the release notes.
+
 ## On-device acceptance tests (in progress)
 
 - [x] Build against the installed Momentum API; launch without crashes
@@ -221,7 +223,7 @@ standalone regression remains pending.
 - [x] Switch to PULSE/PC1 and repeat at 1 kHz; inspect periods/duty
 - [ ] STOP, BACK and exit close files; existing CSVs are not overwritten
 - [x] Record at least 12 rows; ensure periodic sync does not freeze the UI
-- [ ] Remove/unmount SD before starting; ensure UI reports an error safely
+- [ ] SD fault injection not performed on device; source-path audit documented. Do NOT remove the microSD while LabMate runs
 - [x] Test sudden PC1 signal loss: valid flag returns 0 and then 1 on recovery
 - [x] Test continuous logging for at least 10 minutes (600 valid FREQ/PC1 rows)
 - [ ] Test simultaneous USB navigation during continuous logging
