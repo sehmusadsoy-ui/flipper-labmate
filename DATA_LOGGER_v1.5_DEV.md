@@ -149,19 +149,30 @@ records have `valid=0`, `high_us=0`, `low_us=0`,
 The no-signal-at-start Pulse logging case passed; this does **not**
 cover signal loss during an active capture.
 
+**Device feedback — 2026-10-09 (live PC1 signal loss and recovery):**
+The user uploaded `log_0022.csv` with 18 complete FREQ/PC1 samples. Rows
+1–8 were valid (approximately 999.828 Hz); rows 9–10 (at 9002 and
+10002 ms) were invalid (`valid=0`, `frequency_hz=0.000`); rows 11–18
+were valid again (approximately 999.828–999.859 Hz). This verifies
+a recorded `valid=1 → valid=0 → valid=1` transition under a live
+signal interruption in the low-frequency capture mode. Signal
+disconnection and exact 3-second timeout onset are not independently
+timestamped by the CSV.
+
 ## On-device acceptance tests (in progress)
 
 - [x] Build against the installed Momentum API; launch without crashes
 - [ ] Verify existing v1.4 meter and generator screens still work
 - [x] Insert microSD and record at least 5 samples on PC1 with internal PA7
       generator loopback; check format, timestamps and values
-- [ ] Switch to PB3 and repeat at 1, 20, and 50 kHz
-- [ ] Switch to PULSE/PC1 and repeat at 1 kHz; inspect periods/duty
+- [x] Switch to PB3 and repeat at 1, 20, and 50 kHz
+- [x] Switch to PULSE/PC1 and repeat at 1 kHz; inspect periods/duty
 - [ ] STOP, BACK and exit close files; existing CSVs are not overwritten
 - [x] Record at least 12 rows; ensure periodic sync does not freeze the UI
 - [ ] Remove/unmount SD before starting; ensure UI reports an error safely
-- [ ] Test sudden signal loss: valid flag returns 0 after timeout
-- [ ] Test continuous logging for at least 10 minutes and USB navigation
+- [x] Test sudden PC1 signal loss: valid flag returns 0 and then 1 on recovery
+- [x] Test continuous logging for at least 10 minutes (600 valid FREQ/PC1 rows)
+- [ ] Test simultaneous USB navigation during continuous logging
 
 **Electrical safety:** Flipper Zero GPIO is 3.3 V logic only. Never connect
 unknown voltage or 5 V / 12 V directly to GPIO. Use a 3.3 V-compatible
