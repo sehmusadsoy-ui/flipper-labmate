@@ -645,3 +645,59 @@ void draw_pulse(Canvas* canvas, LabMateApp* app) {
     canvas_draw_str(canvas, 96, 61, "^STAT");
 }
 
+/* Read-only Data Logger dashboard; all SD work stays in app loop. */
+void draw_logger(Canvas* canvas, LabMateApp* app) {
+    char mode[30];
+    char live[40];
+    char state[40];
+
+    ui_draw_header(canvas, "DATA LOGGER");
+    canvas_set_font(canvas, FontSecondary);
+    if(app->logger_source == LoggerPulse) {
+        snprintf(mode, sizeof(mode), "PULSE / PC1");
+        if(app->pulse_period_valid) {
+            snprintf(
+                live, sizeof(live), "PER %lu us  DUTY %lu.%01lu%%",
+                (unsigned long)pulse_cycles_to_us(app->pulse_period_cycles),
+                (unsigned long)(app->pulse_duty_permille / 10U),
+                (unsigned long)(app->pulse_duty_permille % 10U));
+        } else {
+            snprintf(live, sizeof(live), "NO VALID PULSE");
+        }
+    } else {
+        snprintf(
+            mode, sizeof(mode), "FREQ / %s",
+            app->logger_source == LoggerFrequencyHigh ? "PB3 HIGH" : "PC1 LOW");
+        if(app->frequency_valid) {
+            snprintf(
+                live, sizeof(live), "FREQ %lu.%03lu Hz",
+                (unsigned long)(app->frequency_millihz / 1000U),
+                (unsigned long)(app->frequency_millihz % 1000U));
+        } else {
+            snprintf(live, sizeof(live), "NO VALID FREQ");
+        }
+    }
+
+    if(app->logger_busy) {
+        snprintf(state, sizeof(state),
+                 app->logger_busy_stopping ? "SAVING / WAIT" : "OPENING / WAIT");
+    } else if(app->logger_error) {
+        snprintf(state, sizeof(state), "SD / WRITE ERROR");
+    } else if(app->logger_recording) {
+        snprintf(state, sizeof(state), "REC: %lu rows", (unsigned long)app->logger_rows);
+    } else if(app->logger_path[0]) {
+        snprintf(state, sizeof(state), "SAVED: %lu rows", (unsigned long)app->logger_rows);
+    } else {
+        snprintf(state, sizeof(state), "READY / 1 second");
+    }
+
+    canvas_draw_str(canvas, 2, 24, mode);
+    canvas_draw_str(canvas, 2, 36, live);
+    canvas_draw_str(canvas, 2, 48, state);
+    canvas_draw_str(
+        canvas, 2, 61,
+        app->logger_busy ? "PLEASE WAIT" :
+        (app->logger_recording ? "OK STOP  BACK SAVE" : "< > MODE  OK REC"));
+}
+
+
