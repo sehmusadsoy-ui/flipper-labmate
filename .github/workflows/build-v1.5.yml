@@ -39,7 +39,14 @@ jobs:
           test -n "$FAP" && test -s "$FAP"
           mkdir -p build-artifacts
           cp "$FAP" build-artifacts/labmate-v1.5.fap
-          (cd build-artifacts && sha256sum labmate-v1.5.fap > SHA256SUMS.txt)
+          (cd build-artifacts && sha256sum labmate-v1.5.fap > SHA256SUMS.txt && sha256sum -c SHA256SUMS.txt)
+          {
+            echo "Source commit: ${{ github.sha }}"
+            echo "Momentum SDK channel: dev"
+            echo "Momentum SDK version: ${{ steps.compile.outputs.api-version }}"
+          } > build-artifacts/BUILD_INFO.txt
+          cat build-artifacts/SHA256SUMS.txt
+          cat build-artifacts/BUILD_INFO.txt
           ls -l build-artifacts
 
       - name: Upload release-candidate FAP (not a release)
