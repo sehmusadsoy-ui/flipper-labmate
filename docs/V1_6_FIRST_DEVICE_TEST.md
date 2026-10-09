@@ -489,3 +489,30 @@ five tested presets as complete, retain the currently device-tested
 estimation algorithm, and avoid unnecessary changes to TIM2/PA7.
 Stable v1.5 / `main` remain untouched. No FAP reinstall required
 for this documentation-only update.
+
+## Pulse Analyzer 100 Hz and 1 kHz visual device retest (2026-10-10)
+
+The user supplied two screen captures from the real Flipper Pulse
+Analyzer, each visibly in **PC1 / LIVE** mode. In the test context,
+the Signal Generator was set to a nominal 50% duty cycle, first
+at 100 Hz and then at 1 kHz.
+
+| Nominal generator setting | HIGH | LOW | PERIOD | DUTY |
+| --- | --- | --- | --- | --- |
+| 100 Hz | 5.00 ms | 5.00 ms | 10 ms | 50.0% |
+| 1 kHz | 500 us | 500 us | 1.00 ms | 50.0% |
+
+**Functional result: PASS for both discrete test points.**
+Observed on-screen durations and percentage match the theoretical
+50%-duty PWM settings. This confirms the PC1 Pulse Analyzer display
+and conversion scales at these two settings, but does not independently
+calibrate the timing source or verify Pulse Analyzer performance at
+higher or lower frequencies or on other input pins.
+
+Pulse Analyzer **does not offer PB3**; supported pins are
+PC0, PC1, PB2 and PA4. HIGH PB3 belongs to the distinct
+hardware-counter Frequency Meter mode. Do not modify any pin
+routing or measured-value estimator based on these PASS results.
+
+This is a test-report-only update on `v1.6-dev`, with no firmware
+build, installation or modification to `main`/Stable `v1.5`.
