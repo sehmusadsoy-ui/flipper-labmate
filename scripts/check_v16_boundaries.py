@@ -263,8 +263,8 @@ expect(
     "Missing portable profile codec functions",
 )
 expect(
-    re.search(r"\\bstorage_\\w+\\s*\\(", PROFILES) is None and
-    re.search(r"\\bfuri_hal_\\w+\\s*\\(", PROFILES) is None,
+    re.search(r"\bstorage_\w+\s*\(", PROFILES) is None and
+    re.search(r"\bfuri_hal_\w+\s*\(", PROFILES) is None,
     "Profile codec must stay independent from storage and hardware",
 )
 
