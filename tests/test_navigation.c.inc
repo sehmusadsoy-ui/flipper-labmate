@@ -1,4 +1,4 @@
-/* Portable navigation tests: exhaustive access to all 7 existing tools.
+/* Portable navigation tests: exhaustive access to all 8 tools.
  * Do not include this host test in the firmware FAP build.
  */
 #include "labmate_navigation.h"
@@ -7,11 +7,11 @@
 #include <stdio.h>
 
 int main(void) {
-    const uint8_t expected_sizes[] = {3U, 1U, 2U, 1U};
+    const uint8_t expected_sizes[] = {3U, 1U, 3U, 1U};
     const uint8_t expected_tools[][LABMATE_NAV_MAX_CHILDREN] = {
         {LabMateToolGpio, LabMateToolFrequency, LabMateToolPulse},
         {LabMateToolGenerator, LabMateToolInvalid, LabMateToolInvalid},
-        {LabMateToolLogger, LabMateToolHistory, LabMateToolInvalid},
+        {LabMateToolLogger, LabMateToolHistory, LabMateToolProfiles},
         {LabMateToolAbout, LabMateToolInvalid, LabMateToolInvalid},
     };
     uint8_t visits[LabMateToolCount] = {0};
@@ -50,6 +50,6 @@ int main(void) {
     assert(labmate_nav_wrap(200U, 0U, 1) == 0U);
     assert(labmate_nav_wrap(255U, 3U, 1) == 1U);
     assert(labmate_nav_wrap(255U, 3U, -1) == 2U);
-    puts("LabMate v1.6 navigation mapping/wrap: all 7 tools reachable once");
+    puts("LabMate v1.6 navigation mapping/wrap: all 8 tools reachable once");
     return 0;
 }

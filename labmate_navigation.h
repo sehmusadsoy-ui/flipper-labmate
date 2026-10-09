@@ -14,6 +14,7 @@ typedef enum {
     LabMateToolLogger,
     LabMateToolHistory,
     LabMateToolAbout,
+    LabMateToolProfiles, /* Append; IDs 0..6 remain unchanged. */
     LabMateToolCount,
     LabMateToolInvalid = 255
 } LabMateTool;

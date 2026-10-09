@@ -9,6 +9,7 @@
 #include <storage/storage.h>
 #include "labmate_resource_policy.h"
 #include "labmate_navigation.h"
+#include "labmate_profile_storage.h"
 
 #define LABMATE_VERSION_TEXT "v1.6d"
 /* Shared menu/pin counts: UI and input handling must agree. */
@@ -33,6 +34,7 @@ typedef enum {
     LabMateScreenHistory,
     LabMateScreenHistoryDetail,
     LabMateScreenAbout,
+    LabMateScreenProfiles,
 } LabMateScreen;
 
 typedef enum {
@@ -57,6 +59,8 @@ typedef struct {
     bool menu_in_group;
     uint8_t menu_group; /* LabMateMenuGroup, valid when menu_in_group */
     uint8_t gpio_index;
+    uint8_t preferred_frequency_pin;
+    uint8_t preferred_pulse_pin;
 
     LabMateScreen screen;
     /* One active measurement capture at a time; TIM1 PWM is independent. */
@@ -194,6 +198,15 @@ typedef struct {
     uint8_t history_mode;
     char history_first_row[80];
     uint8_t history_first_row_len;
+
+    LabMateProfileStore profiles;
+    uint8_t profile_active_copy; /* 0=a, 1=b, 255=none */
+    uint8_t profile_selected;
+    bool profile_save_mode;
+    bool profile_confirm;
+    bool profile_busy;
+    LabMateProfileIoResult profile_io;
+    uint8_t profile_notice; /* 0=ready 1=saved 2=loaded 3=empty 4=stop PWM 5=error */
 
     FuriMutex* mutex;
 } LabMateApp;
