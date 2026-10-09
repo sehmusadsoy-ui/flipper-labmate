@@ -9,10 +9,10 @@
 - Kept all four existing tools. Regression checks were user-confirmed on Flipper hardware; ten-minute/600-row PC1 logging, PB3 1/20/50 kHz samples, pulse samples and signal-loss recovery were tested.
 - Imported a sample CSV successfully with LibreOffice Calc; Microsoft Excel has not been independently verified.
 
-### Remaining before Stable
-- Repeat a short STOP/BACK saving check and a USB-connected (without SD-mounted file transfers) logging check on the final development build.
-- Confirm compatible Momentum firmware/API and final artifact checksum.
-- Real microSD fault recovery and external-reference frequency accuracy remain unverified; see [release notes draft](RELEASE_NOTES_v1.5_DRAFT.md).
+### Final development acceptance and Stable gate
+- The user confirmed final v1.5-dev checks: development labels match in menu/About, USB-connected STOP/save, BACK-to-save and opening both new files in Log History.
+- Prepare the final stable-labeled release candidate, build it against the Momentum SDK, verify the FAP and SHA-256, and check installation before publishing.
+- Real microSD fault recovery, simultaneous host writes to a live CSV, Microsoft Excel import and external-reference calibration remain unverified; see [release notes draft](RELEASE_NOTES_v1.5_DRAFT.md).
 
 ## [1.4] - 2026-10-08
 
