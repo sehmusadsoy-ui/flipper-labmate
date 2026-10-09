@@ -128,3 +128,14 @@ void ui_draw_menu_icon(
     }
 }
 
+
+void ui_draw_header(
+    Canvas* canvas,
+    const char* title) {
+
+    canvas_set_font(canvas, FontPrimary);
+    canvas_draw_str(canvas, 2, 10, title);
+
+    canvas_draw_line(canvas, 0, 13, 127, 13);
+}
+
