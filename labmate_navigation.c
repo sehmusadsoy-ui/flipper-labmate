@@ -52,3 +52,10 @@ const char* labmate_nav_group_title(uint8_t group) {
 const char* labmate_nav_tool_title(uint8_t tool) {
     return tool < LabMateToolCount ? tool_titles[tool] : "";
 }
+
+uint8_t labmate_nav_first_visible(uint8_t selected, uint8_t count, uint8_t rows) {
+    if(rows == 0U || count <= rows) return 0U;
+    if(selected >= count) selected = 0U;
+    const uint8_t first = selected > 1U ? (uint8_t)(selected - 1U) : 0U;
+    return first + rows > count ? (uint8_t)(count - rows) : first;
+}

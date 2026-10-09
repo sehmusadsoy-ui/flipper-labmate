@@ -148,8 +148,8 @@ void draw_menu(Canvas* canvas, LabMateApp* app) {
     ui_badge(canvas, 90, 1, 36, LABMATE_VERSION_TEXT, false);
     canvas_draw_line(canvas, 0, 13, 127, 13);
 
-    uint8_t first = selected > 1U ? (uint8_t)(selected - 1U) : 0U;
-    if(count > 3U && first + 3U > count) first = (uint8_t)(count - 3U);
+    /* In three-item groups, always keep every row visible (no blank slot). */
+    const uint8_t first = labmate_nav_first_visible(selected, count, 3U);
     for(uint8_t row = 0U; row < 3U && (uint8_t)(first + row) < count; ++row) {
         const uint8_t index = (uint8_t)(first + row);
         const uint8_t y = (uint8_t)(25U + row * 12U);

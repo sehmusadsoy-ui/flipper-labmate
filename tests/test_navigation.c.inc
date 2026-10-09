@@ -36,6 +36,12 @@ int main(void) {
         assert(labmate_nav_wrap(0U, expected_sizes[group], 0) == 0U);
     }
     for(uint8_t tool = 0; tool < LabMateToolCount; ++tool) assert(visits[tool] == 1U);
+    assert(labmate_nav_first_visible(2U, 3U, 3U) == 0U);
+    assert(labmate_nav_first_visible(1U, 2U, 3U) == 0U);
+    assert(labmate_nav_first_visible(3U, 4U, 3U) == 1U);
+    assert(labmate_nav_first_visible(0U, 4U, 3U) == 0U);
+    assert(labmate_nav_first_visible(255U, 0U, 3U) == 0U);
+    assert(labmate_nav_first_visible(2U, 5U, 0U) == 0U);
     assert(labmate_nav_group_size(255U) == 0U);
     assert(labmate_nav_tool_at(255U, 0U) == LabMateToolInvalid);
     assert(labmate_nav_tool_at(0U, 3U) == LabMateToolInvalid);
