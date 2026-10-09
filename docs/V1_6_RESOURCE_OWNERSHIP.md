@@ -80,18 +80,57 @@ Additional resource handoff invariants:
    ownership. The shared teardown resets the owner to None. Pure policy
    functions and host-native pin/owner/flag matrix tests cover invalid
    claims. Independent TIM1/PA7 generator operation is unchanged.
-5. **Pending:** visible error reporting, hardware acquisition rollback,
-   and full fail-safe resource cleanup after external HAL errors
-   for PC1 IRQ, PB3 TIM2 and active generator resources, including handling
-   failed acquisition and cleaning up callbacks on exit.
-6. **Pending device regression:** Generator ON → BACK → GPIO Monitor → navigate
+5. **Implemented (software-policy rejection only, hardware test pending):**
+   `capture_pin_index` records the actual GPIO armed by IRQ capture,
+   independently of menu selection. Pulse ISR and both IRQ detach paths
+   use this recorded pin. Each capture stop invalidates the pin. The
+   128x64 Frequency/Pulse status badge displays `ERR` on policy denial;
+   Logger displays `CAPTURE BLOCKED` and refuses file creation when
+   owner, selected pin, armed pin or active flags are inconsistent.
+   Missing input signal remains recordable as a `valid=0` sample.
+6. **Pending:** physical HAL acquisition failure reporting and rollback
+   (not provided by existing `void` APIs), callback cleanup under fault,
+   on-device 128x64 layout verification and measurement regressions.
+7. **Pending device regression:** Generator ON → BACK → GPIO Monitor → navigate
    across PA7, then Generator OFF → PA7 becomes selectable again; also test
    switching Frequency/Pulse/Logger views, HOLD/LIVE and app exit. Do not
    connect unknown or unsafe voltages.
-7. **Pending:** update broader project roadmap only after device-level
+8. **Pending:** update broader project roadmap only after device-level
    evidence supports the stability claim.
 
 **Electrical safety:** Flipper Zero GPIO measurements/inputs must use
 3.3 V-compatible digital signals only. No mains, 5 V or unknown voltage
 connection. **Static source audits and compilation do not validate runtime
 pin-sharing behavior.**
+
+## Low-level API limitation
+
+Checked against the Momentum Firmware source headers on the development
+SDK: `furi_hal_gpio_init()`, `furi_hal_gpio_init_ex()`,
+`furi_hal_gpio_add_int_callback()`,
+`furi_hal_gpio_enable_int_callback()` and `furi_hal_bus_enable()`
+return `void`. Consequently, a refused software-policy request can
+be signalled, but the application cannot currently claim to detect every
+physical acquisition failure or automatically roll back a HAL action.
+The documented `ERR` / `CAPTURE BLOCKED` message only represents a
+software-consistency failure.
+
+## Physical regression matrix (pending)
+
+- Generator PA7 ON → BACK → GPIO Monitor → navigate around reserved PA7 →
+  verify PWM remains active; explicitly stop generator and verify PA7 returns.
+- Enter Frequency HIGH PB3, switch LOW PC1 and back; check MODE, MIN/MAX,
+  HOLD/LIVE, loss and return of a known 3.3 V compatible digital signal.
+- Enter Pulse PC0/PC1/PB2/PA4, test both edges, HOLD/LIVE and pin switches;
+  verify no obsolete callback remains after BACK.
+- In Logger modes FREQ LOW, FREQ HIGH and PULSE, verify START/STOP/BACK,
+  correct CSV mode/pin data and Log History behavior, without overwriting.
+- Verify new `ERR`/`CAPTURE BLOCKED` 128x64 labels if a **software**
+  acquisition is deliberately rejected in a controlled test; the host
+  test matrix only checks rejection rules, not actual UI behavior.
+- Confirm app exit stops TIM1 PWM and all measurement resources and
+  preserves already written CSV recordings.
+
+**Untested hardware case:** full/unmounted/corrupt microSD, blocked I/O,
+HAL callback/bus failure and power loss cannot be marked resolved by
+source review or GitHub Actions alone. Only use safe 3.3 V signals.

@@ -86,10 +86,23 @@ This is a development designation, **not** a published v1.6 Stable release.
       and the shared teardown.
 - [x] Extend native C tests with pin/owner/active-flag matrices and add CI
       static checks for the three capture start paths.
-- [ ] Integrate visible error reporting and hardware-acquire failure rollback,
-      then validate all resource handoffs and HOLD/LIVE on the actual Flipper.
-      HAL GPIO callback registration/start APIs are used as before; a passing
-      build does not guarantee acquisition never fails on real hardware.
+- [x] Keep a separate `capture_pin_index` for the GPIO actually armed by
+      LOW/Pulse callbacks, so IRQ read/detach cannot accidentally follow the
+      on-screen GPIO selection.
+- [x] Display `ERR` on Frequency/Pulse when the capture policy rejects a
+      request; display `CAPTURE BLOCKED` in Logger. Do not mislabel policy
+      refusal as a microSD failure.
+- [x] Require owner, selected pin, armed pin and active flags to match before
+      creating a new Logger CSV. Lack of a signal is still recordable as
+      `valid=0` and does not trigger this rule.
+- [x] Test pin/owner/active-flag consistency in host-native C tests; compile
+      source and run SHA-256 check in Momentum SDK CI.
+- [ ] Physical device verification of all transitions, Pulse HOLD/LIVE,
+      128x64 status badges and Data Logger recording is still pending.
+- [ ] Real low-level acquisition failure reporting and recovery remain
+      unresolved: Momentum GPIO callback add/enable, GPIO init and TIM2
+      bus enable return `void`, so the policy gate does NOT detect hardware
+      failures or provide automatic hardware rollback.
 
 ### Step 4 — Logger/history boundaries
 - [ ] Separate logger and history read/write operations behind documented APIs.
@@ -142,9 +155,14 @@ validated on the v1.5 release. Do not claim this is solved by a refactor.
 
 ## Build
 
-A root-level external app with `application.fam` includes `*.c` sources by
-default, so `labmate_ui_primitives.c` and `labmate_ui_screens.c` will be compiled into the same FAP
-without manually editing source-file masks.
+The explicit `sources=["*.c"]` in `application.fam` compiles only
+root-level C app modules into the FAP, including
+`labmate_ui_primitives.c`, `labmate_ui_screens.c` and
+`labmate_resource_policy.c`. This intentionally excludes
+`tests/test_resource_policy.c.inc` from firmware linking. The firmware
+manifest's original default wildcard was `*.c*`, which also matched
+the host-only test fixture and caused an intermediate development
+link failure.
 
 GitHub Actions: `.github/workflows/build-v1.6.yml` builds Momentum dev SDK,
 verifies a nonempty FAP, checks SHA-256 and uploads `labmate-v1.6-dev-fap`.
@@ -190,3 +208,19 @@ shared via `labmate_internal.h` to avoid diverging numeric conversions.
 **Next major milestone:** audited GPIO/EXTI/timer ownership and module
 boundaries, with on-device regressions before claiming v1.6 stability.
 Do not pull IRQ handling or storage writes into the render module.
+
+## Most recent development verification
+
+Commit `fd42a8c` (not a Stable release) completed the CI pipeline at
+[Actions run 37991404581](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/37991404581):
+- Architectural boundary validation, including IRQ pin tracking.
+- Host-native C pin/owner/flag mismatch tests.
+- Momentum development SDK multi-file FAP compilation.
+- FAP existence/SHA-256 validation and dev-only artifact upload.
+
+**What CI does not prove:** correct signal frequencies/duties on a real
+Flipper, complete interrupt cleanup during all mode transitions, absence
+of physical resource conflicts, actual SD-failure behavior, and correctness
+of 128x64 text layout. A firmware HAL call returning `void` cannot be
+converted into a reliable rollback-capable success/failure result without
+a supported additional signal.
