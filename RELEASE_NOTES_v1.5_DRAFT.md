@@ -73,20 +73,22 @@ frequency calibration or verification against an external standard.**
 
 ## Release gate — remaining on-device acceptance
 
-- [ ] Install and launch the final source from `v1.5-dev` (including the
-      most recent logger cleanup and the matching `v1.5d` in About).
-- [ ] One FREQ/PC1 capture: START for about five seconds, OK STOP;
-      inspect the saved file in Log History.
-- [ ] Second FREQ/PC1 capture: START for about five seconds, BACK to
-      menu without pressing STOP; inspect this separate saved CSV.
-- [ ] While connected to USB for power/serial only (no SD mounts or
-      host file writes), start a short recording, navigate normally,
-      stop, and verify readable Log History.
-- [ ] Verify no regressions, unexpected freezes, overwrites or
-      duplicate application entries after the last code change.
-- [ ] Review final CI output, prepare stable-only version labels,
-      produce the final FAP, verify its SHA-256, and publish v1.5
-      *only once all applicable checks have passed*.
+- [x] Install and launch the latest development source on device, including
+      the SD cleanup and matching development-version text (user report).
+- [x] FREQ/PC1 capture with STOP/save; successfully reopen in Log History
+      (user report).
+- [x] Second FREQ/PC1 capture with BACK-to-save; successfully reopen
+      the separate CSV in Log History (user report).
+- [x] Record and STOP with USB attached; saved CSV available in
+      Log History (user report; no simultaneous host writes tested).
+- [x] Original four instrument regressions and Logger final-device
+      STOP/BACK/History controls passed (user-reported).
+- [ ] Ensure the release candidate installs as a single app entry;
+      do not treat this as proof of SD error recovery.
+- [ ] Build the stable-labeled release candidate from its exact final source,
+      record CI SDK/API version, and produce the FAP plus SHA-256.
+- [ ] Confirm release-candidate installation and get explicit go-ahead
+      before creating a v1.5 tag or publishing a GitHub Release.
 
 If a test fails, continue on `v1.5-dev`; do not tag or publish Stable.
 
