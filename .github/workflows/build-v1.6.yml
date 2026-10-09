@@ -8,6 +8,7 @@ on:
       - "*.h"
       - "scripts/check_v16_boundaries.py"
       - "tests/test_resource_policy.c.inc"
+      - "scripts/install-labmate.ps1"
       - "application.fam"
       - ".github/workflows/build-v1.6.yml"
   workflow_dispatch:
@@ -68,3 +69,67 @@ jobs:
           name: labmate-v1.6-dev-fap
           path: build-artifacts/
           if-no-files-found: error
+
+  installer_safety:
+    name: Check Windows installer with mock transport (no USB)
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Prepare mock FAP and Momentum scripts
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $root = Join-Path $env:RUNNER_TEMP 'LabMate Fixture'
+          $fw = Join-Path $root 'Mock Momentum'
+          $tool = Join-Path $fw 'scripts\toolchain'
+          New-Item -ItemType Directory -Path $tool -Force | Out-Null
+          $fap = Join-Path $root 'labmate-v1.6-dev.fap'
+          [IO.File]::WriteAllBytes($fap, [byte[]](1,2,3,4,5))
+          $hash = (Get-FileHash $fap -Algorithm SHA256).Hash
+          [IO.File]::WriteAllText((Join-Path $root 'SHA256SUMS.txt'),
+            "$($hash.ToLowerInvariant())  labmate-v1.6-dev.fap`n")
+          [IO.File]::WriteAllText((Join-Path $tool 'fbtenv.cmd'),
+            "@echo off`r`nexit /b 0`r`n")
+          $stub = @'
+          import os, sys
+          with open(os.environ["LABMATE_MOCK_LOG"], "w") as f:
+              f.write("\n".join(sys.argv[1:]))
+          sys.exit(int(os.environ.get("LABMATE_MOCK_EXIT", "0")))
+          '@
+          [IO.File]::WriteAllText((Join-Path $fw 'scripts\runfap.py'), $stub)
+          "LABMATE_FIXTURE_ROOT=$root" >> $env:GITHUB_ENV
+          "LABMATE_MOCK_FW=$fw" >> $env:GITHUB_ENV
+          "LABMATE_MOCK_LOG=$(Join-Path $root 'command.txt')" >> $env:GITHUB_ENV
+
+      - name: Verify checksums, fixed destination and exit propagation
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $fap = Join-Path $env:LABMATE_FIXTURE_ROOT 'labmate-v1.6-dev.fap'
+          $hash = (Get-FileHash $fap -Algorithm SHA256).Hash
+          & ./scripts/install-labmate.ps1 -FapPath $fap -VerifyOnly
+          if ($LASTEXITCODE -ne 0) { throw 'Valid checksum was rejected.' }
+          & ./scripts/install-labmate.ps1 -FapPath $fap -ExpectedSha256 ('0' * 64) -VerifyOnly
+          if ($LASTEXITCODE -eq 0) { throw 'Checksum mismatch was accepted.' }
+          & ./scripts/install-labmate.ps1 -FapPath $fap -ExpectedSha256 'wrong' -VerifyOnly
+          if ($LASTEXITCODE -eq 0) { throw 'Malformed SHA256 was accepted.' }
+
+          # Fake runfap.py records args, never talks to a Flipper.
+          & ./scripts/install-labmate.ps1 -FapPath $fap -ExpectedSha256 $hash -FirmwareRoot $env:LABMATE_MOCK_FW -Port COM7
+          if ($LASTEXITCODE -ne 0) { throw 'Mock runfap call failed.' }
+          $received = @(Get-Content -LiteralPath $env:LABMATE_MOCK_LOG)
+          $expected = @('-p','COM7','-s',$fap,'-t','/ext/apps/Tools/labmate.fap')
+          if (($received -join '|') -cne ($expected -join '|')) {
+              throw "Wrong destination or argument order: $($received -join ', ')"
+          }
+
+          $env:LABMATE_MOCK_EXIT = '23'
+          & ./scripts/install-labmate.ps1 -FapPath $fap -ExpectedSha256 $hash -FirmwareRoot $env:LABMATE_MOCK_FW
+          if ($LASTEXITCODE -eq 0) { throw 'Nonzero transport exit was treated as success.' }
+          Remove-Item Env:\LABMATE_MOCK_EXIT
+          Write-Host 'Mock USB tests passed; no Flipper connected.'

@@ -113,8 +113,10 @@ This is a development designation, **not** a published v1.6 Stable release.
 ### Step 5 — Navigation, profiles and one-command install
 - [ ] Plan grouped navigation and saved measurement profiles, with backward
       compatibility and clear reset semantics.
-- [ ] Supply a PowerShell + USB install script that checks its inputs and
-      updates a single `/ext/apps/Tools/labmate.fap`.
+- [x] Add a SHA256-verified local-FAP PowerShell installer (scripts/install-labmate.ps1)
+      with a fixed /ext/apps/Tools/labmate.fap USB destination.
+- [x] Add Windows mock transport tests for hashes, argument order and errors.
+- [ ] Independently validate installer and updated development FAP on Flipper.
 - [ ] Compile, compare screens and run on-device regressions before proposing
       v1.6 Stable.
 
@@ -224,3 +226,27 @@ of physical resource conflicts, actual SD-failure behavior, and correctness
 of 128x64 text layout. A firmware HAL call returning `void` cannot be
 converted into a reliable rollback-capable success/failure result without
 a supported additional signal.
+
+## Verified local FAP installation helper (development)
+
+Run one command in PowerShell from the v1.6-dev checkout with a local FAP
+and a trusted matching SHA256SUMS.txt beside it:
+
+    .\scripts\install-labmate.ps1 -FapPath 'C:\path\labmate-v1.6-dev.fap'
+
+Alternatively pass -ExpectedSha256 followed by a trusted 64-digit hex SHA256.
+-VerifyOnly checks its contents without firmware or USB. -FirmwareRoot
+specifies a custom Momentum checkout (default: $HOME\Momentum-Firmware);
+-Port may be auto, COM7, etc. No automatic download, building, firmware
+flashing, CSV deletion or other application installation is performed.
+
+The script rejects missing/empty/wrong-extension FAPs, absent or ambiguous
+checksum entries, malformed hashes, SHA256 mismatches, unsafe cmd.exe paths,
+missing Momentum scripts and nonzero runfap.py exits. The USB target is
+always /ext/apps/Tools/labmate.fap, never a newly named duplicate.
+It calls fbtenv.cmd to select Momentum's Python dependencies before runfap.py.
+
+GitHub Actions includes a Windows mock transport test. It confirms script
+argument order and failure propagation WITHOUT a connected Flipper. Physical
+Flipper install and app regressions remain pending; this script has NOT
+been deployed to the user's device.
