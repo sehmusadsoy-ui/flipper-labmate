@@ -576,7 +576,7 @@ static void gpio_change(
 }
 
 /* Convert captured CPU cycles with 64-bit intermediates. */
-static uint64_t pulse_cycles_to_us(uint32_t cycles) {
+uint64_t pulse_cycles_to_us(uint32_t cycles) {
     if(SystemCoreClock == 0U) return 0;
     return (((uint64_t)cycles * 1000000ULL) +
             (SystemCoreClock / 2U)) / SystemCoreClock;
@@ -741,22 +741,6 @@ static void pulse_stats_record(LabMateApp* app, uint32_t now) {
  * Keep the IRQ capture and the measurement calculations untouched.
  * Use short values that fit within a 60-pixel metric column.
  */
-static void pulse_ui_format_value(char* text, size_t size, uint32_t cycles) {
-    const uint64_t us = pulse_cycles_to_us(cycles);
-
-    if(us < 1000ULL) {
-        snprintf(text, size, "%luus", (unsigned long)us);
-    } else if(us < 10000ULL) {
-        snprintf(text, size, "%lu.%02lums",
-                 (unsigned long)(us / 1000ULL),
-                 (unsigned long)((us % 1000ULL) / 10ULL));
-    } else if(us < 10000000ULL) {
-        snprintf(text, size, "%lums", (unsigned long)((us + 500ULL) / 1000ULL));
-    } else {
-        snprintf(text, size, "%lus", (unsigned long)((us + 500000ULL) / 1000000ULL));
-    }
-}
-
 static void measurement_update(LabMateApp* app) {
     if(app->hold) return;
 
@@ -1487,134 +1471,6 @@ static void generator_change_frequency(
 }
 
 /* ---------- DRAWING (stateful screens) ---------- */
-
-static void pulse_ui_metric(
-    Canvas* canvas,
-    uint8_t x,
-    uint8_t label_y,
-    uint8_t value_y,
-    const char* label,
-    const char* value) {
-
-    /* Both labels and values use the compact 6x8 font. The large
-     * FontPrimary glyphs extend upwards into the label row inside
-     * the LCD's 18-pixel metric cells, hiding parts of both strings. */
-    canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, x, label_y, label);
-    canvas_draw_str(canvas, x, value_y, value);
-}
-
-/* Second Pulse Analyzer page: four rows, MIN and MAX columns.
- * The 128x64 LCD cannot show twelve detailed values in the LIVE grid.
- * Keep the existing live 2x2 display untouched. */
-static void draw_pulse_stats(Canvas* canvas, LabMateApp* app) {
-    char hi_min[24] = "---";
-    char hi_max[24] = "---";
-    char lo_min[24] = "---";
-    char lo_max[24] = "---";
-    char per_min[24] = "---";
-    char per_max[24] = "---";
-    char duty_min[24] = "---";
-    char duty_max[24] = "---";
-
-    if(app->pulse_stats_valid) {
-        pulse_ui_format_value(hi_min, sizeof(hi_min), app->pulse_min_high_cycles);
-        pulse_ui_format_value(hi_max, sizeof(hi_max), app->pulse_max_high_cycles);
-        pulse_ui_format_value(lo_min, sizeof(lo_min), app->pulse_min_low_cycles);
-        pulse_ui_format_value(lo_max, sizeof(lo_max), app->pulse_max_low_cycles);
-        pulse_ui_format_value(per_min, sizeof(per_min), app->pulse_min_period_cycles);
-        pulse_ui_format_value(per_max, sizeof(per_max), app->pulse_max_period_cycles);
-        snprintf(duty_min, sizeof(duty_min), "%lu.%lu%%",
-                 (unsigned long)(app->pulse_min_duty_permille / 10U),
-                 (unsigned long)(app->pulse_min_duty_permille % 10U));
-        snprintf(duty_max, sizeof(duty_max), "%lu.%lu%%",
-                 (unsigned long)(app->pulse_max_duty_permille / 10U),
-                 (unsigned long)(app->pulse_max_duty_permille % 10U));
-    }
-
-    canvas_set_font(canvas, FontSecondary);
-    /* Fixed table cells leave room for seven-character values in each
-     * numeric column. The row baselines are >= 8px apart. */
-    canvas_draw_str(canvas, 3, 20, "TYPE");
-    canvas_draw_str(canvas, 42, 20, "MIN");
-    canvas_draw_str(canvas, 87, 20, "MAX");
-    canvas_draw_line(canvas, 0, 22, 127, 22);
-
-    canvas_draw_str(canvas, 3, 30, "HIGH");
-    canvas_draw_str(canvas, 40, 30, hi_min);
-    canvas_draw_str(canvas, 85, 30, hi_max);
-
-    canvas_draw_str(canvas, 3, 38, "LOW");
-    canvas_draw_str(canvas, 40, 38, lo_min);
-    canvas_draw_str(canvas, 85, 38, lo_max);
-
-    canvas_draw_str(canvas, 3, 46, "PER");
-    canvas_draw_str(canvas, 40, 46, per_min);
-    canvas_draw_str(canvas, 85, 46, per_max);
-
-    canvas_draw_str(canvas, 3, 54, "DUTY");
-    canvas_draw_str(canvas, 40, 54, duty_min);
-    canvas_draw_str(canvas, 85, 54, duty_max);
-
-    /* Short footer labels fit across all 128 pixels; avoid text
-     * beyond x=127 and a baseline on the bottommost pixel. */
-    /* No rule over this footer: 8px letters start at y=55 while
-     * the last measurement row ends at y=54. */
-    canvas_draw_str(canvas, 3, 62, "vRST");
-    canvas_draw_str(canvas, 45, 62, app->hold ? "OK LIVE" : "OK HOLD");
-    canvas_draw_str(canvas, 95, 62, "^BACK");
-}
-
-static void draw_pulse(Canvas* canvas, LabMateApp* app) {
-    char high[24] = "---";
-    char low[24] = "---";
-    char period[24] = "---";
-    char duty[24] = "---";
-
-    /* Compact instrument header with input and capture state. */
-    canvas_set_font(canvas, FontPrimary);
-    canvas_draw_str(canvas, 2, 10, "PULSE");
-    ui_badge(canvas, 56, 1, 33, labmate_gpio_names[app->gpio_index], false);
-    ui_badge(canvas, 91, 1, 35, app->hold ? "HOLD" : "LIVE", !app->hold);
-    canvas_draw_line(canvas, 0, 13, 127, 13);
-
-    if(app->pulse_stats_view) {
-        draw_pulse_stats(canvas, app);
-        return;
-    }
-
-    if(app->pulse_high_valid) {
-        pulse_ui_format_value(high, sizeof(high), app->pulse_high_cycles);
-    }
-    if(app->pulse_low_valid) {
-        pulse_ui_format_value(low, sizeof(low), app->pulse_low_cycles);
-    }
-    if(app->pulse_period_valid) {
-        pulse_ui_format_value(period, sizeof(period), app->pulse_period_cycles);
-        snprintf(duty, sizeof(duty), "%lu.%lu%%",
-                 (unsigned long)(app->pulse_duty_permille / 10U),
-                 (unsigned long)(app->pulse_duty_permille % 10U));
-    }
-
-    /* 2 x 2 measurement grid.
-     * Use separate baselines for text and separators: on the 128x64
-     * display, even a one-pixel collision cuts the labels visibly.
-     * The measurement values and IRQ engine are unchanged.
-     */
-    canvas_draw_line(canvas, 64, 15, 64, 51);
-    canvas_draw_line(canvas, 2, 33, 126, 33);
-    pulse_ui_metric(canvas, 3, 21, 31, "HIGH", high);
-    pulse_ui_metric(canvas, 68, 21, 31, "LOW", low);
-    pulse_ui_metric(canvas, 3, 41, 50, "PERIOD", period);
-    pulse_ui_metric(canvas, 68, 41, 50, "DUTY", duty);
-
-    /* Navigation: short captions fit the actual 128px viewport. */
-    canvas_draw_line(canvas, 0, 52, 127, 52);
-    canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 3, 61, "<>PIN");
-    canvas_draw_str(canvas, 45, 61, app->hold ? "OK LIVE" : "OK HOLD");
-    canvas_draw_str(canvas, 96, 61, "^STAT");
-}
 
 static void draw_logger(Canvas* canvas, LabMateApp* app) {
     char mode[30];
