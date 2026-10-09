@@ -1,0 +1,54 @@
+name: LabMate v1.6 Development Build
+
+on:
+  push:
+    branches: [v1.6-dev]
+    paths:
+      - "*.c"
+      - "*.h"
+      - "application.fam"
+      - ".github/workflows/build-v1.6.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: labmate-v1.6-dev-build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Compile modular LabMate FAP (development only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out development branch
+        uses: actions/checkout@v4
+
+      - name: Compile with Momentum SDK
+        id: compile
+        uses: flipperdevices/flipperzero-ufbt-action@v0.1
+        with:
+          sdk-channel: dev
+          sdk-index-url: https://up.momentum-fw.dev/firmware/directory.json
+
+      - name: Verify output and checksum
+        env:
+          BUILT_API_VERSION: ${{ steps.compile.outputs.api-version }}
+        run: |
+          set -euo pipefail
+          FAP="$(find . -type f -name 'labmate.fap' -not -path './.git/*' -print -quit)"
+          test -n "$FAP" && test -s "$FAP"
+          mkdir -p build-artifacts
+          cp "$FAP" build-artifacts/labmate-v1.6-dev.fap
+          (cd build-artifacts && sha256sum labmate-v1.6-dev.fap > SHA256SUMS.txt && sha256sum -c SHA256SUMS.txt)
+          echo "Momentum SDK API: $BUILT_API_VERSION"
+          ls -lh build-artifacts
+
+      - name: Upload development artifact (no release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: labmate-v1.6-dev-fap
+          path: build-artifacts/
+          if-no-files-found: error
