@@ -457,8 +457,35 @@ is an intentional formatting-precision difference, not evidence of
 a conflicting measurement. The near-10 kHz compact formatter changes
 its precision at 10 kHz. No estimator or PWM code was changed here.
 
-**Next independent functional points H4/H5:** 20 kHz and 50 kHz
-using only an already-verified safe 3.3 V-compatible test setup.
-Reset MIN/MAX before each point, compare LIVE/MIN/MAX, allow 5 s
-to settle, and STOP generator before changing connections. The
-operator has NOT yet reported results for H4/H5.
+**H4/H5 subsequently completed:** user-reported functional self-test
+results are recorded below. No external calibrated measurement is implied.
+
+## H4-H5 20/50 kHz device results (user-reported, 2026-10-10)
+
+The operator reported real-device HIGH PB3 frequency observations
+using the Flipper Signal Generator for the following additional test
+points. Units were explicitly kHz:
+
+| Test | Generator | LIVE | MIN | MAX | Largest deviation of stated extrema |
+| --- | --- | --- | --- | --- | --- |
+| H4 | 20 kHz | 20.00 kHz | 19.99 kHz | 20.00 kHz | 0.05% |
+| H5 | 50 kHz | 50.00 kHz | 49.99 kHz | 50.00 kHz | 0.02% |
+
+**H4 PASS / H5 PASS** for functional self-measurement on the physical
+device. Together with the earlier user-reported H1-H3 passes (1, 5,
+10 kHz), all **five discrete HIGH PB3 kHz test points** have passed.
+This does not prove continuous performance at *every* frequency
+between 1 and 50 kHz or above the tested range.
+
+At these speeds the TIM2 hardware edge counter is used; the
+frequency estimator was not modified. The generator and meter share
+Flipper hardware/timing resources, so the comparison is not an
+independent absolute-frequency calibration. The measured range,
+display precision, and lack of an independent oscillator reference
+must be documented in any future release summary.
+
+**Outcome:** Treat the HIGH PB3 high-frequency regression on the
+five tested presets as complete, retain the currently device-tested
+estimation algorithm, and avoid unnecessary changes to TIM2/PA7.
+Stable v1.5 / `main` remain untouched. No FAP reinstall required
+for this documentation-only update.
