@@ -15,6 +15,9 @@ SCREENS_H = (ROOT / "labmate_ui_screens.h").read_text(encoding="utf-8")
 INTERNAL_H = (ROOT / "labmate_internal.h").read_text(encoding="utf-8")
 PRIMITIVES = (ROOT / "labmate_ui_primitives.c").read_text(encoding="utf-8")
 MANIFEST = (ROOT / "application.fam").read_text(encoding="utf-8")
+POLICY = (ROOT / "labmate_resource_policy.c").read_text(encoding="utf-8")
+POLICY_H = (ROOT / "labmate_resource_policy.h").read_text(encoding="utf-8")
+
 
 failures: list[str] = []
 
@@ -112,6 +115,40 @@ for sentinel in [
 expect('"v1.6d"' in INTERNAL_H, "Development UI version must remain v1.6d")
 expect('fap_version="1.6"' in MANIFEST, "Development manifest must remain 1.6")
 expect('"3.3V GPIO ONLY"' in SCREENS, "Safety indication missing from About screen")
+
+# A background TIM1 PWM output owns PA7. The GPIO Monitor must not
+# reconfigure that pin (including on entry with a stale PA7 selection).
+expect(
+    "labmate_monitor_entry_pin(app->gpio_index, app->generator_running)" in MAIN,
+    "GPIO Monitor entry must respect background PA7 ownership",
+)
+expect(
+    "labmate_monitor_next_pin(app->gpio_index, direction, app->generator_running)" in MAIN,
+    "GPIO Monitor navigation must skip reserved PA7",
+)
+expect(
+    "labmate_monitor_pin_allowed(index, app->generator_running)" in MAIN,
+    "GPIO release must not reconfigure a reserved PA7 PWM output",
+)
+expect(
+    "static void gpio_release(LabMateApp* app, uint8_t index)" in MAIN,
+    "GPIO release must receive app ownership context",
+)
+expect(
+    '"PA7 BUSY"' in SCREENS,
+    "GPIO Monitor should explain that PWM has reserved PA7",
+)
+expect(
+    "labmate_monitor_pin_allowed(" in POLICY
+    and "labmate_monitor_entry_pin(" in POLICY
+    and "labmate_monitor_next_pin(" in POLICY,
+    "Missing shared portable resource policy implementation",
+)
+expect(
+    "#define LABMATE_MONITOR_PA7_INDEX 7U" in POLICY_H,
+    "Incorrect reserved PA7 GPIO monitor index",
+)
+
 
 if failures:
     for error in failures:
