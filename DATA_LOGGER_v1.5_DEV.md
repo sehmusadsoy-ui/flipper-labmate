@@ -175,10 +175,18 @@ internal 3.3 V PA7-to-PC1 loopback and 1 Hz generator; user reported success
 without detailed per-control measurements or screenshots. Frequency Meter,
 Pulse Analyzer and Signal Generator regressions remain open.
 
+**Device feedback — 2026-10-09 (v1.4 Frequency Meter regression):**
+The user confirmed the FREQ/PC1 LOW mode regression checklist passed after
+the v1.5 changes: approximately 1 kHz measurement using PA7-to-PC1 3.3 V
+loopback; MIN/MAX display; HOLD/LIVE controls; UP resetting extrema; and
+BACK navigation without freeze. This is a user-reported on-device pass;
+Pulse Analyzer and Signal Generator regression checks remain pending.
+
 ## On-device acceptance tests (in progress)
 
 - [x] Build against the installed Momentum API; launch without crashes
-- [ ] Verify existing v1.4 Frequency Meter, Pulse Analyzer and Generator screens still work
+- [ ] Verify existing v1.4 Pulse Analyzer and Generator screens still work
+- [x] Recheck Frequency Meter LOW/PC1 MIN/MAX, HOLD/LIVE, reset, BACK (user-reported pass)
 - [x] Recheck GPIO Monitor after v1.5 changes (user-reported pass)
 - [x] Insert microSD and record at least 5 samples on PC1 with internal PA7
       generator loopback; check format, timestamps and values
