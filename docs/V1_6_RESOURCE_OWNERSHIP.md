@@ -39,8 +39,8 @@ PWM while `generator_running` still reports active.
   PA7 value cannot silently reconfigure an active PWM output.
 - The GPIO Monitor shows `PA7 BUSY` while PWM owns that pin. Signal Generator
   continues to run in background until explicitly stopped or the app exits.
-- `tests/test_resource_policy.c` checks policy logic on a desktop C compiler,
-  while CI builds the full development FAP and runs static boundary guards.
+- `tests/test_resource_policy.c.inc` checks policy logic on a desktop C compiler,
+  while CI builds the full development FAP and runs static boundary guards.\n  The host-only test uses a `.c.inc` extension so Flipper's recursive `*.c`\n  build does not treat it as an application source.
 
 This is **not** proof of on-device timing, peripheral-state preservation or
 complete resource management. PA7 still requires a physical regression test;
