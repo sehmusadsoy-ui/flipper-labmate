@@ -332,3 +332,33 @@ oscilloscope timing verification. This is a functional regression pass,
 not a metrology guarantee. Keep `main` / Stable `v1.5` untouched.
 No new Flipper installation is required from this documentation-only
 update.
+
+## Next on-device gate: three-slot Profiles (NOT RUN yet)
+
+The v1.6-dev code now includes a Records > Profiles screen and a
+redundant A/B microSD store. After a successful GitHub CI build, use
+the existing one-step GitHub CLI + PowerShell installer (FAP name
+`labmate.fap`), not manual ZIP extraction.
+
+1. **P1:** Enter Records > Profiles with microSD inserted. The three
+   slots show EMPTY on first use, or prior saved entries on a repeat.
+   No GPIO wiring is needed.
+2. **P2:** Choose S1, toggle SAVE, press OK and confirm with OK.
+   SAVED must appear; a second SAVE may overwrite that same slot only
+   after confirmation. BACK on confirmation must cancel.
+3. **P3:** Change a Generator frequency preset while output is
+   STOP. Select LOAD for S1 and press OK. LOADED must appear; opening
+   Signal Generator must show the stored preset with output STOP.
+   There must be no unexpected PWM output activation.
+4. **P4:** Repeat S2/S3 with distinct frequency presets. Exit app,
+   restart, and verify all slots and their settings persist. Confirm
+   existing History CSV files remain present and readable.
+5. **P5:** With Signal Generator RUN, try to LOAD a saved profile.
+   The screen must display STOP PWM and refuse to alter parameters.
+   Return to Generator, STOP it, and load again.
+6. **P6:** If a damaged/inaccessible file is encountered naturally,
+   capture the error screen; **do not remove the microSD during a
+   write or deliberately corrupt data on-device**.
+
+Capture PASS/FAIL/NOT RUN for each item. Tests P1-P6 have **not**
+been performed on real hardware by the assistant.

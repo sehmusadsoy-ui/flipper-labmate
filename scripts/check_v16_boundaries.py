@@ -40,6 +40,7 @@ SCREENS_EXPECTED = [
     "draw_history",
     "draw_history_detail",
     "draw_about",
+    "draw_profiles",
 ]
 
 for name in SCREENS_EXPECTED:
@@ -285,6 +286,29 @@ expect(
     "LL_TIM_" not in FREQUENCY_GATE and
     "furi_hal_" not in FREQUENCY_GATE,
     "Adaptive gate must be pure host-testable estimation logic",
+)
+
+# New Profiles tool is appended; original seven instruments retain IDs.
+expect(
+    '"Profiles"' in NAVIGATION and
+    "case LabMateToolProfiles:" in MAIN and
+    "void draw_profiles(" in SCREENS and
+    "labmate_profile_sd_load(" in MAIN and
+    "labmate_profile_sd_save(" in MAIN,
+    "Missing profile navigation, UI or deferred microSD I/O",
+)
+expect(
+    "app->profile_confirm = true;" in MAIN and
+    "app->preferred_frequency_pin = profile->frequency_pin;" in MAIN and
+    "app->preferred_pulse_pin = profile->pulse_pin;" in MAIN and
+    "app->generator_running ||" in MAIN,
+    "Profile save must confirm and load must refuse an active generator",
+)
+expect(
+    "profiles_read_requested" in MAIN and
+    "profiles_save_requested" in MAIN and
+    "labmate_profiles_decode(" in PROFILES,
+    "Profile I/O needs deferred main-thread work and verified codec",
 )
 
 if failures:

@@ -346,3 +346,31 @@ rather than a fixed wall-clock gate boundary. Requirements:
 
 CI only proves host math tests and build, **not** accuracy on physical GPIO.
 Do not promote v1.6 until Flipper retesting passes.
+
+## Development Profiles: three slots and dual-copy microSD persistence
+
+Records > Profiles provides three user-controlled slots. UP/DOWN chooses
+a slot, LEFT/RIGHT toggles LOAD/SAVE, OK on SAVE requires a second OK
+confirmation (BACK cancels), and OK on LOAD applies previously validated
+settings only. Load refuses while Generator RUN is active; it never
+starts PWM, opens a capture, or restores HOLD status.
+
+Each slot stores Frequency Meter input PC1/PB3, Pulse Analyzer input
+PC0/PC1/PB2/PA4, one of 15 generator frequency presets, and default
+Data Logger source LOW/HIGH/PULSE. Inputs are remembered independently
+of the currently active GPIO Monitor pin. Logger PULSE still captures
+on PC1; the separate Pulse Analyzer preference does not reroute it.
+
+Profiles are 32-byte CRC32-protected LBP1 records. microSD paths:
+`/ext/apps_data/labmate/profiles_a.bin` and `profiles_b.bin`. On
+load, the newest valid generation wins; one corrupt copy can be
+ignored if the other is intact. SAVE overwrites only the inactive copy,
+calls sync and close, then reads back all bytes and decodes them.
+Both-invalid files are shown as BAD CRC and never silently overwritten.
+Storage failures show SD ERR/WRITE ERR. Original CSV logs are untouched.
+
+All profile SD I/O is deferred from the input handler until after
+the rendering mutex is released. No GPIO IRQ or PWM APIs are called
+by the Profiles screen or codec. This is a **development candidate**;
+real-Flipper profile save/load, power-loss and corrupt-SD handling
+still require physical tests before any Stable release.
