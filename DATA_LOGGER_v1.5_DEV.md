@@ -159,6 +159,15 @@ signal interruption in the low-frequency capture mode. Signal
 disconnection and exact 3-second timeout onset are not independently
 timestamped by the CSV.
 
+**Desktop CSV compatibility — LibreOffice Calc import check (2026-10-09):**
+The user opened `log_0022.csv` in LibreOffice Calc on Windows. The
+screenshot confirms nine separated columns (A–I), a header plus 18
+measurement rows (2–19), decimal-comma interpretation of frequency
+values (for example `999,828`), and the expected `valid` sequence:
+eight rows of 1, two rows of 0, eight rows of 1. This verifies
+LibreOffice Calc compatibility, **not a direct test in Microsoft Excel**.
+No Excel license was available for that separate check.
+
 ## On-device acceptance tests (in progress)
 
 - [x] Build against the installed Momentum API; launch without crashes
