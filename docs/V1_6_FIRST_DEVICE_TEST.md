@@ -425,3 +425,40 @@ hardware calibration are not reported as tested. No intentional SD
 corruption, unsafe electrical tests, or changes to stable v1.5 are
 required. The current profile implementation is a viable **v1.6-dev
 device-tested feature candidate**, not automatically promoted to main.
+
+## H1-H3 HIGH PB3 kHz device observations (user-reported, 2026-10-10)
+
+The operator tested the active v1.6-dev firmware on the real Flipper
+with the built-in Signal Generator and Frequency Meter set to HIGH PB3.
+Input units in the message were abbreviated; values below interpret
+LIVE as kHz and the MIN/MAX fields per the actual LCD format.
+
+| Test | Generator | Reported LIVE | Reported MIN | Reported MAX |
+| --- | --- | --- | --- | --- |
+| H1 | 1 kHz | 1.00 kHz | 999.9 Hz | 1.000 kHz |
+| H2 | 5 kHz | 4.99 kHz | 4.999 kHz | 5.000 kHz |
+| H3 | 10 kHz | 9.99 kHz | 9.991 kHz | 10.00 kHz |
+
+For the reported MIN/MAX, the greatest deviation from the generator
+setting is 0.01% at H1, 0.02% at H2, and 0.09% at H3. These three
+**functional self-test points PASS** on the device, but the generator
+and meter share the same Flipper reference; this is NOT independent
+frequency calibration and cannot establish external absolute accuracy.
+
+### LCD decimal precision, not independent LIVE-vs-MIN error
+
+The frequency display implementation in `labmate_ui_screens.c`
+formats high-frequency **LIVE** as `%lu.%02lu kHz` (two decimal places,
+truncated), while the compact MIN/MAX formatter displays
+`%lu.%03luk` in the 1–9.999 kHz range. For example, a single
+underlying reading of 4.999 kHz is printed as `4.99 kHz` in LIVE
+but `4.999k` in MIN. Similarly, LIVE 9.99 vs MIN 9.991 at H3
+is an intentional formatting-precision difference, not evidence of
+a conflicting measurement. The near-10 kHz compact formatter changes
+its precision at 10 kHz. No estimator or PWM code was changed here.
+
+**Next independent functional points H4/H5:** 20 kHz and 50 kHz
+using only an already-verified safe 3.3 V-compatible test setup.
+Reset MIN/MAX before each point, compare LIVE/MIN/MAX, allow 5 s
+to settle, and STOP generator before changing connections. The
+operator has NOT yet reported results for H4/H5.
