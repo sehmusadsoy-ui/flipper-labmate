@@ -111,8 +111,15 @@ This is a development designation, **not** a published v1.6 Stable release.
 - [ ] Do not change the on-SD `/ext/apps_data/labmate/` format.
 
 ### Step 5 — Navigation, profiles and one-command install
-- [ ] Plan grouped navigation and saved measurement profiles, with backward
-      compatibility and clear reset semantics.
+- [x] Add four-level root categories (MEASURE, OUTPUT, RECORDS, INFO)
+      with nested access to the original seven tools; keep the same tool IDs
+      and instrument START/STOP paths. BACK from a tool returns to its group,
+      BACK from a group returns to root, BACK from root exits the app.
+- [x] Cover all seven unique tool routes, selection wrapping and invalid
+      groups with a host-native C test and a shared renderer/input mapping.
+- [ ] Design and implement saved measurement profiles with explicit storage
+      compatibility, version validation, and safe overwrite/reset semantics.
+- [ ] Perform real-device visual/navigation regression before v1.6 Stable.
 - [x] Add a SHA256-verified local-FAP PowerShell installer (scripts/install-labmate.ps1)
       with a fixed /ext/apps/Tools/labmate.fap USB destination.
 - [x] Add Windows mock transport tests for hashes, argument order and errors.
@@ -260,3 +267,21 @@ exit status remained in PowerShell's LASTEXITCODE. The test now resets
 that native process status **after checking** the failure is nonzero.
 This does not suppress any failed assertion and does not alter the
 installer's failure reporting. Check the latest CI for final results.
+
+## Grouped navigation (v1.6-dev, physical regression pending)
+
+Root groups: MEASURE (GPIO Monitor, Frequency Meter, Pulse Analyzer),
+OUTPUT (Signal Generator), RECORDS (Data Logger, Log History), INFO (About).
+The original seven entry IDs are unchanged and reused by the renderer
+and input handler through labmate_navigation.c/.h.
+
+UP/DOWN wrap in the current group; OK enters the selected group or launches
+the selected instrument; BACK leaves a group or exits at the root. A tool's
+existing BACK-to-menu behavior now lands inside its current group.
+Generator background PWM policy, frequency capture ownership, logger SD
+writes and stored CSV files are unchanged by the grouping code.
+
+Portable test tests/test_navigation.c.inc exhaustively verifies mappings,
+invalid group/index behavior and wrapping on groups with 1, 2 or 3 items.
+The 128x64 row/padding/font result and back-navigation must still be
+verified on the physical device. Saved profiles remain **not implemented**.

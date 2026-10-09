@@ -8,10 +8,11 @@
 #include <gui/gui.h>
 #include <storage/storage.h>
 #include "labmate_resource_policy.h"
+#include "labmate_navigation.h"
 
 #define LABMATE_VERSION_TEXT "v1.6d"
 /* Shared menu/pin counts: UI and input handling must agree. */
-#define MENU_COUNT 7
+#define MENU_COUNT LabMateToolCount
 #define GPIO_COUNT LABMATE_MONITOR_PIN_COUNT
 /* Shared immutable GPIO labels, used by both migrated and legacy renderers. */
 extern const char* const labmate_gpio_names[GPIO_COUNT];
@@ -52,7 +53,9 @@ typedef struct {
     bool running;
     bool hold;
 
-    uint8_t selected;
+    uint8_t selected; /* active row within root or current tool group */
+    bool menu_in_group;
+    uint8_t menu_group; /* LabMateMenuGroup, valid when menu_in_group */
     uint8_t gpio_index;
 
     LabMateScreen screen;

@@ -8,6 +8,7 @@ on:
       - "*.h"
       - "scripts/check_v16_boundaries.py"
       - "tests/test_resource_policy.c.inc"
+      - "tests/test_navigation.c.inc"
       - "scripts/install-labmate.ps1"
       - "application.fam"
       - ".github/workflows/build-v1.6.yml"
@@ -42,6 +43,14 @@ jobs:
             labmate_resource_policy.c tests/test_resource_policy.c.inc \
             -o /tmp/labmate-resource-policy-tests
           /tmp/labmate-resource-policy-tests
+
+      - name: Test grouped menu mapping on host
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. -x c \
+            labmate_navigation.c tests/test_navigation.c.inc \
+            -o /tmp/labmate-navigation-tests
+          /tmp/labmate-navigation-tests
 
       - name: Compile with Momentum SDK
         id: compile

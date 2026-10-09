@@ -120,15 +120,7 @@ void draw_history_detail(Canvas* canvas, LabMateApp* app) {
 }
 
 /* Step 2: read-only renderers migrated verbatim from labmate.c. */
-static const char* menu_items[MENU_COUNT] = {
-    "GPIO Monitor",
-    "Frequency Meter",
-    "Pulse Analyzer",
-    "Signal Generator",
-    "Data Logger",
-    "Log History",
-    "About",
-};
+/* Menu labels and tool mapping now live in labmate_navigation.c. */
 
 const char* const labmate_gpio_names[GPIO_COUNT] = {
     "PC0",
@@ -141,157 +133,51 @@ const char* const labmate_gpio_names[GPIO_COUNT] = {
     "PA7",
 };
 
-void draw_menu(
-    Canvas* canvas,
-    LabMateApp* app) {
+void draw_menu(Canvas* canvas, LabMateApp* app) {
+    const bool inside = app->menu_in_group;
+    const uint8_t count = inside ? labmate_nav_group_size(app->menu_group) :
+                                  (uint8_t)LabMateGroupCount;
+    const uint8_t selected = app->selected < count ? app->selected : 0U;
 
-    /*
-     * LabMate v1.2 instrument-style main menu.
+    /* The root lists categories; each child group lists its original tools.
+     * No hardware state changes when navigating between menu levels.
      */
+    canvas_set_font(canvas, FontPrimary);
+    canvas_draw_str(canvas, 2, 10,
+                    inside ? labmate_nav_group_title(app->menu_group) : "LABMATE");
+    ui_badge(canvas, 90, 1, 36, LABMATE_VERSION_TEXT, false);
+    canvas_draw_line(canvas, 0, 13, 127, 13);
 
-    canvas_set_font(
-        canvas,
-        FontPrimary);
+    uint8_t first = selected > 1U ? (uint8_t)(selected - 1U) : 0U;
+    if(count > 3U && first + 3U > count) first = (uint8_t)(count - 3U);
+    for(uint8_t row = 0U; row < 3U && (uint8_t)(first + row) < count; ++row) {
+        const uint8_t index = (uint8_t)(first + row);
+        const uint8_t y = (uint8_t)(25U + row * 12U);
+        const uint8_t tool = inside ?
+            labmate_nav_tool_at(app->menu_group, index) :
+            labmate_nav_group_icon(index);
+        const char* title = inside ?
+            labmate_nav_tool_title(tool) : labmate_nav_group_title(index);
 
-    canvas_draw_str(
-        canvas,
-        2,
-        10,
-        "LABMATE");
-
-    /*
-     * Version badge.
-     */
-    ui_badge(
-        canvas,
-        99,
-        1,
-        27,
-        LABMATE_VERSION_TEXT,
-        false);
-
-    canvas_draw_line(
-        canvas,
-        0,
-        13,
-        127,
-        13);
-
-    /*
-     * Three visible rows.
-     * Selected item remains centered where possible.
-     */
-    uint8_t first = 0;
-
-    if(app->selected > 1) {
-        first =
-            app->selected - 1;
-    }
-
-    if(first + 3 > MENU_COUNT) {
-        first =
-            MENU_COUNT - 3;
-    }
-
-    for(uint8_t row = 0;
-        row < 3;
-        row++) {
-
-        uint8_t i =
-            first + row;
-
-        uint8_t y =
-            25 + (row * 12);
-
-        if(i == app->selected) {
-
-            /*
-             * Inverted active row.
-             */
-            canvas_draw_box(
-                canvas,
-                1,
-                y - 10,
-                126,
-                12);
-
-            canvas_set_color(
-                canvas,
-                ColorWhite);
-
-            ui_draw_menu_icon(
-                canvas,
-                i,
-                4,
-                y - 9);
-
-            canvas_set_font(
-                canvas,
-                FontSecondary);
-
-            canvas_draw_str(
-                canvas,
-                20,
-                y,
-                menu_items[i]);
-
-            canvas_draw_str(
-                canvas,
-                117,
-                y,
-                ">");
-
-            canvas_set_color(
-                canvas,
-                ColorBlack);
-
-        } else {
-
-            ui_draw_menu_icon(
-                canvas,
-                i,
-                4,
-                y - 9);
-
-            canvas_set_font(
-                canvas,
-                FontSecondary);
-
-            canvas_draw_str(
-                canvas,
-                20,
-                y,
-                menu_items[i]);
-
-            canvas_draw_str(
-                canvas,
-                117,
-                y,
-                ">");
+        if(index == selected) {
+            canvas_draw_box(canvas, 1, y - 10, 126, 12);
+            canvas_set_color(canvas, ColorWhite);
         }
+        ui_draw_menu_icon(canvas, tool, 4, y - 9);
+        canvas_set_font(canvas, FontSecondary);
+        canvas_draw_str(canvas, 20, y, title);
+        canvas_draw_str(canvas, 117, y, ">");
+        if(index == selected) canvas_set_color(canvas, ColorBlack);
     }
 
-    canvas_draw_line(
-        canvas,
-        0,
-        52,
-        127,
-        52);
-
-    /*
-     * Instrument-style navigation footer.
-     */
-    ui_key(
-        canvas,
-        2,
-        "^v",
-        "MOVE");
-
-    ui_key(
-        canvas,
-        70,
-        "OK",
-        "OPEN");
+    canvas_draw_line(canvas, 0, 52, 127, 52);
+    if(inside) {
+        ui_key(canvas, 2, "BK", "ROOT");
+        ui_key(canvas, 70, "OK", "OPEN");
+    } else {
+        ui_key(canvas, 2, "^v", "MOVE");
+        ui_key(canvas, 70, "OK", "OPEN");
+    }
 }
 
 void draw_gpio(Canvas* canvas, LabMateApp* app) {

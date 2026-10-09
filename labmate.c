@@ -1646,6 +1646,8 @@ int32_t labmate_app(void* p) {
     app->running = true;
     app->hold = false;
     app->selected = 0;
+    app->menu_group = LabMateGroupMeasure;
+    app->menu_in_group = false;
     app->gpio_index = 1; /* PC1 */
     app->generator_freq_index = 0; /* 1 Hz */
     app->screen = LabMateScreenMenu;
@@ -1747,37 +1749,33 @@ int32_t labmate_app(void* p) {
 
             if(app->screen ==
                LabMateScreenMenu) {
-
+                /* One navigation source defines both renderer and key map.
+                 * The seven original launch actions remain unchanged.
+                 */
+                const uint8_t count = app->menu_in_group ?
+                    labmate_nav_group_size(app->menu_group) :
+                    (uint8_t)LabMateGroupCount;
                 if(event.key == InputKeyUp) {
-                    if(app->selected == 0) {
-                        app->selected =
-                            MENU_COUNT - 1;
-                    } else {
-                        app->selected--;
-                    }
-
-                } else if(
-                    event.key == InputKeyDown) {
-
-                    app->selected++;
-
-                    if(app->selected >=
-                       MENU_COUNT) {
-                        app->selected = 0;
-                    }
-
-                } else if(
-                    event.key == InputKeyOk) {
-
-                    switch(app->selected) {
-                    case 0:
+                    app->selected = labmate_nav_wrap(app->selected, count, -1);
+                } else if(event.key == InputKeyDown) {
+                    app->selected = labmate_nav_wrap(app->selected, count, 1);
+                } else if(event.key == InputKeyOk) {
+                    if(!app->menu_in_group) {
+                        if(app->selected < LabMateGroupCount) {
+                            app->menu_group = app->selected;
+                            app->selected = 0U;
+                            app->menu_in_group = true;
+                        }
+                    } else if(app->selected < count) {
+                    switch(labmate_nav_tool_at(app->menu_group, app->selected)) {
+                    case LabMateToolGpio:
                         app->screen =
                             LabMateScreenGpio;
                         app->hold = false;
                         gpio_activate(app);
                         break;
 
-                    case 1:
+                    case LabMateToolFrequency:
                         app->screen =
                             LabMateScreenFrequency;
                         app->hold = false;
@@ -1788,7 +1786,7 @@ int32_t labmate_app(void* p) {
                         frequency_hw_start(app);
                         break;
 
-                    case 2:
+                    case LabMateToolPulse:
                         app->screen =
                             LabMateScreenPulse;
                         app->hold = false;
@@ -1800,12 +1798,12 @@ int32_t labmate_app(void* p) {
                         pulse_interrupt_start(app);
                         break;
 
-                    case 3:
+                    case LabMateToolGenerator:
                         app->screen =
                             LabMateScreenGenerator;
                         break;
 
-                    case 4:
+                    case LabMateToolLogger:
                         app->screen = LabMateScreenLogger;
                         app->logger_source = LoggerFrequencyLow;
                         app->logger_error = false;
@@ -1814,21 +1812,25 @@ int32_t labmate_app(void* p) {
                         logger_capture_start(app);
                         break;
 
-                    case 5:
+                    case LabMateToolHistory:
                         app->screen = LabMateScreenHistory;
                         app->history_busy = true;
                         app->history_error = false;
                         history_scan_requested = true;
                         break;
 
-                    case 6:
+                    case LabMateToolAbout:
                         app->screen = LabMateScreenAbout;
                         break;
                     }
-
-                } else if(
-                    event.key == InputKeyBack) {
-                    app->running = false;
+                    }
+                } else if(event.key == InputKeyBack) {
+                    if(app->menu_in_group) {
+                        app->menu_in_group = false;
+                        app->selected = app->menu_group;
+                    } else {
+                        app->running = false;
+                    }
                 }
 
             } else if(app->screen == LabMateScreenHistory) {

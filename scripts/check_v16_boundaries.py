@@ -14,6 +14,7 @@ SCREENS = (ROOT / "labmate_ui_screens.c").read_text(encoding="utf-8")
 SCREENS_H = (ROOT / "labmate_ui_screens.h").read_text(encoding="utf-8")
 INTERNAL_H = (ROOT / "labmate_internal.h").read_text(encoding="utf-8")
 PRIMITIVES = (ROOT / "labmate_ui_primitives.c").read_text(encoding="utf-8")
+NAVIGATION = (ROOT / "labmate_navigation.c").read_text(encoding="utf-8")
 MANIFEST = (ROOT / "application.fam").read_text(encoding="utf-8")
 POLICY = (ROOT / "labmate_resource_policy.c").read_text(encoding="utf-8")
 POLICY_H = (ROOT / "labmate_resource_policy.h").read_text(encoding="utf-8")
@@ -236,6 +237,19 @@ expect(
 expect(
     "#define LABMATE_MONITOR_PA7_INDEX 7U" in POLICY_H,
     "Incorrect reserved PA7 GPIO monitor index",
+)
+
+
+expect(
+    "labmate_nav_tool_at(app->menu_group, app->selected)" in MAIN
+    and "labmate_nav_group_size(app->menu_group)" in MAIN
+    and "labmate_nav_group_size(app->menu_group)" in SCREENS,
+    "Navigation input and renderer must use one shared grouping policy",
+)
+expect(
+    '"GPIO Monitor"' in NAVIGATION and '"Log History"' in NAVIGATION
+    and '"About"' in NAVIGATION and "menu_in_group" in INTERNAL_H,
+    "All seven existing instruments must remain reachable through the menu",
 )
 
 
