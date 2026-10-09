@@ -290,6 +290,15 @@ invalid group/index behavior and wrapping on groups with 1, 2 or 3 items.
 The 128x64 row/padding/font result and back-navigation must still be
 verified on the physical device. Saved profiles remain **not implemented**.
 
+## First Flipper Zero hardware checkpoint
+
+**Ready now, before implementing profile microSD persistence.** Follow
+[`V1_6_FIRST_DEVICE_TEST.md`](V1_6_FIRST_DEVICE_TEST.md) for the pinned
+development build, safe installation/rollback, grouped-menu smoke checks,
+GPIO/capture/PA7 regression tests and Logger/History checks. Record PASS,
+FAIL or NOT RUN; no physical device test is claimed yet. Do not merge into
+Stable based only on GitHub CI.
+
 ## Saved measurement profiles: format-only groundwork
 
 `labmate_profiles.c/.h` provides a deterministic 32-byte binary codec
