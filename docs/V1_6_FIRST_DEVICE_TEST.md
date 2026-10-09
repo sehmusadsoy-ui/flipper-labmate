@@ -309,3 +309,26 @@ Flipper's Frequency Meter, and does not independently calibrate TIM1 PWM
 or TIM2 timing. Physical signal output calibration and broader accuracy
 requirements should remain explicitly separate from functional smoke
 tests.
+
+## Fourth operator confirmation — 10 Hz LIVE range (2026-10-10)
+
+The device operator explicitly confirmed that, with Signal Generator at
+10 Hz and Frequency Meter in HIGH PB3 mode, the LIVE readout varies
+**within the previously reported 9.83–10.29 Hz MIN/MAX limits**,
+rather than making larger unexpected excursions.
+
+**Disposition:** The earlier 1 Hz -> 10 Hz false-reading bug is
+**RESOLVED for functional self-measurement testing** on the Flipper.
+Operator-reported HIGH PB3 1/2/10 Hz readings all fall within 3%
+of the nominal Signal Generator settings (based on the observed ranges).
+The 10 Hz LIVE variability is bounded and no longer blocks moving on
+to saved-profile development. Keep the 100 ms TIM2 polling quantization
+as a documented accuracy/UX limitation; do not alter the now-tested
+counter algorithm for cosmetic smoothing without explicit new tests.
+
+**Scope limitation:** Generator and meter share the same Flipper; there
+has been **no independent calibrated frequency reference** or
+oscilloscope timing verification. This is a functional regression pass,
+not a metrology guarantee. Keep `main` / Stable `v1.5` untouched.
+No new Flipper installation is required from this documentation-only
+update.
