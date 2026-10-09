@@ -11,6 +11,7 @@
 #include "labmate_ui_primitives.h"
 #include "labmate_internal.h"
 #include "labmate_ui_screens.h"
+#include "labmate_resource_policy.h"
 
 #define LOGGER_DIR "/ext/apps_data/labmate"
 #define LOGGER_INTERVAL_MS 1000U
@@ -425,7 +426,14 @@ static void pulse_interrupt_start(LabMateApp* app) {
     app->pulse_irq_active = true;
 }
 
-static void gpio_release(uint8_t index) {
+static void gpio_release(LabMateApp* app, uint8_t index) {
+    /* Never reclaim PA7 while the generator owns TIM1 PWM in background.
+     * The policy is checked here as a final guard against unsafe releases.
+     */
+    if(index >= GPIO_COUNT ||
+       !labmate_monitor_pin_allowed(index, app->generator_running)) {
+        return;
+    }
     furi_hal_gpio_init_simple(
         labmate_gpio_pins[index],
         GpioModeAnalog);
@@ -489,6 +497,11 @@ static void frequency_stats_record(LabMateApp* app) {
 static void pulse_stats_reset(LabMateApp* app);
 
 static void gpio_activate(LabMateApp* app) {
+    /* A previous session may have left PA7 selected before PWM started.
+     * Fall back to PC1 rather than silently reconfiguring the PWM output.
+     */
+    app->gpio_index =
+        labmate_monitor_entry_pin(app->gpio_index, app->generator_running);
     furi_hal_gpio_init_simple(
         labmate_gpio_pins[app->gpio_index],
         GpioModeInput);
@@ -524,7 +537,7 @@ static void gpio_change(
         frequency_interrupt_stop(app);
         frequency_hw_stop(app);
 
-        gpio_release(app->gpio_index);
+        gpio_release(app, app->gpio_index);
 
         app->gpio_index = target_index;
         app->hold = false;
@@ -546,7 +559,7 @@ static void gpio_change(
         if(next_index == app->gpio_index) return;
         /* Detach the old EXTI callback before changing pin or IRQ state. */
         pulse_interrupt_stop(app);
-        gpio_release(app->gpio_index);
+        gpio_release(app, app->gpio_index);
         app->gpio_index = next_index;
         app->hold = false;
         app->pulse_stats_view = false;
@@ -556,22 +569,13 @@ static void gpio_change(
         return;
     }
 
-    gpio_release(app->gpio_index);
+    gpio_release(app, app->gpio_index);
 
-    if(direction > 0) {
-        app->gpio_index++;
-
-        if(app->gpio_index >= GPIO_COUNT) {
-            app->gpio_index = 0;
-        }
-    } else {
-        if(app->gpio_index == 0) {
-            app->gpio_index = GPIO_COUNT - 1;
-        } else {
-            app->gpio_index--;
-        }
-    }
-
+    /* Preserve the original eight-pin navigation except that PA7 is not
+     * selectable while Signal Generator keeps its PWM output active.
+     */
+    app->gpio_index =
+        labmate_monitor_next_pin(app->gpio_index, direction, app->generator_running);
     gpio_activate(app);
 }
 
@@ -1011,7 +1015,7 @@ static void logger_capture_stop(LabMateApp* app) {
     frequency_hw_stop(app);
     frequency_interrupt_stop(app);
     pulse_interrupt_stop(app);
-    gpio_release(app->gpio_index);
+    gpio_release(app, app->gpio_index);
 }
 
 static void logger_capture_start(LabMateApp* app) {
@@ -1859,8 +1863,7 @@ int32_t labmate_app(void* p) {
                         pulse_interrupt_stop(app);
                     }
 
-                    gpio_release(
-                        app->gpio_index);
+                    gpio_release(app, app->gpio_index);
 
                     app->hold = false;
                     app->screen =
@@ -2016,7 +2019,7 @@ int32_t labmate_app(void* p) {
             frequency_hw_stop(app);
             frequency_interrupt_stop(app);
         }
-        gpio_release(app->gpio_index);
+        gpio_release(app, app->gpio_index);
     }
 
     gui_remove_view_port(
