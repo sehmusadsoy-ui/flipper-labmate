@@ -3,7 +3,7 @@
 **Status:** Updated 2026-10-09 to reflect the published v1.5 Stable release.  
 **Current Stable baseline:** [v1.5 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.5), published 2026-10-09 (FAP, release notes and SHA-256).  
 **Previous Stable fallback:** [v1.4 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.4).  
-**Next planned milestone:** v1.6 — Code and UI Refactoring. No v1.6 development branch or implementation is claimed here; `v1.5-dev` is the historical v1.5 development branch.
+**Current development milestone:** v1.6 — Code and UI Refactoring, active on [`v1.6-dev`](https://github.com/sehmusadsoy-ui/flipper-labmate/tree/v1.6-dev). The first low-risk stateless UI module split has compiled in development CI; no v1.6 Stable release is claimed. `v1.5-dev` remains the historical v1.5 development branch.
 
 ## Vision
 
@@ -75,7 +75,7 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
 | v1.3 | Foundational digital instruments | Stable published |
 | v1.4 | Frequency and pulse MIN/MAX, signal-loss behavior, UI stability | Stable published |
 | **v1.5** | **Data Logger, CSV recording and Log History** | **Stable published 2026-10-09** |
-| v1.6 | Code/UI refactor | Planned |
+| v1.6 | Code/UI refactor | In progress on `v1.6-dev` (development only) |
 | v1.7 | PWM Studio and Counter | Planned |
 | v1.8 | UART, I²C, possible 1-Wire tools | Planned |
 | v1.9 | Logic Scope and Signal Compare | Planned |
