@@ -7,6 +7,7 @@ on:
       - "*.c"
       - "*.h"
       - "scripts/check_v16_boundaries.py"
+      - "tests/test_resource_policy.c"
       - "application.fam"
       - ".github/workflows/build-v1.6.yml"
   workflow_dispatch:
@@ -31,6 +32,14 @@ jobs:
 
       - name: Guard passive UI and hardware boundaries
         run: python3 scripts/check_v16_boundaries.py
+
+      - name: Test portable GPIO / PA7 ownership policy
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. \
+            labmate_resource_policy.c tests/test_resource_policy.c \
+            -o /tmp/labmate-resource-policy-tests
+          /tmp/labmate-resource-policy-tests
 
       - name: Compile with Momentum SDK
         id: compile
