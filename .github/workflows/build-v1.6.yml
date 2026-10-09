@@ -164,8 +164,8 @@ jobs:
           # inherit it after every expected-failure assertion has passed.
           $global:LASTEXITCODE = 0
           $rcScript = Get-Content -Raw ./scripts/install-from-github.ps1
-          if($rcScript -notmatch ' -b v1\\.6-rc1 ' -or
-             $rcScript -match ' -b v1\\.6-dev ') {
+          if($rcScript -notmatch [regex]::Escape(' -b v1.6-rc1 ') -or
+             $rcScript -match [regex]::Escape(' -b v1.6-dev ')) {
             throw 'RC1 installer must select RC1 Actions runs, never v1.6-dev.'
           }
           Write-Host 'Mock USB tests and RC1 installer isolation passed; no Flipper connected.'

@@ -7,7 +7,8 @@ not a stable production release or an existing v1.5 replacement.
   `v1.6-dev` documentation head; instrument logic and data formats
   were not changed for RC1.
 - **RC1 identity:** LCD version `v1.6rc1`, external app manifest
-  version `1.6-rc1`.
+  version `1.6` (kept SDK-compatible). The installed LCD and distinct
+  RC1 build still clearly identify the release candidate.
 - **Build:** GitHub Actions workflow `build-v1.6.yml` on this
   RC1 branch. Checks: source/hardware boundaries, resource policy,
   navigation, profile CRC codec/delete, TIM2 gate math, Momentum SDK
@@ -56,3 +57,15 @@ equipment; no uncontrolled new connections.
 
 **Do not publish or promote v1.6 Stable without explicit operator
 approval after reviewing RC1 physical smoke results.**
+
+## RC1 CI correction
+
+The first RC1 attempt encountered a Momentum SDK app-discovery/build
+failure after setting `fap_version` to the suffix-bearing
+`1.6-rc1` string, so the app manifest version was restored to
+`1.6`, matching the successfully compiled device-tested developer
+build. The on-device `v1.6rc1` label remains. The Windows mock
+installer check also needed the correct PowerShell literal/regex
+matching for the RC1 branch name. Both fixes are packaging/test
+changes only; no GPIO, frequency estimator, PWM, profiles, logger
+or menu logic changes.
