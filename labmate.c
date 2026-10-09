@@ -62,7 +62,7 @@ static uint8_t pulse_gpio_next_index(uint8_t current, int8_t direction) {
  * Designed for the current polling-based
  * measurement engine.
  */
-static const uint32_t generator_frequencies[] = {
+const uint32_t labmate_generator_frequencies[] = {
     1,
     2,
     5,
@@ -1433,7 +1433,7 @@ static void generator_stop(LabMateApp* app) {
 
 static void generator_start(LabMateApp* app) {
     uint32_t freq =
-        generator_frequencies[
+        labmate_generator_frequencies[
             app->generator_freq_index];
 
     if(freq == 0) {
@@ -1481,7 +1481,7 @@ static void generator_change_frequency(
     if(app->generator_running) {
         furi_hal_pwm_set_params(
             FuriHalPwmOutputIdTim1PA7,
-            generator_frequencies[app->generator_freq_index],
+            labmate_generator_frequencies[app->generator_freq_index],
             50U);
     }
 }
@@ -1614,41 +1614,6 @@ static void draw_pulse(Canvas* canvas, LabMateApp* app) {
     canvas_draw_str(canvas, 3, 61, "<>PIN");
     canvas_draw_str(canvas, 45, 61, app->hold ? "OK LIVE" : "OK HOLD");
     canvas_draw_str(canvas, 96, 61, "^STAT");
-}
-
-static void draw_generator(Canvas* canvas, LabMateApp* app) {
-    char value[32];
-    const uint32_t freq = generator_frequencies[app->generator_freq_index];
-
-    /* Output and RUN/STOP are visible even when switching presets. */
-    canvas_set_font(canvas, FontPrimary);
-    canvas_draw_str(canvas, 2, 10, "GEN");
-    ui_badge(canvas, 34, 1, 55, "OUT PA7", false);
-    ui_badge(canvas, 91, 1, 35, app->generator_running ? "RUN" : "STOP",
-             app->generator_running);
-    canvas_draw_line(canvas, 0, 13, 127, 13);
-
-    /* Only the visual presentation changes: PWM remains TIM1/PA7. */
-    if(freq >= 1000U && (freq % 1000U) == 0U) {
-        snprintf(value, sizeof(value), "%lu kHz", (unsigned long)(freq / 1000U));
-    } else {
-        snprintf(value, sizeof(value), "%lu Hz", (unsigned long)freq);
-    }
-
-    canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 3, 24, "OUTPUT FREQ");
-    canvas_set_font(canvas, FontPrimary);
-    canvas_draw_str(canvas, 4, 40, value);
-
-    canvas_draw_line(canvas, 84, 17, 84, 50);
-    canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 90, 27, "DUTY");
-    canvas_set_font(canvas, FontPrimary);
-    canvas_draw_str(canvas, 90, 41, "50%");
-
-    canvas_draw_line(canvas, 0, 52, 127, 52);
-    ui_key(canvas, 2, "<>", "FREQ");
-    ui_key(canvas, 70, "OK", app->generator_running ? "STOP" : "START");
 }
 
 static void draw_logger(Canvas* canvas, LabMateApp* app) {
