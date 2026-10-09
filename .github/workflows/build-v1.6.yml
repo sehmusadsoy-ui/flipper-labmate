@@ -16,9 +16,9 @@ permissions:
   contents: read
 
 concurrency:
-  # Separate queue from a stale prior runner of the UI refactor series.
+  # Separate current ownership-policy CI from a prior stale UI runner.
   # Keep cancelling outdated intermediate-source builds on this branch.
-  group: labmate-v1.6-dev-build-ui-v2
+  group: labmate-v1.6-dev-build-pa7-v3
   cancel-in-progress: true
 
 jobs:
