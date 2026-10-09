@@ -360,8 +360,11 @@ the existing one-step GitHub CLI + PowerShell installer (FAP name
    capture the error screen; **do not remove the microSD during a
    write or deliberately corrupt data on-device**.
 
-Capture PASS/FAIL/NOT RUN for each item. Tests P1-P6 have **not**
-been performed on real hardware by the assistant.
+Capture PASS/FAIL/NOT RUN for each item. Device operator confirmed
+P1/P2 (three slots and SAVE) PASS and P3/P4 (LOAD and persistence)
+PASS. P5 (generator-active LOAD refusal) and P6 (naturally encountered
+storage errors) remain NOT RUN. All results are user-reported, not
+independent physical testing by the assistant.
 
 ## P7 profile deletion gate (NOT RUN)
 
@@ -380,3 +383,29 @@ wires are needed for this test.
 6. Do not corrupt the SD card, remove it during writes, or delete any
    binary file manually to simulate failure. No hardware safety test
    beyond user-reported observation is claimed.
+
+## User-reported P7 DELETE device pass (2026-10-10)
+
+Operator reported `P7-A=PASS`, `P7-B=PASS`, `P7-C=PASS`
+on real Flipper Zero running the development DELETE-capable FAP built
+from commit `4eaf8054d354fb7725617b72df25c0a974daf214`
+(GitHub Actions `38001774685`). Observed outcomes:
+
+- **P7-A PASS:** Selecting DELETE and pressing BACK at the confirmation
+  stage leaves the profile intact.
+- **P7-B PASS:** Confirming DELETE with OK twice clears the selected
+  S2 slot and reports a successful deletion.
+- **P7-C PASS:** After exiting and reopening LabMate, the S2 slot stays
+  EMPTY, while S1 and existing CSV Log History entries remain intact.
+
+This is evidence for functional slot deletion and persistence, not proof
+of secure erasure of the older redundant binary copy. P7 empty-slot
+DELETE no-write behavior was not individually tested by the operator.
+No changes to firmware `main`, Stable `v1.5`, or the now-tested FAP
+are made by this record-only commit.
+
+**Next active device test: P5.** With a known safe setup and Generator
+RUN, LOAD of S1 should show STOP PWM and refuse to apply the profile.
+After manually stopping Generator, LOAD should report LOADED without
+reactivating the output. A confirmed physical PASS has not yet been
+reported for P5.
