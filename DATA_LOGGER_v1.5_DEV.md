@@ -182,10 +182,19 @@ loopback; MIN/MAX display; HOLD/LIVE controls; UP resetting extrema; and
 BACK navigation without freeze. This is a user-reported on-device pass;
 Pulse Analyzer and Signal Generator regression checks remain pending.
 
+**Device feedback — 2026-10-09 (v1.4 Pulse Analyzer regression):**
+The user confirmed the Pulse Analyzer regression test passed with the
+internal PA7-to-PC1 3.3 V loopback at 1 kHz / 50% duty. The check included
+approximately 500 us HIGH/LOW, 1000 us period, 50% duty; UP statistics
+MIN/MAX, DOWN statistics reset, OK HOLD/LIVE, and BACK navigation.
+This is a user-reported on-device pass. Signal Generator's final
+standalone regression remains pending.
+
 ## On-device acceptance tests (in progress)
 
 - [x] Build against the installed Momentum API; launch without crashes
-- [ ] Verify existing v1.4 Pulse Analyzer and Generator screens still work
+- [ ] Verify existing v1.4 Signal Generator screen still works
+- [x] Recheck Pulse Analyzer HIGH/LOW/PERIOD/DUTY, MIN/MAX, reset, HOLD/LIVE, BACK (user-reported pass)
 - [x] Recheck Frequency Meter LOW/PC1 MIN/MAX, HOLD/LIVE, reset, BACK (user-reported pass)
 - [x] Recheck GPIO Monitor after v1.5 changes (user-reported pass)
 - [x] Insert microSD and record at least 5 samples on PC1 with internal PA7
