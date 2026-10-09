@@ -6,6 +6,7 @@ on:
     paths:
       - "*.c"
       - "*.h"
+      - "scripts/check_v16_boundaries.py"
       - "application.fam"
       - ".github/workflows/build-v1.6.yml"
   workflow_dispatch:
@@ -27,6 +28,9 @@ jobs:
     steps:
       - name: Check out development branch
         uses: actions/checkout@v4
+
+      - name: Guard passive UI and hardware boundaries
+        run: python3 scripts/check_v16_boundaries.py
 
       - name: Compile with Momentum SDK
         id: compile
