@@ -56,6 +56,8 @@ typedef struct {
     uint8_t gpio_index;
 
     LabMateScreen screen;
+    /* One active measurement capture at a time; TIM1 PWM is independent. */
+    LabMateCaptureOwner capture_owner;
 
     bool gpio_state;
     bool gpio_previous_state;

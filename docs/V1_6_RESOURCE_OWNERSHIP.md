@@ -73,14 +73,22 @@ Additional resource handoff invariants:
    `capture_stop_all()` reuses existing LOW PC1 IRQ, HIGH PB3/TIM2 and
    Pulse EXTI stop implementations. Used by mode changes, Logger capture
    stop, BACK and app exit. No capture start/ISR or TIM1 PWM logic changed.
-4. **Pending:** explicit owner state and consistent acquire/release semantics
+4. **Implemented (initial exclusive-owner stage, device test pending):**
+   `LabMateCaptureOwner` tracks the active LOW PC1 IRQ, HIGH PB3/TIM2 or
+   Pulse EXTI capture. Each start checks the current owner, every active flag
+   and the requested pin before touching hardware, and each stop clears
+   ownership. The shared teardown resets the owner to None. Pure policy
+   functions and host-native pin/owner/flag matrix tests cover invalid
+   claims. Independent TIM1/PA7 generator operation is unchanged.
+5. **Pending:** visible error reporting, hardware acquisition rollback,
+   and full fail-safe resource cleanup after external HAL errors
    for PC1 IRQ, PB3 TIM2 and active generator resources, including handling
    failed acquisition and cleaning up callbacks on exit.
-5. **Pending device regression:** Generator ON → BACK → GPIO Monitor → navigate
+6. **Pending device regression:** Generator ON → BACK → GPIO Monitor → navigate
    across PA7, then Generator OFF → PA7 becomes selectable again; also test
    switching Frequency/Pulse/Logger views, HOLD/LIVE and app exit. Do not
    connect unknown or unsafe voltages.
-6. **Pending:** update broader project roadmap only after device-level
+7. **Pending:** update broader project roadmap only after device-level
    evidence supports the stability claim.
 
 **Electrical safety:** Flipper Zero GPIO measurements/inputs must use

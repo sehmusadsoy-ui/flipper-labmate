@@ -97,6 +97,34 @@ for name in ["ui_badge", "ui_key", "ui_draw_menu_icon", "ui_draw_header"]:
         f"UI primitive is missing: {name}",
     )
 
+# Every capture start must use the shared exclusive-owner policy.
+expect(
+    "LabMateCaptureOwner capture_owner;" in INTERNAL_H,
+    "Missing exclusive capture owner state",
+)
+expect(
+    MAIN.count("capture_can_start(app, LabMateCapture") == 3,
+    "All three capture start paths must check ownership and pin eligibility",
+)
+for owner in (
+    "LabMateCaptureFrequencyLow",
+    "LabMateCaptureFrequencyHigh",
+    "LabMateCapturePulse",
+):
+    expect(
+        f"app->capture_owner = {owner};" in MAIN,
+        f"Capture start must mark active owner: {owner}",
+    )
+expect(
+    "labmate_capture_can_acquire(" in POLICY and
+    "labmate_capture_pin_allowed(" in POLICY,
+    "Exclusive capture policy implementation is missing",
+)
+expect(
+    "app->capture_owner = LabMateCaptureNone;" in MAIN,
+    "Capture owner is not cleared after release",
+)
+
 # Capture STOP paths share one idempotent teardown helper; Pulse HOLD is
 # deliberately excluded because it stops only its own IRQ.
 expect(

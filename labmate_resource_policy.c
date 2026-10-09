@@ -31,3 +31,32 @@ uint8_t labmate_monitor_next_pin(
     /* Defensive fallback; never select PA7 while background PWM owns it. */
     return LABMATE_MONITOR_PC1_INDEX;
 }
+
+// No GPIO, timer or interrupt calls here; all of these rules are host-testable.
+bool labmate_capture_pin_allowed(LabMateCaptureOwner requested, uint8_t pin_index) {
+    if(pin_index >= LABMATE_MONITOR_PIN_COUNT) return false;
+    switch(requested) {
+    case LabMateCaptureFrequencyLow:
+        return pin_index == LABMATE_MONITOR_PC1_INDEX;
+    case LabMateCaptureFrequencyHigh:
+        return pin_index == 4U; /* PB3 -> TIM2_CH2 */
+    case LabMateCapturePulse:
+        return pin_index == 0U || pin_index == 1U ||
+               pin_index == 3U || pin_index == 5U;
+    case LabMateCaptureNone:
+    default:
+        return false;
+    }
+}
+
+bool labmate_capture_can_acquire(
+    LabMateCaptureOwner owner,
+    LabMateCaptureOwner requested,
+    uint8_t pin_index,
+    bool frequency_low_active,
+    bool frequency_high_active,
+    bool pulse_active) {
+    return owner == LabMateCaptureNone &&
+           !frequency_low_active && !frequency_high_active && !pulse_active &&
+           labmate_capture_pin_allowed(requested, pin_index);
+}

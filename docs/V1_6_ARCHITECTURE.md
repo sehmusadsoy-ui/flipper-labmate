@@ -77,6 +77,20 @@ This is a development designation, **not** a published v1.6 Stable release.
 - [ ] Extract capture code without changing timing behavior; exercise
       entry/exit, HOLD/LIVE, mode changes and signal loss on hardware.
 
+#### Capture ownership: initial exclusive-claim stage
+
+- [x] Add `LabMateCaptureOwner` state for Frequency LOW (PC1), Frequency
+      HIGH (PB3/TIM2), and Pulse (PC0/PC1/PB2/PA4).
+- [x] Reject overlapping capture starts and wrong-pin requests before
+      reconfiguring GPIO/EXTI/TIM2; clear capture ownership in each stop path
+      and the shared teardown.
+- [x] Extend native C tests with pin/owner/active-flag matrices and add CI
+      static checks for the three capture start paths.
+- [ ] Integrate visible error reporting and hardware-acquire failure rollback,
+      then validate all resource handoffs and HOLD/LIVE on the actual Flipper.
+      HAL GPIO callback registration/start APIs are used as before; a passing
+      build does not guarantee acquisition never fails on real hardware.
+
 ### Step 4 — Logger/history boundaries
 - [ ] Separate logger and history read/write operations behind documented APIs.
 - [ ] Preserve monotonic non-overwriting CSV numbering, row schema, periodic

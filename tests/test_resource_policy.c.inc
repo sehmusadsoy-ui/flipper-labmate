@@ -28,6 +28,40 @@ static void check_sequence(bool generator_running) {
     }
 }
 
+static void check_capture_ownership(void) {
+    for(uint8_t pin = 0U; pin <= LABMATE_MONITOR_PIN_COUNT; ++pin) {
+        for(int requested = LabMateCaptureNone;
+            requested <= LabMateCapturePulse;
+            ++requested) {
+            const LabMateCaptureOwner type = (LabMateCaptureOwner)requested;
+            const bool permitted = labmate_capture_pin_allowed(type, pin);
+            const bool expected =
+                (type == LabMateCaptureFrequencyLow && pin == 1U) ||
+                (type == LabMateCaptureFrequencyHigh && pin == 4U) ||
+                (type == LabMateCapturePulse &&
+                 (pin == 0U || pin == 1U || pin == 3U || pin == 5U));
+            assert(permitted == expected);
+            assert(labmate_capture_can_acquire(
+                       LabMateCaptureNone, type, pin, false, false, false) == expected);
+
+            /* No preemption, even when the old IRQ/TIM flags are stale. */
+            for(int owner = LabMateCaptureFrequencyLow;
+                owner <= LabMateCapturePulse;
+                ++owner) {
+                assert(!labmate_capture_can_acquire(
+                    (LabMateCaptureOwner)owner, type, pin, false, false, false));
+            }
+            for(unsigned flags = 1U; flags < 8U; ++flags) {
+                assert(!labmate_capture_can_acquire(
+                    LabMateCaptureNone, type, pin,
+                    (flags & 1U) != 0U, (flags & 2U) != 0U,
+                    (flags & 4U) != 0U));
+            }
+        }
+    }
+    assert(!labmate_capture_pin_allowed(LabMateCapturePulse, UINT8_MAX));
+}
+
 int main(void) {
     /* All eight pins remain available when the generator is off. */
     for(uint8_t pin = 0U; pin < LABMATE_MONITOR_PIN_COUNT; ++pin) {
@@ -61,6 +95,7 @@ int main(void) {
 
     check_sequence(false);
     check_sequence(true);
+    check_capture_ownership();
 
     puts("LabMate v1.6 PA7 resource policy: all host-native cases passed");
     return 0;

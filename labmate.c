@@ -83,6 +83,20 @@ const uint32_t labmate_generator_frequencies[] = {
 
 #define GENERATOR_FREQ_COUNT 15
 
+/* Capture starts may only claim a free owner and an allowed physical pin.
+ * Invalid or overlapping requests leave GPIO, EXTI and timers untouched.
+ * UI/mode switching still calls capture_stop_all() before changing pins.
+ */
+static bool capture_can_start(const LabMateApp* app, LabMateCaptureOwner requested) {
+    return labmate_capture_can_acquire(
+        app->capture_owner,
+        requested,
+        app->gpio_index,
+        app->frequency_irq_active,
+        app->frequency_hw_active,
+        app->pulse_irq_active);
+}
+
 static void frequency_gpio_callback(void* context) {
     LabMateApp* app = context;
 
@@ -154,12 +168,16 @@ static void frequency_hw_stop(LabMateApp* app) {
         GpioModeAnalog);
 
     app->frequency_hw_active = false;
+    if(app->capture_owner == LabMateCaptureFrequencyHigh) {
+        app->capture_owner = LabMateCaptureNone;
+    }
     app->frequency_hw_last_count = 0;
     app->frequency_hw_last_cycle = 0;
 }
 
 static void frequency_hw_start(LabMateApp* app) {
-    if(app->frequency_hw_active) {
+    if(app->frequency_hw_active ||
+       !capture_can_start(app, LabMateCaptureFrequencyHigh)) {
         return;
     }
 
@@ -222,6 +240,7 @@ static void frequency_hw_start(LabMateApp* app) {
     app->frequency_hw_last_count = 0;
     app->frequency_hw_last_cycle = DWT->CYCCNT;
     app->frequency_hw_active = true;
+    app->capture_owner = LabMateCaptureFrequencyHigh;
 
     LL_TIM_EnableCounter(TIM2);
 }
@@ -235,9 +254,16 @@ static void __attribute__((unused)) frequency_interrupt_stop(LabMateApp* app) {
     furi_hal_gpio_remove_int_callback(pin);
 
     app->frequency_irq_active = false;
+    if(app->capture_owner == LabMateCaptureFrequencyLow) {
+        app->capture_owner = LabMateCaptureNone;
+    }
 }
 
 static void __attribute__((unused)) frequency_interrupt_start(LabMateApp* app) {
+    if(app->frequency_irq_active ||
+       !capture_can_start(app, LabMateCaptureFrequencyLow)) {
+        return;
+    }
     const GpioPin* pin =
         labmate_gpio_pins[app->gpio_index];
 
@@ -271,6 +297,7 @@ static void __attribute__((unused)) frequency_interrupt_start(LabMateApp* app) {
     furi_hal_gpio_enable_int_callback(pin);
 
     app->frequency_irq_active = true;
+    app->capture_owner = LabMateCaptureFrequencyLow;
 }
 
 /* Pulse Analyzer uses BOTH edges and the CPU cycle counter.
@@ -396,11 +423,15 @@ static void pulse_interrupt_stop(LabMateApp* app) {
     LL_EXTI_ClearFlag_0_31((uint32_t)pin->pin);
     FURI_CRITICAL_EXIT();
     app->pulse_irq_active = false;
+    if(app->capture_owner == LabMateCapturePulse) {
+        app->capture_owner = LabMateCaptureNone;
+    }
 }
 
 static void pulse_interrupt_start(LabMateApp* app) {
+    if(app->pulse_irq_active ||
+       !capture_can_start(app, LabMateCapturePulse)) return;
     const GpioPin* pin = labmate_gpio_pins[app->gpio_index];
-    if(app->pulse_irq_active) return;
 
     app->pulse_irq_seen = false;
     app->pulse_irq_high_valid = false;
@@ -424,6 +455,7 @@ static void pulse_interrupt_start(LabMateApp* app) {
     furi_hal_gpio_add_int_callback(pin, pulse_gpio_callback, app);
     furi_hal_gpio_enable_int_callback(pin);
     app->pulse_irq_active = true;
+    app->capture_owner = LabMateCapturePulse;
 }
 
 /* Shared capture teardown. Each stop checks the existing active flags.
@@ -435,6 +467,8 @@ static void capture_stop_all(LabMateApp* app) {
     frequency_hw_stop(app);
     frequency_interrupt_stop(app);
     pulse_interrupt_stop(app);
+    /* No capture remains after the three idempotent stop paths. */
+    app->capture_owner = LabMateCaptureNone;
 }
 
 static void gpio_release(LabMateApp* app, uint8_t index) {
@@ -1582,6 +1616,7 @@ int32_t labmate_app(void* p) {
     app->gpio_index = 1; /* PC1 */
     app->generator_freq_index = 0; /* 1 Hz */
     app->screen = LabMateScreenMenu;
+    app->capture_owner = LabMateCaptureNone;
 
     app->mutex =
         furi_mutex_alloc(
