@@ -25,3 +25,6 @@ void ui_draw_menu_icon(
     uint8_t item,
     uint8_t x,
     uint8_t y);
+
+/* Stateless instrument-style title and separator line. */
+void ui_draw_header(Canvas* canvas, const char* title);
