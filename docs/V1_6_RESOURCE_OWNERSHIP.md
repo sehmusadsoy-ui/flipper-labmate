@@ -40,7 +40,10 @@ PWM while `generator_running` still reports active.
 - The GPIO Monitor shows `PA7 BUSY` while PWM owns that pin. Signal Generator
   continues to run in background until explicitly stopped or the app exits.
 - `tests/test_resource_policy.c.inc` checks policy logic on a desktop C compiler,
-  while CI builds the full development FAP and runs static boundary guards.\n  The host-only test uses a `.c.inc` extension so Flipper's recursive `*.c`\n  build does not treat it as an application source.
+  while CI builds the full development FAP and runs static boundary guards.
+  `application.fam` explicitly uses `sources=["*.c"]` so the host-only
+  `.c.inc` test is not linked into the FAP. The original Momentum manifest
+  default `*.c*` pattern would also match `.c.inc` files.
 
 This is **not** proof of on-device timing, peripheral-state preservation or
 complete resource management. PA7 still requires a physical regression test;
