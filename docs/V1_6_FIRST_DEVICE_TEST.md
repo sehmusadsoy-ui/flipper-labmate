@@ -121,3 +121,59 @@ After Gates A–C are reviewed:
 
 **Important:** This file documents a planned test procedure, not a claim
 that any device test took place.
+
+## First physical test report — user-reported (2026-10-10)
+
+**Firmware candidate under test:** development FAP from CI
+[37992919485](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/37992919485),
+code SHA `a69c231`; `v1.6d` was installed and launched on the Flipper via
+Momentum runfap.py, COM7. This evidence was supplied by the device operator,
+not collected by GitHub CI or by the development assistant directly.
+
+| Test | User-reported result | Scope |
+| --- | --- | --- |
+| A1–A8 | PASS (8/8) | Grouped navigation, tool entry/exit, labels, display |
+| B1 | PASS | GPIO monitor |
+| B2 | PASS | Frequency Meter mode changes and functional checks |
+| B3 | PASS | Pulse input selection, statistics/measurement UI |
+| B4 | PASS | Pulse HOLD/LIVE and re-entry |
+| B5 | PASS | Generator remains RUN after BACK |
+| B6 | PASS | PWM PA7 software reservation/skip and release |
+| C1–C3 | PASS | Logger PC1 LOW, PB3 HIGH, Pulse PC1 recording |
+| C4–C5 | PASS | History new/old files and persistence across restart |
+
+**Measurement accuracy finding, OPEN / HIGH PRIORITY:** The operator also
+reports that while the Signal Generator is set to **1 Hz**, a frequency
+measurement displayed approximately **10 Hz**. It is currently **unknown**
+whether the affected input was Frequency HIGH PB3 or LOW PC1 (or another
+measurement view), what values persisted after settling, and whether
+physical 1 Hz timing was independently verified. Therefore none of these
+PASS reports constitutes an unconditional 1 Hz frequency accuracy pass.
+
+### Source-level leading hypothesis (not confirmed on hardware)
+
+In `labmate.c`, the TIM2/PB3 HIGH branch samples a counter at
+`SystemCoreClock / 10U`, approximately **100 ms**, and computes frequency
+from `delta_count / elapsed_cycles` whenever `delta_count > 0`.
+One rising edge detected inside a roughly 100 ms sample is therefore
+reported around **10 Hz**, even if the source truly produces only one rising
+edge per second. This is an inherent small-count / short-gate bias and is
+consistent with the reported 10x symptom **IF the reading was HIGH PB3**.
+The LOW PC1 branch timestamps successive rising edges instead and has a
+different measurement path. Momentum's TIM1/PA7 PWM HAL takes the
+configured frequency in Hz; no hardware output verification is claimed.
+
+**Next diagnosis (before changing firmware):** Confirm which label
+appeared on the measuring screen: `HIGH PB3` or `LOW PC1`, and the exact
+display reading (LIVE value vs MIN/MAX). With an existing approved safe
+3.3 V-compatible test setup, compare the reading after several seconds
+in LOW PC1 and HIGH PB3 modes, without altering the current v1.6d binary.
+STOP PWM before making any changes to the test setup; do not use 5 V or
+unknown signals. If HIGH PB3 is affected, design and host-test low-count
+gating or low-rate validity policy without regressing high-frequency
+measurements. If LOW PC1 is affected, inspect EXTI edge/timestamp handling
+instead of applying a HIGH-specific fix.
+
+**Release decision:** Keep v1.6-dev unpromoted and profile SD persistence
+deferred until the 1 Hz discrepancy has been diagnosed and retested on
+device. Do NOT silently change a validated v1.5 Stable artifact.
