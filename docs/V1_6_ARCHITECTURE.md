@@ -44,8 +44,13 @@ This is a development designation, **not** a published v1.6 Stable release.
 - [x] Extract About, Log History and Log Detail drawing to
       `labmate_ui_screens.c/.h` with their existing labels, fonts and read-only behavior.
       The shared `ui_draw_header()` helper now lives in `labmate_ui_primitives.c`.
-- [ ] Extract the remaining stateful screen renderers in small groups and
-      compare labels, control hints and fonts on device. Keep UI mutex and event loop unchanged.
+- [x] Move Main Menu, GPIO Monitor and Frequency Meter drawing (including
+      display-only frequency formatting) to `labmate_ui_screens.c`.
+- [x] Move Signal Generator drawing to the same UI module, retaining the
+      single existing preset-frequency array as shared immutable data.
+- [ ] Move Pulse Analyzer and Data Logger drawing in a separate reviewed change,
+      then compare labels, font sizes and control hints on device. Keep the
+      existing UI mutex and event loop unchanged.
 
 ### Step 3 — Centralize resource ownership
 - [ ] Create explicit ownership and cleanup rules for PC1 EXTI, PB3 TIM2 and
@@ -105,10 +110,24 @@ operations are performed from `draw_about`, `draw_history` or
 `draw_history_detail`.
 
 The UI section shrank from 2,964 to approximately 2,677 lines in
-`labmate.c`. Purely moving code does not prove behavior is identical: the
+`labmate.c`.
+The subsequent extraction of Menu/GPIO/Frequency/Generator leaves the
+current main file at 2,297 lines; the new screen
+module is 502 lines. Purely moving code does not prove behavior is identical: the
 CI build is a compile/link check; **Flipper on-device screen regression
 remains pending for v1.6-dev**.
 
-The next incremental work item is to extract the other stateful renderers
-after carefully defining read-only display dependencies; do not pull IRQ
-handling or storage writes into the render module.
+Main Menu, GPIO Monitor, Frequency Meter and Signal Generator rendering
+have now been moved as independent read-only screens. Frequency MIN/MAX
+formatters stay with the display. GPIO labels use a single shared immutable
+table, and the PWM generator preset table remains owned by `labmate.c` but
+is exposed read-only to the display; no hardware-generation call was moved.
+A brief intermediate CI failure (legacy Pulse renderer still referring to
+its old private `gpio_names`) was corrected by sharing that table. The
+corrected three-screen build passed the Momentum SDK CI compile and FAP
+checksum checks.
+
+Next: migrate the remaining Pulse and Data Logger screens carefully;
+`pulse_cycles_to_us()` is shared by logger formatting and measurement,
+so its dependency must be resolved without copying calculation logic.
+Do not pull IRQ handling or storage writes into the render module.
