@@ -2123,6 +2123,38 @@ int32_t labmate_app(void* p) {
             furi_mutex_release(app->mutex);
         }
 
+        /* Profile I/O is deferred until AFTER releasing the UI mutex.
+         * No microSD writes are made in an interrupt or drawing callback.
+         */
+        if(profiles_read_requested) {
+            LabMateProfileStore restored;
+            uint8_t active = LABMATE_PROFILE_COPY_NONE;
+            const LabMateProfileIoResult result =
+                labmate_profile_sd_load(&restored, &active);
+            furi_mutex_acquire(app->mutex, FuriWaitForever);
+            app->profiles = restored;
+            app->profile_active_copy = active;
+            app->profile_io = result;
+            app->profile_busy = false;
+            furi_mutex_release(app->mutex);
+        }
+        if(profiles_save_requested) {
+            uint8_t written_copy = LABMATE_PROFILE_COPY_NONE;
+            const bool saved = labmate_profile_sd_save(
+                &proposed_profiles, proposed_copy, &written_copy);
+            furi_mutex_acquire(app->mutex, FuriWaitForever);
+            if(saved) {
+                app->profiles = proposed_profiles;
+                app->profile_active_copy = written_copy;
+                app->profile_io = LabMateProfileIoOk;
+                app->profile_notice = 1U; /* SAVED */
+            } else {
+                app->profile_notice = 5U; /* WRITE ERR */
+            }
+            app->profile_busy = false;
+            furi_mutex_release(app->mutex);
+        }
+
         /* History directory/file operations never hold the UI mutex. */
         if(history_close_requested) history_close(app);
         if(history_scan_requested) history_scan(app);
