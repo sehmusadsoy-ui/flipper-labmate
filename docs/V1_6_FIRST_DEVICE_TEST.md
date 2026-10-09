@@ -261,3 +261,51 @@ setup, re-check HIGH PB3 1, 2, and 10 Hz. Wait long enough to see new
 readings and distinguish LIVE values from lifetime MIN/MAX extrema,
 resetting MIN/MAX before each preset/mode. Stop PWM before changing any
 connections. No manual ZIP downloads: use the PowerShell GitHub installer.
+
+## Third physical retest: HIGH PB3 stability (user-reported, 2026-10-10)
+
+**FAP build:** GitHub Actions
+[37999740904](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/37999740904),
+source SHA `f2edde8dbd31022daa4ca182e48855fac2779422`.
+This is device-operator evidence, not an independent oscilloscope
+calibration or a GitHub CI hardware test.
+
+| Generator preset | LIVE (Hz) | MIN (Hz) | MAX (Hz) | Maximum absolute relative error |
+| --- | ---: | ---: | ---: | ---: |
+| 1 Hz | 0.99 | 0.97 | 1.02 | 3.0% |
+| 2 Hz | 1.99 | 1.96 | 2.03 | 2.0% |
+| 10 Hz | operator reports "very variable" | 9.83 | 10.29 | 2.9% |
+
+**Assessment:** The original catastrophic 1 Hz -> 10 Hz result
+and the subsequent 1 Hz -> ~1.5 Hz phase-biased peak were no longer
+observed. The first two nominal frequencies achieved readings within
+approximately 3% of the programmed source, a **functional device retest
+PASS** for their intended measurement modes. The 10 Hz range has
+0.46 Hz peak-to-peak spread, approximately 4.6% of nominal; all reported
+extrema are within 2.9% of nominal, but LIVE was described as very
+variable with no single representative number provided, so 10 Hz
+*stability* remains **OBSERVE / NEEDS FOLLOW-UP**, not a numerical
+instantaneous-reading PASS.
+
+**Technical hypothesis:** HIGH PB3 uses a ~100 ms software poll of
+the TIM2 rising-edge counter. The edge-aligned estimator still anchors
+timestamps at the poll rather than at the exact hardware edge time.
+Up to roughly one poll interval at each gate boundary contributes
+quantization jitter, which can be relevant for ~3 s estimation gates
+(around a few percent). This is a hypothesis based on source and readings,
+not a proven external electrical or oscillator defect.
+
+**Decision:** Preserve this known-good correction and avoid further
+frequency algorithm changes solely from MIN/MAX spread. Verify
+repeatability and LIVE behavior at 10 Hz before attempting further
+smoothing; adding an estimator or median should not conceal real signal
+changes or degrade high-frequency counting. The user prefers
+one-command GitHub CLI + PowerShell installation and the consistent
+`labmate.fap` filename.
+
+**Release discipline:** Keep `main` / v1.5 Stable untouched. The
+frequency accuracy evidence compares Signal Generator with the same
+Flipper's Frequency Meter, and does not independently calibrate TIM1 PWM
+or TIM2 timing. Physical signal output calibration and broader accuracy
+requirements should remain explicitly separate from functional smoke
+tests.
