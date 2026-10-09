@@ -10,6 +10,7 @@
 #include <storage/storage.h>
 
 #define MENU_COUNT 7
+#define LABMATE_VERSION_TEXT "v1.5d"
 #define LOGGER_DIR "/ext/apps_data/labmate"
 #define LOGGER_INTERVAL_MS 1000U
 /* Flush buffered records every ten 1-second samples to limit data loss. */
@@ -1836,7 +1837,7 @@ static void draw_menu(
         99,
         1,
         27,
-        "v1.5d",
+        LABMATE_VERSION_TEXT,
         false);
 
     canvas_draw_line(
@@ -2306,7 +2307,7 @@ static void draw_about(
         canvas,
         2,
         10,
-        "LABMATE v1.5");
+        "LABMATE " LABMATE_VERSION_TEXT);
 
     canvas_draw_line(
         canvas,
