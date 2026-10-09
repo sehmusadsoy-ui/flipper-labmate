@@ -317,3 +317,17 @@ other, with generation comparison and recovery rules. This design is NOT YET
 connected to microSD APIs; no such files are currently created by LabMate.
 Never claim saved profiles are usable until atomic-ish file load/save,
 error handling, UI confirmation and on-device testing are completed.
+
+## PB3/TIM2 low-count gate correction (awaiting on-device retest)
+
+Following the first physical v1.6d regression, HIGH PB3 measured about
+10 Hz while Signal Generator was set to 1 Hz. Source diagnosis traced
+this to treating an isolated edge in a 100 ms sample as a full-frequency
+estimate. The adaptive counter gate is implemented in pure
+`labmate_frequency_gate.c/.h`, and the app now keeps a separate 100 ms
+TIM2 poll anchor and up-to-2 s frequency estimation window.
+
+This change does NOT assert a verified 1 Hz reading on hardware. See
+[`V1_6_FIRST_DEVICE_TEST.md`](V1_6_FIRST_DEVICE_TEST.md) for the regression
+report and required physical HIGH PB3 retest. No v1.6 Stable release until
+accuracy is checked; saved-profile storage/UI remain deferred.

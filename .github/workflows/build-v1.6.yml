@@ -10,6 +10,7 @@ on:
       - "tests/test_resource_policy.c.inc"
       - "tests/test_navigation.c.inc"
       - "tests/test_profiles.c.inc"
+      - "tests/test_frequency_gate.c.inc"
       - "scripts/install-labmate.ps1"
       - "application.fam"
       - ".github/workflows/build-v1.6.yml"
@@ -60,6 +61,14 @@ jobs:
             labmate_profiles.c tests/test_profiles.c.inc \
             -o /tmp/labmate-profile-tests
           /tmp/labmate-profile-tests
+
+      - name: Test PB3 adaptive frequency gate (portable C)
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. -x c \
+            labmate_frequency_gate.c tests/test_frequency_gate.c.inc \
+            -o /tmp/labmate-frequency-gate-tests
+          /tmp/labmate-frequency-gate-tests
 
       - name: Compile with Momentum SDK
         id: compile

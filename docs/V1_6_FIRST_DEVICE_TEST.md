@@ -177,3 +177,34 @@ instead of applying a HIGH-specific fix.
 **Release decision:** Keep v1.6-dev unpromoted and profile SD persistence
 deferred until the 1 Hz discrepancy has been diagnosed and retested on
 device. Do NOT silently change a validated v1.5 Stable artifact.
+
+## Confirmed HIGH PB3 discrepancy and corrective development work
+
+The device operator confirmed that the unexpected **10 Hz** value appeared
+specifically in **Frequency Meter / HIGH PB3**, while the generator was
+configured to **1 Hz**. Source inspection confirmed that the old HIGH path
+computed `delta_count / 0.1-second` even for one counted edge. One edge
+observed in a 100 ms window corresponds to an instantaneous 10 Hz estimate,
+which is not a reliable long-term 1 Hz reading.
+
+The fix changes TIM2/PB3 sampling to two independent clocks:
+- **100 ms hardware polls**, retaining high-speed edge observation and
+  signal-loss tracking.
+- **Adaptive frequency estimation:** publish on >=10 edges for prompt
+  high-rate response, or after a maximum ~2 s gate for slow signals,
+  provided at least two edges were counted. An empty or single-edge
+  two-second gate produces no new frequency or MIN/MAX value.
+- HOLD to LIVE, capture release and fresh mode entry reset both clocks.
+  No GPIO/EXTI/TIM2 acquisition API is changed.
+
+New portable C tests exercise 1 Hz sampled at 100 ms, 2/10/100/1000/50000 Hz
+counter windows, isolated noise edges, no-signal gates and TIM2/DWT counter
+wraparound. These are **host simulations, not a Flipper accuracy
+calibration**. At low frequencies in HIGH mode, measurement latency is about
+2 seconds and count/time quantization persists; LOW PC1 remains preferable
+for precise very slow signals. Signal Generator PA7 TIM1 output has NOT been
+independently verified at the pin by external timing equipment.
+
+The corrected FAP must be tested on the same Flipper, with the same known
+3.3 V-compatible setup, **before** the physical 1 Hz finding can be closed.
+The physical operator is required to reinstall the newly built FAP.

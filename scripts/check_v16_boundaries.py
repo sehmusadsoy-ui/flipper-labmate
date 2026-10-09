@@ -18,6 +18,7 @@ NAVIGATION = (ROOT / "labmate_navigation.c").read_text(encoding="utf-8")
 MANIFEST = (ROOT / "application.fam").read_text(encoding="utf-8")
 PROFILES = (ROOT / "labmate_profiles.c").read_text(encoding="utf-8")
 POLICY = (ROOT / "labmate_resource_policy.c").read_text(encoding="utf-8")
+FREQUENCY_GATE = (ROOT / "labmate_frequency_gate.c").read_text(encoding="utf-8")
 POLICY_H = (ROOT / "labmate_resource_policy.h").read_text(encoding="utf-8")
 
 
@@ -266,6 +267,23 @@ expect(
     re.search(r"\bstorage_\w+\s*\(", PROFILES) is None and
     re.search(r"\bfuri_hal_\w+\s*\(", PROFILES) is None,
     "Profile codec must stay independent from storage and hardware",
+)
+
+# A one-edge 100 ms counter bin must not generate a misleading 10 Hz
+# sample for a 1 Hz source. Hardware polling and sample gates are separate.
+expect(
+    "labmate_high_gate_evaluate(" in MAIN and
+    "frequency_hw_last_poll_count" in MAIN and
+    "frequency_hw_last_poll_cycle" in MAIN and
+    "LabMateHighGatePublish" in MAIN,
+    "PB3 high-frequency meter must use the adaptive sample gate",
+)
+expect(
+    "LABMATE_HIGH_GATE_MIN_EDGES" in FREQUENCY_GATE and
+    "LABMATE_HIGH_GATE_MAX_SECONDS" in FREQUENCY_GATE and
+    "LL_TIM_" not in FREQUENCY_GATE and
+    "furi_hal_" not in FREQUENCY_GATE,
+    "Adaptive gate must be pure host-testable estimation logic",
 )
 
 if failures:

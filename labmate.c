@@ -12,6 +12,7 @@
 #include "labmate_internal.h"
 #include "labmate_ui_screens.h"
 #include "labmate_resource_policy.h"
+#include "labmate_frequency_gate.h"
 
 #define LOGGER_DIR "/ext/apps_data/labmate"
 #define LOGGER_INTERVAL_MS 1000U
@@ -179,6 +180,8 @@ static void frequency_hw_stop(LabMateApp* app) {
     }
     app->frequency_hw_last_count = 0;
     app->frequency_hw_last_cycle = 0;
+    app->frequency_hw_last_poll_count = 0;
+    app->frequency_hw_last_poll_cycle = 0;
 }
 
 static void frequency_hw_start(LabMateApp* app) {
@@ -244,7 +247,9 @@ static void frequency_hw_start(LabMateApp* app) {
     LL_TIM_SetCounter(TIM2, 0);
 
     app->frequency_hw_last_count = 0;
+    app->frequency_hw_last_poll_count = 0;
     app->frequency_hw_last_cycle = DWT->CYCCNT;
+    app->frequency_hw_last_poll_cycle = app->frequency_hw_last_cycle;
     app->frequency_hw_active = true;
     app->capture_pin_index = app->gpio_index;
     app->capture_owner = LabMateCaptureFrequencyHigh;
@@ -828,53 +833,53 @@ static void measurement_update(LabMateApp* app) {
          * PB3 / TIM2_CH2 counts edges without GPIO interrupts.
          */
         if(app->frequency_hw_active) {
-            uint32_t current_cycle = DWT->CYCCNT;
-            uint32_t elapsed_cycles =
-                current_cycle -
-                app->frequency_hw_last_cycle;
+            const uint32_t current_cycle = DWT->CYCCNT;
 
-            /*
-             * Update roughly every 100 ms.
+            /* Poll hardware at ~100 ms to keep high-rate responsiveness.
+             * Low-count readings accumulate across multiple polls instead
+             * of mistaking one 1 Hz pulse for 10 Hz in a 100 ms gate.
              */
-            if(SystemCoreClock > 0 &&
-               elapsed_cycles >=
+            if(SystemCoreClock > 0U &&
+               (uint32_t)(current_cycle - app->frequency_hw_last_poll_cycle) >=
                    (SystemCoreClock / 10U)) {
 
-                uint32_t current_count =
-                    LL_TIM_GetCounter(TIM2);
-
-                uint32_t delta_count =
-                    current_count -
-                    app->frequency_hw_last_count;
-
-                app->frequency_hw_last_count =
-                    current_count;
-
-                app->frequency_hw_last_cycle =
-                    current_cycle;
-
+                const uint32_t current_count = LL_TIM_GetCounter(TIM2);
+                app->frequency_hw_last_poll_cycle = current_cycle;
                 app->edges = current_count;
 
-                if(delta_count > 0) {
-                    app->frequency_millihz =
-                        (uint32_t)(
-                            (((uint64_t)delta_count *
-                              (uint64_t)SystemCoreClock *
-                              1000ULL) +
-                             (elapsed_cycles / 2U)) /
-                            elapsed_cycles);
-
-                    app->frequency_valid = true;
+                /* Track any edge for loss detection, including a window
+                 * with too few pulses to publish a frequency estimate.
+                 */
+                if(current_count != app->frequency_hw_last_poll_count) {
+                    app->frequency_hw_last_poll_count = current_count;
                     app->frequency_last_edge = now;
-                    frequency_stats_record(app);
+                }
 
-                } else if(
-                    tick_frequency > 0 &&
-                    (now -
-                     app->frequency_last_edge) >
-                        (tick_frequency * 3U)) {
+                uint32_t sample_millihz = 0U;
+                const LabMateHighGateResult gate = labmate_high_gate_evaluate(
+                    current_count - app->frequency_hw_last_count,
+                    (uint32_t)(current_cycle - app->frequency_hw_last_cycle),
+                    SystemCoreClock, &sample_millihz);
 
-                    app->frequency_millihz = 0;
+                if(gate != LabMateHighGateWait) {
+                    /* Close a gate even if it lacks >=2 edges. An isolated
+                     * stray edge never becomes a false high-frequency
+                     * measurement or MIN/MAX statistic.
+                     */
+                    app->frequency_hw_last_count = current_count;
+                    app->frequency_hw_last_cycle = current_cycle;
+
+                    if(gate == LabMateHighGatePublish) {
+                        app->frequency_millihz = sample_millihz;
+                        app->frequency_valid = true;
+                        frequency_stats_record(app);
+                    }
+                }
+
+                if(tick_frequency > 0U &&
+                   (uint32_t)(now - app->frequency_last_edge) >
+                       (tick_frequency * 3U)) {
+                    app->frequency_millihz = 0U;
                     app->frequency_valid = false;
                 }
             }
@@ -1925,8 +1930,12 @@ int32_t labmate_app(void* p) {
                             measurement_reset(app);
                             if(app->screen == LabMateScreenFrequency &&
                                app->frequency_hw_active) {
-                                app->frequency_hw_last_count = LL_TIM_GetCounter(TIM2);
-                                app->frequency_hw_last_cycle = DWT->CYCCNT;
+                                const uint32_t count = LL_TIM_GetCounter(TIM2);
+                                const uint32_t cycle = DWT->CYCCNT;
+                                app->frequency_hw_last_count = count;
+                                app->frequency_hw_last_poll_count = count;
+                                app->frequency_hw_last_cycle = cycle;
+                                app->frequency_hw_last_poll_cycle = cycle;
                             }
                         }
                     }

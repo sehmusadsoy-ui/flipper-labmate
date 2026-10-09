@@ -93,8 +93,12 @@ typedef struct {
 
     /* High-frequency hardware counter on PB3 / TIM2_CH2 */
     bool frequency_hw_active;
+    /* First sample of the adaptive frequency-estimation gate. */
     uint32_t frequency_hw_last_count;
     uint32_t frequency_hw_last_cycle;
+    /* Last 100 ms counter poll: independent of gate origin and HOLD. */
+    uint32_t frequency_hw_last_poll_count;
+    uint32_t frequency_hw_last_poll_cycle;
 
     uint32_t frequency_period_samples[8];
     uint8_t frequency_sample_index;
