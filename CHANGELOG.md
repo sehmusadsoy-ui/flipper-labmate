@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.5] - Unreleased (development)
+## [1.5] - Release candidate (not published)
 
 ### Data Logger and Log History
 - Added microSD CSV recording for low-frequency PC1, high-frequency PB3 and pulse PC1 measurements, sampled once each second.
