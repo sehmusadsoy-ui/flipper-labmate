@@ -331,3 +331,18 @@ This change does NOT assert a verified 1 Hz reading on hardware. See
 [`V1_6_FIRST_DEVICE_TEST.md`](V1_6_FIRST_DEVICE_TEST.md) for the regression
 report and required physical HIGH PB3 retest. No v1.6 Stable release until
 accuracy is checked; saved-profile storage/UI remain deferred.
+
+## HIGH PB3 edge-aligned gate refinement
+
+The first hardware retest eliminated gross ~10x readings but MIN/MAX
+still ranged 0.95..1.45 Hz at 1 Hz, 1.91..2.39 Hz at 2 Hz and
+9.34..10.70 Hz at 10 Hz. The v1.6-dev TIM2 estimator now
+anchors/ends the counter gate only on observed rising-edge increments,
+rather than a fixed wall-clock gate boundary. Requirements:
+- pure estimator threshold: >=32 count increments OR >=3 seconds and >=2 increments;
+- reset the gate after more than 3 seconds of silence and when releasing HOLD;
+- retain independent ~100 ms TIM2 counter polling and timer ownership;
+- do not mistake device MIN/MAX for a calibrated steady-state frequency.
+
+CI only proves host math tests and build, **not** accuracy on physical GPIO.
+Do not promote v1.6 until Flipper retesting passes.

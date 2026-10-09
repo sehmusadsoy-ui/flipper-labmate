@@ -1,7 +1,7 @@
-/* Portable PB3/TIM2 sparse counter gate tests; not part of firmware FAP. */
+/* Portable TIM2/PB3 observed-edge gate tests; NOT built into the FAP. */
 #include "labmate_frequency_gate.h"
-
 #include <assert.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -14,7 +14,7 @@ static void check_result(
     LabMateHighGateResult expected,
     uint32_t expected_millihz) {
     uint32_t actual = 0xA5A5A5A5U;
-    const LabMateHighGateResult result =
+    LabMateHighGateResult result =
         labmate_high_gate_evaluate(edges, elapsed_cycles, CPU_HZ, &actual);
     assert(result == expected);
     if(result == LabMateHighGatePublish) {
@@ -24,73 +24,91 @@ static void check_result(
     }
 }
 
-static void check_1hz_sample_timeline(void) {
-    /* 100 ms software polls observe one 1 Hz rising edge at ticks 3,13,23...
-     * The old algorithm reported 10 Hz at each isolated detected edge.
-     * Publish only after the gate has observed enough time and edges.
-     */
+/* Simulate 100 ms TIM2 polls. Count exactly one rising edge each period_ticks
+ * (1 Hz = 10; 2 Hz = 5; 10 Hz = 1). Estimation is invoked ONLY after a new
+ * observed edge, and the origin is the first such observed edge.
+ */
+static void check_periodic_signal(uint32_t period_ticks, uint32_t expected_millihz) {
     uint32_t origin_cycle = 0U;
     uint32_t origin_count = 0U;
     uint32_t count = 0U;
-    uint32_t valid = 0U;
-    for(uint32_t tick = 1U; tick <= 50U; ++tick) {
-        if(tick == 3U || tick == 13U || tick == 23U ||
-           tick == 33U || tick == 43U) ++count;
+    uint32_t publications = 0U;
+    bool armed = false;
+    for(uint32_t tick = 1U; tick <= 150U; ++tick) {
+        if(tick < 3U || ((tick - 3U) % period_ticks) != 0U) continue;
+        ++count;
         const uint32_t cycle = tick * TENTH_SECOND;
-        uint32_t value = 0U;
-        const LabMateHighGateResult result =
-            labmate_high_gate_evaluate(
-                count - origin_count, cycle - origin_cycle, CPU_HZ, &value);
-        if(result != LabMateHighGateWait) {
-            origin_count = count;
+        if(!armed) {
             origin_cycle = cycle;
-            if(result == LabMateHighGatePublish) {
-                assert(value == 1000U); /* 1.00 Hz, never 10.00 Hz */
-                ++valid;
-            }
+            origin_count = count;
+            armed = true;
+            continue;
+        }
+        uint32_t result_millihz = 0U;
+        const LabMateHighGateResult result = labmate_high_gate_evaluate(
+            count - origin_count, cycle - origin_cycle, CPU_HZ, &result_millihz);
+        if(result != LabMateHighGateWait) {
+            assert(result == LabMateHighGatePublish);
+            /* Poll clock quantization cannot affect exact test ticks. */
+            assert(result_millihz == expected_millihz);
+            origin_cycle = cycle;
+            origin_count = count;
+            ++publications;
         }
     }
-    assert(valid == 2U);
+    assert(publications >= 2U);
+}
+
+static void check_irregular_counter_sampling(void) {
+    /* A 1 Hz signal observed at 0.3, 1.3, 2.3, 3.4 seconds
+     * must be near 1 Hz (3/3.1), not a 1.5 Hz fixed-gate artefact.
+     */
+    check_result(3U, 31U * TENTH_SECOND,
+                 LabMateHighGatePublish, 968U);
 }
 
 static void check_counter_and_cycle_wrap(void) {
-    /* Hardware counter and DWT CYCCNT use unsigned modulo subtraction. */
-    const uint32_t old_count = UINT32_MAX - 4U;
-    const uint32_t new_count = 5U; /* 10 edges across TIM2 wrap */
-    assert((uint32_t)(new_count - old_count) == 10U);
+    const uint32_t old_count = UINT32_MAX - 25U;
+    const uint32_t new_count = 6U; /* 32 TIM2 edges across wrap */
+    assert((uint32_t)(new_count - old_count) == 32U);
     const uint32_t old_cycle = UINT32_MAX - TENTH_SECOND + 1U;
-    const uint32_t new_cycle = 0U; /* ~100 ms across CPU cycle wrap */
+    const uint32_t new_cycle = 0U;
     assert((uint32_t)(new_cycle - old_cycle) == TENTH_SECOND);
     check_result(new_count - old_count, new_cycle - old_cycle,
-                 LabMateHighGatePublish, 100000U);
+                 LabMateHighGatePublish, 320000U);
 }
 
 int main(void) {
+    /* An isolated edge can never produce a fake 10 Hz reading. */
     check_result(1U, TENTH_SECOND, LabMateHighGateWait, 0U);
-    check_result(0U, CPU_HZ * 2U, LabMateHighGateNoSample, 0U);
-    check_result(1U, CPU_HZ * 2U, LabMateHighGateNoSample, 0U);
-    check_result(2U, CPU_HZ * 2U, LabMateHighGatePublish, 1000U);
-    check_result(4U, CPU_HZ * 2U, LabMateHighGatePublish, 2000U);
-    check_result(10U, CPU_HZ, LabMateHighGatePublish, 10000U);
-    check_result(10U, TENTH_SECOND, LabMateHighGatePublish, 100000U);
-    check_result(100U, TENTH_SECOND, LabMateHighGatePublish, 1000000U);
+    check_result(0U, CPU_HZ * 3U, LabMateHighGateNoSample, 0U);
+    check_result(1U, CPU_HZ * 3U, LabMateHighGateNoSample, 0U);
+
+    check_result(3U, CPU_HZ * 3U, LabMateHighGatePublish, 1000U);
+    check_result(6U, CPU_HZ * 3U, LabMateHighGatePublish, 2000U);
+    check_result(32U, CPU_HZ * 3U + TENTH_SECOND * 2U,
+                 LabMateHighGatePublish, 10000U);
+    check_result(32U, CPU_HZ / 3U, LabMateHighGatePublish, 96000U);
+    check_result(32U, TENTH_SECOND, LabMateHighGatePublish, 320000U);
     check_result(5000U, TENTH_SECOND, LabMateHighGatePublish, 50000000U);
-    check_result(9U, CPU_HZ, LabMateHighGateWait, 0U);
+    check_result(3U, CPU_HZ, LabMateHighGateWait, 0U);
     check_result(0U, 0U, LabMateHighGateWait, 0U);
     {
         uint32_t mhz = 123U;
-        assert(labmate_high_gate_evaluate(2U, CPU_HZ * 2U, 0U, &mhz) ==
+        assert(labmate_high_gate_evaluate(2U, CPU_HZ * 3U, 0U, &mhz) ==
                LabMateHighGateWait);
-        assert(mhz == 123U);
-        assert(labmate_high_gate_evaluate(2U, CPU_HZ * 2U, CPU_HZ, 0) ==
-               LabMateHighGateWait);
-        assert(labmate_high_gate_evaluate(UINT32_MAX, TENTH_SECOND,
-                                          CPU_HZ, &mhz) ==
+        assert(labmate_high_gate_evaluate(2U, CPU_HZ * 3U,
+                                         CPU_HZ, 0) == LabMateHighGateWait);
+        assert(labmate_high_gate_evaluate(UINT32_MAX,
+                                          TENTH_SECOND, CPU_HZ, &mhz) ==
                LabMateHighGateNoSample);
         assert(mhz == 123U);
     }
-    check_1hz_sample_timeline();
+    check_periodic_signal(10U, 1000U);
+    check_periodic_signal(5U, 2000U);
+    check_periodic_signal(1U, 10000U);
+    check_irregular_counter_sampling();
     check_counter_and_cycle_wrap();
-    puts("LabMate v1.6 PB3 adaptive counter gate: host tests passed");
+    puts("LabMate v1.6 PB3 edge-aligned counter gate: host tests passed");
     return 0;
 }

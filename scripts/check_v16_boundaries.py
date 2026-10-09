@@ -275,12 +275,13 @@ expect(
     "labmate_high_gate_evaluate(" in MAIN and
     "frequency_hw_last_poll_count" in MAIN and
     "frequency_hw_last_poll_cycle" in MAIN and
+    "frequency_hw_gate_started" in MAIN and
     "LabMateHighGatePublish" in MAIN,
     "PB3 high-frequency meter must use the adaptive sample gate",
 )
 expect(
     "LABMATE_HIGH_GATE_MIN_EDGES" in FREQUENCY_GATE and
-    "LABMATE_HIGH_GATE_MAX_SECONDS" in FREQUENCY_GATE and
+    "LABMATE_HIGH_GATE_SLOW_SECONDS" in FREQUENCY_GATE and
     "LL_TIM_" not in FREQUENCY_GATE and
     "furi_hal_" not in FREQUENCY_GATE,
     "Adaptive gate must be pure host-testable estimation logic",

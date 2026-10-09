@@ -93,6 +93,8 @@ typedef struct {
 
     /* High-frequency hardware counter on PB3 / TIM2_CH2 */
     bool frequency_hw_active;
+    /* True only after an input edge has been observed in this gate. */
+    bool frequency_hw_gate_started;
     /* First sample of the adaptive frequency-estimation gate. */
     uint32_t frequency_hw_last_count;
     uint32_t frequency_hw_last_cycle;

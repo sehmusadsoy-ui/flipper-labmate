@@ -219,3 +219,45 @@ The script finds the most recent successful development run, automatically
 retrieves the artifact into a temporary folder, checks SHA256, invokes
 Momentum runfap.py via COM7 by default and cleans up temporary files.
 Stable v1.5, Momentum firmware and existing CSV records are not modified.
+
+## Device operator follow-up: HIGH PB3 1/2/10 Hz (2026-10-10)
+
+Following the first two-second counter-window fix, the user reported
+the following **MIN/MAX** readings on real hardware with Signal Generator
+set to each preset and Frequency Meter in **HIGH PB3**:
+
+| Generator preset | Recorded MIN (Hz) | Recorded MAX (Hz) |
+| --- | ---: | ---: |
+| 1 Hz | 0.95 | 1.45 |
+| 2 Hz | 1.91 | 2.39 |
+| 10 Hz | 9.34 | 10.70 |
+
+These user-reported extrema are not a steady-state instantaneous sample,
+nor independent oscilloscope calibration. The prior tenfold 1 Hz -> 10 Hz
+artefact appears eliminated, but the maximum errors are still +45%,
++19.5%, and +7%, respectively. Therefore HIGH PB3 frequency *accuracy*
+is still pending hardware verification; the 1 Hz result is not a full PASS.
+
+**Second correction:** The remaining source-level issue was terminating
+a multi-second counting window at an arbitrary 100 ms polling boundary,
+which can add/remove one entire counted edge. At 1 Hz, a two-second
+window containing three edges reports approximately 1.5 Hz. The new
+edge-aligned algorithm starts a window on a detected TIM2 count increment
+and publishes only at another detected increment. It waits for 32 counted
+edges (fast rates), or at least 3 seconds with >=2 counted edges (slow
+rates). It re-arms on HOLD/LIVE and after an input silence >3 seconds.
+No PWM output, pin ownership, logger CSV or v1.5 Stable code changes.
+
+**Expected trade-off:** at ~1 Hz the display takes about 3–4 seconds
+to generate a fresh value; at ~2 Hz about 3–4 seconds; at ~10 Hz about
+3–4 seconds until 32 additional edges have been observed. This is a
+deliberate stability-over-latency choice for the HIGH PB3 mode. The
+100 ms hardware poll remains, and very fast signals can still update
+on successive polls. Time quantization from 100 ms polling remains;
+physical retesting is essential.
+
+**Next physical retest:** using the already validated 3.3 V-compatible
+setup, re-check HIGH PB3 1, 2, and 10 Hz. Wait long enough to see new
+readings and distinguish LIVE values from lifetime MIN/MAX extrema,
+resetting MIN/MAX before each preset/mode. Stop PWM before changing any
+connections. No manual ZIP downloads: use the PowerShell GitHub installer.
