@@ -7,11 +7,12 @@
 #include <furi.h>
 #include <gui/gui.h>
 #include <storage/storage.h>
+#include "labmate_resource_policy.h"
 
 #define LABMATE_VERSION_TEXT "v1.6d"
 /* Shared menu/pin counts: UI and input handling must agree. */
 #define MENU_COUNT 7
-#define GPIO_COUNT 8
+#define GPIO_COUNT LABMATE_MONITOR_PIN_COUNT
 /* Shared immutable GPIO labels, used by both migrated and legacy renderers. */
 extern const char* const labmate_gpio_names[GPIO_COUNT];
 /* One source of truth for TIM1/PA7 preset frequencies, also displayed in UI. */
