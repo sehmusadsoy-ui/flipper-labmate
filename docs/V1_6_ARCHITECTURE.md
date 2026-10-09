@@ -61,6 +61,13 @@ This is a development designation, **not** a published v1.6 Stable release.
 - [x] Perform source audit of TIM1/PA7, TIM2/PB3, PC1 and Pulse EXTI
       ownership; document potential background-PWM versus GPIO Monitor
       PA7 reconfiguration conflict in [`V1_6_RESOURCE_OWNERSHIP.md`](V1_6_RESOURCE_OWNERSHIP.md).
+- [x] Implement pure, host-testable PA7 policy in `labmate_resource_policy.c/.h`:
+      reserve PA7 for background PWM, skip it during GPIO Monitor navigation,
+      fall back to PC1 on entry and guard `gpio_release()` from overriding PWM.
+- [x] Display `PA7 BUSY` in the GPIO Monitor while PWM is active; preserve
+      the generator's existing background RUN/STOP semantics.
+- [x] Add host-native test cases for both directions, wraparound, generator
+      ON/OFF and old PA7 selection; keep the device regression pending.
 - [ ] Create explicit ownership and cleanup rules for PC1 EXTI, PB3 TIM2 and
       PA7 TIM1, protecting against pin/timer contention and stale callbacks.
 - [ ] Extract capture code without changing timing behavior; exercise
@@ -89,6 +96,16 @@ presence of the expected measurement, GPIO and logger entry points. This is
 static inspection only, **not a hardware-level guarantee**. Build jobs still
 produce a development FAP and a matching SHA-256; they do not publish
 Stable artifacts.
+
+## PA7 ownership test limitation
+
+The PA7 conflict is now guarded at the C source level, with tests that run
+on a desktop compiler and a static source boundary check. Only the policy
+logic can be verified without the Flipper hardware; confirming that PWM
+continues running while GUI navigation avoids PA7 still requires a
+real-device regression. Remaining centralized ownership for PC1 IRQ, PB3
+TIM2 and Pulse EXTI is not implemented yet. See
+[`V1_6_RESOURCE_OWNERSHIP.md`](V1_6_RESOURCE_OWNERSHIP.md).
 
 ## Regression gate for every device-changing step
 
