@@ -168,10 +168,18 @@ eight rows of 1, two rows of 0, eight rows of 1. This verifies
 LibreOffice Calc compatibility, **not a direct test in Microsoft Excel**.
 No Excel license was available for that separate check.
 
+**Device feedback — 2026-10-09 (v1.4 GPIO Monitor regression):**
+The user reported that the GPIO Monitor regression check passed after the
+v1.5-dev Data Logger and Log History changes. The test involved the existing
+internal 3.3 V PA7-to-PC1 loopback and 1 Hz generator; user reported success
+without detailed per-control measurements or screenshots. Frequency Meter,
+Pulse Analyzer and Signal Generator regressions remain open.
+
 ## On-device acceptance tests (in progress)
 
 - [x] Build against the installed Momentum API; launch without crashes
-- [ ] Verify existing v1.4 meter and generator screens still work
+- [ ] Verify existing v1.4 Frequency Meter, Pulse Analyzer and Generator screens still work
+- [x] Recheck GPIO Monitor after v1.5 changes (user-reported pass)
 - [x] Insert microSD and record at least 5 samples on PC1 with internal PA7
       generator loopback; check format, timestamps and values
 - [x] Switch to PB3 and repeat at 1, 20, and 50 kHz
