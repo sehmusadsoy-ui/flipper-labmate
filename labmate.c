@@ -1877,6 +1877,70 @@ int32_t labmate_app(void* p) {
                     }
                 }
 
+            } else if(app->screen == LabMateScreenProfiles) {
+                if(!app->profile_busy) {
+                    if(app->profile_confirm) {
+                        if(event.key == InputKeyBack) {
+                            app->profile_confirm = false;
+                        } else if(event.key == InputKeyOk &&
+                                  (app->profile_io == LabMateProfileIoOk ||
+                                   app->profile_io == LabMateProfileIoEmpty)) {
+                            /* Snapshot under mutex. Commit SD only afterward. */
+                            proposed_profiles = app->profiles;
+                            LabMateProfile* profile =
+                                &proposed_profiles.slots[app->profile_selected];
+                            profile->present = true;
+                            profile->frequency_pin = app->preferred_frequency_pin;
+                            profile->pulse_pin = app->preferred_pulse_pin;
+                            profile->generator_index = app->generator_freq_index;
+                            profile->logger_source = app->logger_source;
+                            proposed_profiles.generation++;
+                            proposed_copy = app->profile_active_copy;
+                            profiles_save_requested = true;
+                            app->profile_busy = true;
+                            app->profile_confirm = false;
+                            app->profile_notice = 0U;
+                        }
+                    } else if(event.key == InputKeyUp) {
+                        app->profile_selected = labmate_nav_wrap(
+                            app->profile_selected, LABMATE_PROFILE_SLOT_COUNT, -1);
+                        app->profile_notice = 0U;
+                    } else if(event.key == InputKeyDown) {
+                        app->profile_selected = labmate_nav_wrap(
+                            app->profile_selected, LABMATE_PROFILE_SLOT_COUNT, 1);
+                        app->profile_notice = 0U;
+                    } else if(event.key == InputKeyLeft ||
+                              event.key == InputKeyRight) {
+                        app->profile_save_mode = !app->profile_save_mode;
+                        app->profile_notice = 0U;
+                    } else if(event.key == InputKeyOk) {
+                        if(app->profile_io != LabMateProfileIoOk &&
+                           app->profile_io != LabMateProfileIoEmpty) {
+                            /* Do not overwrite fully corrupt or unreadable SD. */
+                        } else if(app->profile_save_mode) {
+                            app->profile_confirm = true;
+                        } else {
+                            const LabMateProfile* profile =
+                                &app->profiles.slots[app->profile_selected];
+                            if(!profile->present) {
+                                app->profile_notice = 3U; /* EMPTY */
+                            } else if(app->generator_running ||
+                                      app->capture_owner != LabMateCaptureNone ||
+                                      app->logger_recording) {
+                                app->profile_notice = 4U; /* STOP PWM */
+                            } else {
+                                /* LOAD never starts PWM or arms an IRQ. */
+                                app->preferred_frequency_pin = profile->frequency_pin;
+                                app->preferred_pulse_pin = profile->pulse_pin;
+                                app->generator_freq_index = profile->generator_index;
+                                app->logger_source = profile->logger_source;
+                                app->profile_notice = 2U; /* LOADED */
+                            }
+                        }
+                    } else if(event.key == InputKeyBack) {
+                        app->screen = LabMateScreenMenu;
+                    }
+                }
             } else if(app->screen == LabMateScreenHistory) {
                 if(event.key == InputKeyUp && app->history_count > 0U) {
                     app->history_selected = (uint8_t)(
