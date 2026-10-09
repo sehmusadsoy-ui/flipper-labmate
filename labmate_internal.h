@@ -14,6 +14,8 @@
 #define GPIO_COUNT 8
 /* Shared immutable GPIO labels, used by both migrated and legacy renderers. */
 extern const char* const labmate_gpio_names[GPIO_COUNT];
+/* One source of truth for TIM1/PA7 preset frequencies, also displayed in UI. */
+extern const uint32_t labmate_generator_frequencies[];
 /* Keep only the latest 32 log IDs in RAM; read CSV contents incrementally. */
 #define LOGGER_HISTORY_LIMIT 32U
 /* High-speed pulse extrema use median-of-five sampled readings. */
