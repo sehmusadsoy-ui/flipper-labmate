@@ -21,6 +21,7 @@ void draw_profiles(Canvas* canvas, LabMateApp* app) {
     else if(app->profile_notice == 3U) state = "EMPTY";
     else if(app->profile_notice == 4U) state = "STOP PWM";
     else if(app->profile_notice == 5U) state = "WRITE ERR";
+    else if(app->profile_notice == 6U) state = "DELETED";
     canvas_draw_str_aligned(canvas, 126, 10, AlignRight, AlignBottom, state);
 
     for(uint8_t i = 0U; i < LABMATE_PROFILE_SLOT_COUNT; ++i) {
@@ -54,12 +55,17 @@ void draw_profiles(Canvas* canvas, LabMateApp* app) {
     canvas_draw_line(canvas, 0, 52, 127, 52);
     canvas_set_font(canvas, FontSecondary);
     if(app->profile_confirm) {
-        canvas_draw_str(canvas, 2, 61, "OK SAVE  BACK CANCEL");
+        canvas_draw_str(canvas, 2, 61, app->profile_action == 2U ?
+                        "OK DELETE  BACK CANCEL" : "OK SAVE  BACK CANCEL");
     } else if(app->profile_busy) {
         canvas_draw_str(canvas, 2, 61, "SD: PLEASE WAIT");
     } else {
-        canvas_draw_str(canvas, 2, 61, app->profile_save_mode ?
-                        "<> SAVE   OK SELECT" : "<> LOAD   OK APPLY");
+        const char* footer = app->profile_action == 0U ?
+                             "<> LOAD   OK APPLY" :
+                             app->profile_action == 1U ?
+                             "<> SAVE   OK SELECT" :
+                             "<> DELETE OK SELECT";
+        canvas_draw_str(canvas, 2, 61, footer);
     }
 }
 

@@ -374,3 +374,22 @@ the rendering mutex is released. No GPIO IRQ or PWM APIs are called
 by the Profiles screen or codec. This is a **development candidate**;
 real-Flipper profile save/load, power-loss and corrupt-SD handling
 still require physical tests before any Stable release.
+
+## Explicit profile slot DELETE (development)
+
+Profiles now offers **LOAD / SAVE / DELETE** by LEFT/RIGHT cycling,
+with UP/DOWN selecting S1–S3. DELETE on a populated slot requires
+OK followed by a second OK; BACK cancels confirmation. An empty slot
+reports EMPTY and performs no write. Successful DELETE reports DELETED
+and the chosen slot immediately shows EMPTY.
+
+DELETE clears only that slot's five-byte serialized representation in
+memory, increments the profile generation, and writes a complete CRC32
+record to the **inactive** A/B profile file using the existing verified
+storage method. There is no direct delete/truncate of log CSV files,
+profile backups, or other slots. If the new copy is corrupt during a
+subsequent read, the older backup might be recovered by design; thus
+this is *functional profile deletion*, not secure erasure of old bytes.
+Hardware outputs and active measurement sessions are not affected.
+
+The new DELETE UI and microSD persistence have NOT been physically tested.

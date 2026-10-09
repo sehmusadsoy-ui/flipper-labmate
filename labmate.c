@@ -1761,6 +1761,7 @@ int32_t labmate_app(void* p) {
         bool history_close_requested = false;
         bool profiles_read_requested = false;
         bool profiles_save_requested = false;
+        bool profiles_delete_requested = false;
         LabMateProfileStore proposed_profiles;
         uint8_t proposed_copy = LABMATE_PROFILE_COPY_NONE;
         FuriStatus status =
@@ -1860,7 +1861,7 @@ int32_t labmate_app(void* p) {
                     case LabMateToolProfiles:
                         app->screen = LabMateScreenProfiles;
                         app->profile_selected = 0U;
-                        app->profile_save_mode = false;
+                        app->profile_action = 0U; /* LOAD */
                         app->profile_confirm = false;
                         app->profile_notice = 0U;
                         app->profile_busy = true;
@@ -1889,11 +1890,20 @@ int32_t labmate_app(void* p) {
                             proposed_profiles = app->profiles;
                             LabMateProfile* profile =
                                 &proposed_profiles.slots[app->profile_selected];
-                            profile->present = true;
-                            profile->frequency_pin = app->preferred_frequency_pin;
-                            profile->pulse_pin = app->preferred_pulse_pin;
-                            profile->generator_index = app->generator_freq_index;
-                            profile->logger_source = app->logger_source;
+                            profiles_delete_requested = app->profile_action == 2U;
+                            if(profiles_delete_requested) {
+                                /* Canonical empty slot: all 5 fields zero.
+                                 * The inactive CRC copy gets a new generation;
+                                 * the active copy is never touched by DELETE.
+                                 */
+                                memset(profile, 0, sizeof(*profile));
+                            } else {
+                                profile->present = true;
+                                profile->frequency_pin = app->preferred_frequency_pin;
+                                profile->pulse_pin = app->preferred_pulse_pin;
+                                profile->generator_index = app->generator_freq_index;
+                                profile->logger_source = app->logger_source;
+                            }
                             proposed_profiles.generation++;
                             proposed_copy = app->profile_active_copy;
                             profiles_save_requested = true;
@@ -1911,14 +1921,25 @@ int32_t labmate_app(void* p) {
                         app->profile_notice = 0U;
                     } else if(event.key == InputKeyLeft ||
                               event.key == InputKeyRight) {
-                        app->profile_save_mode = !app->profile_save_mode;
+                        app->profile_action = event.key == InputKeyRight ?
+                            (uint8_t)((app->profile_action + 1U) % 3U) :
+                            (uint8_t)((app->profile_action + 2U) % 3U);
                         app->profile_notice = 0U;
                     } else if(event.key == InputKeyOk) {
                         if(app->profile_io != LabMateProfileIoOk &&
                            app->profile_io != LabMateProfileIoEmpty) {
                             /* Do not overwrite fully corrupt or unreadable SD. */
-                        } else if(app->profile_save_mode) {
-                            app->profile_confirm = true;
+                        } else if(app->profile_action == 1U ||
+                                  app->profile_action == 2U) {
+                            /* Delete on EMPTY is a no-op: never write SD.
+                             * Both SAVE and DELETE need a second OK press.
+                             */
+                            if(app->profile_action == 2U &&
+                               !app->profiles.slots[app->profile_selected].present) {
+                                app->profile_notice = 3U; /* EMPTY */
+                            } else {
+                                app->profile_confirm = true;
+                            }
                         } else {
                             const LabMateProfile* profile =
                                 &app->profiles.slots[app->profile_selected];
@@ -2147,7 +2168,7 @@ int32_t labmate_app(void* p) {
                 app->profiles = proposed_profiles;
                 app->profile_active_copy = written_copy;
                 app->profile_io = LabMateProfileIoOk;
-                app->profile_notice = 1U; /* SAVED */
+                app->profile_notice = profiles_delete_requested ? 6U : 1U;
             } else {
                 app->profile_notice = 5U; /* WRITE ERR */
             }

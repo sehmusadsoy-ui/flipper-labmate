@@ -72,6 +72,25 @@ int main(void) {
     assert(!labmate_profiles_is_newer(1U, 2U));
     assert(!labmate_profiles_is_newer(0x80000000U, 0U));
 
-    puts("LabMate profile codec: valid and corrupt cases passed");
+    /* DELETE is represented as an absent slot in a NEW generation.
+     * Zero every slot field, CRC encode/decode, and retain other slots.
+     * No separate filesystem remove operation is involved.
+     */
+    LabMateProfileStore cleared = source;
+    memset(&cleared.slots[0], 0, sizeof(cleared.slots[0]));
+    cleared.generation++;
+    uint8_t cleared_bytes[LABMATE_PROFILE_BYTES];
+    assert(labmate_profiles_encode(&cleared, cleared_bytes));
+    assert(labmate_profiles_decode(&dest, cleared_bytes, sizeof(cleared_bytes)));
+    assert(!dest.slots[0].present);
+    assert(dest.slots[1].present == false);
+    assert(dest.slots[2].present);
+    assert(dest.generation == source.generation + 1U);
+    assert(labmate_profiles_is_newer(dest.generation, source.generation));
+    assert(cleared_bytes[12] == 0U && cleared_bytes[13] == 0U &&
+           cleared_bytes[14] == 0U && cleared_bytes[15] == 0U &&
+           cleared_bytes[16] == 0U);
+
+    puts("LabMate profile codec: valid, corrupt and delete cases passed");
     return 0;
 }

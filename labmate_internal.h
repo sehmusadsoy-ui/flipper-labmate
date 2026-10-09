@@ -202,11 +202,11 @@ typedef struct {
     LabMateProfileStore profiles;
     uint8_t profile_active_copy; /* 0=a, 1=b, 255=none */
     uint8_t profile_selected;
-    bool profile_save_mode;
+    uint8_t profile_action; /* 0=LOAD 1=SAVE 2=DELETE */
     bool profile_confirm;
     bool profile_busy;
     LabMateProfileIoResult profile_io;
-    uint8_t profile_notice; /* 0=ready 1=saved 2=loaded 3=empty 4=stop PWM 5=error */
+    uint8_t profile_notice; /* 0=ready 1=saved 2=loaded 3=empty 4=stop PWM 5=error 6=deleted */
 
     FuriMutex* mutex;
 } LabMateApp;

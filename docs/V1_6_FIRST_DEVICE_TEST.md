@@ -362,3 +362,21 @@ the existing one-step GitHub CLI + PowerShell installer (FAP name
 
 Capture PASS/FAIL/NOT RUN for each item. Tests P1-P6 have **not**
 been performed on real hardware by the assistant.
+
+## P7 profile deletion gate (NOT RUN)
+
+Once P3–P6 are complete with the known-good three-slot firmware, install
+a successful new CI build containing explicit DELETE support via the
+usual PowerShell GitHub CLI installer (no manual FAP download). No GPIO
+wires are needed for this test.
+
+1. Pick a saved noncritical slot, e.g. S2; use LEFT/RIGHT to select DELETE.
+2. Press OK once, then BACK. Slot MUST remain populated (cancel path).
+3. Press OK twice and wait for DELETED; slot MUST show EMPTY.
+4. Exit and restart LabMate, then verify the slot stays EMPTY while other
+   saved slots and existing Log History CSV files remain available.
+5. Selecting DELETE on the empty slot should display EMPTY without a
+   microSD write.
+6. Do not corrupt the SD card, remove it during writes, or delete any
+   binary file manually to simulate failure. No hardware safety test
+   beyond user-reported observation is claimed.
