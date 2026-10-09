@@ -62,6 +62,37 @@ static void check_capture_ownership(void) {
     assert(!labmate_capture_pin_allowed(LabMateCapturePulse, UINT8_MAX));
 }
 
+static void check_capture_snapshots(void) {
+    for(uint8_t pin = 0U; pin <= LABMATE_MONITOR_PIN_COUNT; ++pin) {
+        for(int k = LabMateCaptureFrequencyLow; k <= LabMateCapturePulse; ++k) {
+            const LabMateCaptureOwner owner = (LabMateCaptureOwner)k;
+            const bool allowed = labmate_capture_pin_allowed(owner, pin);
+            const bool low = owner == LabMateCaptureFrequencyLow;
+            const bool high = owner == LabMateCaptureFrequencyHigh;
+            const bool pulse = owner == LabMateCapturePulse;
+            assert(labmate_capture_matches(
+                owner, owner, pin, pin, low, high, pulse) == allowed);
+            assert(!labmate_capture_matches(
+                LabMateCaptureNone, owner, pin, pin, low, high, pulse));
+            assert(!labmate_capture_matches(
+                owner, owner, pin, (uint8_t)(pin + 1U), low, high, pulse));
+            assert(!labmate_capture_matches(
+                owner, owner, pin, pin, false, false, false));
+            assert(!labmate_capture_matches(
+                owner, owner, pin, pin, true, true, false));
+            assert(!labmate_capture_matches(
+                owner, owner, pin, pin, true, false, true));
+            assert(!labmate_capture_matches(
+                owner, owner, pin, pin, false, true, true));
+        }
+    }
+    assert(!labmate_capture_matches(
+        LabMateCaptureNone, LabMateCaptureNone, 0U, 0U, false, false, false));
+    assert(!labmate_capture_matches(
+        LabMateCapturePulse, LabMateCapturePulse, UINT8_MAX, UINT8_MAX,
+        false, false, true));
+}
+
 int main(void) {
     /* All eight pins remain available when the generator is off. */
     for(uint8_t pin = 0U; pin < LABMATE_MONITOR_PIN_COUNT; ++pin) {
@@ -96,6 +127,7 @@ int main(void) {
     check_sequence(false);
     check_sequence(true);
     check_capture_ownership();
+    check_capture_snapshots();
 
     puts("LabMate v1.6 PA7 resource policy: all host-native cases passed");
     return 0;

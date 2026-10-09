@@ -414,7 +414,9 @@ void draw_frequency(Canvas* canvas, LabMateApp* app) {
     canvas_set_font(canvas, FontPrimary);
     canvas_draw_str(canvas, 2, 10, "FREQ");
     ui_badge(canvas, 34, 1, 55, high_mode ? "HIGH PB3" : "LOW PC1", false);
-    ui_badge(canvas, 91, 1, 35, app->hold ? "HOLD" : "LIVE", !app->hold);
+    ui_badge(canvas, 91, 1, 35,
+             app->capture_blocked ? "ERR" : (app->hold ? "HOLD" : "LIVE"),
+             !app->hold);
     canvas_draw_line(canvas, 0, 13, 127, 13);
 
     if(app->frequency_valid) {
@@ -607,7 +609,9 @@ void draw_pulse(Canvas* canvas, LabMateApp* app) {
     canvas_set_font(canvas, FontPrimary);
     canvas_draw_str(canvas, 2, 10, "PULSE");
     ui_badge(canvas, 56, 1, 33, labmate_gpio_names[app->gpio_index], false);
-    ui_badge(canvas, 91, 1, 35, app->hold ? "HOLD" : "LIVE", !app->hold);
+    ui_badge(canvas, 91, 1, 35,
+             app->capture_blocked ? "ERR" : (app->hold ? "HOLD" : "LIVE"),
+             !app->hold);
     canvas_draw_line(canvas, 0, 13, 127, 13);
 
     if(app->pulse_stats_view) {
@@ -684,6 +688,8 @@ void draw_logger(Canvas* canvas, LabMateApp* app) {
     if(app->logger_busy) {
         snprintf(state, sizeof(state),
                  app->logger_busy_stopping ? "SAVING / WAIT" : "OPENING / WAIT");
+    } else if(app->capture_blocked) {
+        snprintf(state, sizeof(state), "CAPTURE BLOCKED");
     } else if(app->logger_error) {
         snprintf(state, sizeof(state), "SD / WRITE ERROR");
     } else if(app->logger_recording) {

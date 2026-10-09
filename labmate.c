@@ -87,14 +87,19 @@ const uint32_t labmate_generator_frequencies[] = {
  * Invalid or overlapping requests leave GPIO, EXTI and timers untouched.
  * UI/mode switching still calls capture_stop_all() before changing pins.
  */
-static bool capture_can_start(const LabMateApp* app, LabMateCaptureOwner requested) {
-    return labmate_capture_can_acquire(
+static bool capture_can_start(LabMateApp* app, LabMateCaptureOwner requested) {
+    const bool allowed = labmate_capture_can_acquire(
         app->capture_owner,
         requested,
         app->gpio_index,
         app->frequency_irq_active,
         app->frequency_hw_active,
         app->pulse_irq_active);
+    /* GPIO callback and bus-enable HAL functions return void.
+     * This status means policy rejected the request, NOT a detected HAL fault.
+     */
+    app->capture_blocked = !allowed;
+    return allowed;
 }
 
 static void frequency_gpio_callback(void* context) {
@@ -170,6 +175,7 @@ static void frequency_hw_stop(LabMateApp* app) {
     app->frequency_hw_active = false;
     if(app->capture_owner == LabMateCaptureFrequencyHigh) {
         app->capture_owner = LabMateCaptureNone;
+        app->capture_pin_index = GPIO_COUNT;
     }
     app->frequency_hw_last_count = 0;
     app->frequency_hw_last_cycle = 0;
@@ -240,6 +246,7 @@ static void frequency_hw_start(LabMateApp* app) {
     app->frequency_hw_last_count = 0;
     app->frequency_hw_last_cycle = DWT->CYCCNT;
     app->frequency_hw_active = true;
+    app->capture_pin_index = app->gpio_index;
     app->capture_owner = LabMateCaptureFrequencyHigh;
 
     LL_TIM_EnableCounter(TIM2);
@@ -247,8 +254,9 @@ static void frequency_hw_start(LabMateApp* app) {
 static void __attribute__((unused)) frequency_interrupt_stop(LabMateApp* app) {
     if(!app->frequency_irq_active) return;
 
+    /* Detach exactly the pin on which this callback was registered. */
     const GpioPin* pin =
-        labmate_gpio_pins[app->gpio_index];
+        labmate_gpio_pins[app->capture_pin_index];
 
     furi_hal_gpio_disable_int_callback(pin);
     furi_hal_gpio_remove_int_callback(pin);
@@ -256,6 +264,7 @@ static void __attribute__((unused)) frequency_interrupt_stop(LabMateApp* app) {
     app->frequency_irq_active = false;
     if(app->capture_owner == LabMateCaptureFrequencyLow) {
         app->capture_owner = LabMateCaptureNone;
+        app->capture_pin_index = GPIO_COUNT;
     }
 }
 
@@ -289,6 +298,8 @@ static void __attribute__((unused)) frequency_interrupt_start(LabMateApp* app) {
         GpioPullNo,
         GpioSpeedVeryHigh);
 
+    /* Publish pin identity before enabling interrupts. */
+    app->capture_pin_index = app->gpio_index;
     furi_hal_gpio_add_int_callback(
         pin,
         frequency_gpio_callback,
@@ -306,7 +317,8 @@ static void __attribute__((unused)) frequency_interrupt_start(LabMateApp* app) {
  */
 static void pulse_gpio_callback(void* context) {
     LabMateApp* app = context;
-    const GpioPin* pin = labmate_gpio_pins[app->gpio_index];
+    /* Keep IRQ capture tied to the registered pin, not UI navigation. */
+    const GpioPin* pin = labmate_gpio_pins[app->capture_pin_index];
     const uint32_t cycle = DWT->CYCCNT;
     const bool level = furi_hal_gpio_read(pin);
 
@@ -409,7 +421,7 @@ static void pulse_gpio_callback(void* context) {
 
 static void pulse_interrupt_stop(LabMateApp* app) {
     if(!app->pulse_irq_active) return;
-    const GpioPin* pin = labmate_gpio_pins[app->gpio_index];
+    const GpioPin* pin = labmate_gpio_pins[app->capture_pin_index];
     furi_hal_gpio_disable_int_callback(pin);
     furi_hal_gpio_remove_int_callback(pin);
 
@@ -425,6 +437,7 @@ static void pulse_interrupt_stop(LabMateApp* app) {
     app->pulse_irq_active = false;
     if(app->capture_owner == LabMateCapturePulse) {
         app->capture_owner = LabMateCaptureNone;
+        app->capture_pin_index = GPIO_COUNT;
     }
 }
 
@@ -452,6 +465,8 @@ static void pulse_interrupt_start(LabMateApp* app) {
     app->pulse_irq_tick_cycle = app->pulse_irq_last_cycle;
     app->pulse_irq_last_tick = furi_get_tick();
 
+    /* Publish pin identity before callback activation. */
+    app->capture_pin_index = app->gpio_index;
     furi_hal_gpio_add_int_callback(pin, pulse_gpio_callback, app);
     furi_hal_gpio_enable_int_callback(pin);
     app->pulse_irq_active = true;
@@ -467,8 +482,10 @@ static void capture_stop_all(LabMateApp* app) {
     frequency_hw_stop(app);
     frequency_interrupt_stop(app);
     pulse_interrupt_stop(app);
-    /* No capture remains after the three idempotent stop paths. */
+    /* All three capture engines stopped and callbacks detached. */
     app->capture_owner = LabMateCaptureNone;
+    app->capture_pin_index = GPIO_COUNT;
+    app->capture_blocked = false;
 }
 
 static void gpio_release(LabMateApp* app, uint8_t index) {
@@ -1160,6 +1177,22 @@ static bool logger_init_next_file_index(LabMateApp* app) {
 
 static bool logger_start(LabMateApp* app) {
     if(app->logger_recording) return true;
+    /* A lost signal is NOT an acquisition failure and still records valid=0.
+     * Reject only a software owner / selected pin / active flags mismatch.
+     */
+    const LabMateCaptureOwner expected =
+        (app->logger_source == LoggerPulse) ? LabMateCapturePulse :
+        (app->logger_source == LoggerFrequencyHigh) ? LabMateCaptureFrequencyHigh :
+                                                       LabMateCaptureFrequencyLow;
+    if(!labmate_capture_matches(
+           app->capture_owner, expected,
+           app->gpio_index, app->capture_pin_index,
+           app->frequency_irq_active, app->frequency_hw_active,
+           app->pulse_irq_active)) {
+        app->capture_blocked = true;
+        return false;
+    }
+    app->capture_blocked = false;
     app->logger_error = false;
     app->logger_rows = 0U;
     app->logger_path[0] = '\0';
@@ -1617,6 +1650,7 @@ int32_t labmate_app(void* p) {
     app->generator_freq_index = 0; /* 1 Hz */
     app->screen = LabMateScreenMenu;
     app->capture_owner = LabMateCaptureNone;
+    app->capture_pin_index = GPIO_COUNT;
 
     app->mutex =
         furi_mutex_alloc(

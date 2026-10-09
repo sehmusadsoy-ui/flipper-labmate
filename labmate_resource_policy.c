@@ -60,3 +60,27 @@ bool labmate_capture_can_acquire(
            !frequency_low_active && !frequency_high_active && !pulse_active &&
            labmate_capture_pin_allowed(requested, pin_index);
 }
+
+// Pure function: checks software owner, pin identity and active flags.
+bool labmate_capture_matches(
+    LabMateCaptureOwner owner,
+    LabMateCaptureOwner expected,
+    uint8_t selected_pin,
+    uint8_t owned_pin,
+    bool frequency_low_active,
+    bool frequency_high_active,
+    bool pulse_active) {
+    if(owner != expected || owned_pin != selected_pin ||
+       !labmate_capture_pin_allowed(expected, selected_pin)) return false;
+    switch(expected) {
+    case LabMateCaptureFrequencyLow:
+        return frequency_low_active && !frequency_high_active && !pulse_active;
+    case LabMateCaptureFrequencyHigh:
+        return frequency_high_active && !frequency_low_active && !pulse_active;
+    case LabMateCapturePulse:
+        return pulse_active && !frequency_low_active && !frequency_high_active;
+    case LabMateCaptureNone:
+    default:
+        return false;
+    }
+}

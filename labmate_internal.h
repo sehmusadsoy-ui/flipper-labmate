@@ -58,6 +58,10 @@ typedef struct {
     LabMateScreen screen;
     /* One active measurement capture at a time; TIM1 PWM is independent. */
     LabMateCaptureOwner capture_owner;
+    /* Physical pin armed by capture; independent of the selected UI pin. */
+    uint8_t capture_pin_index;
+    /* Software-policy denial only; not low-level hardware fault detection. */
+    bool capture_blocked;
 
     bool gpio_state;
     bool gpio_previous_state;

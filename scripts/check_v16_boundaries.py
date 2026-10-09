@@ -125,6 +125,39 @@ expect(
     "Capture owner is not cleared after release",
 )
 
+# IRQ callback and teardown must reference the actual registered pin.
+expect(
+    "uint8_t capture_pin_index;" in INTERNAL_H and
+    "bool capture_blocked;" in INTERNAL_H,
+    "Missing pinned IRQ identity and blocked capture state",
+)
+expect(
+    MAIN.count("labmate_gpio_pins[app->capture_pin_index]") >= 3,
+    "Active IRQ callback and teardown must use the registered pin",
+)
+expect(
+    MAIN.count("app->capture_pin_index = app->gpio_index;") == 3,
+    "Each capture start path must record its actual selected pin",
+)
+expect(
+    "app->capture_pin_index = GPIO_COUNT;" in MAIN,
+    "Capture teardown must invalidate pin identity",
+)
+expect(
+    "app->capture_blocked = !allowed;" in MAIN,
+    "Software acquisition denial needs an observable status",
+)
+expect(
+    "labmate_capture_matches(" in POLICY and
+    "if(!labmate_capture_matches(" in MAIN,
+    "Logger must verify capture before creating a CSV",
+)
+expect(
+    '"CAPTURE BLOCKED"' in SCREENS and
+    'app->capture_blocked ? "ERR"' in SCREENS,
+    "Refused capture policy should be visible in UI",
+)
+
 # Capture STOP paths share one idempotent teardown helper; Pulse HOLD is
 # deliberately excluded because it stops only its own IRQ.
 expect(

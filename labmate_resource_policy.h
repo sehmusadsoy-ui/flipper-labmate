@@ -46,3 +46,14 @@ bool labmate_capture_can_acquire(
     bool frequency_low_active,
     bool frequency_high_active,
     bool pulse_active);
+
+// Snapshot consistency: capture must own the selected, configured pin,
+// with exactly its own hardware-active flag asserted.
+bool labmate_capture_matches(
+    LabMateCaptureOwner owner,
+    LabMateCaptureOwner expected,
+    uint8_t selected_pin,
+    uint8_t owned_pin,
+    bool frequency_low_active,
+    bool frequency_high_active,
+    bool pulse_active);
