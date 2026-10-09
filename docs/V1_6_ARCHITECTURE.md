@@ -24,16 +24,19 @@ statistics, PWM generator, SD logging, read-only history and the event loop.
 
 ## Implementation sequence
 
+The v1.6 development build is labeled `v1.6d` in the UI, with manifest version `1.6`.
+This is a development designation, **not** a published v1.6 Stable release.
+
 ### Step 0 — Freeze baseline and build gate
 - [x] Create a separate `v1.6-dev` branch from the latest `main` after v1.5 Stable.
 - [x] Add GitHub Actions dev-only Momentum SDK build; artifact is **not** a release.
 - [x] Record architecture, stable invariants and regression expectations.
 
 ### Step 1 — Extract low-risk UI primitives
-- [ ] Move stateless badge, footer-key and menu icon rendering to
+- [x] Move stateless badge, footer-key and menu icon rendering to
       `labmate_ui_primitives.c/.h`; keep menu-to-icon mapping exactly as before.
-- [ ] Keep all measurement, capture, IRQ, resource and storage functions intact.
-- [ ] Compile the resulting **multi-file** FAP in GitHub Actions.
+- [x] Keep all measurement, capture, IRQ, resource and storage functions intact.
+- [x] Compile the resulting **multi-file** FAP in GitHub Actions (first UI-only extraction passed build + SHA-256 check; final version-label build verified separately).
 
 ### Step 2 — Extract state-aware UI drawing
 - [ ] Introduce a shared internal app-state header before relocating
