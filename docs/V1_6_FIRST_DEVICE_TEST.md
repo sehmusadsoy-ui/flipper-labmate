@@ -545,17 +545,17 @@ by itself demonstrate unstable Pulse measurement or a new defect.
 The user has not specifically reported the sequence of frequency
 changes or a stats reset, so this explanation remains an inference.
 
-**HOLD / LIVE NOT YET VERIFIED:** Both screenshots display `LIVE`.
-A following device test must press OK while viewing the STATS page,
-confirm the top badge changes to `HOLD` and the values do not update,
-then press OK again and confirm return to `LIVE` and updated readings.
-The operator should avoid unplugging or altering a live electrical
-connection merely to prove freezing; observing the `HOLD` badge
-and retained stats is enough for a UI regression check. If they
-change generator frequency for a separate live-update test, STOP
-the output first per the established verified setup.
+**HOLD / LIVE operator confirmation (2026-10-10):** The two
+screenshots themselves display `LIVE` only and do not prove HOLD.
+The user was subsequently asked to verify the STATS-screen OK toggle
+(HOLD retains values, second OK returns to LIVE), and replied
+"HOLD da calisiyor" ("HOLD works as well"). Record **HOLD/LIVE PASS**
+as a *user-reported real-device functional test*, not as visual proof
+of frozen values or an independent calibrated timing measurement.
 
-No physical test of HOLD is inferred from the supplied images.
-All findings are visual/operator evidence, not an external frequency
-calibration. This is a **documentation-only** update on `v1.6-dev`;
-no app code, firmware, CSV log, or stable v1.5 modification.
+**Pulse Analyzer PC1 v1.6-dev functional status:** 100 Hz and 1 kHz
+pulse HIGH/LOW/PER/DUTY display, STATS MIN/MAX accumulation and
+HOLD/LIVE controls now PASS the reported device checks. Other Pulse
+input pins and frequencies were not covered by these two settings.
+No change to pin mapping, IRQ handling, core estimator, PWM, CSV logs,
+or v1.5 Stable was needed; this is a documentation-only update.
