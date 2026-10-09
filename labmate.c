@@ -608,6 +608,7 @@ static void gpio_change(
         gpio_release(app, app->gpio_index);
 
         app->gpio_index = target_index;
+        app->preferred_frequency_pin = target_index;
         app->hold = false;
 
         frequency_stats_reset(app);
@@ -629,6 +630,7 @@ static void gpio_change(
         capture_stop_all(app);
         gpio_release(app, app->gpio_index);
         app->gpio_index = next_index;
+        app->preferred_pulse_pin = next_index;
         app->hold = false;
         app->pulse_stats_view = false;
         pulse_stats_reset(app);
@@ -1619,6 +1621,9 @@ static void render_callback(
     case LabMateScreenAbout:
         draw_about(canvas);
         break;
+    case LabMateScreenProfiles:
+        draw_profiles(canvas, app);
+        break;
     }
 
     furi_mutex_release(
@@ -1669,6 +1674,11 @@ int32_t labmate_app(void* p) {
     app->menu_group = LabMateGroupMeasure;
     app->menu_in_group = false;
     app->gpio_index = 1; /* PC1 */
+    app->preferred_frequency_pin = 4U; /* HIGH PB3 by default */
+    app->preferred_pulse_pin = 1U; /* Pulse PC1 by default */
+    app->profile_active_copy = LABMATE_PROFILE_COPY_NONE;
+    app->profile_io = LabMateProfileIoEmpty;
+    labmate_profile_store_init(&app->profiles);
     app->generator_freq_index = 0; /* 1 Hz */
     app->screen = LabMateScreenMenu;
     app->capture_owner = LabMateCaptureNone;
@@ -1749,6 +1759,10 @@ int32_t labmate_app(void* p) {
         bool history_scan_requested = false;
         bool history_open_requested = false;
         bool history_close_requested = false;
+        bool profiles_read_requested = false;
+        bool profiles_save_requested = false;
+        LabMateProfileStore proposed_profiles;
+        uint8_t proposed_copy = LABMATE_PROFILE_COPY_NONE;
         FuriStatus status =
             furi_message_queue_get(
                 queue,
@@ -1800,7 +1814,7 @@ int32_t labmate_app(void* p) {
                             LabMateScreenFrequency;
                         app->hold = false;
 
-                        app->gpio_index = 4U; /* PB3 / HIGH mode */
+                        app->gpio_index = app->preferred_frequency_pin;
                         frequency_stats_reset(app);
                         measurement_reset(app);
                         frequency_hw_start(app);
@@ -1811,7 +1825,7 @@ int32_t labmate_app(void* p) {
                             LabMateScreenPulse;
                         app->hold = false;
                         /* Previous tools may have left PB3/PC3 selected. */
-                        app->gpio_index = 1U; /* PC1, a safe EXTI line */
+                        app->gpio_index = app->preferred_pulse_pin;
                         app->pulse_stats_view = false;
                         pulse_stats_reset(app);
                         measurement_reset(app);
@@ -1825,7 +1839,7 @@ int32_t labmate_app(void* p) {
 
                     case LabMateToolLogger:
                         app->screen = LabMateScreenLogger;
-                        app->logger_source = LoggerFrequencyLow;
+                        /* Preserve logger source selected or loaded. */
                         app->logger_error = false;
                         app->logger_rows = 0U;
                         app->logger_path[0] = '\0';
@@ -1841,6 +1855,16 @@ int32_t labmate_app(void* p) {
 
                     case LabMateToolAbout:
                         app->screen = LabMateScreenAbout;
+                        break;
+
+                    case LabMateToolProfiles:
+                        app->screen = LabMateScreenProfiles;
+                        app->profile_selected = 0U;
+                        app->profile_save_mode = false;
+                        app->profile_confirm = false;
+                        app->profile_notice = 0U;
+                        app->profile_busy = true;
+                        profiles_read_requested = true;
                         break;
                     }
                     }
