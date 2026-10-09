@@ -653,3 +653,52 @@ are unchanged. The latest functionally tested code build was
 commit `4eaf8054d354fb7725617b72df25c0a974daf214`,
 GitHub Actions `38001774685` (pass); subsequent commits to
 `v1.6-dev` have only updated documentation.
+
+## RC1 packaged binary — first device smoke (user-reported, 2026-10-10)
+
+The operator installed the **RC1-specific successful Actions build**
+from run [38005381142](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38005381142),
+code commit `62e708fc7c556fe89ef2a1bc99a6ced259434cdf`, with the
+RC1-only SHA256-validating PowerShell/GitHub CLI installer via COM7.
+Their console log reports a full file transfer, successful app
+launch request and successful SHA256 verification.
+
+After installation the operator explicitly confirmed these six
+checks as **PASS on the actual device**:
+
+| RC1 smoke check | User-reported result |
+| --- | --- |
+| Main-menu version label `v1.6rc1` | PASS |
+| Frequency Meter screens open | PASS |
+| Pulse Analyzer screens open | PASS |
+| Previously saved Profiles S1 survives the install | PASS |
+| Log History exposes existing saved CSV entries | PASS |
+| Signal Generator initially shows STOP | PASS |
+
+This is a **new packaged-RC1 smoke check** beyond the earlier,
+broader, user-reported measurements on the `v1.6-dev` FAP.
+Do not conflate the two: RC1 opening the meters does NOT itself
+retest numerical frequency accuracy, Pulse STATS/HOLD, PA7 BUSY
+interlock or new CSV writes. Those were previously verified on the
+unmodified instrument logic of the development FAP; RC1 only
+changed build/installer, version identity and display geometry.
+
+The initial RC1 workflow attempt failed packaging/test guards,
+then RC1 commit `62e708fc` successfully passed every CI step:
+host boundary, PA7 resource, navigation, profile codec,
+frequency gate, Momentum FAP compile, SHA256 archive and mock
+Windows installer. GitHub Actions artifact `labmate` (contains
+`labmate.fap` and checksum) was available and unexpired at
+release readiness review. No release tag/pre-release has yet been
+created at the time of this device report.
+
+**Pre-release recommendation:** Candidate passes the release
+candidate functional gate for a clearly marked *pre-release*, not
+an assertion of full independent accuracy or microSD fault
+tolerance. Publish assets from that **specific successful run**,
+tag `v1.6.0-rc1` pointing to exact commit
+`62e708fc7c556fe89ef2a1bc99a6ced259434cdf`,
+mark GitHub Release as **prerelease**, do NOT set latest,
+and leave `main`, Stable v1.5 and the `v1.6-rc1` branch
+unchanged. No publish action was authorized by the instruction
+to *review readiness*, so release remains uncreated.
