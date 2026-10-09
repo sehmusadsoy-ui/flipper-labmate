@@ -39,10 +39,13 @@ This is a development designation, **not** a published v1.6 Stable release.
 - [x] Compile the resulting **multi-file** FAP in GitHub Actions (first UI-only extraction passed build + SHA-256 check; final version-label build verified separately).
 
 ### Step 2 — Extract state-aware UI drawing
-- [ ] Introduce a shared internal app-state header before relocating
-      state-dependent renderers.
-- [ ] Move screen renderers in small groups; compare visible labels, control
-      hints and fonts. Keep the UI mutex and event loop unchanged initially.
+- [x] Introduce `labmate_internal.h` to share the exact existing app-state
+      structure and enums between modules, without changing member layout or IRQ/storage ownership.
+- [x] Extract About, Log History and Log Detail drawing to
+      `labmate_ui_screens.c/.h` with their existing labels, fonts and read-only behavior.
+      The shared `ui_draw_header()` helper now lives in `labmate_ui_primitives.c`.
+- [ ] Extract the remaining stateful screen renderers in small groups and
+      compare labels, control hints and fonts on device. Keep UI mutex and event loop unchanged.
 
 ### Step 3 — Centralize resource ownership
 - [ ] Create explicit ownership and cleanup rules for PC1 EXTI, PB3 TIM2 and
@@ -82,7 +85,7 @@ validated on the v1.5 release. Do not claim this is solved by a refactor.
 ## Build
 
 A root-level external app with `application.fam` includes `*.c` sources by
-default, so `labmate_ui_primitives.c` will be compiled into the same FAP
+default, so `labmate_ui_primitives.c` and `labmate_ui_screens.c` will be compiled into the same FAP
 without manually editing source-file masks.
 
 GitHub Actions: `.github/workflows/build-v1.6.yml` builds Momentum dev SDK,
@@ -90,3 +93,22 @@ verifies a nonempty FAP, checks SHA-256 and uploads `labmate-v1.6-dev-fap`.
 It deliberately never tags/publishes releases.
 
 **Do not deploy development FAPs to the user's Flipper Zero without a request.**
+
+## Step 2 initial source-boundary audit
+
+The internal state types, `LabMateScreen` / `LabMateLoggerSource` enums and
+the state layout have been transferred verbatim into `labmate_internal.h`.
+The app lifecycle, UI mutex and all measurement, logger and history file I/O
+logic remain in `labmate.c`. The new screen-rendering module only **reads**
+the snapshot displayed by the existing canvas callback; no storage or timer
+operations are performed from `draw_about`, `draw_history` or
+`draw_history_detail`.
+
+The UI section shrank from 2,964 to approximately 2,677 lines in
+`labmate.c`. Purely moving code does not prove behavior is identical: the
+CI build is a compile/link check; **Flipper on-device screen regression
+remains pending for v1.6-dev**.
+
+The next incremental work item is to extract the other stateful renderers
+after carefully defining read-only display dependencies; do not pull IRQ
+handling or storage writes into the render module.
