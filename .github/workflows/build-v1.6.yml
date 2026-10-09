@@ -1,8 +1,8 @@
-name: LabMate v1.6 Development Build
+name: LabMate v1.6 RC1 Build
 
 on:
   push:
-    branches: [v1.6-dev]
+    branches: [v1.6-rc1]
     paths:
       - "*.c"
       - "*.h"
@@ -23,16 +23,16 @@ permissions:
 concurrency:
   # Separate current ownership-policy CI from a prior stale UI runner.
   # Keep cancelling outdated intermediate-source builds on this branch.
-  group: labmate-v1.6-dev-build-pa7-v3
+  group: labmate-v1.6-rc1-ci
   cancel-in-progress: true
 
 jobs:
   build:
-    name: Compile modular LabMate FAP (development only)
+    name: Compile modular LabMate RC1 FAP
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Check out development branch
+      - name: Check out RC1 branch
         uses: actions/checkout@v4
 
       - name: Guard passive UI and hardware boundaries
@@ -91,7 +91,7 @@ jobs:
           echo "Momentum SDK API: $BUILT_API_VERSION"
           ls -lh build-artifacts
 
-      - name: Upload development artifact (no release)
+      - name: Upload RC1 artifact (not a stable release)
         uses: actions/upload-artifact@v4
         with:
           name: labmate
@@ -163,4 +163,9 @@ jobs:
           # The final nonzero exit was intentional. The pwsh step must not
           # inherit it after every expected-failure assertion has passed.
           $global:LASTEXITCODE = 0
-          Write-Host 'Mock USB tests passed; no Flipper connected.'
+          $rcScript = Get-Content -Raw ./scripts/install-from-github.ps1
+          if($rcScript -notmatch ' -b v1\\.6-rc1 ' -or
+             $rcScript -match ' -b v1\\.6-dev ') {
+            throw 'RC1 installer must select RC1 Actions runs, never v1.6-dev.'
+          }
+          Write-Host 'Mock USB tests and RC1 installer isolation passed; no Flipper connected.'

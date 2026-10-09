@@ -1,4 +1,4 @@
-# Installs newest successful LabMate dev build directly from GitHub.
+# Installs newest successful LabMate v1.6 RC1 build directly from GitHub.
 # Requires GitHub CLI with one-time "gh auth login" authentication.
 [CmdletBinding()]
 param(
@@ -20,14 +20,23 @@ try {
     & gh auth status --hostname github.com 2>&1 | Out-Null
     if($LASTEXITCODE -ne 0) { throw 'Run gh auth login once, then retry.' }
 
-    $data = & gh run list -R $repo -w build-v1.6.yml -b v1.6-dev -s success -L 1 --json databaseId,headSha
+    $data = & gh run list -R $repo -w build-v1.6.yml -b v1.6-rc1 -s success -L 1 --json databaseId,headSha
     if($LASTEXITCODE -ne 0) { throw 'Unable to query GitHub Actions.' }
     $runs = @($data | ConvertFrom-Json)
     if($runs.Count -ne 1 -or -not $runs[0].databaseId) {
-        throw 'No successful v1.6-dev build found.'
+        throw 'No successful v1.6-rc1 build found.'
+    }
+    # An older successful Actions run is not sufficient after a new RC
+    # commit; do not silently install a stale build while CI is pending.
+    $headSha = & gh api "repos/$repo/branches/v1.6-rc1" --jq .commit.sha
+    if($LASTEXITCODE -ne 0 -or -not $headSha) {
+        throw 'Unable to verify latest RC1 branch head.'
+    }
+    if($runs[0].headSha -ne [string]$headSha) {
+        throw 'Latest RC1 commit does not yet have a successful build.'
     }
     $runId = [string]$runs[0].databaseId
-    Write-Host "LabMate build $runId (commit $($runs[0].headSha))" -ForegroundColor Cyan
+    Write-Host "LabMate RC1 build $runId (commit $($runs[0].headSha))" -ForegroundColor Cyan
 
     $tempDir = Join-Path $env:TEMP ('LabMate-' + [guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory -Path $tempDir -Force | Out-Null

@@ -1,13 +1,17 @@
-# LabMate v1.6 — RC readiness review (draft)
+# LabMate v1.6 RC1 — Candidate branch checklist
 
-**State:** Functional device regression tests PASSED per operator
-reports; eligible for **release-candidate review**, not auto-promoted
-to stable.
+**State:** RC1 branch prepared from the device-tested v1.6-dev code.
+CI and a **fresh on-device RC1 smoke test** must complete before
+considering stable promotion. This is not a stable release.
 
 **Tested application code:** `4eaf8054d354fb7725617b72df25c0a974daf214`  
 **Confirmed successful build:** [GitHub Actions 38001774685](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38001774685)  
 **Distribution artifact:** `labmate` containing `labmate.fap` and `SHA256SUMS.txt`.  
-**Current device-facing UI text:** `v1.6d` (developer build); manifest FAP version: `1.6`.  
+**RC1-specific UI text:** `v1.6rc1`; manifest FAP version: `1.6-rc1`.
+
+**RC1 branch:** [`v1.6-rc1`](https://github.com/sehmusadsoy-ui/flipper-labmate/tree/v1.6-rc1).
+The RC1 Actions workflow selects only this branch. Its PowerShell installer
+checks the latest successful RC1 build against the branch head before install.  
 **Evidence log:** [V1_6_FIRST_DEVICE_TEST.md](V1_6_FIRST_DEVICE_TEST.md)
 
 ## Functional gates — all user-reported PASS
@@ -37,22 +41,22 @@ CI cannot substitute for device tests or independent calibration.
   Do not intentionally harm or corrupt the user's device/data.
 - F2 confirms the EMPTY state in UI, not the absence of every
   underlying microSD command; code-level no-op has a separate guard.
-- Current app UI still identifies as `v1.6d`, which is appropriate
-  for a development FAP, not a consumer stable release.
+- The new RC1 label is a cosmetic/UI and manifest change from the
+  earlier device-tested dev FAP. The newly packaged binary still needs
+  a basic physical startup, navigation and capture regression check.
 
 ## Controlled release decision (requires operator direction)
 
 1. Freeze working instrument algorithms and preserve the proven
    `labmate.fap` naming and GitHub CLI + PowerShell installation path.
-2. If the operator requests RC packaging, prepare a distinct RC
-   identity and matching build from the current tested **code**
-   without modifying the `main` branch or existing `v1.5` release.
-   Re-run host unit tests, Momentum SDK compile and brief hardware
-   smoke on the actual packaged binary.
+2. RC1 branch is isolated and requires its own green GitHub Actions
+   run (four portable/guard tests + Momentum SDK build + mock Windows
+   transport tests). The operator must then smoke-test the exact RC1 FAP
+   by opening the tools, verifying STOP/BUSY and CSV/Profile persistence.
 3. Promote to stable only with an explicit request from the operator
    after reviewing the residual limitations. Never silently replace
    v1.5 stable or claim those tests were run.
 
-This is a document, not a release or a Git tag. No new device
-install or data migration is required to keep using the tested
-development build.
+No Stable release or tag is created here. GitHub Actions will produce
+an RC1 artifact named `labmate` containing `labmate.fap` and
+`SHA256SUMS.txt`. Existing profile data and CSV paths are unchanged.
