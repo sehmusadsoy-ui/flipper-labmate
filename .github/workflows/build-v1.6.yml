@@ -9,6 +9,7 @@ on:
       - "scripts/check_v16_boundaries.py"
       - "tests/test_resource_policy.c.inc"
       - "tests/test_navigation.c.inc"
+      - "tests/test_profiles.c.inc"
       - "scripts/install-labmate.ps1"
       - "application.fam"
       - ".github/workflows/build-v1.6.yml"
@@ -51,6 +52,14 @@ jobs:
             labmate_navigation.c tests/test_navigation.c.inc \
             -o /tmp/labmate-navigation-tests
           /tmp/labmate-navigation-tests
+
+      - name: Test profile codec (portable C)
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. -x c \
+            labmate_profiles.c tests/test_profiles.c.inc \
+            -o /tmp/labmate-profile-tests
+          /tmp/labmate-profile-tests
 
       - name: Compile with Momentum SDK
         id: compile

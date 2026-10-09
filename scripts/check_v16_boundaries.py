@@ -16,6 +16,7 @@ INTERNAL_H = (ROOT / "labmate_internal.h").read_text(encoding="utf-8")
 PRIMITIVES = (ROOT / "labmate_ui_primitives.c").read_text(encoding="utf-8")
 NAVIGATION = (ROOT / "labmate_navigation.c").read_text(encoding="utf-8")
 MANIFEST = (ROOT / "application.fam").read_text(encoding="utf-8")
+PROFILES = (ROOT / "labmate_profiles.c").read_text(encoding="utf-8")
 POLICY = (ROOT / "labmate_resource_policy.c").read_text(encoding="utf-8")
 POLICY_H = (ROOT / "labmate_resource_policy.h").read_text(encoding="utf-8")
 
@@ -252,6 +253,20 @@ expect(
     "All seven existing instruments must remain reachable through the menu",
 )
 
+
+# Saved-profile serialization is pure/host-testable and intentionally has no
+# direct storage, IRQ, timer or GPIO access; file persistence comes later.
+expect(
+    "labmate_profiles_decode(" in PROFILES and
+    "labmate_profiles_encode(" in PROFILES and
+    "labmate_profiles_is_newer(" in PROFILES,
+    "Missing portable profile codec functions",
+)
+expect(
+    re.search(r"\\bstorage_\\w+\\s*\\(", PROFILES) is None and
+    re.search(r"\\bfuri_hal_\\w+\\s*\\(", PROFILES) is None,
+    "Profile codec must stay independent from storage and hardware",
+)
 
 if failures:
     for error in failures:

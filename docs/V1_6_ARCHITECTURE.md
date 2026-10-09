@@ -117,8 +117,12 @@ This is a development designation, **not** a published v1.6 Stable release.
       BACK from a group returns to root, BACK from root exits the app.
 - [x] Cover all seven unique tool routes, selection wrapping and invalid
       groups with a host-native C test and a shared renderer/input mapping.
-- [ ] Design and implement saved measurement profiles with explicit storage
-      compatibility, version validation, and safe overwrite/reset semantics.
+- [x] Define and test a portable, CRC32-protected 32-byte profile codec:
+      three named-by-slot future presets, explicit v1 schema, generation
+      counter, input validation and strict corruption rejection.
+- [ ] Integrate actual microSD dual-copy load/save, UI slot selection,
+      confirmation and safe overwrite/reset semantics. The codec alone
+      does NOT save or restore settings on the Flipper.
 - [ ] Perform real-device visual/navigation regression before v1.6 Stable.
 - [x] Add a SHA256-verified local-FAP PowerShell installer (scripts/install-labmate.ps1)
       with a fixed /ext/apps/Tools/labmate.fap USB destination.
@@ -285,3 +289,22 @@ Portable test tests/test_navigation.c.inc exhaustively verifies mappings,
 invalid group/index behavior and wrapping on groups with 1, 2 or 3 items.
 The 128x64 row/padding/font result and back-navigation must still be
 verified on the physical device. Saved profiles remain **not implemented**.
+
+## Saved measurement profiles: format-only groundwork
+
+`labmate_profiles.c/.h` provides a deterministic 32-byte binary codec
+for three future profile slots. Each populated slot stores preferred Frequency
+pin (PC1/PB3), Pulse EXTI pin (PC0/PC1/PB2/PA4), Generator frequency-preset
+index (0..14) and Data Logger mode (LOW/HIGH/PULSE); it deliberately does not
+store or auto-start any active PWM or capture. The header includes magic,
+schema version, slot count, generation and reserved bits; CRC32 detects
+truncated or corrupted data. The decoder rejects wrong/unknown versions,
+invalid pins, out-of-range values, noncanonical empty slots and bad CRC.
+Decoding never partially updates the caller's profile state when invalid.
+
+Potential future persistence: alternating `profiles_a.bin` and
+`profiles_b.bin` files, keeping one previously valid copy when updating the
+other, with generation comparison and recovery rules. This design is NOT YET
+connected to microSD APIs; no such files are currently created by LabMate.
+Never claim saved profiles are usable until atomic-ish file load/save,
+error handling, UI confirmation and on-device testing are completed.
