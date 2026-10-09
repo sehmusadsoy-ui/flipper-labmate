@@ -9,182 +9,17 @@
 #include <input/input.h>
 #include <storage/storage.h>
 #include "labmate_ui_primitives.h"
+#include "labmate_internal.h"
+#include "labmate_ui_screens.h"
 
 #define MENU_COUNT 7
-#define LABMATE_VERSION_TEXT "v1.6d"
 #define LOGGER_DIR "/ext/apps_data/labmate"
 #define LOGGER_INTERVAL_MS 1000U
 /* Flush buffered records every ten 1-second samples to limit data loss. */
 #define LOGGER_SYNC_EVERY_ROWS 10U
-/* Keep only the latest 32 log IDs in RAM; scan file contents incrementally. */
-#define LOGGER_HISTORY_LIMIT 32U
 #define LOGGER_HISTORY_READ_BYTES 256U
 #define GPIO_COUNT 8
-/* High-speed Pulse MIN/MAX uses the median of five spaced captures.
- * This changes statistics only; LIVE values and IRQ timing are untouched. */
-#define PULSE_STATS_FILTER_SAMPLES 5U
 
-
-typedef enum {
-    LabMateScreenMenu,
-    LabMateScreenGpio,
-    LabMateScreenFrequency,
-    LabMateScreenPulse,
-    LabMateScreenGenerator,
-    LabMateScreenLogger,
-    LabMateScreenHistory,
-    LabMateScreenHistoryDetail,
-    LabMateScreenAbout,
-} LabMateScreen;
-
-typedef enum {
-    LoggerFrequencyLow,
-    LoggerFrequencyHigh,
-    LoggerPulse,
-    LoggerSourceCount,
-} LabMateLoggerSource;
-
-typedef struct {
-    uint32_t high_cycles;
-    uint32_t low_cycles;
-    uint32_t period_cycles;
-    uint32_t duty_permille;
-} PulseStatsSample;
-
-typedef struct {
-    bool running;
-    bool hold;
-
-    uint8_t selected;
-    uint8_t gpio_index;
-
-    LabMateScreen screen;
-
-    bool gpio_state;
-    bool gpio_previous_state;
-    uint32_t edges;
-
-    /* Frequency meter */
-    uint32_t frequency_last_edge;
-    uint32_t frequency_period_ticks;
-    uint32_t frequency_millihz;
-    bool frequency_edge_seen;
-    bool frequency_valid;
-    /* v1.4-dev: running minimum and maximum of valid frequency readings.
-     * Units are millihertz (same as frequency_millihz). */
-    uint32_t frequency_min_millihz;
-    uint32_t frequency_max_millihz;
-    bool frequency_stats_valid;
-
-    volatile uint32_t frequency_irq_last_cycle;
-    volatile uint32_t frequency_irq_period_cycles;
-    volatile uint32_t frequency_irq_last_tick;
-    volatile uint32_t frequency_irq_edges;
-    volatile bool frequency_irq_new_period;
-    volatile uint32_t frequency_irq_cycle_accumulator;
-    volatile uint8_t frequency_irq_accumulated_periods;
-    bool frequency_irq_active;
-
-    /* High-frequency hardware counter on PB3 / TIM2_CH2 */
-    bool frequency_hw_active;
-    uint32_t frequency_hw_last_count;
-    uint32_t frequency_hw_last_cycle;
-
-    uint32_t frequency_period_samples[8];
-    uint8_t frequency_sample_index;
-    uint8_t frequency_sample_count;
-
-    /* Pulse analyzer: edge timestamps captured in GPIO IRQ. */
-    bool pulse_irq_active;
-    volatile bool pulse_irq_level;
-    volatile bool pulse_irq_seen;
-    volatile bool pulse_irq_high_valid;
-    volatile bool pulse_irq_low_valid;
-    volatile uint32_t pulse_irq_last_cycle;
-    volatile uint32_t pulse_irq_last_tick;
-    volatile uint32_t pulse_irq_tick_cycle;
-    volatile uint32_t pulse_irq_high_cycles;
-    volatile uint32_t pulse_irq_low_cycles;
-    volatile uint32_t pulse_irq_edges;
-    /* Short block averages suppress high-frequency ISR timestamp jitter.
-     * Only used when the measured half-period is <= 1 ms. */
-    volatile uint32_t pulse_irq_high_sum;
-    volatile uint32_t pulse_irq_low_sum;
-    volatile uint8_t pulse_irq_high_samples;
-    volatile uint8_t pulse_irq_low_samples;
-    volatile bool pulse_irq_wide_window;
-
-    /* Display-side snapshot: no IRQ writes to these fields. */
-    uint32_t pulse_high_cycles;
-    uint32_t pulse_low_cycles;
-    uint32_t pulse_period_cycles;
-    uint32_t pulse_duty_permille;
-    bool pulse_high_valid;
-    bool pulse_low_valid;
-    bool pulse_period_valid;
-
-    /* v1.4: Pulse Analyzer extrema come from completed display-side
-     * measurements. Never update this history from the GPIO interrupt. */
-    bool pulse_stats_view;
-    bool pulse_stats_valid;
-    bool pulse_stats_last_valid;
-    uint32_t pulse_stats_last_high_cycles;
-    uint32_t pulse_stats_last_low_cycles;
-    PulseStatsSample pulse_stats_recent[PULSE_STATS_FILTER_SAMPLES];
-    uint8_t pulse_stats_recent_count;
-    uint8_t pulse_stats_recent_next;
-    uint32_t pulse_stats_recent_tick;
-    uint32_t pulse_min_high_cycles;
-    uint32_t pulse_max_high_cycles;
-    uint32_t pulse_min_low_cycles;
-    uint32_t pulse_max_low_cycles;
-    uint32_t pulse_min_period_cycles;
-    uint32_t pulse_max_period_cycles;
-    uint32_t pulse_min_duty_permille;
-    uint32_t pulse_max_duty_permille;
-
-    /* Signal generator */
-    bool generator_running;
-    bool generator_state;
-    uint8_t generator_freq_index;
-    uint32_t generator_last_toggle;
-
-    /* v1.5: SD logging uses app-thread snapshots, never GPIO IRQ writes. */
-    LabMateLoggerSource logger_source;
-    bool logger_recording;
-    bool logger_error;
-    bool logger_busy;
-    bool logger_busy_stopping;
-    uint32_t logger_next_file_index;
-    uint32_t logger_start_tick;
-    uint32_t logger_last_tick;
-    uint32_t logger_rows;
-    char logger_path[96];
-    Storage* logger_storage;
-    File* logger_file;
-
-    /* Read-only history browser. The list is bounded; CSV parsing is streamed. */
-    uint16_t history_ids[LOGGER_HISTORY_LIMIT];
-    uint8_t history_count;
-    uint8_t history_selected;
-    uint32_t history_total;
-    bool history_busy;
-    bool history_error;
-    bool history_loading;
-    Storage* history_storage;
-    File* history_file;
-    uint32_t history_rows;
-    uint32_t history_last_ms;
-    uint32_t history_line_ms;
-    bool history_past_header;
-    bool history_line_has_comma;
-    bool history_in_timestamp;
-    uint8_t history_mode;
-    char history_first_row[80];
-    uint8_t history_first_row_len;
-
-    FuriMutex* mutex;
-} LabMateApp;
 
 static const char* menu_items[MENU_COUNT] = {
     "GPIO Monitor",
@@ -1676,16 +1511,6 @@ static void generator_change_frequency(
 
 /* ---------- DRAWING (stateful screens) ---------- */
 
-static void draw_header(
-    Canvas* canvas,
-    const char* title) {
-
-    canvas_set_font(canvas, FontPrimary);
-    canvas_draw_str(canvas, 2, 10, title);
-
-    canvas_draw_line(canvas, 0, 13, 127, 13);
-}
-
 static void draw_menu(
     Canvas* canvas,
     LabMateApp* app) {
@@ -1844,7 +1669,7 @@ static void draw_gpio(Canvas* canvas, LabMateApp* app) {
     const uint32_t edges = app->edges;
 
     /* Compact instrument header, consistent with Frequency and Pulse screens. */
-    draw_header(canvas, "GPIO");
+    ui_draw_header(canvas, "GPIO");
     ui_badge(canvas, 35, 1, 34, gpio_names[app->gpio_index], false);
     ui_badge(canvas, 91, 1, 35, app->hold ? "HOLD" : "LIVE", !app->hold);
 
@@ -2171,67 +1996,12 @@ static void draw_generator(Canvas* canvas, LabMateApp* app) {
     ui_key(canvas, 70, "OK", app->generator_running ? "STOP" : "START");
 }
 
-static void draw_about(
-    Canvas* canvas) {
-
-    canvas_set_font(
-        canvas,
-        FontPrimary);
-
-    canvas_draw_str(
-        canvas,
-        2,
-        10,
-        "LABMATE " LABMATE_VERSION_TEXT);
-
-    canvas_draw_line(
-        canvas,
-        0,
-        13,
-        127,
-        13);
-
-    canvas_set_font(
-        canvas,
-        FontSecondary);
-
-    canvas_draw_str(
-        canvas,
-        2,
-        24,
-        "Digital Signal Toolkit");
-
-    canvas_draw_str(
-        canvas,
-        2,
-        36,
-        "LOW PC1");
-
-    canvas_draw_str(
-        canvas,
-        47,
-        36,
-        "HIGH PB3");
-
-    canvas_draw_str(
-        canvas,
-        2,
-        48,
-        "GEN PA7");
-
-    canvas_draw_str(
-        canvas,
-        2,
-        60,
-        "3.3V GPIO ONLY");
-}
-
 static void draw_logger(Canvas* canvas, LabMateApp* app) {
     char mode[30];
     char live[40];
     char state[40];
 
-    draw_header(canvas, "DATA LOGGER");
+    ui_draw_header(canvas, "DATA LOGGER");
     canvas_set_font(canvas, FontSecondary);
     if(app->logger_source == LoggerPulse) {
         snprintf(mode, sizeof(mode), "PULSE / PC1");
@@ -2280,63 +2050,6 @@ static void draw_logger(Canvas* canvas, LabMateApp* app) {
         (app->logger_recording ? "OK STOP  BACK SAVE" : "< > MODE  OK REC"));
 }
 
-
-static void draw_history(Canvas* canvas, LabMateApp* app) {
-    draw_header(canvas, "LOG HISTORY");
-    canvas_set_font(canvas, FontSecondary);
-    if(app->history_busy) {
-        canvas_draw_str(canvas, 2, 36, "SCANNING SD...");
-    } else if(app->history_error) {
-        canvas_draw_str(canvas, 2, 36, "SD / READ ERROR");
-    } else if(app->history_count == 0U) {
-        canvas_draw_str(canvas, 2, 36, "NO SAVED LOGS");
-    } else {
-        uint8_t first = (uint8_t)((app->history_selected / 3U) * 3U);
-        for(uint8_t row = 0U; row < 3U; ++row) {
-            uint8_t idx = (uint8_t)(first + row);
-            if(idx >= app->history_count) break;
-            char item[24];
-            snprintf(
-                item, sizeof(item), "%c log_%04u.csv",
-                idx == app->history_selected ? '>' : ' ',
-                (unsigned int)app->history_ids[idx]);
-            canvas_draw_str(canvas, 2, (uint8_t)(24U + row * 12U), item);
-        }
-    }
-    canvas_draw_str(canvas, 2, 61, "UP/DN  OK VIEW  BACK");
-}
-
-static void draw_history_detail(Canvas* canvas, LabMateApp* app) {
-    draw_header(canvas, "LOG DETAIL");
-    canvas_set_font(canvas, FontSecondary);
-    if(app->history_selected >= app->history_count) {
-        canvas_draw_str(canvas, 2, 36, "NO LOG SELECTED");
-    } else {
-        char line[36];
-        snprintf(
-            line, sizeof(line), "log_%04u.csv",
-            (unsigned int)app->history_ids[app->history_selected]);
-        canvas_draw_str(canvas, 2, 24, line);
-        if(app->history_busy) {
-            canvas_draw_str(canvas, 2, 36, "OPENING...");
-        } else if(app->history_error) {
-            canvas_draw_str(canvas, 2, 36, "SD / READ ERROR");
-        } else {
-            const char* mode = "EMPTY / UNKNOWN";
-            if(app->history_mode == 1U) mode = "FREQ / PC1";
-            else if(app->history_mode == 2U) mode = "FREQ / PB3";
-            else if(app->history_mode == 3U) mode = "PULSE / PC1";
-            canvas_draw_str(canvas, 2, 36, mode);
-            snprintf(
-                line, sizeof(line), "%s %lu  %lus",
-                app->history_loading ? "READ" : "ROWS",
-                (unsigned long)app->history_rows,
-                (unsigned long)(app->history_last_ms / 1000U));
-            canvas_draw_str(canvas, 2, 48, line);
-        }
-    }
-    canvas_draw_str(canvas, 2, 61, "BACK LIST  READ ONLY");
-}
 
 static void render_callback(
     Canvas* canvas,
