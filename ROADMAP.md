@@ -1,8 +1,9 @@
-# LabMate Master Roadmap — v1.5 to v2.0
+# LabMate Master Roadmap — v1.5 Stable to v2.0
 
-**Status:** Agreed development roadmap as of 2026-10-08.  
-**Stable baseline:** v1.4 (published and kept unchanged while new features are developed).  
-**Active development branch:** `v1.5-dev`.
+**Status:** Updated 2026-10-09 to reflect the published v1.5 Stable release.  
+**Current Stable baseline:** [v1.5 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.5), published 2026-10-09 (FAP, release notes and SHA-256).  
+**Previous Stable fallback:** [v1.4 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.4).  
+**Next planned milestone:** v1.6 — Code and UI Refactoring. No v1.6 development branch or implementation is claimed here; `v1.5-dev` is the historical v1.5 development branch.
 
 ## Vision
 
@@ -10,13 +11,15 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
 
 ## Official version milestones
 
-### v1.5 — Data Logger
+### v1.5 — Data Logger and Log History (Stable published 2026-10-09)
 
-- Record Frequency Meter and Pulse Analyzer measurements in **CSV** format to the microSD card.
-- START/STOP controls; safe file finalization and useful status/error feedback.
-- Browse previously saved recording sessions.
-- Validate that the CSV can be opened and analyzed in Excel.
-- Avoid writing to microSD from GPIO interrupt handlers or at each 50 kHz signal edge; use rate-limited sampled records.
+- **Delivered:** CSV logging to microSD for FREQ/PC1 LOW, FREQ/PB3 HIGH and PULSE/PC1 with one sampled measurement per second.
+- **Delivered:** START/STOP and BACK-to-save controls, file finalization, periodic synchronization and status/error feedback where failures are detected.
+- **Delivered:** Read-only Log History browser for up to 32 recent numbered CSV sessions.
+- **Validated:** A recorded CSV imported successfully in LibreOffice Calc; **Microsoft Excel was not independently tested**.
+- **Delivered:** Rate-limited records, with no microSD file writes from GPIO interrupt handlers or on each high-frequency signal edge.
+- **Published:** [LabMate v1.5 Stable release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.5), with FAP, release notes and SHA-256. Physical-device tests were performed on the preceding development build; the final CI-produced FAP was installed afterward.
+- **Known untested scenario:** Real microSD failure/recovery (e.g. read/write failures, full/corrupt/unmounted media or long blocked I/O) was **not** hardware-validated; see [v1.5 release notes](RELEASE_NOTES_v1.5.md). This is a documented limitation, not an outstanding condition requiring further v1.5 tests.
 
 ### v1.6 — Code and UI Refactoring
 
@@ -71,11 +74,11 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
 | --- | --- | --- |
 | v1.3 | Foundational digital instruments | Stable published |
 | v1.4 | Frequency and pulse MIN/MAX, signal-loss behavior, UI stability | Stable published |
-| **v1.5** | **Data Logger** | **Next to implement on `v1.5-dev`** |
+| **v1.5** | **Data Logger, CSV recording and Log History** | **Stable published 2026-10-09** |
 | v1.6 | Code/UI refactor | Planned |
 | v1.7 | PWM Studio and Counter | Planned |
 | v1.8 | UART, I²C, possible 1-Wire tools | Planned |
 | v1.9 | Logic Scope and Signal Compare | Planned |
 | v2.0 | LabMate Ultimate / Signal Doctor | Planned |
 
-The sequence above is the agreed project roadmap; changes to the roadmap should be explicit and agreed before changing version goals.
+The sequence above remains the agreed project roadmap. The 2026-10-09 documentation update records the completed v1.5 milestone **without changing any future version goals**. Subsequent scope changes should be explicit and agreed.
