@@ -5,6 +5,21 @@ published Stable release. Do not distribute this document as proof that
 v1.5 is officially released. Final version text and checksums must be
 generated from the final, tested v1.5 commit and binary.
 
+## Release candidate provenance (not yet published)
+
+- Release candidate branch: `v1.5-rc1`.
+- Application source commit: `966542af54927761a0209a9d81e5e1e84ead531e`.
+- Source uses the same shared on-device label `v1.5` in the menu
+  and About; measurement/storage logic is unchanged from the tested
+  development build.
+- GitHub Actions build: https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/37867965848 (passed).
+- Candidate file: `labmate-v1.5-rc1.fap` (27,080 bytes).
+- Candidate SHA-256:
+  `b5c6a374f9ae70bada33797bef91788626ace81a33580a61e3cb3b5510e530d5`.
+- The checksum has been verified against the FAP inside the CI artifact.
+- Built using Momentum dev SDK in CI; a precise installed-firmware/API
+  compatibility check is still required on the device before Stable.
+
 ## New in v1.5
 
 - **Data Logger** — records one sampled measurement per second to CSV
@@ -83,10 +98,10 @@ frequency calibration or verification against an external standard.**
       Log History (user report; no simultaneous host writes tested).
 - [x] Original four instrument regressions and Logger final-device
       STOP/BACK/History controls passed (user-reported).
-- [ ] Ensure the release candidate installs as a single app entry;
+- [ ] Confirm the release candidate installs as a single app entry and runs on the target firmware;
       do not treat this as proof of SD error recovery.
-- [ ] Build the stable-labeled release candidate from its exact final source,
-      record CI SDK/API version, and produce the FAP plus SHA-256.
+- [x] Build the stable-labeled release candidate from source commit 966542a,
+      verify the generated FAP and SHA-256 (Momentum dev SDK; exact API compatibility still requires checking on device).
 - [ ] Confirm release-candidate installation and get explicit go-ahead
       before creating a v1.5 tag or publishing a GitHub Release.
 
