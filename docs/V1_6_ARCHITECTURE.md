@@ -58,6 +58,9 @@ This is a development designation, **not** a published v1.6 Stable release.
       existing UI mutex and event loop unchanged.
 
 ### Step 3 — Centralize resource ownership
+- [x] Perform source audit of TIM1/PA7, TIM2/PB3, PC1 and Pulse EXTI
+      ownership; document potential background-PWM versus GPIO Monitor
+      PA7 reconfiguration conflict in [`V1_6_RESOURCE_OWNERSHIP.md`](V1_6_RESOURCE_OWNERSHIP.md).
 - [ ] Create explicit ownership and cleanup rules for PC1 EXTI, PB3 TIM2 and
       PA7 TIM1, protecting against pin/timer contention and stale callbacks.
 - [ ] Extract capture code without changing timing behavior; exercise
@@ -76,6 +79,16 @@ This is a development designation, **not** a published v1.6 Stable release.
       updates a single `/ext/apps/Tools/labmate.fap`.
 - [ ] Compile, compare screens and run on-device regressions before proposing
       v1.6 Stable.
+
+## Automated development guards
+
+`scripts/check_v16_boundaries.py` runs before the Momentum SDK compile in
+`.github/workflows/build-v1.6.yml`. It verifies the nine renderer interfaces,
+absence of direct hardware/SD calls from the screen drawing module, and
+presence of the expected measurement, GPIO and logger entry points. This is
+static inspection only, **not a hardware-level guarantee**. Build jobs still
+produce a development FAP and a matching SHA-256; they do not publish
+Stable artifacts.
 
 ## Regression gate for every device-changing step
 
