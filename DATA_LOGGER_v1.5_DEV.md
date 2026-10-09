@@ -190,10 +190,28 @@ MIN/MAX, DOWN statistics reset, OK HOLD/LIVE, and BACK navigation.
 This is a user-reported on-device pass. Signal Generator's final
 standalone regression remains pending.
 
+## Final SD cleanup audit (2026-10-09)
+
+- Source change `1471759` calls `storage_file_close()` for every allocated
+  logger file, including failed opens. A successfully opened file is synced
+  first, and failed sync/close attempts set the existing error flag.
+- File and storage cleanup still run outside the UI mutex; CSV files continue
+  using `FSOM_CREATE_NEW` to avoid overwrites.
+- **Not yet tested on hardware after this change:** start, STOP, BACK,
+  record again and read the new CSV from Log History.
+- **Not proven:** behavior under actual microSD read/write failure or full
+  card, concurrent USB storage access, or bounded responsiveness if SD I/O
+  blocks the main thread. Do not remove the microSD while LabMate is running;
+  the app is stored on the card.
+- The last Signal Generator regression was user-confirmed, with a newly
+  entered Frequency Meter LOW PC1 LIVE screen showing `--- Hz` immediately
+  following Generator STOP. Because entering the meter resets its state, the
+  3-second in-place timeout was not independently measured in that step.
+
 ## On-device acceptance tests (in progress)
 
 - [x] Build against the installed Momentum API; launch without crashes
-- [ ] Verify existing v1.4 Signal Generator screen still works
+- [x] Verify Generator RUN/STOP and re-entry meter display on device (user-reported pass)
 - [x] Recheck Pulse Analyzer HIGH/LOW/PERIOD/DUTY, MIN/MAX, reset, HOLD/LIVE, BACK (user-reported pass)
 - [x] Recheck Frequency Meter LOW/PC1 MIN/MAX, HOLD/LIVE, reset, BACK (user-reported pass)
 - [x] Recheck GPIO Monitor after v1.5 changes (user-reported pass)
