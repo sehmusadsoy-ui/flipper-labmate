@@ -12,3 +12,4 @@ void draw_menu(Canvas* canvas, LabMateApp* app);
 void draw_gpio(Canvas* canvas, LabMateApp* app);
 void draw_frequency(Canvas* canvas, LabMateApp* app);
 void draw_generator(Canvas* canvas, LabMateApp* app);
+void draw_pulse(Canvas* canvas, LabMateApp* app);
