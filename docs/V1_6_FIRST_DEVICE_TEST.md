@@ -516,3 +516,46 @@ routing or measured-value estimator based on these PASS results.
 
 This is a test-report-only update on `v1.6-dev`, with no firmware
 build, installation or modification to `main`/Stable `v1.5`.
+
+## Pulse Analyzer STATS screenshot verification (2026-10-10)
+
+The device operator supplied **two images** of Pulse Analyzer on the
+Flipper. Both screens explicitly display `PULSE`, `PC1`, `LIVE`,
+and the `TIME MIN MAX` statistics view (four rows HIGH/LOW/PER/DUTY).
+
+| Screenshot | Parameter | MIN | MAX |
+| --- | --- | --- | --- |
+| A | HIGH | 5.00 ms | 5.00 ms |
+| A | LOW | 4.99 ms | 5.00 ms |
+| A | PER | 9.99 ms | 10 ms |
+| A | DUTY | 50.0% | 50.0% |
+| B | HIGH | 490 us | 5.01 ms |
+| B | LOW | 490 us | 5.01 ms |
+| B | PER | 990 us | 10 ms |
+| B | DUTY | 49.9% | 50.1% |
+
+**STATS UI / accumulation PASS** on PC1: the display presents
+all four MIN/MAX pairs, with values consistent with a 100 Hz / 50%
+duty signal in screenshot A. In screenshot B the minimum intervals
+are consistent with prior 1 kHz measurements (~500 us high/low,
+~1 ms period), while maxima remain near 100 Hz (~5 ms high/low,
+~10 ms period). This can result from stats tracking both frequency
+setpoints without resetting extrema between them; it does **not**
+by itself demonstrate unstable Pulse measurement or a new defect.
+The user has not specifically reported the sequence of frequency
+changes or a stats reset, so this explanation remains an inference.
+
+**HOLD / LIVE NOT YET VERIFIED:** Both screenshots display `LIVE`.
+A following device test must press OK while viewing the STATS page,
+confirm the top badge changes to `HOLD` and the values do not update,
+then press OK again and confirm return to `LIVE` and updated readings.
+The operator should avoid unplugging or altering a live electrical
+connection merely to prove freezing; observing the `HOLD` badge
+and retained stats is enough for a UI regression check. If they
+change generator frequency for a separate live-update test, STOP
+the output first per the established verified setup.
+
+No physical test of HOLD is inferred from the supplied images.
+All findings are visual/operator evidence, not an external frequency
+calibration. This is a **documentation-only** update on `v1.6-dev`;
+no app code, firmware, CSV log, or stable v1.5 modification.
