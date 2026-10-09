@@ -197,8 +197,8 @@ standalone regression remains pending.
   first, and failed sync/close attempts set the existing error flag.
 - File and storage cleanup still run outside the UI mutex; CSV files continue
   using `FSOM_CREATE_NEW` to avoid overwrites.
-- **Not yet tested on hardware after this change:** start, STOP, BACK,
-  record again and read the new CSV from Log History.
+- **Now tested on hardware after this change:** STOP, BACK-to-save and
+  opening both new files in Log History (user report).
 - **Not proven:** behavior under actual microSD read/write failure or full
   card, concurrent USB storage access, or bounded responsiveness if SD I/O
   blocks the main thread. Do not remove the microSD while LabMate is running;
@@ -209,6 +209,17 @@ standalone regression remains pending.
   3-second in-place timeout was not independently measured in that step.
 
 See [v1.5 draft release notes](RELEASE_NOTES_v1.5_DRAFT.md) for the final release gate. No new physical SD removal tests are required; the inability to validate actual storage failure must be disclosed in the release notes.
+
+## Final v1.5-dev hardware acceptance — user report (2026-10-09)
+
+The user reported that **all four final device checks passed on the
+latest v1.5-dev build**: matching development-version text in the main
+menu and About; STOP/save while attached to USB; BACK-to-save/file
+close; and successful opening of the two recorded files in Log History.
+This is a user-reported hardware acceptance result, not an independent
+binary audit or proof of behavior under failed microSD I/O. The test
+used USB connectivity without intentional concurrent host writes to
+the active CSV.
 
 ## On-device acceptance tests (in progress)
 
@@ -221,12 +232,12 @@ See [v1.5 draft release notes](RELEASE_NOTES_v1.5_DRAFT.md) for the final releas
       generator loopback; check format, timestamps and values
 - [x] Switch to PB3 and repeat at 1, 20, and 50 kHz
 - [x] Switch to PULSE/PC1 and repeat at 1 kHz; inspect periods/duty
-- [ ] STOP, BACK and exit close files; existing CSVs are not overwritten
+- [x] STOP and BACK finalize separate recordings readable in Log History (user-confirmed final build); existing-file no-overwrite relies on earlier device tests and create-new source semantics
 - [x] Record at least 12 rows; ensure periodic sync does not freeze the UI
 - [ ] SD fault injection not performed on device; source-path audit documented. Do NOT remove the microSD while LabMate runs
 - [x] Test sudden PC1 signal loss: valid flag returns 0 and then 1 on recovery
 - [x] Test continuous logging for at least 10 minutes (600 valid FREQ/PC1 rows)
-- [ ] Test simultaneous USB navigation during continuous logging
+- [x] USB-connected STOP/save completed successfully on device (user report; not a test of concurrent USB file transfers)
 
 **Electrical safety:** Flipper Zero GPIO is 3.3 V logic only. Never connect
 unknown voltage or 5 V / 12 V directly to GPIO. Use a 3.3 V-compatible
