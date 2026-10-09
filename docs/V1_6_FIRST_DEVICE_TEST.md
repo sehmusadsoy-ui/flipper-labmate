@@ -404,8 +404,24 @@ DELETE no-write behavior was not individually tested by the operator.
 No changes to firmware `main`, Stable `v1.5`, or the now-tested FAP
 are made by this record-only commit.
 
-**Next active device test: P5.** With a known safe setup and Generator
-RUN, LOAD of S1 should show STOP PWM and refuse to apply the profile.
-After manually stopping Generator, LOAD should report LOADED without
-reactivating the output. A confirmed physical PASS has not yet been
-reported for P5.
+## User-reported P5 profile LOAD safety pass (2026-10-10)
+
+After P7's three functional PASS results, the device operator was asked
+to verify all three P5 checks and replied **"evet başarılı"** (yes,
+successful), confirming the requested test sequence succeeded:
+
+- **P5-A PASS:** Signal Generator left RUN in the background; trying
+  to LOAD saved S1 showed `STOP PWM` and did not apply the profile.
+- **P5-B PASS:** Operator returned to Generator and explicitly STOPped
+  it; repeating LOAD showed `LOADED`.
+- **P5-C PASS:** After LOAD, Generator remained STOP, with no
+  automatic output activation.
+
+These are user-reported functional/UI observations on the real Flipper,
+not an independent electrical PA7 measurement. P1, P2, P3, P4,
+P5-A/B/C and P7-A/B/C are now reported PASS. P6 (naturally encountered
+microSD read/corruption cases), empty-slot DELETE/no-write, and broader
+hardware calibration are not reported as tested. No intentional SD
+corruption, unsafe electrical tests, or changes to stable v1.5 are
+required. The current profile implementation is a viable **v1.6-dev
+device-tested feature candidate**, not automatically promoted to main.
