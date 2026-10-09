@@ -48,8 +48,13 @@ This is a development designation, **not** a published v1.6 Stable release.
       display-only frequency formatting) to `labmate_ui_screens.c`.
 - [x] Move Signal Generator drawing to the same UI module, retaining the
       single existing preset-frequency array as shared immutable data.
-- [ ] Move Pulse Analyzer and Data Logger drawing in a separate reviewed change,
-      then compare labels, font sizes and control hints on device. Keep the
+- [x] Move Pulse Analyzer LIVE and MIN/MAX drawing plus display-only pulse
+      formatting to `labmate_ui_screens.c`.
+- [x] Move Data Logger status dashboard drawing to `labmate_ui_screens.c`.
+      Preserve the existing `pulse_cycles_to_us()` calculation in the core and
+      expose a single shared declaration; no duplicate conversion routine.
+- [ ] Run device-level visual and navigation regression: labels, font sizes,
+      control hints, HOLD/LIVE transitions and logger/history screens. Keep the
       existing UI mutex and event loop unchanged.
 
 ### Step 3 — Centralize resource ownership
@@ -111,9 +116,9 @@ operations are performed from `draw_about`, `draw_history` or
 
 The UI section shrank from 2,964 to approximately 2,677 lines in
 `labmate.c`.
-The subsequent extraction of Menu/GPIO/Frequency/Generator leaves the
-current main file at 2,297 lines; the new screen
-module is 502 lines. Purely moving code does not prove behavior is identical: the
+The subsequent extraction of all nine screens leaves the current app core at
+2,098 lines, with 704 lines in the screen renderer module.
+The displayed numbers are line counts, not proof of code correctness. Purely moving code does not prove behavior is identical: the
 CI build is a compile/link check; **Flipper on-device screen regression
 remains pending for v1.6-dev**.
 
@@ -127,7 +132,13 @@ its old private `gpio_names`) was corrected by sharing that table. The
 corrected three-screen build passed the Momentum SDK CI compile and FAP
 checksum checks.
 
-Next: migrate the remaining Pulse and Data Logger screens carefully;
-`pulse_cycles_to_us()` is shared by logger formatting and measurement,
-so its dependency must be resolved without copying calculation logic.
+Pulse Analyzer and Data Logger rendering are now also migrated: all nine
+screen renderer entry points are in `labmate_ui_screens.c`, with declarations
+in `labmate_ui_screens.h`. The screen drawing module is passive; the IRQ,
+timer, generator controls, CSV writes and history reads remain in the app core.
+The original `pulse_cycles_to_us()` calculation stays in `labmate.c` and is
+shared via `labmate_internal.h` to avoid diverging numeric conversions.
+
+**Next major milestone:** audited GPIO/EXTI/timer ownership and module
+boundaries, with on-device regressions before claiming v1.6 stability.
 Do not pull IRQ handling or storage writes into the render module.
