@@ -130,7 +130,7 @@ static const char* menu_items[MENU_COUNT] = {
     "About",
 };
 
-static const char* gpio_names[GPIO_COUNT] = {
+const char* const labmate_gpio_names[GPIO_COUNT] = {
     "PC0",
     "PC1",
     "PC3",
@@ -300,7 +300,7 @@ void draw_gpio(Canvas* canvas, LabMateApp* app) {
 
     /* Compact instrument header, consistent with Frequency and Pulse screens. */
     ui_draw_header(canvas, "GPIO");
-    ui_badge(canvas, 35, 1, 34, gpio_names[app->gpio_index], false);
+    ui_badge(canvas, 35, 1, 34, labmate_gpio_names[app->gpio_index], false);
     ui_badge(canvas, 91, 1, 35, app->hold ? "HOLD" : "LIVE", !app->hold);
 
     /* Separate the live logic level from the transition counter. */
