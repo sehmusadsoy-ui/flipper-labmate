@@ -3,6 +3,9 @@ App(
     name="LabMate",
     apptype=FlipperAppType.EXTERNAL,
     entry_point="labmate_app",
+    # Exclude host-only native tests: Momentum's default "*.c*" would
+    # accidentally include tests/test_resource_policy.c.inc in the FAP linker.
+    sources=["*.c"],
     requires=["gui"],
     stack_size=4 * 1024,
     order=20,
