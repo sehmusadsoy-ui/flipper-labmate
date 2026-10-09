@@ -1,0 +1,120 @@
+name: Publish LabMate v1.5 Stable
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "labmate.c"
+      - "application.fam"
+      - "RELEASE_NOTES_v1.5.md"
+      - ".github/workflows/release-v1.5.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: labmate-v1.5-stable-publish
+  cancel-in-progress: false
+
+jobs:
+  stable:
+    name: Build, checksum and publish v1.5
+    if: github.repository == 'sehmusadsoy-ui/flipper-labmate'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact stable source
+        uses: actions/checkout@v4
+
+      - name: Check that Stable was not already published
+        id: previous
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view v1.5 --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "v1.5 already published; existing release will remain untouched."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            if gh api "repos/${{ github.repository }}/git/ref/tags/v1.5" >/dev/null 2>&1; then
+              echo "::error::v1.5 tag exists without a published Release. Refusing to replace tag."
+              exit 1
+            fi
+          fi
+
+      - name: Verify stable version identifiers
+        if: steps.previous.outputs.exists == 'false'
+        run: |
+          set -euo pipefail
+          grep -Fq '#define LABMATE_VERSION_TEXT "v1.5"' labmate.c
+          grep -Fq 'fap_version="1.5"' application.fam
+          if grep -Fq 'v1.5d' labmate.c; then
+            echo "::error::Development version marker remains"
+            exit 1
+          fi
+          test -s RELEASE_NOTES_v1.5.md
+
+      - name: Compile using Momentum SDK
+        id: compile
+        if: steps.previous.outputs.exists == 'false'
+        uses: flipperdevices/flipperzero-ufbt-action@v0.1
+        with:
+          sdk-channel: dev
+          sdk-index-url: https://up.momentum-fw.dev/firmware/directory.json
+
+      - name: Package FAP, checksum and source provenance
+        if: steps.previous.outputs.exists == 'false'
+        env:
+          BUILT_API_VERSION: ${{ steps.compile.outputs.api-version }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          FAP="$(find . -type f -name 'labmate.fap' -not -path './.git/*' -print -quit)"
+          test -n "$FAP"
+          test -s "$FAP"
+          mkdir -p release
+          cp "$FAP" release/labmate-v1.5.fap
+          (cd release && sha256sum labmate-v1.5.fap > SHA256SUMS.txt && sha256sum -c SHA256SUMS.txt)
+          cp RELEASE_NOTES_v1.5.md release/RELEASE_NOTES_v1.5.md
+          {
+            echo
+            echo "### CI artifact provenance"
+            echo
+            echo "Stable FAP compiled by GitHub Actions from commit \`$SOURCE_SHA\`"
+            echo "using Momentum Firmware dev SDK (API: \`$BUILT_API_VERSION\`)."
+            echo "The preceding hardware validation was on the development build;"
+            echo "the published CI FAP was not independently device-installed."
+          } >> release/RELEASE_NOTES_v1.5.md
+          file release/labmate-v1.5.fap
+          ls -lh release/
+
+      - name: Archive audited build
+        if: steps.previous.outputs.exists == 'false'
+        uses: actions/upload-artifact@v4
+        with:
+          name: labmate-v1.5-stable-fap
+          path: release/
+          if-no-files-found: error
+
+      - name: Create v1.5 tag and publish Stable release
+        if: steps.previous.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create v1.5 \
+            release/labmate-v1.5.fap \
+            release/SHA256SUMS.txt \
+            release/RELEASE_NOTES_v1.5.md \
+            --repo "${{ github.repository }}" \
+            --target "${{ github.sha }}" \
+            --title "LabMate v1.5 Stable" \
+            --notes-file release/RELEASE_NOTES_v1.5.md \
+            --latest
+          gh release view v1.5 --repo "${{ github.repository }}" --json tagName,assets,url
+          mkdir -p verify
+          gh release download v1.5 --repo "${{ github.repository }}" \
+            --pattern 'labmate-v1.5.fap' --dir verify
+          cmp -s release/labmate-v1.5.fap verify/labmate-v1.5.fap
+          echo "Published FAP matches the audited build."

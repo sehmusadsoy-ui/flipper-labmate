@@ -7,8 +7,17 @@
 #include <stm32wbxx_ll_exti.h>
 #include <gui/gui.h>
 #include <input/input.h>
+#include <storage/storage.h>
 
-#define MENU_COUNT 5
+#define MENU_COUNT 7
+#define LABMATE_VERSION_TEXT "v1.5"
+#define LOGGER_DIR "/ext/apps_data/labmate"
+#define LOGGER_INTERVAL_MS 1000U
+/* Flush buffered records every ten 1-second samples to limit data loss. */
+#define LOGGER_SYNC_EVERY_ROWS 10U
+/* Keep only the latest 32 log IDs in RAM; scan file contents incrementally. */
+#define LOGGER_HISTORY_LIMIT 32U
+#define LOGGER_HISTORY_READ_BYTES 256U
 #define GPIO_COUNT 8
 /* High-speed Pulse MIN/MAX uses the median of five spaced captures.
  * This changes statistics only; LIVE values and IRQ timing are untouched. */
@@ -21,8 +30,18 @@ typedef enum {
     LabMateScreenFrequency,
     LabMateScreenPulse,
     LabMateScreenGenerator,
+    LabMateScreenLogger,
+    LabMateScreenHistory,
+    LabMateScreenHistoryDetail,
     LabMateScreenAbout,
 } LabMateScreen;
+
+typedef enum {
+    LoggerFrequencyLow,
+    LoggerFrequencyHigh,
+    LoggerPulse,
+    LoggerSourceCount,
+} LabMateLoggerSource;
 
 typedef struct {
     uint32_t high_cycles;
@@ -129,6 +148,40 @@ typedef struct {
     uint8_t generator_freq_index;
     uint32_t generator_last_toggle;
 
+    /* v1.5: SD logging uses app-thread snapshots, never GPIO IRQ writes. */
+    LabMateLoggerSource logger_source;
+    bool logger_recording;
+    bool logger_error;
+    bool logger_busy;
+    bool logger_busy_stopping;
+    uint32_t logger_next_file_index;
+    uint32_t logger_start_tick;
+    uint32_t logger_last_tick;
+    uint32_t logger_rows;
+    char logger_path[96];
+    Storage* logger_storage;
+    File* logger_file;
+
+    /* Read-only history browser. The list is bounded; CSV parsing is streamed. */
+    uint16_t history_ids[LOGGER_HISTORY_LIMIT];
+    uint8_t history_count;
+    uint8_t history_selected;
+    uint32_t history_total;
+    bool history_busy;
+    bool history_error;
+    bool history_loading;
+    Storage* history_storage;
+    File* history_file;
+    uint32_t history_rows;
+    uint32_t history_last_ms;
+    uint32_t history_line_ms;
+    bool history_past_header;
+    bool history_line_has_comma;
+    bool history_in_timestamp;
+    uint8_t history_mode;
+    char history_first_row[80];
+    uint8_t history_first_row_len;
+
     FuriMutex* mutex;
 } LabMateApp;
 
@@ -137,6 +190,8 @@ static const char* menu_items[MENU_COUNT] = {
     "Frequency Meter",
     "Pulse Analyzer",
     "Signal Generator",
+    "Data Logger",
+    "Log History",
     "About",
 };
 
@@ -903,7 +958,8 @@ static void measurement_update(LabMateApp* app) {
      * The main loop only consumes the period measured
      * by the ISR and performs filtering/calculation.
      */
-    if(app->screen == LabMateScreenFrequency) {
+    if(app->screen == LabMateScreenFrequency ||
+       (app->screen == LabMateScreenLogger && app->logger_source != LoggerPulse)) {
 
         /*
          * High-frequency hardware counter mode.
@@ -1093,7 +1149,8 @@ static void measurement_update(LabMateApp* app) {
     }
 
     /* PULSE ANALYZER: copy one coherent IRQ snapshot. */
-    if(app->screen == LabMateScreenPulse) {
+    if(app->screen == LabMateScreenPulse ||
+       (app->screen == LabMateScreenLogger && app->logger_source == LoggerPulse)) {
         uint32_t hi, lo, last_tick, count;
         bool hi_valid, lo_valid;
 
@@ -1146,6 +1203,407 @@ static void measurement_update(LabMateApp* app) {
         app->gpio_previous_state = current;
     }
     app->gpio_state = current;
+}
+
+
+/* ---------- DATA LOGGER v1.5 ---------- */
+/* The capture engine is unchanged; only processed snapshots are persisted.
+ * File writes happen in the main thread AFTER releasing the GUI mutex.
+ */
+static void logger_capture_stop(LabMateApp* app) {
+    frequency_hw_stop(app);
+    frequency_interrupt_stop(app);
+    pulse_interrupt_stop(app);
+    gpio_release(app->gpio_index);
+}
+
+static void logger_capture_start(LabMateApp* app) {
+    app->hold = false;
+    app->gpio_index =
+        (app->logger_source == LoggerFrequencyHigh) ? 4U : 1U;
+    measurement_reset(app);
+
+    if(app->logger_source == LoggerPulse) {
+        pulse_stats_reset(app);
+        pulse_interrupt_start(app);
+    } else {
+        frequency_stats_reset(app);
+        if(app->logger_source == LoggerFrequencyHigh) {
+            frequency_hw_start(app);
+        } else {
+            frequency_interrupt_start(app);
+        }
+    }
+}
+
+static void logger_capture_change(LabMateApp* app, int8_t direction) {
+    if(app->logger_recording) return;
+    logger_capture_stop(app);
+    if(direction > 0) {
+        app->logger_source =
+            (app->logger_source + 1U) % LoggerSourceCount;
+    } else {
+        app->logger_source =
+            (app->logger_source + LoggerSourceCount - 1U) % LoggerSourceCount;
+    }
+    logger_capture_start(app);
+}
+
+static void logger_stop(LabMateApp* app) {
+    app->logger_recording = false;
+    if(app->logger_file) {
+        const bool was_open = storage_file_is_open(app->logger_file);
+        if(was_open && !storage_file_sync(app->logger_file)) {
+            app->logger_error = true;
+        }
+        /* Storage requires close even if an earlier open failed. A handle
+         * that was never opened need not turn an existing error into a
+         * second close error. Keep all SD work outside the GUI mutex. */
+        if(!storage_file_close(app->logger_file) && was_open) {
+            app->logger_error = true;
+        }
+        storage_file_free(app->logger_file);
+        app->logger_file = NULL;
+    }
+    if(app->logger_storage) {
+        furi_record_close(RECORD_STORAGE);
+        app->logger_storage = NULL;
+    }
+}
+
+/* Accept only log_0001.csv through log_9999.csv. */
+static bool logger_filename_id(const char* name, uint16_t* result) {
+    if(strlen(name) != 12U || strncmp(name, "log_", 4U) != 0 ||
+       strcmp(name + 8, ".csv") != 0) return false;
+    uint16_t id = 0U;
+    for(size_t i = 4U; i < 8U; ++i) {
+        if(name[i] < '0' || name[i] > '9') return false;
+        id = (uint16_t)(id * 10U + (uint16_t)(name[i] - '0'));
+    }
+    if(id == 0U) return false;
+    *result = id;
+    return true;
+}
+
+/* Read the highest existing CSV ID once per application session.
+ * Keep naming monotonic even if older files were deleted. All filesystem
+ * work occurs from the app loop, after releasing the UI mutex. */
+static bool logger_init_next_file_index(LabMateApp* app) {
+    if(app->logger_next_file_index != 0U) return true;
+    File* dir = storage_file_alloc(app->logger_storage);
+    if(!dir) return false;
+
+    bool ok = storage_dir_open(dir, LOGGER_DIR);
+    uint16_t max_id = 0U;
+    if(ok) {
+        FileInfo info;
+        char name[64];
+        while(storage_dir_read(dir, &info, name, sizeof(name))) {
+            uint16_t id;
+            if(!file_info_is_dir(&info) &&
+               logger_filename_id(name, &id) && id > max_id) {
+                max_id = id;
+            }
+        }
+        FS_Error error = storage_file_get_error(dir);
+        if(error != FSE_NOT_EXIST && error != FSE_OK) ok = false;
+    }
+    /* Storage API requires close even after a failed open. */
+    if(!storage_dir_close(dir)) ok = false;
+    storage_file_free(dir);
+    if(ok) app->logger_next_file_index = (uint32_t)max_id + 1U;
+    return ok;
+}
+
+static bool logger_start(LabMateApp* app) {
+    if(app->logger_recording) return true;
+    app->logger_error = false;
+    app->logger_rows = 0U;
+    app->logger_path[0] = '\0';
+
+    app->logger_storage = furi_record_open(RECORD_STORAGE);
+    if(!app->logger_storage ||
+       storage_sd_status(app->logger_storage) != FSE_OK ||
+       !storage_simply_mkdir(app->logger_storage, LOGGER_DIR)) {
+        app->logger_error = true;
+        logger_stop(app);
+        return false;
+    }
+
+    if(!logger_init_next_file_index(app)) {
+        app->logger_error = true;
+        logger_stop(app);
+        return false;
+    }
+
+    app->logger_file = storage_file_alloc(app->logger_storage);
+    if(!app->logger_file) {
+        app->logger_error = true;
+        logger_stop(app);
+        return false;
+    }
+
+    bool opened = false;
+    /* Skip old IDs, including when files have been deleted; if the app is
+     * restarted, a one-time scan chooses highest existing ID + 1.
+     * This also avoids blocking opens on paths known to exist. */
+    uint32_t first_index = app->logger_next_file_index;
+    for(uint32_t i = first_index; i <= 9999U; ++i) {
+        snprintf(
+            app->logger_path, sizeof(app->logger_path),
+            LOGGER_DIR "/log_%04lu.csv", (unsigned long)i);
+        if(storage_file_exists(app->logger_storage, app->logger_path)) continue;
+        /* CREATE_NEW is still essential for no-overwrite safety. */
+        if(storage_file_open(
+               app->logger_file, app->logger_path, FSAM_WRITE, FSOM_CREATE_NEW)) {
+            opened = true;
+            app->logger_next_file_index = i + 1U;
+            break;
+        }
+        /* Handle the rare case another app created the file after our
+         * existence check; all other errors should stop the search. */
+        if(storage_file_get_error(app->logger_file) != FSE_EXIST) break;
+    }
+
+    if(!opened) {
+        app->logger_error = true;
+        logger_stop(app);
+        return false;
+    }
+
+    const char* header =
+        "elapsed_ms,source,pin,valid,frequency_hz,high_us,low_us,period_us,duty_pct\n";
+    const size_t header_size = strlen(header);
+    if(storage_file_write(app->logger_file, header, header_size) != header_size) {
+        app->logger_error = true;
+        logger_stop(app);
+        return false;
+    }
+
+    app->logger_start_tick = furi_get_tick();
+    app->logger_last_tick = app->logger_start_tick;
+    app->logger_recording = true;
+    return true;
+}
+
+/* Called with the app mutex held; does not perform storage operations. */
+static bool logger_prepare_row(LabMateApp* app, char* row, size_t capacity) {
+    if(!app->logger_recording) return false;
+    const uint32_t now = furi_get_tick();
+    const uint32_t hz = furi_kernel_get_tick_frequency();
+    const uint32_t interval =
+        (uint32_t)(((uint64_t)hz * LOGGER_INTERVAL_MS + 999ULL) / 1000ULL);
+    if((uint32_t)(now - app->logger_last_tick) < (interval ? interval : 1U)) {
+        return false;
+    }
+    app->logger_last_tick = now;
+    const uint32_t elapsed_ms =
+        hz ? (uint32_t)(((uint64_t)(now - app->logger_start_tick) * 1000ULL) / hz) : 0U;
+
+    int length;
+    if(app->logger_source == LoggerPulse) {
+        const bool valid = app->pulse_period_valid;
+        length = snprintf(
+            row, capacity,
+            "%lu,PULSE,PC1,%u,,%lu,%lu,%lu,%lu.%01lu\n",
+            (unsigned long)elapsed_ms, valid ? 1U : 0U,
+            (unsigned long)(valid ? pulse_cycles_to_us(app->pulse_high_cycles) : 0U),
+            (unsigned long)(valid ? pulse_cycles_to_us(app->pulse_low_cycles) : 0U),
+            (unsigned long)(valid ? pulse_cycles_to_us(app->pulse_period_cycles) : 0U),
+            (unsigned long)(valid ? app->pulse_duty_permille / 10U : 0U),
+            (unsigned long)(valid ? app->pulse_duty_permille % 10U : 0U));
+    } else {
+        const bool valid = app->frequency_valid;
+        const uint32_t mhz = valid ? app->frequency_millihz : 0U;
+        length = snprintf(
+            row, capacity,
+            "%lu,FREQ,%s,%u,%lu.%03lu,,,,\n",
+            (unsigned long)elapsed_ms,
+            app->logger_source == LoggerFrequencyHigh ? "PB3" : "PC1",
+            valid ? 1U : 0U,
+            (unsigned long)(mhz / 1000U),
+            (unsigned long)(mhz % 1000U));
+    }
+
+    if(length <= 0 || (size_t)length >= capacity) {
+        app->logger_error = true;
+        app->logger_recording = false;
+        app->logger_busy = true;
+        app->logger_busy_stopping = true;
+        /* The application loop closes the file after releasing the UI mutex. */
+        return false;
+    }
+    return true;
+}
+
+
+/* ---------- READ-ONLY LOG HISTORY v1.5 ---------- */
+/* No delete/rename/truncate calls are made from the history browser. */
+
+/* Called without the UI mutex; copies the result under the mutex. */
+static void history_scan(LabMateApp* app) {
+    uint16_t latest[LOGGER_HISTORY_LIMIT] = {0};
+    uint8_t count = 0U;
+    uint32_t total = 0U;
+    bool ok = false;
+
+    Storage* storage = furi_record_open(RECORD_STORAGE);
+    File* dir = NULL;
+    if(storage && storage_sd_status(storage) == FSE_OK &&
+       storage_dir_exists(storage, LOGGER_DIR)) {
+        dir = storage_file_alloc(storage);
+        if(dir) {
+            if(storage_dir_open(dir, LOGGER_DIR)) {
+                ok = true;
+                FileInfo info;
+                char name[64];
+                while(storage_dir_read(dir, &info, name, sizeof(name))) {
+                    uint16_t id;
+                    if(file_info_is_dir(&info) || !logger_filename_id(name, &id)) continue;
+                    ++total;
+                    uint8_t insert = 0U;
+                    while(insert < count && latest[insert] > id) ++insert;
+                    if(insert >= LOGGER_HISTORY_LIMIT) continue;
+                    if(count < LOGGER_HISTORY_LIMIT) ++count;
+                    for(uint8_t j = count - 1U; j > insert; --j) {
+                        latest[j] = latest[j - 1U];
+                    }
+                    latest[insert] = id;
+                }
+                if(storage_file_get_error(dir) != FSE_NOT_EXIST &&
+                   storage_file_get_error(dir) != FSE_OK) ok = false;
+            }
+            /* Directory handles must be closed even if open fails. */
+            storage_dir_close(dir);
+            storage_file_free(dir);
+        }
+    }
+    if(storage) furi_record_close(RECORD_STORAGE);
+
+    furi_mutex_acquire(app->mutex, FuriWaitForever);
+    app->history_count = ok ? count : 0U;
+    app->history_total = ok ? total : 0U;
+    app->history_selected = 0U;
+    if(ok) memcpy(app->history_ids, latest, sizeof(latest));
+    app->history_error = !ok;
+    app->history_busy = false;
+    furi_mutex_release(app->mutex);
+}
+
+static void history_close(LabMateApp* app) {
+    if(app->history_file) {
+        if(storage_file_is_open(app->history_file)) {
+            storage_file_close(app->history_file);
+        }
+        storage_file_free(app->history_file);
+        app->history_file = NULL;
+    }
+    if(app->history_storage) {
+        furi_record_close(RECORD_STORAGE);
+        app->history_storage = NULL;
+    }
+}
+
+/* Called outside the UI mutex; does not interfere with active log files. */
+static void history_open(LabMateApp* app) {
+    history_close(app);
+    bool ok = false;
+    Storage* storage = NULL;
+    File* file = NULL;
+    if(app->history_selected < app->history_count) {
+        char path[96];
+        snprintf(
+            path, sizeof(path), LOGGER_DIR "/log_%04u.csv",
+            (unsigned int)app->history_ids[app->history_selected]);
+        storage = furi_record_open(RECORD_STORAGE);
+        if(storage && storage_sd_status(storage) == FSE_OK) {
+            file = storage_file_alloc(storage);
+            if(file && storage_file_open(file, path, FSAM_READ, FSOM_OPEN_EXISTING)) {
+                ok = true;
+            } else if(file) {
+                /* Required even on failed open. */
+                storage_file_close(file);
+            }
+        }
+    }
+    if(!ok) {
+        if(file) storage_file_free(file);
+        if(storage) furi_record_close(RECORD_STORAGE);
+    }
+    furi_mutex_acquire(app->mutex, FuriWaitForever);
+    app->history_storage = ok ? storage : NULL;
+    app->history_file = ok ? file : NULL;
+    app->history_rows = 0U;
+    app->history_last_ms = 0U;
+    app->history_line_ms = 0U;
+    app->history_past_header = false;
+    app->history_line_has_comma = false;
+    app->history_in_timestamp = true;
+    app->history_mode = 0U; /* unknown until first data row */
+    app->history_first_row_len = 0U;
+    app->history_first_row[0] = '\0';
+    app->history_error = !ok;
+    app->history_loading = ok;
+    app->history_busy = false;
+    furi_mutex_release(app->mutex);
+}
+
+/* Parse at most one small SD chunk per main-loop iteration. */
+static void history_read_step(LabMateApp* app) {
+    if(!app->history_file || !app->history_loading) return;
+    uint8_t bytes[LOGGER_HISTORY_READ_BYTES];
+    size_t size = storage_file_read(app->history_file, bytes, sizeof(bytes));
+    bool finished = size == 0U;
+    bool ok = true;
+    if(finished && !storage_file_eof(app->history_file)) ok = false;
+
+    furi_mutex_acquire(app->mutex, FuriWaitForever);
+    for(size_t i = 0; i < size; ++i) {
+        const char ch = (char)bytes[i];
+        if(ch == '\n') {
+            if(app->history_past_header && app->history_line_has_comma) {
+                if(app->history_rows == 0U) {
+                    app->history_first_row[app->history_first_row_len] = '\0';
+                    if(strstr(app->history_first_row, ",PULSE,PC1,")) {
+                        app->history_mode = 3U;
+                    } else if(strstr(app->history_first_row, ",FREQ,PB3,")) {
+                        app->history_mode = 2U;
+                    } else if(strstr(app->history_first_row, ",FREQ,PC1,")) {
+                        app->history_mode = 1U;
+                    }
+                }
+                ++app->history_rows;
+                app->history_last_ms = app->history_line_ms;
+            }
+            app->history_past_header = true;
+            app->history_line_has_comma = false;
+            app->history_line_ms = 0U;
+            app->history_in_timestamp = true;
+            continue;
+        }
+        if(!app->history_past_header) continue;
+        if(app->history_rows == 0U &&
+           app->history_first_row_len < sizeof(app->history_first_row) - 1U) {
+            app->history_first_row[app->history_first_row_len++] = ch;
+        }
+        if(ch == ',') {
+            app->history_line_has_comma = true;
+            app->history_in_timestamp = false;
+        } else if(app->history_in_timestamp) {
+            if(ch >= '0' && ch <= '9' && app->history_line_ms <= 429496729U) {
+                app->history_line_ms =
+                    app->history_line_ms * 10U + (uint32_t)(ch - '0');
+            } else {
+                app->history_in_timestamp = false;
+            }
+        }
+    }
+    if(finished) {
+        app->history_loading = false;
+        if(!ok) app->history_error = true;
+    }
+    furi_mutex_release(app->mutex);
+    if(finished) history_close(app);
 }
 
 /* ---------- SIGNAL GENERATOR ---------- */
@@ -1332,6 +1790,12 @@ static void ui_draw_menu_icon(
         ui_icon_generator(canvas, x, y);
         break;
     case 4:
+        ui_icon_frequency(canvas, x, y);
+        break;
+    case 5:
+        ui_icon_frequency(canvas, x, y);
+        break;
+    case 6:
         ui_icon_info(canvas, x, y);
         break;
     }
@@ -1373,7 +1837,7 @@ static void draw_menu(
         99,
         1,
         27,
-        "v1.4d",
+        LABMATE_VERSION_TEXT,
         false);
 
     canvas_draw_line(
@@ -1843,7 +2307,7 @@ static void draw_about(
         canvas,
         2,
         10,
-        "LABMATE v1.4");
+        "LABMATE " LABMATE_VERSION_TEXT);
 
     canvas_draw_line(
         canvas,
@@ -1886,6 +2350,119 @@ static void draw_about(
         60,
         "3.3V GPIO ONLY");
 }
+
+static void draw_logger(Canvas* canvas, LabMateApp* app) {
+    char mode[30];
+    char live[40];
+    char state[40];
+
+    draw_header(canvas, "DATA LOGGER");
+    canvas_set_font(canvas, FontSecondary);
+    if(app->logger_source == LoggerPulse) {
+        snprintf(mode, sizeof(mode), "PULSE / PC1");
+        if(app->pulse_period_valid) {
+            snprintf(
+                live, sizeof(live), "PER %lu us  DUTY %lu.%01lu%%",
+                (unsigned long)pulse_cycles_to_us(app->pulse_period_cycles),
+                (unsigned long)(app->pulse_duty_permille / 10U),
+                (unsigned long)(app->pulse_duty_permille % 10U));
+        } else {
+            snprintf(live, sizeof(live), "NO VALID PULSE");
+        }
+    } else {
+        snprintf(
+            mode, sizeof(mode), "FREQ / %s",
+            app->logger_source == LoggerFrequencyHigh ? "PB3 HIGH" : "PC1 LOW");
+        if(app->frequency_valid) {
+            snprintf(
+                live, sizeof(live), "FREQ %lu.%03lu Hz",
+                (unsigned long)(app->frequency_millihz / 1000U),
+                (unsigned long)(app->frequency_millihz % 1000U));
+        } else {
+            snprintf(live, sizeof(live), "NO VALID FREQ");
+        }
+    }
+
+    if(app->logger_busy) {
+        snprintf(state, sizeof(state),
+                 app->logger_busy_stopping ? "SAVING / WAIT" : "OPENING / WAIT");
+    } else if(app->logger_error) {
+        snprintf(state, sizeof(state), "SD / WRITE ERROR");
+    } else if(app->logger_recording) {
+        snprintf(state, sizeof(state), "REC: %lu rows", (unsigned long)app->logger_rows);
+    } else if(app->logger_path[0]) {
+        snprintf(state, sizeof(state), "SAVED: %lu rows", (unsigned long)app->logger_rows);
+    } else {
+        snprintf(state, sizeof(state), "READY / 1 second");
+    }
+
+    canvas_draw_str(canvas, 2, 24, mode);
+    canvas_draw_str(canvas, 2, 36, live);
+    canvas_draw_str(canvas, 2, 48, state);
+    canvas_draw_str(
+        canvas, 2, 61,
+        app->logger_busy ? "PLEASE WAIT" :
+        (app->logger_recording ? "OK STOP  BACK SAVE" : "< > MODE  OK REC"));
+}
+
+
+static void draw_history(Canvas* canvas, LabMateApp* app) {
+    draw_header(canvas, "LOG HISTORY");
+    canvas_set_font(canvas, FontSecondary);
+    if(app->history_busy) {
+        canvas_draw_str(canvas, 2, 36, "SCANNING SD...");
+    } else if(app->history_error) {
+        canvas_draw_str(canvas, 2, 36, "SD / READ ERROR");
+    } else if(app->history_count == 0U) {
+        canvas_draw_str(canvas, 2, 36, "NO SAVED LOGS");
+    } else {
+        uint8_t first = (uint8_t)((app->history_selected / 3U) * 3U);
+        for(uint8_t row = 0U; row < 3U; ++row) {
+            uint8_t idx = (uint8_t)(first + row);
+            if(idx >= app->history_count) break;
+            char item[24];
+            snprintf(
+                item, sizeof(item), "%c log_%04u.csv",
+                idx == app->history_selected ? '>' : ' ',
+                (unsigned int)app->history_ids[idx]);
+            canvas_draw_str(canvas, 2, (uint8_t)(24U + row * 12U), item);
+        }
+    }
+    canvas_draw_str(canvas, 2, 61, "UP/DN  OK VIEW  BACK");
+}
+
+static void draw_history_detail(Canvas* canvas, LabMateApp* app) {
+    draw_header(canvas, "LOG DETAIL");
+    canvas_set_font(canvas, FontSecondary);
+    if(app->history_selected >= app->history_count) {
+        canvas_draw_str(canvas, 2, 36, "NO LOG SELECTED");
+    } else {
+        char line[36];
+        snprintf(
+            line, sizeof(line), "log_%04u.csv",
+            (unsigned int)app->history_ids[app->history_selected]);
+        canvas_draw_str(canvas, 2, 24, line);
+        if(app->history_busy) {
+            canvas_draw_str(canvas, 2, 36, "OPENING...");
+        } else if(app->history_error) {
+            canvas_draw_str(canvas, 2, 36, "SD / READ ERROR");
+        } else {
+            const char* mode = "EMPTY / UNKNOWN";
+            if(app->history_mode == 1U) mode = "FREQ / PC1";
+            else if(app->history_mode == 2U) mode = "FREQ / PB3";
+            else if(app->history_mode == 3U) mode = "PULSE / PC1";
+            canvas_draw_str(canvas, 2, 36, mode);
+            snprintf(
+                line, sizeof(line), "%s %lu  %lus",
+                app->history_loading ? "READ" : "ROWS",
+                (unsigned long)app->history_rows,
+                (unsigned long)(app->history_last_ms / 1000U));
+            canvas_draw_str(canvas, 2, 48, line);
+        }
+    }
+    canvas_draw_str(canvas, 2, 61, "BACK LIST  READ ONLY");
+}
+
 static void render_callback(
     Canvas* canvas,
     void* ctx) {
@@ -1919,6 +2496,18 @@ static void render_callback(
         draw_generator(canvas, app);
         break;
 
+    case LabMateScreenLogger:
+        draw_logger(canvas, app);
+        break;
+
+    case LabMateScreenHistory:
+        draw_history(canvas, app);
+        break;
+
+    case LabMateScreenHistoryDetail:
+        draw_history_detail(canvas, app);
+        break;
+
     case LabMateScreenAbout:
         draw_about(canvas);
         break;
@@ -1947,7 +2536,8 @@ static bool screen_uses_gpio(
     return
         screen == LabMateScreenGpio ||
         screen == LabMateScreenFrequency ||
-        screen == LabMateScreenPulse;
+        screen == LabMateScreenPulse ||
+        screen == LabMateScreenLogger;
 }
 
 int32_t labmate_app(void* p) {
@@ -2041,6 +2631,12 @@ int32_t labmate_app(void* p) {
     uint32_t normal_redraw_last_tick = furi_get_tick();
 
     while(app->running) {
+        /* Defer slow microSD START/STOP work until after UI mutex release. */
+        bool logger_start_requested = false;
+        bool logger_stop_requested = false;
+        bool history_scan_requested = false;
+        bool history_open_requested = false;
+        bool history_close_requested = false;
         FuriStatus status =
             furi_message_queue_get(
                 queue,
@@ -2120,14 +2716,73 @@ int32_t labmate_app(void* p) {
                         break;
 
                     case 4:
-                        app->screen =
-                            LabMateScreenAbout;
+                        app->screen = LabMateScreenLogger;
+                        app->logger_source = LoggerFrequencyLow;
+                        app->logger_error = false;
+                        app->logger_rows = 0U;
+                        app->logger_path[0] = '\0';
+                        logger_capture_start(app);
+                        break;
+
+                    case 5:
+                        app->screen = LabMateScreenHistory;
+                        app->history_busy = true;
+                        app->history_error = false;
+                        history_scan_requested = true;
+                        break;
+
+                    case 6:
+                        app->screen = LabMateScreenAbout;
                         break;
                     }
 
                 } else if(
                     event.key == InputKeyBack) {
                     app->running = false;
+                }
+
+            } else if(app->screen == LabMateScreenHistory) {
+                if(event.key == InputKeyUp && app->history_count > 0U) {
+                    app->history_selected = (uint8_t)(
+                        (app->history_selected + app->history_count - 1U) %
+                        app->history_count);
+                } else if(event.key == InputKeyDown && app->history_count > 0U) {
+                    app->history_selected = (uint8_t)(
+                        (app->history_selected + 1U) % app->history_count);
+                } else if(event.key == InputKeyOk &&
+                          !app->history_busy && app->history_count > 0U) {
+                    app->screen = LabMateScreenHistoryDetail;
+                    app->history_busy = true;
+                    history_open_requested = true;
+                } else if(event.key == InputKeyBack) {
+                    app->screen = LabMateScreenMenu;
+                }
+            } else if(app->screen == LabMateScreenHistoryDetail) {
+                if(event.key == InputKeyBack) {
+                    app->screen = LabMateScreenHistory;
+                    app->history_loading = false;
+                    history_close_requested = true;
+                }
+            } else if(app->screen == LabMateScreenLogger) {
+                if(event.key == InputKeyLeft) {
+                    logger_capture_change(app, -1);
+                } else if(event.key == InputKeyRight) {
+                    logger_capture_change(app, 1);
+                } else if(event.key == InputKeyOk) {
+                    logger_stop_requested = app->logger_recording;
+                    logger_start_requested = !app->logger_recording;
+                    app->logger_busy = true;
+                    app->logger_busy_stopping = logger_stop_requested;
+                    if(logger_stop_requested) app->logger_recording = false;
+                } else if(event.key == InputKeyBack) {
+                    if(app->logger_recording || app->logger_file || app->logger_storage) {
+                        logger_stop_requested = true;
+                        app->logger_recording = false;
+                        app->logger_busy = true;
+                        app->logger_busy_stopping = true;
+                    }
+                    logger_capture_stop(app);
+                    app->screen = LabMateScreenMenu;
                 }
 
             } else if(
@@ -2246,13 +2901,71 @@ int32_t labmate_app(void* p) {
             }
         }
 
+        char pending_log_row[160];
+        bool pending_log = false;
+        if(app->screen == LabMateScreenLogger && app->logger_recording) {
+            pending_log = logger_prepare_row(app, pending_log_row, sizeof(pending_log_row));
+        }
+        if(app->logger_busy && app->logger_error &&
+           !logger_start_requested && !logger_stop_requested &&
+           (app->logger_file || app->logger_storage)) {
+            logger_stop_requested = true;
+        }
         furi_mutex_release(
             app->mutex);
+
+        if(logger_start_requested || logger_stop_requested) {
+            /* Display OPENING/SAVING without holding the drawing mutex
+             * while storage blocks. The main loop may still wait for SD. */
+            view_port_update(viewport);
+            if(logger_stop_requested) logger_stop(app);
+            else logger_start(app);
+            furi_mutex_acquire(app->mutex, FuriWaitForever);
+            app->logger_busy = false;
+            furi_mutex_release(app->mutex);
+        }
+
+        /* History directory/file operations never hold the UI mutex. */
+        if(history_close_requested) history_close(app);
+        if(history_scan_requested) history_scan(app);
+        if(history_open_requested) history_open(app);
+        if(app->screen == LabMateScreenHistoryDetail && app->history_loading) {
+            history_read_step(app);
+        }
+
+        /* SD writes stay outside the mutex and never occur in capture IRQs. */
+        if(pending_log) {
+            size_t bytes = strlen(pending_log_row);
+            bool ok = app->logger_file &&
+                storage_file_write(app->logger_file, pending_log_row, bytes) == bytes;
+            /* Periodic sync happens outside the GUI mutex and outside IRQs.
+             * STOP/BACK still syncs and closes the file immediately. */
+            if(ok && ((app->logger_rows + 1U) % LOGGER_SYNC_EVERY_ROWS) == 0U) {
+                ok = storage_file_sync(app->logger_file);
+            }
+            furi_mutex_acquire(app->mutex, FuriWaitForever);
+            if(ok) {
+                app->logger_rows++;
+            } else {
+                app->logger_error = true;
+                app->logger_recording = false;
+                app->logger_busy = true;
+                app->logger_busy_stopping = true;
+            }
+            furi_mutex_release(app->mutex);
+            if(!ok) {
+                logger_stop(app);
+                furi_mutex_acquire(app->mutex, FuriWaitForever);
+                app->logger_busy = false;
+                furi_mutex_release(app->mutex);
+            }
+        }
 
         /* Under heavy IRQ load, use a calmer LCD refresh rate while
          * preserving immediate response to keys and all captured edges.
          */
-        if(app->screen == LabMateScreenPulse) {
+        if(app->screen == LabMateScreenPulse ||
+           (app->screen == LabMateScreenLogger && app->logger_source == LoggerPulse)) {
             uint32_t tick = furi_get_tick();
             bool key_press =
                 (status == FuriStatusOk && event.type == InputTypePress);
@@ -2280,8 +2993,15 @@ int32_t labmate_app(void* p) {
         generator_stop(app);
     }
 
+    if(app->logger_recording || app->logger_file || app->logger_storage) {
+        logger_stop(app);
+    }
+    history_close(app);
+
     if(screen_uses_gpio(app->screen)) {
-        if(app->screen == LabMateScreenPulse) {
+        if(app->screen == LabMateScreenLogger) {
+            logger_capture_stop(app);
+        } else if(app->screen == LabMateScreenPulse) {
             pulse_interrupt_stop(app);
         } else if(app->screen == LabMateScreenFrequency) {
             frequency_hw_stop(app);

@@ -1,0 +1,50 @@
+name: LabMate v1.5 Development Build
+
+on:
+  push:
+    branches: [v1.5-dev]
+    paths:
+      - "labmate.c"
+      - "application.fam"
+      - ".github/workflows/build-v1.5.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: labmate-v1.5-dev-build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Compile Momentum FAP (no release)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout v1.5-dev
+        uses: actions/checkout@v4
+
+      - name: Compile LabMate against Momentum SDK
+        id: compile
+        uses: flipperdevices/flipperzero-ufbt-action@v0.1
+        with:
+          sdk-channel: dev
+          sdk-index-url: https://up.momentum-fw.dev/firmware/directory.json
+
+      - name: Verify generated FAP
+        run: |
+          set -euo pipefail
+          FAP="$(find . -type f -name 'labmate.fap' -not -path './.git/*' -print -quit)"
+          test -n "$FAP" && test -s "$FAP"
+          mkdir -p build-artifacts
+          cp "$FAP" build-artifacts/labmate-v1.5-dev.fap
+          (cd build-artifacts && sha256sum labmate-v1.5-dev.fap > SHA256SUMS.txt)
+          ls -l build-artifacts
+
+      - name: Upload development FAP
+        uses: actions/upload-artifact@v4
+        with:
+          name: labmate-v1.5-dev-fap
+          path: build-artifacts/
+          if-no-files-found: error

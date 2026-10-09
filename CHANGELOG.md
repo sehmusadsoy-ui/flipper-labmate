@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.5] - 2026-10-09
+
+### Data Logger and Log History
+- Added microSD CSV recording for low-frequency PC1, high-frequency PB3 and pulse PC1 measurements, sampled once each second.
+- Added START/STOP and BACK-to-save, unique non-overwriting log filenames, periodic sync, and read-only browsing of up to 32 recent log files.
+- Reduced repeated START/STOP stalls by moving file-system operations outside the GUI mutex; cleaned up file handles after unsuccessful opens.
+- Kept all four existing tools. Regression checks were user-confirmed on Flipper hardware; ten-minute/600-row PC1 logging, PB3 1/20/50 kHz samples, pulse samples and signal-loss recovery were tested.
+- Imported a sample CSV successfully with LibreOffice Calc; Microsoft Excel has not been independently verified.
+
+### Stable acceptance and limitations
+- The user confirmed final v1.5-dev checks: development labels match in menu/About, USB-connected STOP/save, BACK-to-save and opening both new files in Log History.
+- Final stable-labeled source displays v1.5 in the main menu and About. The Stable publishing workflow verifies the final FAP, checksums, source commit and Momentum SDK provenance.
+- Real microSD fault recovery, simultaneous host writes to a live CSV, Microsoft Excel import and external-reference calibration remain unverified; see [v1.5 Stable release notes](RELEASE_NOTES_v1.5.md).
+
 ## [1.4] - 2026-10-08
 
 ### Frequency Meter

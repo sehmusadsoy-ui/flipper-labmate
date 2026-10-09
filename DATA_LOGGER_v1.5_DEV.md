@@ -1,0 +1,244 @@
+# LabMate v1.5-dev — Data Logger
+
+Status: **development only**. Do not label as stable until an on-device
+Momentum firmware test has passed. v1.4 Stable remains the release baseline.
+
+## Scope
+
+The Data Logger remains a main-menu entry, followed by Log History. It reuses the existing capture
+engines (not separate GPIO interrupts) and stores one processed measurement
+snapshot per second in CSV on the microSD card.
+
+- **FREQ / PC1 LOW** — period-based low-frequency meter
+- **FREQ / PB3 HIGH** — TIM2 hardware edge-counting meter
+- **PULSE / PC1** — pulse HIGH/LOW/period and duty measurements
+- **LEFT/RIGHT** — select the source while logging is stopped
+- **OK** — start or stop recording
+- **BACK** — stop and close the file, release the capture input, return to menu
+
+The Signal Generator retains its existing PA7 hardware PWM behavior. None of
+the v1.4 meter or generator key bindings are intentionally changed.
+
+## Files and CSV fields
+
+Directory: `/ext/apps_data/labmate/`
+
+Example filename: `log_0001.csv`, then `log_0002.csv` and so on. Files
+are created with `FSOM_CREATE_NEW`; no existing log is overwritten. Up to
+9,999 numeric names are supported. On the first START after launching the app,
+the logger scans existing CSV filenames once and chooses the highest existing
+ID + 1, rather than reusing gaps from deleted files. Within the same app
+session, the next ID keeps increasing. If all CSV files are deleted and the
+app is restarted, numbering begins again at 0001. If 9999 already exists,
+a new recording fails safely instead of overwriting a file.
+
+CSV columns:
+
+```csv
+elapsed_ms,source,pin,valid,frequency_hz,high_us,low_us,period_us,duty_pct
+1000,FREQ,PC1,1,999.820,,,,
+2000,PULSE,PC1,1,,500,500,1000,50.0
+```
+
+These rows are **illustrative of the format**, not actual measurement results.
+`elapsed_ms` is time since record start measured with the firmware tick counter
+and is not wall-clock time. A valid flag of `0` indicates the capture has
+not produced a valid result (frequency becomes 0; pulse widths become 0).
+
+The logger snapshots at 1-second intervals, **not one row per GPIO edge**.
+SD writes happen in the application loop, outside GPIO interrupt handlers and
+outside the UI mutex. After every 10 successfully written measurement rows, the
+logger also synchronizes the CSV file to microSD; STOP/BACK synchronizes and
+closes it. A failed write or sync stops recording and sets an error message.
+Unexpected power loss or microSD removal may still cause lost data; periodic
+sync is damage mitigation, not a guarantee.
+
+## Build in the existing Momentum checkout
+
+From the repository root (PowerShell):
+
+```powershell
+Copy-Item .\labmate.c "$env:USERPROFILE\Momentum-Firmware\applications_user\labmate\labmate.c" -Force
+Copy-Item .\application.fam "$env:USERPROFILE\Momentum-Firmware\applications_user\labmate\application.fam" -Force
+Copy-Item .\labmate_10px.png "$env:USERPROFILE\Momentum-Firmware\applications_user\labmate\labmate_10px.png" -Force
+cd "$env:USERPROFILE\Momentum-Firmware"
+.\fbt launch APPSRC=applications_user\labmate
+```
+
+## START/STOP responsiveness fix (repeat-cycle device check passed)
+
+- When starting a new recording, check for already-existing filenames and reuse
+  a session-local next-number cursor. Only try to open candidate files that
+  do not already exist; CREATE_NEW still prevents overwriting existing data.
+- Perform START and STOP file operations after releasing the GUI mutex, showing
+  an OPENING/SAVING wait indicator. This prevents storage latency from holding
+  the UI drawing lock, but slow microSD calls can still briefly delay button
+  handling because the storage operations share the application thread.
+- Defer storage cleanup after CSV formatting/write failures until outside the
+  GUI mutex.
+- If the app still hangs on repeat START, capture the exact stage and investigate
+  storage blocking, file handles and whether an asynchronous worker is needed.
+
+**Regression test:** start a PC1 1 kHz recording; STOP after 5 seconds; press
+OK again to START a second recording without leaving the screen; STOP again.
+Verify two different CSV filenames and readable content, then repeat at least
+five START/STOP cycles. Test BACK and re-entry, SD error display, and other
+v1.4 measurement screens. Do not consider this fix verified by CI alone.
+
+**Device feedback — 2026-10-09:** The user confirmed that three consecutive
+START -> approximately 5 seconds -> STOP cycles and BACK/menu re-entry were
+performed without the previously reported freeze. This is a successful
+repeat-START responsiveness smoke test on the physical Flipper after the fix.
+The longer five-cycle and other regression tests above remain open; do not
+infer they passed from this report alone.
+
+## Log History browser (new in v1.5-dev; partial on-device checks passed)
+
+- Main-menu item: **Log History** (separate from the live Data Logger).
+- Show up to **32 most recent** filenames matching `log_NNNN.csv`, sorted by
+  descending numeric ID. Older files remain safe on microSD but are not shown
+  in this first bounded browser. No filesystem deletion or modification.
+- **UP/DOWN** selects a file; **OK** opens read-only details; **BACK** returns
+  to the list/menu. Details show the detected source (FREQ/PC1, FREQ/PB3,
+  PULSE/PC1), number of complete CSV measurement rows, and last logged
+  elapsed time in seconds. Empty files show zero rows and unknown source.
+- CSV detail parsing reads at most 256 bytes per application-loop pass. The
+  directory scan, open, read, and close run outside the GUI mutex. Slow or
+  failing SD operations may still delay the application's event loop; no
+  nonblocking worker is claimed yet.
+- No timestamp/date is inferred from `elapsed_ms` because it is time since
+  START, not a wall-clock timestamp.
+
+**Device feedback — 2026-10-09:** On-device Log History displayed a
+PULSE/PC1 10-row session and the user also confirmed newly created
+`log_0008.csv` (5 rows) and `log_0009.csv` (10 rows) were visible with
+their respective counts. This confirms initial list/detail reading, but
+does not prove absent-SD handling, large-list scanning or that no other
+navigation bugs exist.
+
+**On-device validation still needed:** Open history with existing FREQ and
+PULSE logs; confirm descending order, arrow navigation and back navigation.
+Check `log_0001.csv` (empty/header-only), a 10-row PULSE capture, and a
+15-row FREQ capture. Check that a newly created file becomes visible after
+re-entering history, that older CSVs are unchanged, and that an absent or
+unmounted microSD displays a safe error. Repeat START/STOP recording after
+leaving history to watch for regressions.
+
+
+**Device feedback — 2026-10-09 (repeat START/STOP):** The user reports
+five consecutive START/STOP recordings without freezes and confirms that
+all five recordings are visible in Log History. This is a user-reported
+on-device regression pass; the five new CSV files have not been
+independently inspected here. SD-absent and other remaining acceptance
+tests are still pending.
+
+**Device feedback — 2026-10-09 (no-input CSV):** With Signal Generator
+stopped, a five-second FREQ/PC1 recording created `log_0020.csv`.
+The uploaded CSV was inspected: 5 of 5 measurement records have
+`valid=0`, `frequency_hz=0.000`, and elapsed times of
+1005, 2011, 3019, 4023 and 5023 ms. Log History reported 5 rows / 5 s.
+This verifies no-signal-at-start logging, **not** an in-progress signal-loss
+transition. Test stopping the generator during an active recording separately.
+
+**Device feedback — 2026-10-09 (no-input Pulse CSV):** With Signal
+Generator stopped, a five-second PULSE/PC1 recording created
+`log_0021.csv`. The uploaded CSV was inspected: 5 of 5 measurement
+records have `valid=0`, `high_us=0`, `low_us=0`,
+`period_us=0`, `duty_pct=0.0`; elapsed times are 1001,
+2001, 3001, 4001, and 5001 ms. Log History showed 5 rows / 5 s.
+The no-signal-at-start Pulse logging case passed; this does **not**
+cover signal loss during an active capture.
+
+**Device feedback — 2026-10-09 (live PC1 signal loss and recovery):**
+The user uploaded `log_0022.csv` with 18 complete FREQ/PC1 samples. Rows
+1–8 were valid (approximately 999.828 Hz); rows 9–10 (at 9002 and
+10002 ms) were invalid (`valid=0`, `frequency_hz=0.000`); rows 11–18
+were valid again (approximately 999.828–999.859 Hz). This verifies
+a recorded `valid=1 → valid=0 → valid=1` transition under a live
+signal interruption in the low-frequency capture mode. Signal
+disconnection and exact 3-second timeout onset are not independently
+timestamped by the CSV.
+
+**Desktop CSV compatibility — LibreOffice Calc import check (2026-10-09):**
+The user opened `log_0022.csv` in LibreOffice Calc on Windows. The
+screenshot confirms nine separated columns (A–I), a header plus 18
+measurement rows (2–19), decimal-comma interpretation of frequency
+values (for example `999,828`), and the expected `valid` sequence:
+eight rows of 1, two rows of 0, eight rows of 1. This verifies
+LibreOffice Calc compatibility, **not a direct test in Microsoft Excel**.
+No Excel license was available for that separate check.
+
+**Device feedback — 2026-10-09 (v1.4 GPIO Monitor regression):**
+The user reported that the GPIO Monitor regression check passed after the
+v1.5-dev Data Logger and Log History changes. The test involved the existing
+internal 3.3 V PA7-to-PC1 loopback and 1 Hz generator; user reported success
+without detailed per-control measurements or screenshots. Frequency Meter,
+Pulse Analyzer and Signal Generator regressions remain open.
+
+**Device feedback — 2026-10-09 (v1.4 Frequency Meter regression):**
+The user confirmed the FREQ/PC1 LOW mode regression checklist passed after
+the v1.5 changes: approximately 1 kHz measurement using PA7-to-PC1 3.3 V
+loopback; MIN/MAX display; HOLD/LIVE controls; UP resetting extrema; and
+BACK navigation without freeze. This is a user-reported on-device pass;
+Pulse Analyzer and Signal Generator regression checks remain pending.
+
+**Device feedback — 2026-10-09 (v1.4 Pulse Analyzer regression):**
+The user confirmed the Pulse Analyzer regression test passed with the
+internal PA7-to-PC1 3.3 V loopback at 1 kHz / 50% duty. The check included
+approximately 500 us HIGH/LOW, 1000 us period, 50% duty; UP statistics
+MIN/MAX, DOWN statistics reset, OK HOLD/LIVE, and BACK navigation.
+This is a user-reported on-device pass. Signal Generator's final
+standalone regression remains pending.
+
+## Final SD cleanup audit (2026-10-09)
+
+- Source change `1471759` calls `storage_file_close()` for every allocated
+  logger file, including failed opens. A successfully opened file is synced
+  first, and failed sync/close attempts set the existing error flag.
+- File and storage cleanup still run outside the UI mutex; CSV files continue
+  using `FSOM_CREATE_NEW` to avoid overwrites.
+- **Now tested on hardware after this change:** STOP, BACK-to-save and
+  opening both new files in Log History (user report).
+- **Not proven:** behavior under actual microSD read/write failure or full
+  card, concurrent USB storage access, or bounded responsiveness if SD I/O
+  blocks the main thread. Do not remove the microSD while LabMate is running;
+  the app is stored on the card.
+- The last Signal Generator regression was user-confirmed, with a newly
+  entered Frequency Meter LOW PC1 LIVE screen showing `--- Hz` immediately
+  following Generator STOP. Because entering the meter resets its state, the
+  3-second in-place timeout was not independently measured in that step.
+
+See [v1.5 draft release notes](RELEASE_NOTES_v1.5_DRAFT.md) for the final release gate. No new physical SD removal tests are required; the inability to validate actual storage failure must be disclosed in the release notes.
+
+## Final v1.5-dev hardware acceptance — user report (2026-10-09)
+
+The user reported that **all four final device checks passed on the
+latest v1.5-dev build**: matching development-version text in the main
+menu and About; STOP/save while attached to USB; BACK-to-save/file
+close; and successful opening of the two recorded files in Log History.
+This is a user-reported hardware acceptance result, not an independent
+binary audit or proof of behavior under failed microSD I/O. The test
+used USB connectivity without intentional concurrent host writes to
+the active CSV.
+
+## On-device acceptance tests (in progress)
+
+- [x] Build against the installed Momentum API; launch without crashes
+- [x] Verify Generator RUN/STOP and re-entry meter display on device (user-reported pass)
+- [x] Recheck Pulse Analyzer HIGH/LOW/PERIOD/DUTY, MIN/MAX, reset, HOLD/LIVE, BACK (user-reported pass)
+- [x] Recheck Frequency Meter LOW/PC1 MIN/MAX, HOLD/LIVE, reset, BACK (user-reported pass)
+- [x] Recheck GPIO Monitor after v1.5 changes (user-reported pass)
+- [x] Insert microSD and record at least 5 samples on PC1 with internal PA7
+      generator loopback; check format, timestamps and values
+- [x] Switch to PB3 and repeat at 1, 20, and 50 kHz
+- [x] Switch to PULSE/PC1 and repeat at 1 kHz; inspect periods/duty
+- [x] STOP and BACK finalize separate recordings readable in Log History (user-confirmed final build); existing-file no-overwrite relies on earlier device tests and create-new source semantics
+- [x] Record at least 12 rows; ensure periodic sync does not freeze the UI
+- [ ] SD fault injection not performed on device; source-path audit documented. Do NOT remove the microSD while LabMate runs
+- [x] Test sudden PC1 signal loss: valid flag returns 0 and then 1 on recovery
+- [x] Test continuous logging for at least 10 minutes (600 valid FREQ/PC1 rows)
+- [x] USB-connected STOP/save completed successfully on device (user report; not a test of concurrent USB file transfers)
+
+**Electrical safety:** Flipper Zero GPIO is 3.3 V logic only. Never connect
+unknown voltage or 5 V / 12 V directly to GPIO. Use a 3.3 V-compatible
+loopback with the internal signal generator for the first tests.
