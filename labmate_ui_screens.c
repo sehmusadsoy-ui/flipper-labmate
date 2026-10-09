@@ -7,6 +7,62 @@
  * No SD, IRQ, GPIO or timer access in this module.
  */
 
+/* Profile storage only runs in app thread; this renderer is read-only. */
+void draw_profiles(Canvas* canvas, LabMateApp* app) {
+    ui_draw_header(canvas, "PROFILES");
+    canvas_set_font(canvas, FontSecondary);
+
+    const char* state = "READY";
+    if(app->profile_busy) state = "WAIT";
+    else if(app->profile_io == LabMateProfileIoCorrupt) state = "BAD CRC";
+    else if(app->profile_io == LabMateProfileIoError) state = "SD ERR";
+    else if(app->profile_notice == 1U) state = "SAVED";
+    else if(app->profile_notice == 2U) state = "LOADED";
+    else if(app->profile_notice == 3U) state = "EMPTY";
+    else if(app->profile_notice == 4U) state = "STOP PWM";
+    else if(app->profile_notice == 5U) state = "WRITE ERR";
+    canvas_draw_str_aligned(canvas, 126, 10, AlignRight, AlignBottom, state);
+
+    for(uint8_t i = 0U; i < LABMATE_PROFILE_SLOT_COUNT; ++i) {
+        const uint8_t y = (uint8_t)(24U + 12U * i);
+        if(app->profile_selected == i) {
+            canvas_draw_box(canvas, 1, y - 10, 126, 12);
+            canvas_set_color(canvas, ColorWhite);
+        }
+        char line[32];
+        const LabMateProfile* slot = &app->profiles.slots[i];
+        if(!slot->present) {
+            snprintf(line, sizeof(line), "S%u  EMPTY", (unsigned)(i + 1U));
+        } else {
+            const uint32_t freq = labmate_generator_frequencies[slot->generator_index];
+            if(freq >= 1000U && freq % 1000U == 0U) {
+                snprintf(line, sizeof(line), "S%u %s %lukHz",
+                         (unsigned)(i + 1U),
+                         slot->frequency_pin == 4U ? "PB3" : "PC1",
+                         (unsigned long)(freq / 1000U));
+            } else {
+                snprintf(line, sizeof(line), "S%u %s %luHz",
+                         (unsigned)(i + 1U),
+                         slot->frequency_pin == 4U ? "PB3" : "PC1",
+                         (unsigned long)freq);
+            }
+        }
+        canvas_draw_str(canvas, 5, y, line);
+        if(app->profile_selected == i) canvas_set_color(canvas, ColorBlack);
+    }
+
+    canvas_draw_line(canvas, 0, 52, 127, 52);
+    canvas_set_font(canvas, FontSecondary);
+    if(app->profile_confirm) {
+        canvas_draw_str(canvas, 2, 61, "OK SAVE  BACK CANCEL");
+    } else if(app->profile_busy) {
+        canvas_draw_str(canvas, 2, 61, "SD: PLEASE WAIT");
+    } else {
+        canvas_draw_str(canvas, 2, 61, app->profile_save_mode ?
+                        "<> SAVE   OK SELECT" : "<> LOAD   OK APPLY");
+    }
+}
+
 void draw_about(
     Canvas* canvas) {
 
