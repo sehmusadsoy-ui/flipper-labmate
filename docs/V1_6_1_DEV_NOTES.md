@@ -340,3 +340,40 @@ abnormal SD/power-loss scenarios as unverified until explicitly tested.
 Do not promote to Stable unless both gates pass. Keep main, the
 published v1.6 release and historical tags untouched until a separate
 release decision.
+
+## Gate A — completed device integration checks: PASS (operator report)
+
+Exact firmware commit `9c087b64504083e5f977544bc27cd9ce37840819`
+passed GitHub Actions [38056474953](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38056474953).
+The operator reported **8/8 PASS** in the combined device session:
+
+1. MEASURE / OUTPUT / RECORDS / INFO grouped menus; all tools accessible.
+2. Screen labels, selections and footer layout without observed overflow.
+3. Frequency LOW/HIGH and Pulse, including HOLD/LIVE.
+4. GPIO/EXTI transitions without observed freezes/collisions.
+5. Generator RUN/STOP and PA7 reservation.
+6. Three Logger sources, incremental CSV names and History.
+7. Preserved Profile S1, SAVE/LOAD and Generator initially STOP.
+8. Exit/relaunch and repeated tool switching without observed freezes.
+
+Gate A is accepted for these normal-use scenarios; no external metrology,
+interrupt fault injection, or long endurance guarantee is implied.
+
+## Gate B — frozen release-candidate source and final acceptance checklist
+
+**Candidate source SHA:** `9c087b64504083e5f977544bc27cd9ce37840819`.
+This exact already-successful firmware run is the release-candidate binary;
+this documentation-only commit must not be mistaken for a new FAP build.
+Do not introduce further code changes before the final Gate B check.
+The updater must validate the successful run's SHA and artifact checksum,
+and install only `/ext/apps/Tools/labmate.fap` on COM7.
+
+Final single-session checks: clean startup; LOW PC1 (100 Hz / 1 kHz),
+HIGH PB3 (1 kHz / 10 kHz), Pulse PC1 (100 Hz / 1 kHz) readings; HOLD/LIVE;
+LOW/HIGH/Pulse repeated transitions without freeze; Generator default STOP,
+PA7 protection during RUN and release after STOP; all three Logger modes,
+CSV sequence and old/new History; S1 SAVE/LOAD persistence after exit/restart;
+all four group menus and screens; final exit/relaunch and sustained ordinary
+use. Capture results separately as PASS/FAIL/PENDING; no automatic claim of
+Stable promotion on CI alone. Keep `main`, v1.6 Stable and published tags
+unchanged pending a separately authorized release decision.
