@@ -469,3 +469,14 @@ not the older RC1 firmware artifact. Before publishing Stable, produce
 and independently verify a release asset from the exact tested commit,
 while preserving existing v1.6 Stable assets and `main` until a separately
 approved release strategy is selected.
+
+## v1.6.1 Stable — published and checked (2026-10-10)
+
+GitHub Stable release [v1.6.1](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1)
+exists and is published (not prerelease/draft). Tag resolves to physical INFO-tested
+firmware source `bc63271afe572c393c1febd0f0ef7039404bc937`.
+Assets: `labmate.fap` (38,232 bytes) and `SHA256SUMS.txt`.
+The publishing command reported checksum
+`DA2B09D40608A5BF237A9D682E2802EBDA68942DA887CF0E4F3FE5DE9F105F79`.
+Earlier RC1 remains a prerelease, and v1.6 Stable remains a separate release.
+The user's preferred full UI redesign is deferred to a future v1.7 design milestone.
