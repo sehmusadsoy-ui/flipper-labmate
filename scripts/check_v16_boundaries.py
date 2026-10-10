@@ -196,8 +196,8 @@ for sentinel in [
 ]:
     expect(sentinel in MAIN, f"Required capture/storage function missing: {sentinel}")
 
-expect('"v1.6"' in INTERNAL_H, "Stable candidate UI version must remain v1.6")
-expect('fap_version="1.6"' in MANIFEST, "Stable candidate manifest version must remain 1.6")
+expect('"v1.6.1d"' in INTERNAL_H, "v1.6.1 development label required")
+expect('fap_version="1.6"' in MANIFEST, "Keep SDK-compatible manifest version during dev")
 expect(
     'sources=["*.c"]' in MANIFEST,
     "FAP source list must explicitly exclude native C test fixtures",
@@ -312,6 +312,23 @@ expect(
     "profiles_save_requested" in MAIN and
     "labmate_profiles_decode(" in PROFILES,
     "Profile I/O needs deferred main-thread work and verified codec",
+)
+
+LOGGER_CODEC = (ROOT / "labmate_logger_codec.c").read_text(encoding="utf-8")
+LOGGER_HEADER = (ROOT / "labmate_logger_codec.h").read_text(encoding="utf-8")
+expect(
+    '"labmate_logger_codec.h"' in MAIN and
+    "labmate_logger_filename_id(" in MAIN and
+    "labmate_logger_format_row(" in MAIN and
+    "static bool logger_filename_id(" not in MAIN,
+    "Missing extracted logger codec calls",
+)
+expect(
+    "bool labmate_logger_filename_id(" in LOGGER_CODEC and
+    "int labmate_logger_format_row(" in LOGGER_CODEC and
+    "int labmate_logger_format_row(" in LOGGER_HEADER and
+    "storage_" not in LOGGER_CODEC and "furi_" not in LOGGER_CODEC,
+    "Logger codec must be hardware/storage independent",
 )
 
 if failures:

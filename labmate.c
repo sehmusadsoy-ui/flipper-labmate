@@ -13,6 +13,7 @@
 #include "labmate_ui_screens.h"
 #include "labmate_resource_policy.h"
 #include "labmate_frequency_gate.h"
+#include "labmate_logger_codec.h"
 
 #define LOGGER_DIR "/ext/apps_data/labmate"
 #define LOGGER_INTERVAL_MS 1000U
@@ -1153,20 +1154,6 @@ static void logger_stop(LabMateApp* app) {
     }
 }
 
-/* Accept only log_0001.csv through log_9999.csv. */
-static bool logger_filename_id(const char* name, uint16_t* result) {
-    if(strlen(name) != 12U || strncmp(name, "log_", 4U) != 0 ||
-       strcmp(name + 8, ".csv") != 0) return false;
-    uint16_t id = 0U;
-    for(size_t i = 4U; i < 8U; ++i) {
-        if(name[i] < '0' || name[i] > '9') return false;
-        id = (uint16_t)(id * 10U + (uint16_t)(name[i] - '0'));
-    }
-    if(id == 0U) return false;
-    *result = id;
-    return true;
-}
-
 /* Read the highest existing CSV ID once per application session.
  * Keep naming monotonic even if older files were deleted. All filesystem
  * work occurs from the app loop, after releasing the UI mutex. */
@@ -1183,7 +1170,7 @@ static bool logger_init_next_file_index(LabMateApp* app) {
         while(storage_dir_read(dir, &info, name, sizeof(name))) {
             uint16_t id;
             if(!file_info_is_dir(&info) &&
-               logger_filename_id(name, &id) && id > max_id) {
+               labmate_logger_filename_id(name, &id) && id > max_id) {
                 max_id = id;
             }
         }
@@ -1298,30 +1285,21 @@ static bool logger_prepare_row(LabMateApp* app, char* row, size_t capacity) {
     const uint32_t elapsed_ms =
         hz ? (uint32_t)(((uint64_t)(now - app->logger_start_tick) * 1000ULL) / hz) : 0U;
 
-    int length;
-    if(app->logger_source == LoggerPulse) {
-        const bool valid = app->pulse_period_valid;
-        length = snprintf(
-            row, capacity,
-            "%lu,PULSE,PC1,%u,,%lu,%lu,%lu,%lu.%01lu\n",
-            (unsigned long)elapsed_ms, valid ? 1U : 0U,
-            (unsigned long)(valid ? pulse_cycles_to_us(app->pulse_high_cycles) : 0U),
-            (unsigned long)(valid ? pulse_cycles_to_us(app->pulse_low_cycles) : 0U),
-            (unsigned long)(valid ? pulse_cycles_to_us(app->pulse_period_cycles) : 0U),
-            (unsigned long)(valid ? app->pulse_duty_permille / 10U : 0U),
-            (unsigned long)(valid ? app->pulse_duty_permille % 10U : 0U));
-    } else {
-        const bool valid = app->frequency_valid;
-        const uint32_t mhz = valid ? app->frequency_millihz : 0U;
-        length = snprintf(
-            row, capacity,
-            "%lu,FREQ,%s,%u,%lu.%03lu,,,,\n",
-            (unsigned long)elapsed_ms,
-            app->logger_source == LoggerFrequencyHigh ? "PB3" : "PC1",
-            valid ? 1U : 0U,
-            (unsigned long)(mhz / 1000U),
-            (unsigned long)(mhz % 1000U));
+    LabMateLogRow sample = {
+        .source = (LabMateLogRowSource)app->logger_source,
+        .elapsed_ms = elapsed_ms,
+        .valid = app->logger_source == LoggerPulse ?
+            app->pulse_period_valid : app->frequency_valid,
+        .frequency_millihz = app->frequency_millihz,
+    };
+    if(app->logger_source == LoggerPulse && sample.valid) {
+        /* Preserve existing 32-bit ARM snprintf argument semantics. */
+        sample.pulse_high_us = (uint32_t)pulse_cycles_to_us(app->pulse_high_cycles);
+        sample.pulse_low_us = (uint32_t)pulse_cycles_to_us(app->pulse_low_cycles);
+        sample.pulse_period_us = (uint32_t)pulse_cycles_to_us(app->pulse_period_cycles);
+        sample.pulse_duty_permille = app->pulse_duty_permille;
     }
+    const int length = labmate_logger_format_row(row, capacity, &sample);
 
     if(length <= 0 || (size_t)length >= capacity) {
         app->logger_error = true;
@@ -1357,7 +1335,7 @@ static void history_scan(LabMateApp* app) {
                 char name[64];
                 while(storage_dir_read(dir, &info, name, sizeof(name))) {
                     uint16_t id;
-                    if(file_info_is_dir(&info) || !logger_filename_id(name, &id)) continue;
+                    if(file_info_is_dir(&info) || !labmate_logger_filename_id(name, &id)) continue;
                     ++total;
                     uint8_t insert = 0U;
                     while(insert < count && latest[insert] > id) ++insert;

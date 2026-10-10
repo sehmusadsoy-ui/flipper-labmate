@@ -1,8 +1,8 @@
-name: LabMate Main Source CI (v1.6)
+name: LabMate v1.6.1 Development CI
 
 on:
   push:
-    branches: [main]
+    branches: [v1.6.1-dev]
     paths:
       - "*.c"
       - "*.h"
@@ -23,16 +23,16 @@ permissions:
 concurrency:
   # Separate current ownership-policy CI from a prior stale UI runner.
   # Keep cancelling outdated intermediate-source builds on this branch.
-  group: labmate-v1.6-main-ci
+  group: labmate-v1.6.1-dev-ci
   cancel-in-progress: true
 
 jobs:
   build:
-    name: Compile modular LabMate v1.6 FAP (main verification only)
+    name: Compile modular LabMate v1.6.1 FAP (development only)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Check out main
+      - name: Check out v1.6.1-dev
         uses: actions/checkout@v4
 
       - name: Guard passive UI and hardware boundaries
@@ -63,6 +63,14 @@ jobs:
             -o /tmp/labmate-profile-tests
           /tmp/labmate-profile-tests
 
+      - name: Test portable logger CSV and filename codec
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. -x c \
+            labmate_logger_codec.c tests/test_logger_codec.c.inc \
+            -o /tmp/labmate-logger-codec-tests
+          /tmp/labmate-logger-codec-tests
+
       - name: Test PB3 adaptive frequency gate (portable C)
         run: |
           set -euo pipefail
@@ -91,7 +99,7 @@ jobs:
           echo "Momentum SDK API: $BUILT_API_VERSION"
           ls -lh build-artifacts
 
-      - name: Upload main CI artifact (does not publish)
+      - name: Upload dev FAP artifact (no release)
         uses: actions/upload-artifact@v4
         with:
           name: labmate
@@ -164,10 +172,12 @@ jobs:
           # inherit it after every expected-failure assertion has passed.
           $global:LASTEXITCODE = 0
           $stableScript = Get-Content -Raw ./scripts/install-from-github.ps1
+          $devScript = Get-Content -Raw ./scripts/install-v161-dev.ps1
           if($stableScript -notmatch [regex]::Escape('gh release download $tag') -or
              $stableScript -notmatch [regex]::Escape("$tag = 'v1.6'") -or
-             $stableScript -match [regex]::Escape(' -b v1.6-stable-candidate ') -or
-             $stableScript -match [regex]::Escape(' -b v1.6-dev ')) {
-            throw 'Main installer must download the immutable v1.6 Stable Release, not a dev/RC run.'
+             $devScript -notmatch [regex]::Escape(' -b v1.6.1-dev ') -or
+             $devScript -match [regex]::Escape(' -b v1.6-rc1 ') -or
+             $devScript -match [regex]::Escape(' -b v1.6-stable-candidate ')) {
+            throw 'v1.6.1 dev and v1.6 Stable installer targets must remain isolated.'
           }
-          Write-Host 'Mock USB tests and Stable release installer target guard passed; no Flipper connected.'
+          Write-Host 'Mock USB tests and installer isolation passed; no Flipper connected.'

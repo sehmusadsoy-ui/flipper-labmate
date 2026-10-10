@@ -1,7 +1,7 @@
 #pragma once
 
 /* Internal LabMate application state, shared by the app loop and state-aware
- * renderers. NOT an external ABI. Stable candidate is isolated until final FAP device validation.
+ * renderers. NOT an external ABI. v1.6.1 development branch remains separate from Stable.
  * IRQ-owned fields and storage handles retain the v1.5 layout and semantics.
  */
 #include <furi.h>
@@ -11,7 +11,7 @@
 #include "labmate_navigation.h"
 #include "labmate_profile_storage.h"
 
-#define LABMATE_VERSION_TEXT "v1.6"
+#define LABMATE_VERSION_TEXT "v1.6.1d"
 /* Shared menu/pin counts: UI and input handling must agree. */
 #define MENU_COUNT LabMateToolCount
 #define GPIO_COUNT LABMATE_MONITOR_PIN_COUNT
