@@ -423,3 +423,31 @@ tested firmware commit `9c087b64504083e5f977544bc27cd9ce37840819`.
 The operator's publishing script verified CI SUCCESS and the artifact
 SHA256 before upload. The previous [v1.6 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6)
 remains published as a non-prerelease. RC1 is **not** promoted to Stable.
+
+## Post-RC1 cosmetic request (not in published RC1)
+
+On `v1.6.1-dev`, the About/INFO renderer now credits
+**SauronLAB** as developer and **Sehmus** immediately below, using ASCII
+because the default firmware bitmap font does not reliably include
+Turkish-specific glyphs. Preserve the GPIO voltage safety notice.
+This is an untested follow-up to the published RC1, not a retroactive
+change to the release/tag or to `main`.
+
+### Proposed later UI design milestone (v1.7 candidate; not implemented)
+
+- Replace the generic MEASURE / OUTPUT / RECORDS / INFO root list with
+  purpose-specific icon/card treatments, strong selection feedback and a
+  consistent compact navigation footer.
+- Redesign Data Logger with visually distinct source, current reading,
+  REC/STOP state, row counter and clear save/error feedback.
+- Redesign Log History with file list selection, file summary and read-only
+  details without changing CSV format or history scanning behavior.
+- Redesign Profiles with a clear active slot/selected action, SAVE/LOAD
+  confirmation, status messages and visible S1/S2/S3 information.
+- Prototype and review monochrome 128x64 screenshots before coding, then
+  run dedicated screen-overflow and real-device regression tests.
+
+This is a proposed scope for a later version, not a claim that it was
+previously scheduled or already implemented. The current pre-Stable
+patch is restricted to INFO credits to avoid reopening the RC acceptance
+matrix for a broad UI overhaul.
