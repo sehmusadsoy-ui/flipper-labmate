@@ -179,7 +179,8 @@ static void frequency_hw_stop(LabMateApp* app) {
     app->frequency_hw_active = false;
     app->frequency_hw_gate_started = false;
     if(app->capture_owner == LabMateCaptureFrequencyHigh) {
-        app->capture_owner = LabMateCaptureNone;
+        app->capture_owner = labmate_capture_owner_after_stop(
+            app->capture_owner, LabMateCaptureFrequencyHigh);
         app->capture_pin_index = GPIO_COUNT;
     }
     app->frequency_hw_last_count = 0;
@@ -273,7 +274,8 @@ static void __attribute__((unused)) frequency_interrupt_stop(LabMateApp* app) {
 
     app->frequency_irq_active = false;
     if(app->capture_owner == LabMateCaptureFrequencyLow) {
-        app->capture_owner = LabMateCaptureNone;
+        app->capture_owner = labmate_capture_owner_after_stop(
+            app->capture_owner, LabMateCaptureFrequencyLow);
         app->capture_pin_index = GPIO_COUNT;
     }
 }
@@ -446,7 +448,8 @@ static void pulse_interrupt_stop(LabMateApp* app) {
     FURI_CRITICAL_EXIT();
     app->pulse_irq_active = false;
     if(app->capture_owner == LabMateCapturePulse) {
-        app->capture_owner = LabMateCaptureNone;
+        app->capture_owner = labmate_capture_owner_after_stop(
+            app->capture_owner, LabMateCapturePulse);
         app->capture_pin_index = GPIO_COUNT;
     }
 }
