@@ -133,7 +133,21 @@ static void check_resource_transitions(void) {
     assert(labmate_monitor_pin_allowed(7U, false));
 }
 
+static void check_release_policy(void) {
+    for(int owner = LabMateCaptureNone; owner <= LabMateCapturePulse; ++owner) {
+        for(int stopping = LabMateCaptureNone; stopping <= LabMateCapturePulse; ++stopping) {
+            const LabMateCaptureOwner expected =
+                (owner == stopping && stopping != LabMateCaptureNone)
+                    ? LabMateCaptureNone : (LabMateCaptureOwner)owner;
+            assert(labmate_capture_owner_after_stop(
+                (LabMateCaptureOwner)owner,
+                (LabMateCaptureOwner)stopping) == expected);
+        }
+    }
+}
+
 int main(void) {
+    check_release_policy();
     check_resource_transitions();
     /* All eight pins remain available when the generator is off. */
     for(uint8_t pin = 0U; pin < LABMATE_MONITOR_PIN_COUNT; ++pin) {
