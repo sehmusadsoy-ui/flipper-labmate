@@ -413,3 +413,13 @@ frozen firmware SHA. DO NOT use branch HEAD as a substitute for the tested
 binary commit, and do not assert a new firmware CI run on the docs commit.
 Keep `main`, existing v1.6 Stable assets and tags unchanged without an
 explicit separate release instruction.
+
+## v1.6.1 RC1 — published and independently checked (2026-10-10)
+
+Pre-release [v1.6.1-rc.1](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1-rc.1)
+is published (not a draft), with assets `labmate.fap` and
+`SHA256SUMS.txt`. The GitHub tag resolves to the frozen, physically
+tested firmware commit `9c087b64504083e5f977544bc27cd9ce37840819`.
+The operator's publishing script verified CI SUCCESS and the artifact
+SHA256 before upload. The previous [v1.6 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6)
+remains published as a non-prerelease. RC1 is **not** promoted to Stable.
