@@ -451,3 +451,21 @@ This is a proposed scope for a later version, not a claim that it was
 previously scheduled or already implemented. The current pre-Stable
 patch is restricted to INFO credits to avoid reopening the RC acceptance
 matrix for a broad UI overhaul.
+
+## Post-RC1 INFO screen — real Flipper regression: PASS (operator report)
+
+For exact code commit `bc63271afe572c393c1febd0f0ef7039404bc937`,
+GitHub Actions [38057529062](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38057529062)
+completed SUCCESS. Operator reported **3/3 PASS**:
+
+1. SauronLAB, Sehmus and repository GitHub address are readable on INFO.
+2. 3.3V GPIO ONLY warning and INFO-to-menu navigation work.
+3. App exit/relaunch succeeds and Generator starts STOP.
+
+This approves the post-RC1 INFO change for release preparation. It does
+not retroactively update the already published `v1.6.1-rc.1` release.
+Stable release candidate must use the newer tested INFO source commit,
+not the older RC1 firmware artifact. Before publishing Stable, produce
+and independently verify a release asset from the exact tested commit,
+while preserving existing v1.6 Stable assets and `main` until a separately
+approved release strategy is selected.
