@@ -63,3 +63,8 @@ bool labmate_capture_matches(
  */
 LabMateCaptureOwner labmate_capture_owner_after_stop(
     LabMateCaptureOwner current, LabMateCaptureOwner stopping);
+
+/* Final software teardown may clear the capture owner only when all
+ * capture engines report inactive. TIM1/PA7 generator is independent. */
+bool labmate_capture_all_stopped(
+    bool frequency_low_active, bool frequency_high_active, bool pulse_active);
