@@ -146,7 +146,53 @@ static void check_release_policy(void) {
     }
 }
 
+/* Step 6.3: exhaustive software lifecycle permutations. These tests do
+ * not simulate actual HAL/IRQ teardown, only the resource policy contract. */
+static void check_release_reacquire_matrix(void) {
+    const LabMateCaptureOwner owners[] = {
+        LabMateCaptureFrequencyLow, LabMateCaptureFrequencyHigh,
+        LabMateCapturePulse,
+    };
+    const uint8_t pins[] = {1U, 4U, 3U};
+    for(unsigned i = 0U; i < 3U; ++i) {
+        for(unsigned j = 0U; j < 3U; ++j) {
+            const LabMateCaptureOwner active = owners[i];
+            const LabMateCaptureOwner next = owners[j];
+            /* A STOP request by a different capture cannot release owner. */
+            if(i != j) {
+                const LabMateCaptureOwner unchanged =
+                    labmate_capture_owner_after_stop(active, next);
+                assert(unchanged == active);
+                assert(!labmate_capture_can_acquire(
+                    unchanged, next, pins[j], false, false, false));
+            }
+            /* A matching STOP is not enough until stale active flags clear. */
+            const LabMateCaptureOwner released =
+                labmate_capture_owner_after_stop(active, active);
+            assert(released == LabMateCaptureNone);
+            for(unsigned mask = 1U; mask <= 7U; ++mask) {
+                assert(!labmate_capture_can_acquire(
+                    released, next, pins[j], (mask & 1U) != 0U,
+                    (mask & 2U) != 0U, (mask & 4U) != 0U));
+            }
+            assert(labmate_capture_can_acquire(
+                released, next, pins[j], false, false, false));
+        }
+    }
+    /* Wrong pin requests can never acquire an otherwise free capture. */
+    assert(!labmate_capture_can_acquire(
+        LabMateCaptureNone, LabMateCaptureFrequencyLow, 4U,
+        false, false, false));
+    assert(!labmate_capture_can_acquire(
+        LabMateCaptureNone, LabMateCaptureFrequencyHigh, 1U,
+        false, false, false));
+    assert(!labmate_capture_can_acquire(
+        LabMateCaptureNone, LabMateCapturePulse, 7U,
+        false, false, false));
+}
+
 int main(void) {
+    check_release_reacquire_matrix();
     check_release_policy();
     check_resource_transitions();
     /* All eight pins remain available when the generator is off. */
