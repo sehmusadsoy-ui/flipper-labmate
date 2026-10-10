@@ -498,10 +498,16 @@ static void capture_stop_all(LabMateApp* app) {
     frequency_hw_stop(app);
     frequency_interrupt_stop(app);
     pulse_interrupt_stop(app);
-    /* All three capture engines stopped and callbacks detached. */
-    app->capture_owner = LabMateCaptureNone;
-    app->capture_pin_index = GPIO_COUNT;
-    app->capture_blocked = false;
+    /* A failed/stale stop must not advertise a free capture owner. */
+    if(labmate_capture_all_stopped(
+           app->frequency_irq_active, app->frequency_hw_active,
+           app->pulse_irq_active)) {
+        app->capture_owner = LabMateCaptureNone;
+        app->capture_pin_index = GPIO_COUNT;
+        app->capture_blocked = false;
+    } else {
+        app->capture_blocked = true;
+    }
 }
 
 static void gpio_release(LabMateApp* app, uint8_t index) {
