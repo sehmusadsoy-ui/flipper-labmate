@@ -151,3 +151,37 @@ HOLD/LIVE, timeout and statistic scheduling until separately tested.
 Require native regression tests and a successful Momentum SDK build,
 then a fresh real-device frequency and Logger/Profile smoke test.
 Do not modify v1.6 Stable, main or previously published release assets.
+
+## Step 5 — real Flipper regression: PASS (operator report)
+
+For exact commit `1e42b6a8c7f97473476f1f95f9d0c1fb70c53f55`,
+GitHub Actions [38050554917](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38050554917)
+completed successfully. The operator reported nine real-device checks **PASS**:
+
+1. LOW PC1 frequency readings at 10 Hz.
+2. LOW PC1 frequency readings at 100 Hz.
+3. LOW PC1 frequency readings at 1 kHz.
+4. HIGH PB3 frequency readings at 1 Hz and 10 Hz.
+5. HIGH PB3 frequency readings at 1 kHz and 10 kHz.
+6. Frequency HOLD/LIVE and MIN/MAX.
+7. Pulse PC1 at 100 Hz and 1 kHz.
+8. All three Data Logger sources and Log History.
+9. Profile S1 persistence and Generator initial STOP.
+
+These are functional on-device operator observations, not independent
+metrology certification or prolonged stress qualification.
+
+## Step 6 — resource ownership and cleanup (planned, not yet tested)
+
+Current pure resource rules in `labmate_resource_policy.c/.h` already
+restrict Pulse EXTI to PC0/PC1/PB2/PA4; prohibit monitor polling of PA7
+while TIM1 PWM runs; and enforce an exclusive owner for LOW PC1 EXTI,
+HIGH PB3 TIM2 and Pulse EXTI capture.
+
+Next, strengthen the ownership/cleanup contract incrementally with
+host tests for conflicting acquisitions, allowed capture transitions,
+invalid EXTI line choices, background PWM pin reservation, STOP/exit
+release and re-entry. Do not move hardware ISR callbacks, TIM setup or
+EXTI cleanup wholesale in a single change. Verify each narrow code
+change with native tests, Momentum CI and fresh physical-device tests.
+Keep stable v1.6 and all existing CSV/Profile data unchanged.
