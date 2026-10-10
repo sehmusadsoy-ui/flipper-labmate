@@ -1,0 +1,100 @@
+name: Publish LabMate v1.6 Stable (verified candidate)
+on:
+  push:
+    branches: [v1.6-publication]
+    paths:
+      - ".github/workflows/publish-v1.6-stable.yml"
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: labmate-v16-immutable-publication
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish tested FAP as v1.6 Stable
+    if: github.repository == 'sehmusadsoy-ui/flipper-labmate'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify frozen release identity and protect prior Stable
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          EXPECTED_SHA="4a890002fea0acf8d524b7c772db3bbd3e239848"
+          EXPECTED_MAIN="c4c1ec4ff935d716fdfb2e1c164018805e2a8936"
+          EXPECTED_V15="48dc0bfb58262e42684ada27db551b8e788d4a28"
+          RUN_ID="38007158577"
+          candidate=$(gh api "repos/$REPO/branches/v1.6-stable-candidate" --jq '.commit.sha')
+          test "$candidate" = "$EXPECTED_SHA" || { echo "Candidate moved"; exit 1; }
+          main=$(gh api "repos/$REPO/branches/main" --jq '.commit.sha')
+          test "$main" = "$EXPECTED_MAIN" || { echo "Main changed; aborting safely"; exit 1; }
+          v15=$(gh api "repos/$REPO/git/ref/tags/v1.5" --jq '.object.sha')
+          test "$v15" = "$EXPECTED_V15" || { echo "v1.5 tag changed; abort"; exit 1; }
+          run_sha=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq '.head_sha')
+          run_status=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq '.conclusion')
+          test "$run_sha" = "$EXPECTED_SHA" && test "$run_status" = "success" || {
+            echo "Artifact provenance is not the verified successful build"; exit 1;
+          }
+          if ! existing_tag=$(git ls-remote --refs origin refs/tags/v1.6); then
+            echo "Could not verify remote tag state"; exit 1
+          fi
+          test -z "$existing_tag" || { echo "v1.6 tag already exists; abort without changes"; exit 1; }
+          echo "Verified candidate, successful build and existing Stable; v1.6 tag absent."
+
+      - name: Download exact successful build and verify FAP checksum
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          gh run download 38007158577 -R "$REPO" -n labmate -D release
+          test -s release/labmate.fap
+          test -s release/SHA256SUMS.txt
+          (cd release && sha256sum -c SHA256SUMS.txt)
+          sha256sum release/labmate.fap
+
+      - name: Publish v1.6 Stable (does not move main)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          gh release create v1.6 \
+            release/labmate.fap release/SHA256SUMS.txt \
+            --repo "$REPO" \
+            --target "4a890002fea0acf8d524b7c772db3bbd3e239848" \
+            --title "LabMate v1.6 Stable" \
+            --notes-file docs/V1_6_GITHUB_RELEASE_BODY.md \
+            --latest
+
+      - name: Verify tag, release assets and preserved refs
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          sha=$(gh api "repos/$REPO/git/ref/tags/v1.6" --jq '.object.sha')
+          test "$sha" = "4a890002fea0acf8d524b7c772db3bbd3e239848"
+          prerelease=$(gh api "repos/$REPO/releases/tags/v1.6" --jq '.prerelease')
+          test "$prerelease" = "false"
+          gh api "repos/$REPO/releases/tags/v1.6" \
+            --jq '[.assets[].name] | sort | join(",")' | grep -Fx 'SHA256SUMS.txt,labmate.fap'
+          latest=$(gh api "repos/$REPO/releases/latest" --jq '.tag_name')
+          test "$latest" = "v1.6"
+          main=$(gh api "repos/$REPO/branches/main" --jq '.commit.sha')
+          test "$main" = "c4c1ec4ff935d716fdfb2e1c164018805e2a8936"
+          v15=$(gh api "repos/$REPO/git/ref/tags/v1.5" --jq '.object.sha')
+          test "$v15" = "48dc0bfb58262e42684ada27db551b8e788d4a28"
+          echo "PUBLISHED and VERIFIED: LabMate v1.6 Stable; old v1.5 and main preserved."
