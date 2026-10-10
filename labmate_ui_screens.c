@@ -207,7 +207,7 @@ void draw_menu(Canvas* canvas, LabMateApp* app) {
     canvas_set_font(canvas, FontPrimary);
     canvas_draw_str(canvas, 2, 10,
                     inside ? labmate_nav_group_title(app->menu_group) : "LABMATE");
-    ui_badge(canvas, 80, 1, 48, LABMATE_VERSION_TEXT, false);
+    ui_badge(canvas, 90, 1, 36, LABMATE_VERSION_TEXT, false);
     canvas_draw_line(canvas, 0, 13, 127, 13);
 
     /* In three-item groups, always keep every row visible (no blank slot). */

@@ -196,8 +196,8 @@ for sentinel in [
 ]:
     expect(sentinel in MAIN, f"Required capture/storage function missing: {sentinel}")
 
-expect('"v1.6rc1"' in INTERNAL_H, "RC1 UI version must remain v1.6rc1")
-expect('fap_version="1.6"' in MANIFEST, "RC1 SDK manifest must retain compatible 1.6 version")
+expect('"v1.6"' in INTERNAL_H, "Stable candidate UI version must remain v1.6")
+expect('fap_version="1.6"' in MANIFEST, "Stable candidate manifest version must remain 1.6")
 expect(
     'sources=["*.c"]' in MANIFEST,
     "FAP source list must explicitly exclude native C test fixtures",
