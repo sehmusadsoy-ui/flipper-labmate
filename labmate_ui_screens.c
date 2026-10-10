@@ -76,7 +76,7 @@ void draw_about(Canvas* canvas) {
     canvas_set_font(canvas, FontSecondary);
     canvas_draw_str(canvas, 2, 24, "DEV: SauronLAB");
     canvas_draw_str(canvas, 2, 34, "Sehmus");
-    canvas_draw_str_aligned(canvas, 126, 34, AlignRight, AlignBottom, "3.3V ONLY");
+    canvas_draw_str_aligned(canvas, 126, 34, AlignRight, AlignBottom, "3.3V GPIO ONLY");
     canvas_draw_line(canvas, 0, 38, 127, 38);
     canvas_draw_str(canvas, 2, 47, "github.com/");
     canvas_draw_str(canvas, 2, 55, "sehmusadsoy-ui/");
