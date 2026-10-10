@@ -377,3 +377,39 @@ all four group menus and screens; final exit/relaunch and sustained ordinary
 use. Capture results separately as PASS/FAIL/PENDING; no automatic claim of
 Stable promotion on CI alone. Keep `main`, v1.6 Stable and published tags
 unchanged pending a separately authorized release decision.
+
+## Gate B — release-candidate physical validation: PASS (operator report)
+
+**Frozen source commit:** `9c087b64504083e5f977544bc27cd9ce37840819`.
+GitHub Actions [38056474953](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38056474953)
+completed SUCCESS for this exact firmware commit. The operator reports
+**6/6 PASS** in the final device acceptance session:
+
+1. LOW PC1 100 Hz / 1 kHz, HIGH PB3 1 kHz / 10 kHz and Pulse PC1 100 Hz / 1 kHz.
+2. Frequency and Pulse HOLD/LIVE.
+3. LOW/HIGH/Pulse switching without freeze; Generator RUN/STOP and PA7 protection.
+4. All three Logger sources, sequential new CSV names and old/new Log History.
+5. S1 SAVE/LOAD retained, four groups accessible and Generator initially STOP.
+6. Several minutes of ordinary use, tool transitions, exit and relaunch without freeze.
+
+**Gate A: 8/8 PASS. Gate B: 6/6 PASS.** The firmware candidate is
+accepted for release preparation based on these user-reported tests.
+This is not an independent precision calibration or long-duration
+fault-injection qualification.
+
+### Release preparation checklist (not yet published)
+
+- [x] Freeze exact firmware source SHA and successful CI run.
+- [x] Pass Gate A combined device regression.
+- [x] Pass Gate B final device regression.
+- [x] Confirm single installed FAP path: `/ext/apps/Tools/labmate.fap`.
+- [x] Confirm existing CSV/History and Profile S1 compatibility in device tests.
+- [ ] Choose explicit v1.6.1 release/publishing strategy and authorization.
+- [ ] Verify release asset checksum and package provenance from exact CI artifact.
+- [ ] Publish new v1.6.1 version/tag/release only after explicit approval.
+
+The `v1.6.1-dev` branch includes documentation-only commits beyond the
+frozen firmware SHA. DO NOT use branch HEAD as a substitute for the tested
+binary commit, and do not assert a new firmware CI run on the docs commit.
+Keep `main`, existing v1.6 Stable assets and tags unchanged without an
+explicit separate release instruction.
