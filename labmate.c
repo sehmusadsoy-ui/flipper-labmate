@@ -966,15 +966,13 @@ static void measurement_update(LabMateApp* app) {
                     app->frequency_period_ticks =
                         average_period;
 
-                    app->frequency_millihz =
-                        (uint32_t)(
-                            (((uint64_t)SystemCoreClock *
-                              1000ULL) +
-                             (average_period / 2U)) /
-                            average_period);
-
-                    app->frequency_valid = true;
-                    frequency_stats_record(app);
+                    uint32_t sample_millihz = 0U;
+                    if(labmate_low_period_to_millihz(
+                           average_period, SystemCoreClock, &sample_millihz)) {
+                        app->frequency_millihz = sample_millihz;
+                        app->frequency_valid = true;
+                        frequency_stats_record(app);
+                    }
                 }
             }
         }
