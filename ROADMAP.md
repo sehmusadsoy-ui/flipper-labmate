@@ -1,9 +1,9 @@
-# LabMate Master Roadmap — v1.5 Stable to v2.0
+# LabMate Master Roadmap — v1.6 Stable to v2.0
 
-**Status:** Updated 2026-10-09 to reflect the published v1.5 Stable release.  
-**Current Stable baseline:** [v1.5 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.5), published 2026-10-09 (FAP, release notes and SHA-256).  
-**Previous Stable fallback:** [v1.4 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.4).  
-**Current development milestone:** v1.6 — Code and UI Refactoring, active on [`v1.6-dev`](https://github.com/sehmusadsoy-ui/flipper-labmate/tree/v1.6-dev). The first low-risk stateless UI module split has compiled in development CI; no v1.6 Stable release is claimed. `v1.5-dev` remains the historical v1.5 development branch.
+**Status:** Updated 2026-10-10 after publication of v1.6 Stable.  
+**Current Stable baseline:** [v1.6 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6), published 2026-10-10 (FAP and SHA256).  
+**Previous Stable fallback:** [v1.5 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.5); v1.4 and older tags remain available.  
+**Next development milestone:** v1.7 — PWM Studio and Counter. v1.6 measurement and storage logic is now frozen in the `v1.6` release tag.
 
 ## Vision
 
@@ -21,13 +21,15 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
 - **Published:** [LabMate v1.5 Stable release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.5), with FAP, release notes and SHA-256. Physical-device tests were performed on the preceding development build; the final CI-produced FAP was installed afterward.
 - **Known untested scenario:** Real microSD failure/recovery (e.g. read/write failures, full/corrupt/unmounted media or long blocked I/O) was **not** hardware-validated; see [v1.5 release notes](RELEASE_NOTES_v1.5.md). This is a documented limitation, not an outstanding condition requiring further v1.5 tests.
 
-### v1.6 — Code and UI Refactoring
+### v1.6 — Navigation, resource safety and Profiles (Stable published 2026-10-10)
 
-- Split the current monolithic `labmate.c` into maintainable measurement, display, storage, and communication modules.
-- Create centralized GPIO and peripheral-resource management so tools do not conflict over pins/timers/EXTI lines.
-- Introduce a clearer grouped navigation menu and saved measurement profiles.
-- Provide a reliable **one-command PowerShell + USB update/install** procedure; update the single `labmate.fap` rather than creating duplicates.
-- Run freeze, resource-cleanup, and screen layout regression tests.
+- **Delivered:** Grouped navigation and modular display, resource-policy, profile and frequency-gate source modules; additional extraction of the main app core remains a future refactoring option.
+- **Delivered:** GPIO/PA7 resource ownership, PWM RUN/STOP protection and release on app exit.
+- **Delivered:** Adaptive HIGH PB3 TIM2 gate corrections, with real-device functional low-Hz and kHz testing.
+- **Delivered:** Three CRC-validated redundant microSD Profile slots with SAVE/LOAD/DELETE and active-generator LOAD safety guard.
+- **Delivered:** GitHub Actions plus checksum-verified one-command PowerShell/USB installation; normal CSV logging/history from v1.5 retained.
+- **Validated:** Menus, capture, STATS/HOLD, profiles, Data Logger/History and final Stable FAP startup smoke on a physical Flipper.
+- **Published:** [LabMate v1.6 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6). Independent reference calibration and destructive SD fault-injection remain outside the demonstrated test coverage.
 
 ### v1.7 — PWM Studio and Counter
 

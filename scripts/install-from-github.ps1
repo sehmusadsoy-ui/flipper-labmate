@@ -1,5 +1,5 @@
-# Installs successful LabMate v1.6 Stable candidate build directly from GitHub.
-# Requires GitHub CLI with one-time "gh auth login" authentication.
+# Install the published LabMate v1.6 Stable FAP from its immutable GitHub Release.
+# Requires GitHub CLI, 'gh auth login', and a compatible local Momentum SDK.
 [CmdletBinding()]
 param(
     [string]$FirmwareRoot = (Join-Path $HOME 'Momentum-Firmware'),
@@ -9,6 +9,8 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $repo = 'sehmusadsoy-ui/flipper-labmate'
+$tag = 'v1.6'
+$expectedCommit = '4a890002fea0acf8d524b7c772db3bbd3e239848'
 $target = '/ext/apps/Tools/labmate.fap'
 $tempDir = $null
 
@@ -20,28 +22,35 @@ try {
     & gh auth status --hostname github.com 2>&1 | Out-Null
     if($LASTEXITCODE -ne 0) { throw 'Run gh auth login once, then retry.' }
 
-    $data = & gh run list -R $repo -w build-v1.6.yml -b v1.6-stable-candidate -s success -L 1 --json databaseId,headSha
-    if($LASTEXITCODE -ne 0) { throw 'Unable to query GitHub Actions.' }
-    $runs = @($data | ConvertFrom-Json)
-    if($runs.Count -ne 1 -or -not $runs[0].databaseId) {
-        throw 'No successful v1.6-stable-candidate build found.'
+    # Stable means the published release/tag, never the mutable
+    # development, RC1, or Stable candidate workflow head.
+    $tagSha = & gh api "repos/$repo/git/ref/tags/$tag" --jq .object.sha
+    if($LASTEXITCODE -ne 0 -or -not $tagSha) {
+        throw 'Unable to verify v1.6 Stable Git tag.'
     }
-    # An older successful Actions run is not sufficient after a new candidate
-    # commit; do not silently install a stale build while CI is pending.
-    $headSha = & gh api "repos/$repo/branches/v1.6-stable-candidate" --jq .commit.sha
-    if($LASTEXITCODE -ne 0 -or -not $headSha) {
-        throw 'Unable to verify latest Stable candidate branch head.'
+    if([string]$tagSha -ne $expectedCommit) {
+        throw 'v1.6 Stable tag differs from the verified release commit.'
     }
-    if($runs[0].headSha -ne [string]$headSha) {
-        throw 'Latest Stable candidate commit does not yet have a successful build.'
-    }
-    $runId = [string]$runs[0].databaseId
-    Write-Host "LabMate Stable candidate build $runId (commit $($runs[0].headSha))" -ForegroundColor Cyan
 
+    $releaseJson = & gh api "repos/$repo/releases/tags/$tag"
+    if($LASTEXITCODE -ne 0 -or -not $releaseJson) {
+        throw 'Could not read the published Stable release metadata.'
+    }
+    $release = ($releaseJson -join "`n") | ConvertFrom-Json
+    if($release.tag_name -ne $tag -or $release.draft -or $release.prerelease) {
+        throw 'Expected published non-prerelease v1.6 Stable.'
+    }
+    $fapAsset = @($release.assets | Where-Object { $_.name -ceq 'labmate.fap' })
+    $sumAsset = @($release.assets | Where-Object { $_.name -ceq 'SHA256SUMS.txt' })
+    if($fapAsset.Count -ne 1 -or $sumAsset.Count -ne 1) {
+        throw 'Missing or duplicated official Stable release assets.'
+    }
+
+    Write-Host "Official LabMate $tag Stable (commit $expectedCommit)" -ForegroundColor Cyan
     $tempDir = Join-Path $env:TEMP ('LabMate-' + [guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
-    & gh run download $runId -R $repo -n labmate -D $tempDir
-    if($LASTEXITCODE -ne 0) { throw 'GitHub artifact download failed.' }
+    & gh release download $tag -R $repo -p labmate.fap -p SHA256SUMS.txt -D $tempDir
+    if($LASTEXITCODE -ne 0) { throw 'Unable to download official Stable assets.' }
 
     $fap = Join-Path $tempDir 'labmate.fap'
     $sum = Join-Path $tempDir 'SHA256SUMS.txt'

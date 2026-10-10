@@ -1,13 +1,8 @@
+# Archived: this workflow is intentionally disabled to preserve v1.5 Release assets.
 name: Publish LabMate v1.5 Stable
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "labmate.c"
-      - "application.fam"
-      - "RELEASE_NOTES_v1.5.md"
-      - ".github/workflows/release-v1.5.yml"
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -19,7 +14,8 @@ concurrency:
 jobs:
   stable:
     name: Build, checksum and publish v1.5
-    if: github.repository == 'sehmusadsoy-ui/flipper-labmate'
+    # Archived after v1.6: keep workflow history, never mutate older releases.
+    if: ${{ false }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:

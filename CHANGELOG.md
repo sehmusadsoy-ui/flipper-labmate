@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.6] - 2026-10-10 (Stable)
+
+### Architecture, resources and navigation
+- Released LabMate v1.6 Stable on GitHub from the verified
+  `4a890002fea0acf8d524b7c772db3bbd3e239848` source snapshot;
+  `v1.5` remains downloadable.
+- Added grouped MEASURE / OUTPUT / RECORDS / INFO navigation, and
+  modular view, GPIO resource policy and profile codec files.
+- Protected the PA7 Generator PWM pin from conflicting monitoring
+  while RUN, with release on STOP and application exit.
+
+### Frequency, Pulse and saved Profiles
+- Corrected HIGH PB3 TIM2 low-rate estimation via adaptive
+  edge-aligned gating; real-device generator checks passed at
+  1, 2, 10 Hz and 1, 5, 10, 20, 50 kHz.
+- Retained precise LOW PC1 capture; confirmed Pulse Analyzer PC1
+  100 Hz and 1 kHz HIGH/LOW/PERIOD/DUTY, STATS MIN/MAX and HOLD.
+- Added three CRC32-protected, redundant A/B microSD Profile slots
+  with SAVE/LOAD/DELETE, confirmation/cancel and preserved settings;
+  LOAD refuses active PWM and does not start an output.
+
+### Logging, verification and limitations
+- Rechecked CSV Data Logger and Log History on PC1 LOW, PB3 HIGH
+  and PULSE PC1, including old files after reopening LabMate.
+- Real Flipper RC1 and final v1.6 smoke checks passed; Momentum SDK,
+  native-C unit tests, SHA256 packaging and Windows mock transport
+  passed [GitHub Actions run 38007158577](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38007158577).
+- Self-measurements using Flipper's own generator are not independent
+  calibration; full/corrupt/absent-SD and sudden power-loss testing
+  remain unverified. See [v1.6 release notes](RELEASE_NOTES_v1.6.md).
+
+
 ## [1.5] - 2026-10-09
 
 ### Data Logger and Log History
