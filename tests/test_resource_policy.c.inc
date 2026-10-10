@@ -93,7 +93,48 @@ static void check_capture_snapshots(void) {
         false, false, true));
 }
 
+/* Step 6: transition/cleanup contract without touching hardware drivers.
+ * A tool may acquire only after the previous owner and every active
+ * capture flag have been released; PA7 remains reserved during PWM.
+ */
+static void check_resource_transitions(void) {
+    const LabMateCaptureOwner kinds[] = {
+        LabMateCaptureFrequencyLow, LabMateCaptureFrequencyHigh,
+        LabMateCapturePulse,
+    };
+    const uint8_t pins[] = {1U, 4U, 3U};
+    for(unsigned previous = 0U; previous < 3U; ++previous) {
+        for(unsigned next = 0U; next < 3U; ++next) {
+            assert(!labmate_capture_can_acquire(
+                kinds[previous], kinds[next], pins[next],
+                false, false, false));
+            /* Clearing only the owner while leaving any peripheral
+             * active must not enable the next capture. */
+            for(unsigned mask = 1U; mask < 8U; ++mask) {
+                assert(!labmate_capture_can_acquire(
+                    LabMateCaptureNone, kinds[next], pins[next],
+                    (mask & 1U) != 0U,
+                    (mask & 2U) != 0U,
+                    (mask & 4U) != 0U));
+            }
+            assert(labmate_capture_can_acquire(
+                LabMateCaptureNone, kinds[next], pins[next],
+                false, false, false));
+        }
+    }
+    /* System button EXTI3 (PC3/PB3) and EXTI6 (PA6) must stay
+     * excluded from Pulse IRQ acquisition. */
+    const uint8_t forbidden[] = {2U, 4U, 6U, 7U};
+    for(unsigned i = 0U; i < sizeof(forbidden) / sizeof(forbidden[0]); ++i) {
+        assert(!labmate_capture_pin_allowed(LabMateCapturePulse, forbidden[i]));
+    }
+    assert(!labmate_monitor_pin_allowed(7U, true));
+    assert(labmate_monitor_entry_pin(7U, true) == LABMATE_MONITOR_PC1_INDEX);
+    assert(labmate_monitor_pin_allowed(7U, false));
+}
+
 int main(void) {
+    check_resource_transitions();
     /* All eight pins remain available when the generator is off. */
     for(uint8_t pin = 0U; pin < LABMATE_MONITOR_PIN_COUNT; ++pin) {
         assert(labmate_monitor_pin_allowed(pin, false));
