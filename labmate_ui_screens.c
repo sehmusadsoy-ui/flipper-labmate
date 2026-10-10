@@ -69,59 +69,20 @@ void draw_profiles(Canvas* canvas, LabMateApp* app) {
     }
 }
 
-void draw_about(
-    Canvas* canvas) {
-
-    canvas_set_font(
-        canvas,
-        FontPrimary);
-
-    canvas_draw_str(
-        canvas,
-        2,
-        10,
-        "LABMATE " LABMATE_VERSION_TEXT);
-
-    canvas_draw_line(
-        canvas,
-        0,
-        13,
-        127,
-        13);
-
-    canvas_set_font(
-        canvas,
-        FontSecondary);
-
-    canvas_draw_str(
-        canvas,
-        2,
-        24,
-        "Digital Signal Toolkit");
-
-    canvas_draw_str(
-        canvas,
-        2,
-        36,
-        "LOW PC1");
-
-    canvas_draw_str(
-        canvas,
-        47,
-        36,
-        "HIGH PB3");
-
-    canvas_draw_str(
-        canvas,
-        2,
-        48,
-        "GEN PA7");
-
-    canvas_draw_str(
-        canvas,
-        2,
-        60,
-        "3.3V GPIO ONLY");
+void draw_about(Canvas* canvas) {
+    /* Keep developer credit legible on the 128x64 monochrome display.
+     * ASCII is deliberate: the standard Flipper font lacks Turkish glyphs.
+     */
+    ui_draw_header(canvas, "LABMATE " LABMATE_VERSION_TEXT);
+    canvas_set_font(canvas, FontSecondary);
+    canvas_draw_str(canvas, 2, 24, "Digital Signal Toolkit");
+    canvas_draw_line(canvas, 0, 29, 127, 29);
+    canvas_draw_str(canvas, 2, 41, "DEV");
+    canvas_set_font(canvas, FontPrimary);
+    canvas_draw_str(canvas, 28, 42, "SauronLAB");
+    canvas_set_font(canvas, FontSecondary);
+    canvas_draw_str(canvas, 28, 52, "Sehmus");
+    canvas_draw_str(canvas, 2, 62, "3.3V GPIO ONLY");
 }
 
 void draw_history(Canvas* canvas, LabMateApp* app) {
