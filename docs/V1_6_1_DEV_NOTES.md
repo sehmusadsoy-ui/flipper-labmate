@@ -294,3 +294,49 @@ predicate for whether every capture engine has released its active
 flag. Apply it as a final ownership-reset guard after the existing stop
 operations. Preserve the normal teardown order and TIM1/PA7 independence.
 Require CI success and a new physical regression check before acceptance.
+
+## Step 6.5 — real Flipper regression: PASS (operator report)
+
+For exact commit `ddf7367070cf06f2d625991d1b0f3f8546da62e8`,
+GitHub Actions [38056187365](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38056187365)
+completed SUCCESS. The operator installed the build on the device and
+reported **5/5 PASS**:
+
+1. Frequency LOW -> HIGH -> Pulse switching without problems.
+2. Frequency and Pulse HOLD/LIVE functional.
+3. Generator RUN/STOP and PA7 protection.
+4. Tool exit/re-entry and app relaunch without observed freeze.
+5. All three Logger modes, History, Profile S1 and initial Generator STOP.
+
+This completes Step 6.5's normal-operation acceptance checks. Software
+state flags do not independently prove physical peripheral teardown under
+all hardware faults.
+
+## v1.6.1 consolidation and release gates
+
+Stop subdividing the project into repetitive Step 6.x hardware cycles.
+Target **two remaining grouped physical-device test sessions**, subject
+to additional regression testing if a defect is discovered.
+
+### Gate A — architecture and display integration
+
+Review the modular measurement, UI/navigation, storage/profile and
+resource policy boundaries; retain existing behavior and CSV/profile
+format. Complete necessary small changes and automated host, architecture,
+Momentum SDK and installer tests before one combined device session.
+Test navigation, display bounds, measurement handoffs, HOLD/LIVE, PWM
+ownership, logger/history and profile persistence. The communication
+boundary may remain an extension point: UART/I2C implementation is out
+of scope for v1.6.1.
+
+### Gate B — release candidate validation
+
+After Gate A passes, freeze the candidate commit, compile the exact
+artifact, and perform one final device session: USB single-FAP
+installation, startup/exit/relaunch, representative frequency/pulse
+readings, Generator STOP and PA7 ownership, CSV/history compatibility,
+saved profiles and extended ordinary-operation stability. Treat
+abnormal SD/power-loss scenarios as unverified until explicitly tested.
+Do not promote to Stable unless both gates pass. Keep main, the
+published v1.6 release and historical tags untouched until a separate
+release decision.
