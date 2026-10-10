@@ -84,3 +84,9 @@ bool labmate_capture_matches(
         return false;
     }
 }
+
+LabMateCaptureOwner labmate_capture_owner_after_stop(
+    LabMateCaptureOwner current, LabMateCaptureOwner stopping) {
+    if(stopping == LabMateCaptureNone || current != stopping) return current;
+    return LabMateCaptureNone;
+}
