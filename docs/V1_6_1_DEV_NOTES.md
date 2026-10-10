@@ -266,3 +266,31 @@ Consolidate EXTI trigger cleanup into one internal helper while preserving
 LOW PC1's falling-edge-only pre-arm cleanup, Pulse's complete rising/falling
 teardown, and their critical sections. Do not touch TIM2, PWM or IRQ callback
 ordering. Require Momentum CI PASS and a separate on-device regression.
+
+## Step 6.4 — real Flipper regression: PASS (operator report)
+
+For exact commit `b7d4e2b4a29dd63b64803d9f477e579a37f44cd6`,
+GitHub Actions [38055872768](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38055872768)
+completed successfully. The operator reported **10/10 PASS**:
+
+1. LOW PC1 -> Pulse PC1 -> LOW PC1 transition.
+2. LOW PC1 1 kHz reading correct, without double counting.
+3. Pulse PC1 100 Hz and 1 kHz readings correct.
+4. Pulse -> HIGH PB3 -> Pulse transition without freeze.
+5. Frequency and Pulse HOLD/LIVE.
+6. Repeated tool entry/exit without freeze.
+7. PA7 protected during Generator RUN and released after STOP.
+8. All three Logger modes and Log History.
+9. Profile S1 preserved; Generator initially STOP.
+10. App exit and relaunch without problems.
+
+This accepts the EXTI cleanup refactor for tested normal-operation cases,
+not deliberately induced hardware faults or external metrology calibration.
+
+## Step 6.5 — planned defensive cleanup validation
+
+Review the shared capture teardown and add a pure, host-testable
+predicate for whether every capture engine has released its active
+flag. Apply it as a final ownership-reset guard after the existing stop
+operations. Preserve the normal teardown order and TIM1/PA7 independence.
+Require CI success and a new physical regression check before acceptance.
