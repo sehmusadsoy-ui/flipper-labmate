@@ -50,6 +50,26 @@ int main(void) {
     assert(labmate_nav_wrap(200U, 0U, 1) == 0U);
     assert(labmate_nav_wrap(255U, 3U, 1) == 1U);
     assert(labmate_nav_wrap(255U, 3U, -1) == 2U);
+    /* Gate A: all menu selections stay visible within a 3-row viewport.
+     * Exercise every reachable row, not only the historical spot checks. */
+    for(uint8_t count = 1U; count <= 8U; ++count) {
+        for(uint8_t selected = 0U; selected < count; ++selected) {
+            const uint8_t start = labmate_nav_first_visible(selected, count, 3U);
+            assert(start < count);
+            assert(start <= selected);
+            assert(selected < (uint8_t)(start + 3U));
+            assert((uint8_t)(start + 3U) <=
+                   (count > 3U ? count : 3U));
+        }
+    }
+    /* Every grouped menu entry must fit its own viewport. */
+    for(uint8_t group = 0U; group < LabMateGroupCount; ++group) {
+        const uint8_t count = labmate_nav_group_size(group);
+        for(uint8_t selected = 0U; selected < count; ++selected) {
+            const uint8_t start = labmate_nav_first_visible(selected, count, 3U);
+            assert(start <= selected && selected < (uint8_t)(start + 3U));
+        }
+    }
     puts("LabMate v1.6 navigation mapping/wrap: all 8 tools reachable once");
     return 0;
 }
