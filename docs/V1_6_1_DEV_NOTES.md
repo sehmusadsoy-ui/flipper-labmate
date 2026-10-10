@@ -249,3 +249,20 @@ The operator reported **9 PASS, 0 FAIL, 1 PENDING**:
 Step 6.3 is **not fully accepted** until HOLD/LIVE is separately tested.
 No HAL/IRQ resource ownership implementation was changed in Step 6.3;
 this commit extends host regression tests only.
+
+## Step 6.3 — final operator result: PASS (10/10)
+
+Follow-up on the same installed exact commit
+`986b32c79a0e7debb9f83ade19520284de55352c`:
+Frequency Meter HOLD/LIVE **PASS**, Pulse Analyzer HOLD/LIVE **PASS**.
+Together with the previous nine passing checklist items, the full
+Step 6.3 checklist is now **10/10 PASS**, with no reported failures.
+This supersedes the earlier 9 PASS / 1 PENDING report, without
+claiming additional stress or external calibration coverage.
+
+## Step 6.4 — EXTI cleanup refactor plan
+
+Consolidate EXTI trigger cleanup into one internal helper while preserving
+LOW PC1's falling-edge-only pre-arm cleanup, Pulse's complete rising/falling
+teardown, and their critical sections. Do not touch TIM2, PWM or IRQ callback
+ordering. Require Momentum CI PASS and a separate on-device regression.
