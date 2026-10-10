@@ -57,3 +57,9 @@ bool labmate_capture_matches(
     bool frequency_low_active,
     bool frequency_high_active,
     bool pulse_active);
+
+/* Release only the matching capture owner after its hardware is detached.
+ * A stale/non-owner stop must not clear another active tool's ownership.
+ */
+LabMateCaptureOwner labmate_capture_owner_after_stop(
+    LabMateCaptureOwner current, LabMateCaptureOwner stopping);
