@@ -280,6 +280,16 @@ static void __attribute__((unused)) frequency_interrupt_stop(LabMateApp* app) {
     }
 }
 
+/* Centralized EXTI trigger cleanup. Preserve the exact critical-section
+ * ordering of LOW PC1 pre-arm and Pulse IRQ teardown. */
+static void capture_exti_clear(uint32_t line, bool clear_rising) {
+    FURI_CRITICAL_ENTER();
+    if(clear_rising) LL_EXTI_DisableRisingTrig_0_31(line);
+    LL_EXTI_DisableFallingTrig_0_31(line);
+    LL_EXTI_ClearFlag_0_31(line);
+    FURI_CRITICAL_EXIT();
+}
+
 static void __attribute__((unused)) frequency_interrupt_start(LabMateApp* app) {
     if(app->frequency_irq_active ||
        !capture_can_start(app, LabMateCaptureFrequencyLow)) {
@@ -299,10 +309,7 @@ static void __attribute__((unused)) frequency_interrupt_start(LabMateApp* app) {
      * left by Pulse Analyzer's previous rise/fall EXTI configuration.
      * Without this, a 1 kHz square wave may appear as 2 kHz here.
      */
-    FURI_CRITICAL_ENTER();
-    LL_EXTI_DisableFallingTrig_0_31(LL_EXTI_LINE_1);
-    LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_1);
-    FURI_CRITICAL_EXIT();
+    capture_exti_clear(LL_EXTI_LINE_1, false);
 
     furi_hal_gpio_init(
         pin,
@@ -441,11 +448,7 @@ static void pulse_interrupt_stop(LabMateApp* app) {
      * removing an interrupt callback leaves the rising/falling trigger
      * configuration behind on this firmware version.
      */
-    FURI_CRITICAL_ENTER();
-    LL_EXTI_DisableRisingTrig_0_31((uint32_t)pin->pin);
-    LL_EXTI_DisableFallingTrig_0_31((uint32_t)pin->pin);
-    LL_EXTI_ClearFlag_0_31((uint32_t)pin->pin);
-    FURI_CRITICAL_EXIT();
+    capture_exti_clear((uint32_t)pin->pin, true);
     app->pulse_irq_active = false;
     if(app->capture_owner == LabMateCapturePulse) {
         app->capture_owner = labmate_capture_owner_after_stop(
