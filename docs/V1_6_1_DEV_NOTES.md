@@ -185,3 +185,22 @@ release and re-entry. Do not move hardware ISR callbacks, TIM setup or
 EXTI cleanup wholesale in a single change. Verify each narrow code
 change with native tests, Momentum CI and fresh physical-device tests.
 Keep stable v1.6 and all existing CSV/Profile data unchanged.
+
+## Step 6.1 — real Flipper regression: PASS (operator report)
+
+For exact commit `948ed0a1b0ff5f87dc25fe1320bf58da639bc802`,
+GitHub Actions [38051780686](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38051780686)
+completed SUCCESS. The operator installed the checksum-verified FAP over COM7
+and reported **9/9 PASS**: LOW-to-HIGH, HIGH-to-Pulse and Pulse-to-LOW
+transitions without freezes; PA7 reserved while PWM RUN and selectable after
+STOP; Frequency and Pulse HOLD/LIVE; tool exit/re-entry without freezes;
+three Logger modes and History; Profile S1 preserved and Generator STOP at start.
+This verifies these normal-use scenarios, not full hardware fault recovery.
+
+## Step 6.2 — centralized capture owner release (development)
+
+Centralize owner-release policy without moving HAL/EXTI/TIM2 teardown.
+Each stop routine must first detach its actual active peripheral, then
+release its matching software owner; mismatched release requests must not
+clear ownership of a different capture. Add host-native tests. Perform
+Momentum CI and a separate on-device regression before acceptance.
