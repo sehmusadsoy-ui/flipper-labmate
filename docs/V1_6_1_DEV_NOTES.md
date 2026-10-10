@@ -233,3 +233,19 @@ Extend host-native resource lifecycle tests and review timer/EXTI cleanup
 for all STOP and screen exit paths before changing additional HAL operations.
 Keep the implementation incremental, retain the tested firmware semantics,
 and require a new CI PASS plus distinct physical-device regression checks.
+
+## Step 6.3 — physical regression: PARTIAL (operator report)
+
+Exact commit `986b32c79a0e7debb9f83ade19520284de55352c` was installed
+from GitHub Actions run `38052823891` with SHA256 OK over COM7.
+The operator reported **9 PASS, 0 FAIL, 1 PENDING**:
+
+- PASS: LOW PC1 -> HIGH PB3, HIGH PB3 -> Pulse PC1, Pulse PC1 -> LOW PC1.
+- PASS: repeated switching without freeze, PA7 reserved during Generator RUN
+  and selectable after STOP, exit/relaunch, three Logger modes and History,
+  Profile S1 preservation and Generator initial STOP.
+- PENDING: Frequency and Pulse HOLD/LIVE functional regression.
+
+Step 6.3 is **not fully accepted** until HOLD/LIVE is separately tested.
+No HAL/IRQ resource ownership implementation was changed in Step 6.3;
+this commit extends host regression tests only.
