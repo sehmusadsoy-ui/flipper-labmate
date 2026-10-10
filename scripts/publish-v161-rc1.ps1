@@ -20,8 +20,14 @@ try {
         throw "Release $tag already exists; refusing to overwrite."
     }
     # A tag with no release must also be considered reserved.
-    $tagOutput = & gh api "repos/$repo/git/ref/tags/$tag" 2>&1
+    # GitHub returns 404 for a tag that does not exist. PowerShell 5.1
+    # converts native stderr to an error under Stop; use a clean exit-code
+    # probe and preserve any unexpected API/authentication errors.
+    $tagProbe = & cmd.exe /d /s /c "gh api repos/$repo/git/ref/tags/$tag 2>NUL"
     if($LASTEXITCODE -eq 0) { throw "Tag $tag already exists; refusing to move it." }
+    if($LASTEXITCODE -ne 1) {
+        throw "Could not safely verify the absence of tag $tag (exit $LASTEXITCODE)."
+    }
 
     $runInfo = & gh run view $runId -R $repo --json headSha,conclusion | ConvertFrom-Json
     if($LASTEXITCODE -ne 0 -or $runInfo.conclusion -ne 'success' -or $runInfo.headSha -ne $sourceSha) {
