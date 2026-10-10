@@ -190,12 +190,35 @@ for sentinel in [
     "static void generator_stop(",
     "static bool logger_start(",
     "static void logger_stop(",
-    "static void history_scan(",
-    "static void history_read_step(",
     "storage_file_write(",
 ]:
     expect(sentinel in MAIN, f"Required capture/storage function missing: {sentinel}")
 
+HISTORY = (ROOT / "labmate_history.c").read_text(encoding="utf-8")
+HISTORY_H = (ROOT / "labmate_history.h").read_text(encoding="utf-8")
+STORAGE_PATHS = (ROOT / "labmate_storage_paths.h").read_text(encoding="utf-8")
+for fn in ("scan", "open", "read_step", "close"):
+    name = f"labmate_history_{fn}"
+    expect(
+        len(re.findall(rf"(?m)^void\s+{name}\s*\(", HISTORY)) == 1 and
+        f"void {name}(LabMateApp* app);" in HISTORY_H and
+        f"{name}(app)" in MAIN and
+        not re.search(rf"(?m)^static void\s+history_{fn}\s*\(", MAIN),
+        f"History {fn} must have exactly one implementation in history module",
+    )
+expect(
+    "storage_file_write(" not in HISTORY and
+    "storage_file_remove(" not in HISTORY and
+    "storage_file_open(file, path, FSAM_READ, FSOM_OPEN_EXISTING)" in HISTORY and
+    "LOGGER_HISTORY_READ_BYTES 256U" in HISTORY,
+    "History must stay read-only with the same bounded 256-byte reads",
+)
+expect(
+    '#define LABMATE_LOGGER_DIR "/ext/apps_data/labmate"' in STORAGE_PATHS and
+    '#define LOGGER_DIR LABMATE_LOGGER_DIR' in MAIN and
+    '#define LOGGER_DIR LABMATE_LOGGER_DIR' in HISTORY,
+    "Storage path must stay shared and compatible with older CSV logs",
+)
 expect('"v1.6.1d"' in INTERNAL_H, "v1.6.1 development label required")
 expect('fap_version="1.6"' in MANIFEST, "Keep SDK-compatible manifest version during dev")
 expect(
@@ -337,5 +360,5 @@ if failures:
     raise SystemExit(1)
 
 print(f"LabMate v1.6 boundaries OK: {len(SCREENS_EXPECTED)} view-only screens")
-print("GPIO/IRQ, PWM and microSD implementation retained in app core")
+print("GPIO IRQ and PWM retained in core; read-only history storage extracted")
 print("NOTE: static checks cannot verify behavior on the physical Flipper")

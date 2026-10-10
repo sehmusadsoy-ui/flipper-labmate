@@ -24,14 +24,37 @@ Existing v1.6 tag/release and v1.5 Stable are unchanged.
   CI for the exact branch head and validates `labmate.fap` SHA256;
   the published Stable installer remains release-pinned to v1.6.
 
-## Pending physical regression
+## Step 1 — real Flipper regression: PASS (operator report)
 
-**Not tested on a real Flipper yet.** When an exact successful
-development build is installed via the development PowerShell
-script, verify v1.6.1d label, PC1 LOW/PB3 HIGH/PULSE PC1 CSV
-creation, previous History files, saved Profiles S1 and
-Generator default STOP. Do not assert device PASS without
-operator test reports. Use only known 3.3 V-compatible signals.
+The operator installed exact CI FAP from run
+[38045960606](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38045960606)
+(commit `c593a3322f1ca6505d2b02d0305e597998b595b1`)
+via the checksum-checked PowerShell installer and confirmed all seven
+smoke/compatibility tests PASS:
 
-Further measurement/storage extraction and cleanup can proceed
-in small changes with hardware validation after each stage.
+- `v1.6.1d` displayed correctly.
+- PC1 LOW, PB3 HIGH and PULSE PC1 CSV recording each PASS.
+- Log History reads both older and newly created CSV files.
+- Previously saved Profile S1 persisted.
+- Signal Generator default remained STOP.
+
+This is functional device validation, not external metrology calibration
+or intentional corrupt/full-microSD fault injection.
+
+## Step 2 — read-only History module extraction
+
+- Move all four existing Log History storage methods from `labmate.c`
+  into `labmate_history.c/.h`: scan, open, incremental read and close.
+- Keep the same I/O order, SD error handling, mutex boundaries,
+  record formatting and 256-byte read size. This move does not modify
+  the content of any existing CSV.
+- Share one `LABMATE_LOGGER_DIR` macro between Logger and History.
+  Continue to use `/ext/apps_data/labmate` without any on-disk migration.
+- Retain canvas drawing in `labmate_ui_screens.c`, the pure CSV
+  codec in `labmate_logger_codec.c`, and GPIO/IRQ/PWM routines in core.
+- Extend CI architecture guards to require one implementation for
+  each History operation, read-only SD mode and unchanged path.
+
+**Next gate:** Step 2 will need a separate CI PASS and physical
+regression check after installation. The prior seven PASS tests
+apply to Step 1 only. Use only known 3.3 V-compatible signals.
