@@ -15,6 +15,7 @@
 #include "labmate_frequency_gate.h"
 #include "labmate_logger_codec.h"
 #include "labmate_history.h"
+#include "labmate_pulse_math.h"
 #include "labmate_storage_paths.h"
 
 #define LOGGER_DIR LABMATE_LOGGER_DIR
@@ -662,14 +663,13 @@ static void pulse_recalculate(LabMateApp* app) {
     app->pulse_period_valid = false;
     if(!app->pulse_high_valid || !app->pulse_low_valid) return;
 
-    uint64_t period =
-        (uint64_t)app->pulse_high_cycles + app->pulse_low_cycles;
-    if(period == 0 || period > UINT32_MAX) return;
-
-    app->pulse_period_cycles = (uint32_t)period;
-    app->pulse_duty_permille = (uint32_t)(
-        ((uint64_t)app->pulse_high_cycles * 1000ULL + period / 2ULL) /
-        period);
+    uint32_t period = 0U;
+    uint32_t duty = 0U;
+    if(!labmate_pulse_period_and_duty(
+           app->pulse_high_cycles, app->pulse_low_cycles,
+           &period, &duty)) return;
+    app->pulse_period_cycles = period;
+    app->pulse_duty_permille = duty;
     app->pulse_period_valid = true;
 }
 
@@ -681,23 +681,9 @@ static void pulse_stats_window_reset(LabMateApp* app) {
     app->pulse_stats_recent_tick = 0U;
 }
 
-/* A five-element insertion sort runs in the app thread (not the IRQ).
- * Median values are selected from genuine captured measurements; they
- * are not synthetic target values and the result is not clamped to 50%. */
-static uint32_t pulse_stats_median5(const uint32_t values[PULSE_STATS_FILTER_SAMPLES]) {
-    uint32_t sorted[PULSE_STATS_FILTER_SAMPLES];
-    for(uint8_t i = 0U; i < PULSE_STATS_FILTER_SAMPLES; ++i) {
-        uint32_t value = values[i];
-        uint8_t j = i;
-        while(j > 0U && sorted[j - 1U] > value) {
-            sorted[j] = sorted[j - 1U];
-            --j;
-        }
-        sorted[j] = value;
-    }
-    return sorted[PULSE_STATS_FILTER_SAMPLES / 2U];
-}
-
+/* Pure median-of-five extraction is tested in labmate_pulse_math.c.
+ * This app-thread statistics window still owns its capture timestamps.
+ */
 /* The extrema summarize published/averaged HIGH+LOW readings, not
  * individual high-speed edges. Keeping this outside the IRQ preserves
  * the v1.3 capture timing and 50 kHz live duty filtering behavior. */
@@ -769,10 +755,10 @@ static void pulse_stats_record(LabMateApp* app, uint32_t now) {
             periods[i] = sample->period_cycles;
             duties[i] = sample->duty_permille;
         }
-        high = pulse_stats_median5(highs);
-        low = pulse_stats_median5(lows);
-        period = pulse_stats_median5(periods);
-        duty = pulse_stats_median5(duties);
+        high = labmate_pulse_median5(highs);
+        low = labmate_pulse_median5(lows);
+        period = labmate_pulse_median5(periods);
+        duty = labmate_pulse_median5(duties);
     } else {
         /* A slow reading is already an averaged capture and remains exact.
          * Do not mix slow measurements into the fast 5-sample window. */

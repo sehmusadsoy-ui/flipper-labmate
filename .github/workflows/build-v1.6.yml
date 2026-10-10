@@ -11,6 +11,8 @@ on:
       - "tests/test_navigation.c.inc"
       - "tests/test_profiles.c.inc"
       - "tests/test_frequency_gate.c.inc"
+      - "tests/test_logger_codec.c.inc"
+      - "tests/test_pulse_math.c.inc"
       - "scripts/install-labmate.ps1"
       - "scripts/install-from-github.ps1"
       - "application.fam"
@@ -78,6 +80,14 @@ jobs:
             labmate_frequency_gate.c tests/test_frequency_gate.c.inc \
             -o /tmp/labmate-frequency-gate-tests
           /tmp/labmate-frequency-gate-tests
+
+      - name: Test pure Pulse period/duty and median math
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. -x c \
+            labmate_pulse_math.c tests/test_pulse_math.c.inc \
+            -o /tmp/labmate-pulse-math-tests
+          /tmp/labmate-pulse-math-tests
 
       - name: Compile with Momentum SDK
         id: compile

@@ -55,6 +55,42 @@ or intentional corrupt/full-microSD fault injection.
 - Extend CI architecture guards to require one implementation for
   each History operation, read-only SD mode and unchanged path.
 
-**Next gate:** Step 2 will need a separate CI PASS and physical
-regression check after installation. The prior seven PASS tests
-apply to Step 1 only. Use only known 3.3 V-compatible signals.
+## Step 2 — real Flipper regression: PASS (operator report)
+
+After GitHub Actions build
+[38046508627](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38046508627)
+reported SUCCESS, the operator installed its checksum-verified
+`labmate.fap` over COM7 for exact commit
+`a89729141ea89e767b024de9cfe8c3d1a9adb517`.
+The following seven checks were reported **PASS**:
+
+1. Existing CSV files open through Log History.
+2. Newly created CSV files open through Log History.
+3. History still works after exiting and relaunching LabMate.
+4. Data Logger PC1 LOW records successfully.
+5. Data Logger PB3 HIGH records successfully.
+6. Data Logger PULSE PC1 records successfully.
+7. Saved Profile S1 is intact; Signal Generator defaults to STOP.
+
+This confirms the read-only History module extraction on the tested
+device under the listed normal-operation scenarios. It does not
+prove all microSD error-handling or power-loss cases.
+
+## Step 3 — portable Pulse measurement mathematics
+
+- Move period/duty calculation and the existing median-of-five
+  statistics sorter into `labmate_pulse_math.c/.h`.
+- Keep IRQ callbacks, HAL timer ownership, app-thread filtering
+  windows, capture scheduling and screen rendering where they are.
+- Keep the original 64-bit period arithmetic, integer rounding
+  and 5-sample median selection unchanged.
+- Add host-C regression tests for 0%, 25%, 50%, 75%, 100% duty,
+  fractional rounding, out-of-range period, ties, and outliers.
+- Guard source module boundaries and ensure Momentum SDK can compile
+  the reorganized FAP.
+
+**Next gate:** GitHub Actions must pass for Step 3, followed by a
+separate real-Flipper check of Pulse PC1 at 100 Hz and 1 kHz,
+HIGH/LOW/PERIOD/DUTY and STATS/HOLD, plus logger/profile smoke.
+Step 2's 7/7 PASS does not automatically validate Step 3.
+Only 3.3 V-compatible GPIO signals may be connected.

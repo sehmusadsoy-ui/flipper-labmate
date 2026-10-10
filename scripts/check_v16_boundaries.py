@@ -219,6 +219,25 @@ expect(
     '#define LOGGER_DIR LABMATE_LOGGER_DIR' in HISTORY,
     "Storage path must stay shared and compatible with older CSV logs",
 )
+PULSE_MATH = (ROOT / "labmate_pulse_math.c").read_text(encoding="utf-8")
+PULSE_MATH_H = (ROOT / "labmate_pulse_math.h").read_text(encoding="utf-8")
+expect(
+    "labmate_pulse_period_and_duty(" in MAIN and
+    "labmate_pulse_median5(" in MAIN and
+    "static uint32_t pulse_stats_median5(" not in MAIN and
+    "labmate_pulse_period_and_duty(" in PULSE_MATH and
+    "labmate_pulse_median5(" in PULSE_MATH and
+    "labmate_pulse_period_and_duty(" in PULSE_MATH_H and
+    "labmate_pulse_median5(" in PULSE_MATH_H,
+    "Pulse period/duty and median-of-five must be split into portable math module",
+)
+expect(
+    "#define PULSE_STATS_FILTER_SAMPLES LABMATE_PULSE_MEDIAN_SAMPLES" in INTERNAL_H and
+    "#define LABMATE_PULSE_MEDIAN_SAMPLES 5U" in PULSE_MATH_H and
+    "furi_" not in PULSE_MATH and "LL_TIM_" not in PULSE_MATH and
+    "storage_" not in PULSE_MATH,
+    "Pulse math must preserve five-value filter and avoid SDK/SD/hardware calls",
+)
 expect('"v1.6.1d"' in INTERNAL_H, "v1.6.1 development label required")
 expect('fap_version="1.6"' in MANIFEST, "Keep SDK-compatible manifest version during dev")
 expect(

@@ -10,6 +10,7 @@
 #include "labmate_resource_policy.h"
 #include "labmate_navigation.h"
 #include "labmate_profile_storage.h"
+#include "labmate_pulse_math.h"
 
 #define LABMATE_VERSION_TEXT "v1.6.1d"
 /* Shared menu/pin counts: UI and input handling must agree. */
@@ -22,7 +23,7 @@ extern const uint32_t labmate_generator_frequencies[];
 /* Keep only the latest 32 log IDs in RAM; read CSV contents incrementally. */
 #define LOGGER_HISTORY_LIMIT 32U
 /* High-speed pulse extrema use median-of-five sampled readings. */
-#define PULSE_STATS_FILTER_SAMPLES 5U
+#define PULSE_STATS_FILTER_SAMPLES LABMATE_PULSE_MEDIAN_SAMPLES
 
 typedef enum {
     LabMateScreenMenu,
