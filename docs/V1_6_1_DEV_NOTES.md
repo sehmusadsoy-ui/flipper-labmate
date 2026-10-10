@@ -204,3 +204,32 @@ Each stop routine must first detach its actual active peripheral, then
 release its matching software owner; mismatched release requests must not
 clear ownership of a different capture. Add host-native tests. Perform
 Momentum CI and a separate on-device regression before acceptance.
+
+## Step 6.2 — physical device regression: PASS (operator report)
+
+The operator installed exact commit `8dd53b43437f7c55d23424eae47241b3957980dd`
+from successful GitHub Actions run
+[38052489517](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38052489517).
+PowerShell verified SHA256 and reported a successful single-FAP update via COM7.
+The operator reported **10/10 PASS** for these real-device checks:
+
+1. Frequency LOW PC1 to HIGH PB3 transition.
+2. Frequency HIGH PB3 to Pulse PC1 transition.
+3. Pulse PC1 to Frequency LOW PC1 transition.
+4. Repeated tool switching without a freeze.
+5. Frequency and Pulse HOLD/LIVE.
+6. PA7 reserved during Generator RUN.
+7. PA7 available after Generator STOP.
+8. Application exit and relaunch.
+9. All three Logger sources and Log History.
+10. Profile S1 preserved and Generator initially STOP.
+
+The tested capture-owner release refactor passed these normal-operation
+regressions. Abnormal interruptions or low-level hardware faults remain untested.
+
+## Step 6.3 — next engineering gate (planned)
+
+Extend host-native resource lifecycle tests and review timer/EXTI cleanup
+for all STOP and screen exit paths before changing additional HAL operations.
+Keep the implementation incremental, retain the tested firmware semantics,
+and require a new CI PASS plus distinct physical-device regression checks.
