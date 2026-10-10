@@ -35,7 +35,7 @@ try {
     if(-not (Test-Path -LiteralPath $fap) -or -not (Test-Path -LiteralPath $sum)) {
         throw 'Missing labmate.fap or SHA256SUMS.txt in tested artifact.'
     }
-    $matches = @(
+    $hashList = @(
         Get-Content -LiteralPath $sum | ForEach-Object {
             if($_ -match '^(?<hash>[A-Fa-f0-9]{64})\s+\*?(?<file>.+?)\s*$' -and
                ($Matches['file'] -ceq 'labmate.fap' -or $Matches['file'] -ceq './labmate.fap')) {
@@ -43,9 +43,9 @@ try {
             }
         }
     )
-    if($matches.Count -ne 1) { throw 'Expected exactly one FAP checksum.' }
+    if($hashList.Count -ne 1) { throw 'Expected exactly one FAP checksum.' }
     $actual = (Get-FileHash -LiteralPath $fap -Algorithm SHA256).Hash
-    if(-not [string]::Equals($actual, $matches[0], [StringComparison]::OrdinalIgnoreCase)) {
+    if(-not [string]::Equals($actual, $hashList[0], [StringComparison]::OrdinalIgnoreCase)) {
         throw 'SHA256 MISMATCH: release cancelled.'
     }
     if((Get-Item -LiteralPath $fap).Length -eq 0) { throw 'FAP is empty.' }
