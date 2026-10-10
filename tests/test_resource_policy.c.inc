@@ -191,7 +191,17 @@ static void check_release_reacquire_matrix(void) {
         false, false, false));
 }
 
+static void check_all_stopped_guard(void) {
+    for(unsigned flags = 0U; flags < 8U; ++flags) {
+        const bool low = (flags & 1U) != 0U;
+        const bool high = (flags & 2U) != 0U;
+        const bool pulse = (flags & 4U) != 0U;
+        assert(labmate_capture_all_stopped(low, high, pulse) == (flags == 0U));
+    }
+}
+
 int main(void) {
+    check_all_stopped_guard();
     check_release_reacquire_matrix();
     check_release_policy();
     check_resource_transitions();
