@@ -1,4 +1,4 @@
-# LabMate Master Roadmap — v1.6 Stable to v2.0
+# LabMate Master Roadmap — v1.0 to v2.0
 
 **Status:** Updated 2026-10-10 after publication of v1.6 Stable.  
 **Current Stable baseline:** [v1.6 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6), published 2026-10-10 (FAP and SHA256).  
@@ -10,6 +10,45 @@
 Turn LabMate into an **electronic technician's digital pocketknife** on Flipper Zero: a practical, portable instrument for measuring, recording, visualizing and diagnosing 3.3 V digital signals. Prioritize real troubleshooting value, reliable measurements, readable controls, and small-device performance over unnecessary feature count.
 
 ## Official version milestones
+
+### v1.0 — First GPIO diagnostic toolkit (Stable published 2026-10-01)
+
+- **Delivered:** First LabMate Stable release for Flipper Zero with GPIO Monitor (HIGH/LOW, edge count and LIVE/HOLD), Frequency Meter, Pulse Analyzer and Signal Generator.
+- **Delivered:** PC1 rising-edge frequency input with high-resolution `DWT->CYCCNT` timing; Pulse Analyzer HIGH/LOW/PERIOD/DUTY readings; TIM2-based PA7 square-wave generation at fixed 50% duty and 1/2/5 Hz presets.
+- **Validated:** On-device PA7-to-PC1 loopback gave 1.00, 2.00 and 5.00 Hz readings for the respective generator presets; Pulse Analyzer functionality was also checked.
+- **Stability decision:** Runtime frequency input switching was deliberately disabled in v1.0; PC1 was the fixed input.
+- **Published:** [LabMate v1.0](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.0) with the original `labmate.fap`.
+
+### v1.1 — Hardware frequency counter and PWM expansion (Historical milestone 2026-10-05)
+
+- **Delivered:** Dual Frequency Meter inputs: LOW on PC1 using GPIO period timing, and HIGH on PB3 using the TIM2_CH2 hardware edge counter.
+- **Delivered:** LEFT/RIGHT mode selection and mode-specific GPIO cleanup/reset.
+- **Delivered:** PA7/TIM1 hardware PWM Signal Generator with 15 frequency presets from 1 Hz through 50 kHz at fixed 50% duty, replacing per-edge generator interrupts.
+- **Validated:** Development/build and device checks were recorded with Momentum Firmware API 87.1; 3.3 V-compatible GPIO signals only.
+- **Release status:** Described in [CHANGELOG.md](CHANGELOG.md); unlike v1.0 and v1.2, no separate v1.1 GitHub Release is currently listed.
+
+### v1.2 — Dashboard and UI polish (Stable published 2026-10-05)
+
+- **Delivered:** Compact dashboard-style menu, per-tool icons, clearer selection highlighting and a visible application version indicator.
+- **Delivered:** LIVE/HOLD and RUN/STOP badges, improved key hints and redesigned Frequency Meter, Generator and About screen layouts.
+- **Retained:** LOW PC1 / HIGH PB3 measurement paths, PC1-based Pulse Analyzer functionality and PA7 hardware PWM presets from 1 Hz to 50 kHz.
+- **Published:** [LabMate v1.2 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.2) with a prebuilt FAP for the tested Momentum Firmware environment.
+
+### v1.3 — Interrupt capture and stability (Stable published 2026-10-08)
+
+- **Delivered:** Rising/falling GPIO interrupt capture for Pulse Analyzer HIGH/LOW/PERIOD/DUTY, plus averaged high-frequency readings and improved display refresh.
+- **Delivered:** Pulse capture pin choices PC0, PC1, PB2 and PA4, avoiding conflicting or reserved interrupt lines.
+- **Delivered:** Faster HIGH PB3 hardware-counter refresh (about 100 ms), GPIO interrupt edge cleanup, and running Generator frequency changes without stop/restart freezes.
+- **Validated:** Flipper loopback functionality up to 50 kHz with 3.3 V-compatible signals; observations were functional checks, not independent calibration.
+- **Published:** [LabMate v1.3 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.3).
+
+### v1.4 — MIN/MAX statistics and UI stability (Stable published 2026-10-08)
+
+- **Delivered:** Frequency Meter LOW PC1 and HIGH PB3 measured MIN/MAX, UP reset and HOLD/LIVE history preservation; input loss no longer erased previous extrema.
+- **Delivered:** Pulse Analyzer MIN/MAX statistics for HIGH/LOW/PERIOD/DUTY with reset controls and five-sample median filtering of high-frequency extrema.
+- **Delivered:** Clearer 128×64 screen layout and rate-limited redraws to reduce USB-connected UI stalls.
+- **Validated:** Device loopback checks at 1, 20 and 50 kHz, selected statistics/hold controls, and a five-minute USB-connected navigation session; not an external calibrated accuracy claim.
+- **Published:** [LabMate v1.4 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.4), with FAP and SHA-256 file.
 
 ### v1.5 — Data Logger and Log History (Stable published 2026-10-09)
 
