@@ -70,19 +70,17 @@ void draw_profiles(Canvas* canvas, LabMateApp* app) {
 }
 
 void draw_about(Canvas* canvas) {
-    /* Keep developer credit legible on the 128x64 monochrome display.
-     * ASCII is deliberate: the standard Flipper font lacks Turkish glyphs.
-     */
+    /* Monochrome 128x64: full GitHub address split at path separators.
+     * Preserve developer credit and the 3.3V safety notice. */
     ui_draw_header(canvas, "LABMATE " LABMATE_VERSION_TEXT);
     canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 2, 24, "Digital Signal Toolkit");
-    canvas_draw_line(canvas, 0, 29, 127, 29);
-    canvas_draw_str(canvas, 2, 41, "DEV");
-    canvas_set_font(canvas, FontPrimary);
-    canvas_draw_str(canvas, 28, 42, "SauronLAB");
-    canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 28, 52, "Sehmus");
-    canvas_draw_str(canvas, 2, 62, "3.3V GPIO ONLY");
+    canvas_draw_str(canvas, 2, 24, "DEV: SauronLAB");
+    canvas_draw_str(canvas, 2, 34, "Sehmus");
+    canvas_draw_str_aligned(canvas, 126, 34, AlignRight, AlignBottom, "3.3V ONLY");
+    canvas_draw_line(canvas, 0, 38, 127, 38);
+    canvas_draw_str(canvas, 2, 47, "github.com/");
+    canvas_draw_str(canvas, 2, 55, "sehmusadsoy-ui/");
+    canvas_draw_str(canvas, 2, 63, "flipper-labmate");
 }
 
 void draw_history(Canvas* canvas, LabMateApp* app) {
