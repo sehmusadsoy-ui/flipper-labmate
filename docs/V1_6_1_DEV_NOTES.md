@@ -119,9 +119,35 @@ instrument calibration or long-duration/stress qualification.
 - Add source boundary assertions; run full Momentum SDK compile,
   host regression suite and Windows mock installer.
 
-**Step 4 physical device tests still pending.** Once a fresh
-successful CI build is installed, check three Data Logger sources,
-CSV file numbering, Log History existing/new data, STOP/exit/relaunch,
-Profiles S1 preservation and initial Generator STOP. Step 3's
-physical results do not automatically validate Step 4.
+**Step 4 device tests completed; see operator report below.**
 Only known 3.3 V GPIO-compatible signals are permitted.
+
+## Step 4 — real Flipper regression: PASS (operator report)
+
+The operator installed the checksum-verified FAP for exact commit
+`62194ae2910cfda3d683d6c63e168a83881ca94c` from GitHub Actions
+[38049466166](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38049466166)
+over COM7. Installation reported SHA256 OK and successful app launch request.
+The operator subsequently reported all seven physical tests **PASS**:
+
+1. Data Logger PC1 LOW creates records.
+2. Data Logger PB3 HIGH creates records.
+3. Data Logger PULSE PC1 creates records.
+4. New CSV file numbers advance without overwriting old files.
+5. Log History opens both previous and new CSV files.
+6. Logger STOP, app exit and relaunch work normally.
+7. Profile S1 remains saved, and Signal Generator starts in STOP.
+
+This validates normal-operation regression cases for the extracted logger
+storage module. It does not establish power-failure recovery, malformed
+microSD behavior, full-card handling or extended endurance qualification.
+
+## Step 5 — proposed Frequency Meter pure-math extraction
+
+Extract only SDK-independent PC1 period-to-millihertz calculation and
+related filtering helpers after reviewing existing frequency sample
+semantics. Preserve ISR, STM32 TIM2, EXTI, GPIO ownership, gate timing,
+HOLD/LIVE, timeout and statistic scheduling until separately tested.
+Require native regression tests and a successful Momentum SDK build,
+then a fresh real-device frequency and Logger/Profile smoke test.
+Do not modify v1.6 Stable, main or previously published release assets.
