@@ -702,3 +702,45 @@ mark GitHub Release as **prerelease**, do NOT set latest,
 and leave `main`, Stable v1.5 and the `v1.6-rc1` branch
 unchanged. No publish action was authorized by the instruction
 to *review readiness*, so release remains uncreated.
+
+## v1.6 Stable candidate — final device smoke (user-reported, 2026-10-10)
+
+The operator was instructed to install the exact GitHub Actions
+**Stable candidate** artifact using the checksum-verifying installer
+specific to `v1.6-stable-candidate` and test these five items:
+`v1.6` version label, Frequency Meter and Pulse Analyzer screen
+entry, preserved S1 Profiles and old CSV History, and Generator
+initially STOP. The operator replied **"her şey olumlı"**
+("everything positive"). Record **all five smoke checks PASS** as
+an operator-reported result.
+
+| Item on the newly packaged Stable candidate | Result |
+| --- | --- |
+| `v1.6` display label | PASS (operator report) |
+| Frequency Meter and Pulse Analyzer screen access | PASS (operator report) |
+| Previously saved S1 Profile persists | PASS (operator report) |
+| Existing Log History CSV records remain visible | PASS (operator report) |
+| Signal Generator defaults to STOP | PASS (operator report) |
+
+**Precise package provenance:** candidate branch head
+`4a890002fea0acf8d524b7c772db3bbd3e239848`;
+[GitHub Actions run 38007158577](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38007158577)
+reports completed/successful Momentum SDK compile, all source,
+GPIO/resource, navigation, profile codec and frequency math tests,
+artifact SHA256 check, and Windows installer mock transport.
+Artifact `labmate` (including `labmate.fap` and `SHA256SUMS.txt`)
+was available, unexpired, at this final review.
+
+The user's short confirmation covers the requested device checks,
+but is not a separate console transfer log or renewed numerical
+accuracy test. The previously more detailed frequency, Pulse Analyzer,
+profile write/delete, CSV recording and resource interlock checks
+were performed on the **dev** build, with instrument logic unchanged
+for RC1 and Stable candidate. No independent absolute frequency
+calibration or destructive microSD error injection was performed.
+
+**State:** Eligible for an operator-approved v1.6 Stable GitHub
+publication review. Do not silently create a public release or
+change `main` solely on the basis of this test report. The frozen
+stable-candidate SHA should remain unchanged to preserve the
+successful GitHub Actions build and device-test provenance.
