@@ -12,7 +12,7 @@
 #include "labmate_profile_storage.h"
 #include "labmate_pulse_math.h"
 
-#define LABMATE_VERSION_TEXT "v1.6.1d"
+#define LABMATE_VERSION_TEXT "v1.6.1"
 /* Shared menu/pin counts: UI and input handling must agree. */
 #define MENU_COUNT LabMateToolCount
 #define GPIO_COUNT LABMATE_MONITOR_PIN_COUNT
