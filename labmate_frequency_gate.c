@@ -39,3 +39,12 @@ LabMateHighGateResult labmate_high_gate_evaluate(
     *output_millihz = (uint32_t)millihz;
     return LabMateHighGatePublish;
 }
+
+int labmate_low_period_to_millihz(
+    uint32_t period_cycles, uint32_t core_clock_hz, uint32_t* output_millihz) {
+    if(period_cycles == 0U || core_clock_hz == 0U || output_millihz == 0) return 0;
+    *output_millihz = (uint32_t)(
+        (((uint64_t)core_clock_hz * 1000ULL) + (period_cycles / 2U)) /
+        period_cycles);
+    return 1;
+}
