@@ -90,3 +90,8 @@ LabMateCaptureOwner labmate_capture_owner_after_stop(
     if(stopping == LabMateCaptureNone || current != stopping) return current;
     return LabMateCaptureNone;
 }
+
+bool labmate_capture_all_stopped(
+    bool frequency_low_active, bool frequency_high_active, bool pulse_active) {
+    return !frequency_low_active && !frequency_high_active && !pulse_active;
+}
