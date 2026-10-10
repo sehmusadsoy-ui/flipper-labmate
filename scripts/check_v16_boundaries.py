@@ -153,7 +153,7 @@ expect(
 )
 expect(
     "labmate_capture_matches(" in POLICY and
-    "if(!labmate_capture_matches(" in MAIN,
+    "if(!labmate_capture_matches(" in LOGGER_STORAGE,
     "Logger must verify capture before creating a CSV",
 )
 expect(
@@ -188,12 +188,11 @@ for sentinel in [
     "static void frequency_hw_stop(",
     "static void generator_start(",
     "static void generator_stop(",
-    "static bool logger_start(",
-    "static void logger_stop(",
-    "storage_file_write(",
 ]:
     expect(sentinel in MAIN, f"Required capture/storage function missing: {sentinel}")
 
+LOGGER_STORAGE = (ROOT / "labmate_logger_storage.c").read_text(encoding="utf-8")
+LOGGER_STORAGE_H = (ROOT / "labmate_logger_storage.h").read_text(encoding="utf-8")
 HISTORY = (ROOT / "labmate_history.c").read_text(encoding="utf-8")
 HISTORY_H = (ROOT / "labmate_history.h").read_text(encoding="utf-8")
 STORAGE_PATHS = (ROOT / "labmate_storage_paths.h").read_text(encoding="utf-8")
@@ -237,6 +236,34 @@ expect(
     "furi_" not in PULSE_MATH and "LL_TIM_" not in PULSE_MATH and
     "storage_" not in PULSE_MATH,
     "Pulse math must preserve five-value filter and avoid SDK/SD/hardware calls",
+)
+expect(
+    "void labmate_logger_storage_stop(LabMateApp* app)" in LOGGER_STORAGE and
+    "bool labmate_logger_storage_start(LabMateApp* app)" in LOGGER_STORAGE and
+    "void labmate_logger_storage_stop(LabMateApp* app);" in LOGGER_STORAGE_H and
+    "bool labmate_logger_storage_start(LabMateApp* app);" in LOGGER_STORAGE_H and
+    "labmate_logger_storage_stop(app)" in MAIN and
+    "labmate_logger_storage_start(app)" in MAIN and
+    "static void logger_stop(" not in MAIN and
+    "static bool logger_start(" not in MAIN,
+    "CSV file lifecycle must have one implementation in its storage module",
+)
+expect(
+    "storage_file_write(app->logger_file, header, header_size)" in LOGGER_STORAGE and
+    "storage_file_open(" in LOGGER_STORAGE and
+    "FSOM_CREATE_NEW" in LOGGER_STORAGE and
+    "storage_file_sync(app->logger_file)" in LOGGER_STORAGE and
+    "storage_file_close(app->logger_file)" in LOGGER_STORAGE and
+    "labmate_logger_filename_id(" in LOGGER_STORAGE and
+    '#define LOGGER_DIR LABMATE_LOGGER_DIR' in LOGGER_STORAGE,
+    "CSV storage must retain exclusive file creation, flush, close and naming",
+)
+expect(
+    "logger_prepare_row(" in MAIN and
+    "capture_stop_all(" in MAIN and
+    "labmate_logger_storage_start(" not in SCREENS and
+    "labmate_logger_storage_stop(" not in SCREENS,
+    "CSV app capture and drawing must remain separate from SD I/O",
 )
 expect('"v1.6.1d"' in INTERNAL_H, "v1.6.1 development label required")
 expect('fap_version="1.6"' in MANIFEST, "Keep SDK-compatible manifest version during dev")
@@ -379,5 +406,5 @@ if failures:
     raise SystemExit(1)
 
 print(f"LabMate v1.6 boundaries OK: {len(SCREENS_EXPECTED)} view-only screens")
-print("GPIO IRQ and PWM retained in core; read-only history storage extracted")
+print("GPIO IRQ and PWM retained in core; history and logger storage modules extracted")
 print("NOTE: static checks cannot verify behavior on the physical Flipper")

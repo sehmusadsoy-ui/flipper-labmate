@@ -89,8 +89,39 @@ prove all microSD error-handling or power-loss cases.
 - Guard source module boundaries and ensure Momentum SDK can compile
   the reorganized FAP.
 
-**Next gate:** GitHub Actions must pass for Step 3, followed by a
-separate real-Flipper check of Pulse PC1 at 100 Hz and 1 kHz,
-HIGH/LOW/PERIOD/DUTY and STATS/HOLD, plus logger/profile smoke.
-Step 2's 7/7 PASS does not automatically validate Step 3.
-Only 3.3 V-compatible GPIO signals may be connected.
+## Step 3 — real Flipper regression: PASS (operator report)
+
+For exact commit `e9ad287e332e8e5b680aad37a4ae78cb108d6819`
+(GitHub Actions run [38046956822](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38046956822)),
+the operator installed the SHA256-verified FAP over COM7 and reported
+all seven real-device checks **PASS**:
+
+1. Pulse Analyzer PC1 at 100 Hz: HIGH/LOW/PERIOD/DUTY correct.
+2. Pulse Analyzer PC1 at 1 kHz: HIGH/LOW/PERIOD/DUTY correct.
+3. Pulse STATS, MIN and MAX functional.
+4. Pulse HOLD/LIVE switching functional.
+5. All three Data Logger sources still write CSV.
+6. Log History opens both previous and new CSV files.
+7. Saved Profile S1 intact, Generator starts in STOP.
+
+These are functional operator observations rather than independent
+instrument calibration or long-duration/stress qualification.
+
+## Step 4 — separate Logger SD lifecycle from acquisition
+
+- Move existing `logger_stop`, `logger_init_next_file_index`
+  and `logger_start` logic to `labmate_logger_storage.c/.h`.
+- Preserve source ownership checks, SD status and error handling,
+  `FSOM_CREATE_NEW`, monotonic file numbering, CSV header,
+  sync, close and file path `/ext/apps_data/labmate`.
+- Keep live capture and row scheduling in `labmate.c`; keep
+  History separate and read-only, and UI drawing passive.
+- Add source boundary assertions; run full Momentum SDK compile,
+  host regression suite and Windows mock installer.
+
+**Step 4 physical device tests still pending.** Once a fresh
+successful CI build is installed, check three Data Logger sources,
+CSV file numbering, Log History existing/new data, STOP/exit/relaunch,
+Profiles S1 preservation and initial Generator STOP. Step 3's
+physical results do not automatically validate Step 4.
+Only known 3.3 V GPIO-compatible signals are permitted.
