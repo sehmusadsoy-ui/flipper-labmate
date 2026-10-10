@@ -20,6 +20,8 @@ PROFILES = (ROOT / "labmate_profiles.c").read_text(encoding="utf-8")
 POLICY = (ROOT / "labmate_resource_policy.c").read_text(encoding="utf-8")
 FREQUENCY_GATE = (ROOT / "labmate_frequency_gate.c").read_text(encoding="utf-8")
 POLICY_H = (ROOT / "labmate_resource_policy.h").read_text(encoding="utf-8")
+LOGGER_STORAGE = (ROOT / "labmate_logger_storage.c").read_text(encoding="utf-8")
+LOGGER_STORAGE_H = (ROOT / "labmate_logger_storage.h").read_text(encoding="utf-8")
 
 
 failures: list[str] = []
@@ -191,8 +193,6 @@ for sentinel in [
 ]:
     expect(sentinel in MAIN, f"Required capture/storage function missing: {sentinel}")
 
-LOGGER_STORAGE = (ROOT / "labmate_logger_storage.c").read_text(encoding="utf-8")
-LOGGER_STORAGE_H = (ROOT / "labmate_logger_storage.h").read_text(encoding="utf-8")
 HISTORY = (ROOT / "labmate_history.c").read_text(encoding="utf-8")
 HISTORY_H = (ROOT / "labmate_history.h").read_text(encoding="utf-8")
 STORAGE_PATHS = (ROOT / "labmate_storage_paths.h").read_text(encoding="utf-8")
