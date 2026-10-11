@@ -1,0 +1,195 @@
+name: LabMate v1.7 Development CI
+
+on:
+  push:
+    branches: [v1.7-dev]
+    paths:
+      - "*.c"
+      - "*.h"
+      - "scripts/check_v16_boundaries.py"
+      - "tests/test_resource_policy.c.inc"
+      - "tests/test_navigation.c.inc"
+      - "tests/test_profiles.c.inc"
+      - "tests/test_frequency_gate.c.inc"
+      - "tests/test_logger_codec.c.inc"
+      - "tests/test_pulse_math.c.inc"
+      - "scripts/install-labmate.ps1"
+      - "scripts/install-from-github.ps1"
+      - "application.fam"
+      - "labmate_generator.c"
+      - "labmate_generator.h"
+      - ".github/workflows/build-v1.7.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Separate current ownership-policy CI from a prior stale UI runner.
+  # Keep cancelling outdated intermediate-source builds on this branch.
+  group: labmate-v1.7-dev-ci
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Compile modular LabMate v1.7 FAP (development only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out v1.7-dev
+        uses: actions/checkout@v4
+
+      - name: Guard passive UI and hardware boundaries
+        run: python3 scripts/check_v16_boundaries.py
+
+      - name: Test portable GPIO / PA7 ownership policy
+        run: |
+          set -euo pipefail
+          # .c.inc stays outside the FAP wildcard source list.
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. -x c \
+            labmate_resource_policy.c tests/test_resource_policy.c.inc \
+            -o /tmp/labmate-resource-policy-tests
+          /tmp/labmate-resource-policy-tests
+
+      - name: Test grouped menu mapping on host
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. -x c \
+            labmate_navigation.c tests/test_navigation.c.inc \
+            -o /tmp/labmate-navigation-tests
+          /tmp/labmate-navigation-tests
+
+      - name: Test profile codec (portable C)
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. -x c \
+            labmate_profiles.c tests/test_profiles.c.inc \
+            -o /tmp/labmate-profile-tests
+          /tmp/labmate-profile-tests
+
+      - name: Test portable logger CSV and filename codec
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. -x c \
+            labmate_logger_codec.c tests/test_logger_codec.c.inc \
+            -o /tmp/labmate-logger-codec-tests
+          /tmp/labmate-logger-codec-tests
+
+      - name: Test PB3 adaptive frequency gate (portable C)
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. -x c \
+            labmate_frequency_gate.c tests/test_frequency_gate.c.inc \
+            -o /tmp/labmate-frequency-gate-tests
+          /tmp/labmate-frequency-gate-tests
+
+      - name: Test pure Pulse period/duty and median math
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. -x c \
+            labmate_pulse_math.c tests/test_pulse_math.c.inc \
+            -o /tmp/labmate-pulse-math-tests
+          /tmp/labmate-pulse-math-tests
+
+      - name: Compile with Momentum SDK
+        id: compile
+        uses: flipperdevices/flipperzero-ufbt-action@v0.1
+        with:
+          sdk-channel: dev
+          sdk-index-url: https://up.momentum-fw.dev/firmware/directory.json
+
+      - name: Verify output and checksum
+        env:
+          BUILT_API_VERSION: ${{ steps.compile.outputs.api-version }}
+        run: |
+          set -euo pipefail
+          FAP="$(find . -type f -name 'labmate.fap' -not -path './.git/*' -print -quit)"
+          test -n "$FAP" && test -s "$FAP"
+          mkdir -p build-artifacts
+          cp "$FAP" build-artifacts/labmate.fap
+          (cd build-artifacts && sha256sum labmate.fap > SHA256SUMS.txt && sha256sum -c SHA256SUMS.txt)
+          echo "Momentum SDK API: $BUILT_API_VERSION"
+          ls -lh build-artifacts
+
+      - name: Upload dev FAP artifact (no release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: labmate
+          path: build-artifacts/
+          if-no-files-found: error
+
+  installer_safety:
+    name: Check Windows installer with mock transport (no USB)
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Prepare mock FAP and Momentum scripts
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $root = Join-Path $env:RUNNER_TEMP 'LabMate Fixture'
+          $fw = Join-Path $root 'Mock Momentum'
+          $tool = Join-Path $fw 'scripts\toolchain'
+          New-Item -ItemType Directory -Path $tool -Force | Out-Null
+          $fap = Join-Path $root 'labmate.fap'
+          [IO.File]::WriteAllBytes($fap, [byte[]](1,2,3,4,5))
+          $hash = (Get-FileHash $fap -Algorithm SHA256).Hash
+          [IO.File]::WriteAllText((Join-Path $root 'SHA256SUMS.txt'),
+            "$($hash.ToLowerInvariant())  labmate.fap`n")
+          [IO.File]::WriteAllText((Join-Path $tool 'fbtenv.cmd'),
+            "@echo off`r`nexit /b 0`r`n")
+          $stub = @'
+          import os, sys
+          with open(os.environ["LABMATE_MOCK_LOG"], "w") as f:
+              f.write("\n".join(sys.argv[1:]))
+          sys.exit(int(os.environ.get("LABMATE_MOCK_EXIT", "0")))
+          '@
+          [IO.File]::WriteAllText((Join-Path $fw 'scripts\runfap.py'), $stub)
+          "LABMATE_FIXTURE_ROOT=$root" >> $env:GITHUB_ENV
+          "LABMATE_MOCK_FW=$fw" >> $env:GITHUB_ENV
+          "LABMATE_MOCK_LOG=$(Join-Path $root 'command.txt')" >> $env:GITHUB_ENV
+
+      - name: Verify checksums, fixed destination and exit propagation
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $fap = Join-Path $env:LABMATE_FIXTURE_ROOT 'labmate.fap'
+          $hash = (Get-FileHash $fap -Algorithm SHA256).Hash
+          & ./scripts/install-labmate.ps1 -FapPath $fap -VerifyOnly
+          if ($LASTEXITCODE -ne 0) { throw 'Valid checksum was rejected.' }
+          & ./scripts/install-labmate.ps1 -FapPath $fap -ExpectedSha256 ('0' * 64) -VerifyOnly
+          if ($LASTEXITCODE -eq 0) { throw 'Checksum mismatch was accepted.' }
+          & ./scripts/install-labmate.ps1 -FapPath $fap -ExpectedSha256 'wrong' -VerifyOnly
+          if ($LASTEXITCODE -eq 0) { throw 'Malformed SHA256 was accepted.' }
+
+          # Fake runfap.py records args, never talks to a Flipper.
+          & ./scripts/install-labmate.ps1 -FapPath $fap -ExpectedSha256 $hash -FirmwareRoot $env:LABMATE_MOCK_FW -Port COM7
+          if ($LASTEXITCODE -ne 0) { throw 'Mock runfap call failed.' }
+          $received = @(Get-Content -LiteralPath $env:LABMATE_MOCK_LOG)
+          $expected = @('-p','COM7','-s',$fap,'-t','/ext/apps/Tools/labmate.fap')
+          if (($received -join '|') -cne ($expected -join '|')) {
+              throw "Wrong destination or argument order: $($received -join ', ')"
+          }
+
+          $env:LABMATE_MOCK_EXIT = '23'
+          & ./scripts/install-labmate.ps1 -FapPath $fap -ExpectedSha256 $hash -FirmwareRoot $env:LABMATE_MOCK_FW
+          if ($LASTEXITCODE -eq 0) { throw 'Nonzero transport exit was treated as success.' }
+          Remove-Item Env:\LABMATE_MOCK_EXIT
+          # The final nonzero exit was intentional. The pwsh step must not
+          # inherit it after every expected-failure assertion has passed.
+          $global:LASTEXITCODE = 0
+          $stableScript = Get-Content -Raw ./scripts/install-from-github.ps1
+          $devScript = Get-Content -Raw ./scripts/install-v161-dev.ps1
+          if($stableScript -notmatch [regex]::Escape('gh release download $tag') -or
+             $stableScript -notmatch [regex]::Escape("$tag = 'v1.6'") -or
+             $devScript -notmatch [regex]::Escape(' -b v1.6.1-dev ') -or
+             $devScript -match [regex]::Escape(' -b v1.6-rc1 ') -or
+             $devScript -match [regex]::Escape(' -b v1.6-stable-candidate ')) {
+            throw 'v1.6.1 dev and v1.6 Stable installer targets must remain isolated.'
+          }
+          Write-Host 'Mock USB tests and installer isolation passed; no Flipper connected.'
