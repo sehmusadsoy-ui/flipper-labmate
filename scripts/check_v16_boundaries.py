@@ -481,7 +481,26 @@ expect(
     "storage_file_remove(" not in HISTORY and
     "storage_file_open(file, path, FSAM_READ, FSOM_OPEN_EXISTING)" in HISTORY and
     "LOGGER_HISTORY_READ_BYTES 256U" in HISTORY,
-    "History must stay read-only with the same bounded 256-byte reads",
+    "History CSV opens must remain read-only with bounded 256-byte reads",
+)
+expect(
+    "bool labmate_history_delete_file(uint16_t log_id);" in HISTORY_H and
+    len(re.findall(r"(?m)^bool\s+labmate_history_delete_file\s*\(", HISTORY)) == 1 and
+    "log_id == 0U || log_id > 9999U" in HISTORY and
+    "labmate_logger_filename_id(filename, &checked)" in HISTORY and
+    'snprintf(path, sizeof(path), LOGGER_DIR "/%s", filename);' in HISTORY and
+    "storage_common_remove(storage, path) == FSE_OK" in HISTORY and
+    "storage_file_exists(storage, path)" in HISTORY and
+    "storage_simply_remove_recursive" not in HISTORY and
+    "labmate_history_delete_file(history_delete_id)" in MAIN and
+    "history_delete_requested = true;" in MAIN and
+    "app->history_delete_confirm = true;" in MAIN and
+    "history_delete_target" not in MAIN and
+    "app->history_delete_mode = !app->history_delete_mode;" in MAIN and
+    "app->history_selected < app->history_count" in MAIN and
+    "app->logger_file || app->logger_storage" in MAIN and
+    "app->history_file || app->history_storage" in MAIN,
+    "History removal must be explicitly confirmed, single-ID bounded and deferred",
 )
 expect(
     '#define LABMATE_LOGGER_DIR "/ext/apps_data/labmate"' in STORAGE_PATHS and
