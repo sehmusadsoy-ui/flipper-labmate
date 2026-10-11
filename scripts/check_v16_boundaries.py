@@ -228,6 +228,27 @@ for kind in ("high", "low"):
 expect("static void pulse_gpio_callback(" in PULSE_CAPTURE and
        "static void pulse_gpio_callback(" not in MAIN,
        "Pulse IRQ callback must live only in pulse module")
+
+# A long HIGH phase must not erase pending short LOW samples (100 Hz / 95%
+# duty), nor the opposite phase at 5% duty. This source-level regression
+# guard complements the firmware compile and actual on-device pulse test.
+asymmetric_phase = re.search(
+    r"At extreme duty.*?if\(app->pulse_irq_level\)\s*\{"
+    r"(?P<high>.*?)\}\s*else\s*\{(?P<low>.*?)\}\s*\}",
+    PULSE_CAPTURE, re.S,
+)
+expect(
+    asymmetric_phase is not None
+    and "app->pulse_irq_high_sum = 0U;" in asymmetric_phase.group("high")
+    and "app->pulse_irq_high_samples = 0U;" in asymmetric_phase.group("high")
+    and "app->pulse_irq_low_sum" not in asymmetric_phase.group("high")
+    and "app->pulse_irq_low_samples" not in asymmetric_phase.group("high")
+    and "app->pulse_irq_low_sum = 0U;" in asymmetric_phase.group("low")
+    and "app->pulse_irq_low_samples = 0U;" in asymmetric_phase.group("low")
+    and "app->pulse_irq_high_sum" not in asymmetric_phase.group("low")
+    and "app->pulse_irq_high_samples" not in asymmetric_phase.group("low"),
+    "Asymmetric duty must preserve the opposite short-phase averaging window",
+)
 for fn in ("start", "stop"):
     name = f"labmate_pulse_capture_{fn}"
     expect(len(re.findall(rf"(?m)^void\s+{name}\s*\(", PULSE_CAPTURE)) == 1 and
