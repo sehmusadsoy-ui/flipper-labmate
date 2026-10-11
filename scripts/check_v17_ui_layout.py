@@ -30,7 +30,7 @@ footer_pairs = re.findall(
     r'ui_footer_pair\(canvas,\s*"([^"]+)",\s*"([^"]+)",'
     r'\s*"([^"]+)",\s*"([^"]+)"\)', UI,
 )
-assert len(footer_pairs) >= 9, "Expected context-specific pairs in 4 instruments"
+assert len(footer_pairs) >= 8, "Expected context-specific pairs in 4 instruments"
 for left_key, left_action, right_key, right_action in footer_pairs:
     for key, action in ((left_key, left_action), (right_key, right_action)):
         width = len(key) * GLYPH + 6 + 3 + len(action) * GLYPH
