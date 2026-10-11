@@ -80,12 +80,13 @@ These are CI/compile results, **not** physical Flipper measurement validations.
 - An on-instrument `ALERT` indicator appears in the top right for the selected measurement source when a trip is latched; the configuration screen shows ARM/OFF, source, limit and TRIPPED status.
 - **Visual-only**: no buzzer, vibration, automatic PWM changes, GPIO side effects, SD modifications or persisted thresholds. Alert settings survive menu navigation only while LabMate is running.
 - Added `tests/test_threshold.c.inc` for arming, source locks, bounds, valid/invalid data, latching, crossing and acknowledge semantics, plus source-boundary assertions and a dedicated CI job step.
+- **Automated checkpoint PASS:** GitHub Actions `38131696438`, tested code commit `1f1de6d6aa70350ea135856026333e16bcdb69ce`, both native/Momentum build and Windows mock installer jobs passed; `labmate` artifact generated. This does not replace electrical device checks.
 - **Physical device validation pending**: threshold at/below/above on each of Frequency/Pulse/Counter/Button, HOLD/STOP signal invalidation, source changes when disarmed, acknowledgement and visual badge legibility on the monochrome display.
 
 ## Next
 
 - Review the app-level capture teardown coordinator and complete regression tests for transitions between LOW/HIGH/PULSE/LOGGER and PA7 background PWM.
 - Validate the PWM Studio feature slice on the physical Flipper and check PA7 background ownership under navigation/monitoring.
-- Implement Event Counter, button analysis and alerts, respecting existing IRQ restrictions (PC3/PB3 EXTI3 and PA6 EXTI6 conflict with buttons; PWM owns PA7).
+- Review Event Counter, Button Analyzer and Threshold Alerts integration for edge cases, then complete the focused v1.7 UI improvements.
 - Bundle changes into focused on-device sessions, using only verified 3.3 V digital signals.
 - Prior to v1.7 RC, verify physical output frequency/duty and switching, menu reentry, frequency/pulse STATS and HOLD, Logger/History and Profiles. Avoid claims of calibrated metrology.
