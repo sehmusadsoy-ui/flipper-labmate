@@ -117,7 +117,7 @@ typedef struct {
     uint32_t counter_last_hw;
     uint64_t counter_total;
     uint32_t counter_start_tick;
-    uint32_t counter_elapsed_ticks;
+    uint32_t counter_elapsed_seconds;
 
     /* Pulse analyzer: edge timestamps captured in GPIO IRQ. */
     bool pulse_irq_active;
