@@ -1,7 +1,6 @@
 #include <furi.h>
 #include <furi_hal.h>
 #include <furi_hal_resources.h>
-#include <furi_hal_pwm.h>
 #include <furi_hal_bus.h>
 #include <stm32wbxx_ll_tim.h>
 #include <stm32wbxx_ll_exti.h>
@@ -10,6 +9,7 @@
 #include <storage/storage.h>
 #include "labmate_ui_primitives.h"
 #include "labmate_internal.h"
+#include "labmate_generator.h"
 #include "labmate_ui_screens.h"
 #include "labmate_resource_policy.h"
 #include "labmate_frequency_gate.h"
@@ -61,31 +61,6 @@ static uint8_t pulse_gpio_next_index(uint8_t current, int8_t direction) {
     }
     return pulse_gpio_indices[i];
 }
-
-/*
- * Conservative self-test frequencies.
- * Designed for the current polling-based
- * measurement engine.
- */
-const uint32_t labmate_generator_frequencies[] = {
-    1,
-    2,
-    5,
-    10,
-    20,
-    50,
-    100,
-    200,
-    500,
-    1000,
-    2000,
-    5000,
-    10000,
-    20000,
-    50000,
-};
-
-#define GENERATOR_FREQ_COUNT 15
 
 /* Capture starts may only claim a free owner and an allowed physical pin.
  * Invalid or overlapping requests leave GPIO, EXTI and timers untouched.
@@ -1180,73 +1155,6 @@ static bool logger_prepare_row(LabMateApp* app, char* row, size_t capacity) {
  * formatting remain in labmate_logger_codec.c.
  */
 
-/* ---------- SIGNAL GENERATOR ---------- */
-
-static void generator_stop(LabMateApp* app) {
-    if(app->generator_running) {
-        furi_hal_pwm_stop(
-            FuriHalPwmOutputIdTim1PA7);
-    }
-
-    app->generator_running = false;
-    app->generator_state = false;
-}
-
-static void generator_start(LabMateApp* app) {
-    uint32_t freq =
-        labmate_generator_frequencies[
-            app->generator_freq_index];
-
-    if(freq == 0) {
-        return;
-    }
-
-    /*
-     * Hardware PWM on PA7 / TIM1.
-     * No per-edge generator ISR is required.
-     */
-    furi_hal_pwm_start(
-        FuriHalPwmOutputIdTim1PA7,
-        freq,
-        50U);
-
-    app->generator_running = true;
-    app->generator_state = false;
-}
-static void generator_change_frequency(
-    LabMateApp* app,
-    int8_t direction) {
-
-    if(direction > 0) {
-        app->generator_freq_index++;
-
-        if(app->generator_freq_index >=
-           GENERATOR_FREQ_COUNT) {
-
-            app->generator_freq_index = 0;
-        }
-    } else {
-        if(app->generator_freq_index == 0) {
-            app->generator_freq_index =
-                GENERATOR_FREQ_COUNT - 1;
-        } else {
-            app->generator_freq_index--;
-        }
-    }
-
-    /*
-     * Update TIM1 PWM parameters in place while running.
-     * Do not stop and re-enable TIM1 for each key press.
-     * This keeps PA7 configured and avoids repeated timer/bus resets.
-     */
-    if(app->generator_running) {
-        furi_hal_pwm_set_params(
-            FuriHalPwmOutputIdTim1PA7,
-            labmate_generator_frequencies[app->generator_freq_index],
-            50U);
-    }
-}
-
 /* ---------- DRAWING (stateful screens) ---------- */
 
 static void render_callback(
@@ -1758,13 +1666,13 @@ int32_t labmate_app(void* p) {
                 LabMateScreenGenerator) {
 
                 if(event.key == InputKeyLeft) {
-                    generator_change_frequency(
+                    labmate_generator_change_frequency(
                         app,
                         -1);
 
                 } else if(
                     event.key == InputKeyRight) {
-                    generator_change_frequency(
+                    labmate_generator_change_frequency(
                         app,
                         1);
 
@@ -1772,9 +1680,9 @@ int32_t labmate_app(void* p) {
                     event.key == InputKeyOk) {
 
                     if(app->generator_running) {
-                        generator_stop(app);
+                        labmate_generator_stop(app);
                     } else {
-                        generator_start(app);
+                        labmate_generator_start(app);
                     }
 
                 } else if(
@@ -1917,7 +1825,7 @@ int32_t labmate_app(void* p) {
     }
 
     if(app->generator_running) {
-        generator_stop(app);
+        labmate_generator_stop(app);
     }
 
     if(app->logger_recording || app->logger_file || app->logger_storage) {
