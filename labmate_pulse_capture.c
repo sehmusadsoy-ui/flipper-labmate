@@ -82,14 +82,19 @@ static void pulse_gpio_callback(void* context) {
                     app->pulse_irq_low_samples = 0U;
                 }
             } else {
-                app->pulse_irq_high_sum = 0U;
-                app->pulse_irq_low_sum = 0U;
-                app->pulse_irq_high_samples = 0U;
-                app->pulse_irq_low_samples = 0U;
+                /* At extreme duty (e.g. 100 Hz / 95%), one phase can be
+                 * long (>1 ms) while the other needs 16 short samples.
+                 * A long HIGH must not erase the LOW averaging window,
+                 * nor a long LOW erase HIGH samples. Only reset the
+                 * completed phase's pending fast-width accumulator. */
                 if(app->pulse_irq_level) {
+                    app->pulse_irq_high_sum = 0U;
+                    app->pulse_irq_high_samples = 0U;
                     app->pulse_irq_high_cycles = delta;
                     app->pulse_irq_high_valid = true;
                 } else {
+                    app->pulse_irq_low_sum = 0U;
+                    app->pulse_irq_low_samples = 0U;
                     app->pulse_irq_low_cycles = delta;
                     app->pulse_irq_low_valid = true;
                 }
