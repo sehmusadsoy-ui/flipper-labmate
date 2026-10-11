@@ -107,8 +107,8 @@ static const LabMateHelpPage labmate_help[LabMateToolCount] = {
         "1 second sampling", "<>SRC  OK REC/STOP",
     },
     [LabMateToolHistory] = {
-        "LOG HISTORY", "Read-only saved CSV",
-        "MODE / ROWS / TIME", "^v FILE  OK VIEW",
+        "LOG HISTORY", "Browse saved CSV",
+        "Open or delete one", "UD FILE LR MODE OK",
     },
     [LabMateToolAbout] = {
         "ABOUT / GUIDE", "13 pages, 11 tools",
