@@ -9,8 +9,35 @@
 /* Preserve v1.5 bounded incremental SD reads. */
 #define LOGGER_HISTORY_READ_BYTES 256U
 
-/* ---------- READ-ONLY LOG HISTORY v1.5 ---------- */
-/* No delete/rename/truncate calls are made from the history browser. */
+/* ---------- LOG HISTORY (streamed reads, explicit single-file delete) ---------- */
+/* Read and selection are passive; delete runs only after user confirmation,
+ * outside UI mutex and with all logger/history handles closed. */
+
+/* Strictly fixed directory and file shape: never accept a caller path,
+ * a prefix, or recursive removal. A selected uint16 must represent an
+ * existing four-digit log ID. The file itself must not be open.
+ */
+bool labmate_history_delete_file(uint16_t log_id) {
+    if(log_id == 0U || log_id > 9999U) return false;
+    char filename[20];
+    snprintf(filename, sizeof(filename), "log_%04u.csv", (unsigned)log_id);
+    uint16_t checked = 0U;
+    if(!labmate_logger_filename_id(filename, &checked) || checked != log_id) {
+        return false;
+    }
+
+    char path[96];
+    snprintf(path, sizeof(path), LOGGER_DIR "/%s", filename);
+    Storage* storage = furi_record_open(RECORD_STORAGE);
+    if(!storage) return false;
+    bool deleted = false;
+    if(storage_sd_status(storage) == FSE_OK &&
+       storage_file_exists(storage, path)) {
+        deleted = storage_common_remove(storage, path) == FSE_OK;
+    }
+    furi_record_close(RECORD_STORAGE);
+    return deleted;
+}
 
 /* Called without the UI mutex; copies the result under the mutex. */
 void labmate_history_scan(LabMateApp* app) {
