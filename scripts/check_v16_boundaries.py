@@ -24,6 +24,10 @@ FREQ_CAPTURE = (ROOT / "labmate_frequency_capture.c").read_text(encoding="utf-8"
 FREQ_CAPTURE_H = (ROOT / "labmate_frequency_capture.h").read_text(encoding="utf-8")
 MONITOR_GPIO = (ROOT / "labmate_monitor_gpio.c").read_text(encoding="utf-8")
 MONITOR_GPIO_H = (ROOT / "labmate_monitor_gpio.h").read_text(encoding="utf-8")
+COUNTER = (ROOT / "labmate_event_counter.c").read_text(encoding="utf-8")
+COUNTER_H = (ROOT / "labmate_event_counter.h").read_text(encoding="utf-8")
+COUNTER_MATH = (ROOT / "labmate_counter_math.c").read_text(encoding="utf-8")
+COUNTER_MATH_H = (ROOT / "labmate_counter_math.h").read_text(encoding="utf-8")
 SCREENS = (ROOT / "labmate_ui_screens.c").read_text(encoding="utf-8")
 SCREENS_H = (ROOT / "labmate_ui_screens.h").read_text(encoding="utf-8")
 INTERNAL_H = (ROOT / "labmate_internal.h").read_text(encoding="utf-8")
@@ -52,6 +56,7 @@ SCREENS_EXPECTED = [
     "draw_frequency",
     "draw_pulse",
     "draw_generator",
+    "draw_counter",
     "draw_logger",
     "draw_history",
     "draw_history_detail",
@@ -242,6 +247,43 @@ for pwm_op in ("furi_hal_pwm_start(", "furi_hal_pwm_stop(", "furi_hal_pwm_set_pa
     expect(pwm_op in GENERATOR, f"Missing generator HAL operation {pwm_op}")
 expect("FuriHalPwmOutputIdTim1PA7" in GENERATOR,
        "Generator must retain TIM1/PA7 ownership")
+
+# True Event Counter must own PB3/TIM2 exclusively, never call GPIO edge IRQs.
+expect('LabMateCaptureCounter' in POLICY_H
+       and "case LabMateCaptureCounter:" in POLICY
+       and "return pin_index == 4U;" in POLICY
+       and "LabMateToolCounter" in (ROOT / "labmate_navigation.h").read_text(encoding="utf-8")
+       and '"Event Counter"' in NAVIGATION,
+       "Event Counter must be a distinct PB3-only capture tool")
+expect("!app->counter_active && labmate_capture_can_acquire(" in CAPTURE_CORE
+       and "labmate_event_counter_stop(app);" in MAIN
+       and "!app->counter_active && labmate_capture_all_stopped(" in MAIN,
+       "Counter ownership must block other capture tools and preserve cleanup")
+for name in ("start", "poll", "stop", "reset"):
+    decl = f"labmate_event_counter_{name}"
+    expect(len(re.findall(rf"(?m)^void\s+{decl}\s*\(", COUNTER)) == 1
+           and f"void {decl}(LabMateApp* app);" in COUNTER_H
+           and f"{decl}(app);" in MAIN,
+           f"Event Counter lifecycle missing {name}")
+expect("labmate_frequency_tim2_configure()" in COUNTER
+       and "labmate_frequency_tim2_disable()" in COUNTER
+       and "labmate_frequency_tim2_shutdown()" in COUNTER
+       and "labmate_counter_accumulate(" in COUNTER
+       and "furi_hal_gpio_add_int_callback(" not in COUNTER
+       and "LL_TIM_" not in COUNTER,
+       "Counter must use exclusive hardware TIM2 counting, not GPIO IRQ counting")
+expect("labmate_counter_accumulate(" in COUNTER_MATH
+       and "labmate_counter_format(" in COUNTER_MATH
+       and "uint64_t counter_total;" in INTERNAL_H
+       and "labmate_counter_format(app->counter_total" in SCREENS
+       and "case LabMateScreenCounter:" in MAIN
+       and "case LabMateToolCounter:" in MAIN
+       and "case 8:" in PRIMITIVES,
+       "64-bit counter accumulation, UI, and navigation must be wired")
+expect((ROOT / "tests/test_counter_math.c.inc").is_file()
+       and not (ROOT / "tests/test_counter_math.c").exists(),
+       "Counter host-native tests must never link into the FAP")
+
 
 PWM_SETTINGS = (ROOT / "labmate_pwm_settings.c").read_text(encoding="utf-8")
 PWM_SETTINGS_H = (ROOT / "labmate_pwm_settings.h").read_text(encoding="utf-8")
