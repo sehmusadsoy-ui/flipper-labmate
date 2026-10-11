@@ -378,6 +378,38 @@ void draw_frequency(Canvas* canvas, LabMateApp* app) {
     canvas_draw_str(canvas, 102, 61, "^RST");
 }
 
+/* Button Analyzer shows contact bounce and first-edge-to-stable latency.
+ * This renderer reads only the app-thread published snapshot.
+ */
+void draw_button(Canvas* canvas, LabMateApp* app) {
+    char line[36];
+    ui_draw_header(canvas, "BUTTON TEST");
+    ui_badge(canvas, 91, 14, 35,
+             app->capture_blocked ? "BUSY" : app->button_active ? "RUN" : "STOP",
+             app->button_active);
+    canvas_set_font(canvas, FontSecondary);
+    snprintf(line, sizeof(line), "PC1 LOW=PRESS DB:%ums",
+             (unsigned)app->button_quiet_ms);
+    canvas_draw_str(canvas, 2, 25, line);
+    snprintf(line, sizeof(line), "P:%lu R:%lu EDGES:%u",
+             (unsigned long)app->button_stats.presses,
+             (unsigned long)app->button_stats.releases,
+             (unsigned)app->button_stats.last_bounce_edges);
+    canvas_draw_str(canvas, 2, 35, line);
+    snprintf(line, sizeof(line), "BOUNCE:%luus SET:%lums",
+             (unsigned long)app->button_bounce_us,
+             (unsigned long)app->button_settle_ms);
+    canvas_draw_str(canvas, 2, 45, line);
+    snprintf(line, sizeof(line), "HOLD:%lums %s",
+             (unsigned long)app->button_hold_ms,
+             app->button_stats.pending ? "WAIT" :
+                 app->button_stats.stable_level ? "OPEN" : "CLOSED");
+    canvas_draw_str(canvas, 2, 51, line);
+    canvas_draw_line(canvas, 0, 53, 127, 53);
+    canvas_draw_str(canvas, 2, 62, app->button_active ?
+                    "OK STOP  BK EXIT" : "OK RUN <>DB ^RST BK");
+}
+
 /* Event Counter is a passive 64-bit display of PB3/TIM2 rising edges.
  * No hardware or timer access is performed from a Canvas callback.
  */
