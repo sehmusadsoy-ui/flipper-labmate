@@ -45,6 +45,8 @@ bool labmate_capture_pin_allowed(LabMateCaptureOwner requested, uint8_t pin_inde
                pin_index == 3U || pin_index == 5U;
     case LabMateCaptureCounter:
         return pin_index == 4U; /* PB3/TIM2 exclusive, same physical input as HIGH */
+    case LabMateCaptureButton:
+        return pin_index == LABMATE_MONITOR_PC1_INDEX; /* PC1 EXTI1 only */
     case LabMateCaptureNone:
     default:
         return false;
