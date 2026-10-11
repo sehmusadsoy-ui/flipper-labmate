@@ -19,7 +19,18 @@ void ui_key(
     const char* key,
     const char* label);
 
-/* The item-to-icon mapping remains identical to LabMate v1.5 Stable. */
+/* Compact two-action footer for 128x64 screens. Each action has its own
+ * outlined keycap; two actions are deliberately shown instead of cramped
+ * multi-command strings. The app's existing controls remain unchanged.
+ */
+void ui_footer_pair(
+    Canvas* canvas,
+    const char* left_key,
+    const char* left_action,
+    const char* right_key,
+    const char* right_action);
+
+/* Tool-specific monochrome pictograms. */
 void ui_draw_menu_icon(
     Canvas* canvas,
     uint8_t item,
