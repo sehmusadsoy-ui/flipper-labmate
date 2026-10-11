@@ -22,6 +22,8 @@ PULSE_CAPTURE = (ROOT / "labmate_pulse_capture.c").read_text(encoding="utf-8")
 PULSE_CAPTURE_H = (ROOT / "labmate_pulse_capture.h").read_text(encoding="utf-8")
 FREQ_CAPTURE = (ROOT / "labmate_frequency_capture.c").read_text(encoding="utf-8")
 FREQ_CAPTURE_H = (ROOT / "labmate_frequency_capture.h").read_text(encoding="utf-8")
+MONITOR_GPIO = (ROOT / "labmate_monitor_gpio.c").read_text(encoding="utf-8")
+MONITOR_GPIO_H = (ROOT / "labmate_monitor_gpio.h").read_text(encoding="utf-8")
 SCREENS = (ROOT / "labmate_ui_screens.c").read_text(encoding="utf-8")
 SCREENS_H = (ROOT / "labmate_ui_screens.h").read_text(encoding="utf-8")
 INTERNAL_H = (ROOT / "labmate_internal.h").read_text(encoding="utf-8")
@@ -360,7 +362,7 @@ expect('"3.3V GPIO ONLY"' in SCREENS, "Safety indication missing from About scre
 # A background TIM1 PWM output owns PA7. The GPIO Monitor must not
 # reconfigure that pin (including on entry with a stale PA7 selection).
 expect(
-    "labmate_monitor_entry_pin(app->gpio_index, app->generator_running)" in MAIN,
+    "labmate_monitor_entry_pin(app->gpio_index, app->generator_running)" in MONITOR_GPIO,
     "GPIO Monitor entry must respect background PA7 ownership",
 )
 expect(
@@ -368,13 +370,23 @@ expect(
     "GPIO Monitor navigation must skip reserved PA7",
 )
 expect(
-    "labmate_monitor_pin_allowed(index, app->generator_running)" in MAIN,
+    "labmate_monitor_pin_allowed(index, app->generator_running)" in MONITOR_GPIO,
     "GPIO release must not reconfigure a reserved PA7 PWM output",
 )
 expect(
-    "static void gpio_release(LabMateApp* app, uint8_t index)" in MAIN,
+    "void labmate_monitor_gpio_release(LabMateApp* app, uint8_t index)" in MONITOR_GPIO,
     "GPIO release must receive app ownership context",
 )
+expect("furi_hal_gpio_read(" not in MAIN and
+       "furi_hal_gpio_init_simple(" not in MAIN and
+       "labmate_monitor_gpio_activate(app)" in MAIN and
+       "labmate_monitor_gpio_release(app" in MAIN and
+       "labmate_monitor_gpio_read(app->gpio_index)" in MAIN,
+       "GPIO polling/release operations must be delegated from app")
+for name in ("activate", "release", "read"):
+    expect(f"labmate_monitor_gpio_{name}(" in MONITOR_GPIO and
+           f"labmate_monitor_gpio_{name}(" in MONITOR_GPIO_H,
+           f"GPIO Monitor driver missing {name}")
 expect(
     '"PA7 BUSY"' in SCREENS,
     "GPIO Monitor should explain that PWM has reserved PA7",
