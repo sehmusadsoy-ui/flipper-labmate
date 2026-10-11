@@ -127,7 +127,13 @@ assert 'idx == app->history_selected' in UI
 assert 'app->profile_action == 2U ? "DELETE" : "SAVE"' in UI
 assert '"BACK", "NO"' in UI
 assert '"LR", "ACTION", "OK"' in UI
-assert '"UD", "FILE", "OK", "OPEN"' in UI
+assert '"LR", "MODE", "OK"' in UI
+assert 'app->history_delete_mode ? "DELETE" : "OPEN"' in UI
+assert 'app->history_delete_confirm' in UI
+assert '"DELETE THIS FILE?"' in UI
+assert '"CANNOT UNDO"' in UI
+assert '"OK", "DELETE", "BACK", "NO"' in UI
+assert '"FAIL"' in UI and '"DONE"' in UI
 assert '"OK", "STOP", "BACK", "SAVE"' in UI
 assert '"LR", "SOURCE", "OK", "RECORD"' in UI
 
