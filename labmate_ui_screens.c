@@ -86,12 +86,12 @@ typedef struct {
 
 static const LabMateHelpPage labmate_help[LabMateToolCount] = {
     [LabMateToolGpio] = {
-        "GPIO MONITOR", "8-pin logic level scan",
-        "EDGES = polled changes", "<>PIN  OK HOLD",
+        "GPIO MONITOR", "8 GPIO sampled levels",
+        "EDGES = poll changes", "<>PIN  OK HOLD",
     },
     [LabMateToolFrequency] = {
         "FREQUENCY METER", "PC1 LOW / PB3 HIGH",
-        "IRQ period / TIM2 count", "<> MODE  OK HOLD",
+        "Period / TIM2 count", "<> MODE  OK HOLD",
     },
     [LabMateToolPulse] = {
         "PULSE ANALYZER", "PC1 edges: rise/fall",
@@ -102,7 +102,7 @@ static const LabMateHelpPage labmate_help[LabMateToolCount] = {
         "1Hz-50kHz; duty 5-95", "<>Hz ^vDUTY OK RUN",
     },
     [LabMateToolLogger] = {
-        "DATA LOGGER", "PC1/PB3 -> microSD CSV",
+        "DATA LOGGER", "PC1/PB3 SD CSV",
         "1 second sampling", "<>SRC  OK REC/STOP",
     },
     [LabMateToolHistory] = {
@@ -111,23 +111,23 @@ static const LabMateHelpPage labmate_help[LabMateToolCount] = {
     },
     [LabMateToolAbout] = {
         "ABOUT / GUIDE", "13 pages, 11 tools",
-        "3.3V GPIO signals only", "<> PAGE  BK EXIT",
+        "3.3V GPIO only", "<> PAGE  BK EXIT",
     },
     [LabMateToolProfiles] = {
-        "PROFILES", "S1/S2/S3 saved setups",
-        "LOAD never starts PWM", "<>ACTION OK SELECT",
+        "PROFILES", "S1-S3 saved setups",
+        "LOAD keeps PWM STOP", "<>ACTION OK SELECT",
     },
     [LabMateToolCounter] = {
-        "EVENT COUNTER", "PB3 TIM2 rising edges",
-        "64-bit count + seconds", "OK RUN/STOP ^RESET",
+        "EVENT COUNTER", "PB3 TIM2 rise count",
+        "64-bit count / time", "OK RUN/STOP ^RESET",
     },
     [LabMateToolButton] = {
-        "BUTTON ANALYZER", "PC1 pull-up; LOW press",
+        "BUTTON ANALYZER", "PC1 pull-up LOW=press",
         "DB / BOUNCE / SETTLE", "OK RUN vDETAIL <>DB",
     },
     [LabMateToolAlerts] = {
-        "THRESHOLD ALERTS", "FREQ DUTY COUNT SETTLE",
-        ">= limit latches ALRT", "<>SRC ^vLIM OK ARM",
+        "THRESHOLD ALERTS", "FREQ DUTY CNT SETTLE",
+        ">= limit latches", "<>SRC ^vLIM OK ARM",
     },
 };
 
