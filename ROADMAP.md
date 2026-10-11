@@ -84,8 +84,6 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
 - Genuine event/pulse counting appropriate to the available GPIO and hardware timers.
 - Push-button bounce/response testing and configurable threshold alerts.
 - Validate output frequency, duty cycle, and switching behavior on device.
-- Complete the partially finished v1.6 modularity and capture ownership work during v1.7 development: split Frequency/Pulse/Generator hardware modules and consolidate GPIO/TIM/EXTI lifecycle without changing tested measurement behavior.
-- Treat modular refactoring and feature changes as separately reviewed/tested steps; do not mistake successful CI compilation for independent device accuracy or stability validation.
 
 ### v1.8 — Communication Tools
 
