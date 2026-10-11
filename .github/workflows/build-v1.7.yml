@@ -16,6 +16,7 @@ on:
       - "tests/test_pwm_settings.c.inc"
       - "tests/test_counter_math.c.inc"
       - "tests/test_button_logic.c.inc"
+      - "tests/test_threshold.c.inc"
       - "scripts/install-labmate.ps1"
       - "scripts/install-from-github.ps1"
       - "application.fam"
@@ -117,6 +118,14 @@ jobs:
             labmate_button_logic.c tests/test_button_logic.c.inc \
             -o /tmp/labmate-button-logic-tests
           /tmp/labmate-button-logic-tests
+
+      - name: Test Threshold Alerts arm, latch, invalid data and bounded limits
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. -x c \
+            labmate_threshold.c tests/test_threshold.c.inc \
+            -o /tmp/labmate-threshold-tests
+          /tmp/labmate-threshold-tests
 
       - name: Compile with Momentum SDK
         id: compile
