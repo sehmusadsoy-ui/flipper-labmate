@@ -721,6 +721,53 @@ static bool logger_prepare_row(LabMateApp* app, char* row, size_t capacity) {
  * formatting remain in labmate_logger_codec.c.
  */
 
+/* A single alert watches the selected instrument only while its measurement
+ * is live. Inactive/held/stopped tools cannot generate false threshold trips.
+ * The pure threshold module owns compare/latch logic; no ISR or HAL writes.
+ */
+static void threshold_update_from_measurement(LabMateApp* app) {
+    if(!app->threshold.armed) return;
+    bool valid = false;
+    uint64_t sample = 0U;
+    switch(app->threshold.source) {
+    case LabMateAlertFrequency:
+        valid = app->screen == LabMateScreenFrequency && !app->hold &&
+                (app->frequency_hw_active || app->frequency_irq_active) &&
+                app->frequency_valid;
+        if(valid) sample = app->frequency_millihz / 1000U; /* floor Hz */
+        break;
+    case LabMateAlertPulseDuty:
+        valid = app->screen == LabMateScreenPulse && !app->hold &&
+                app->pulse_irq_active && app->pulse_period_valid;
+        if(valid) sample = app->pulse_duty_permille / 10U; /* floor percent */
+        break;
+    case LabMateAlertCounter:
+        valid = app->screen == LabMateScreenCounter && app->counter_active &&
+                app->capture_owner == LabMateCaptureCounter;
+        if(valid) sample = app->counter_total;
+        break;
+    case LabMateAlertButtonSettle:
+        valid = app->screen == LabMateScreenButton && app->button_active &&
+                app->capture_owner == LabMateCaptureButton &&
+                (app->button_stats.presses > 0U || app->button_stats.releases > 0U);
+        if(valid) sample = app->button_settle_ms;
+        break;
+    default:
+        break;
+    }
+    labmate_threshold_update(&app->threshold, valid, sample);
+}
+
+static bool threshold_matches_screen(const LabMateApp* app) {
+    switch(app->threshold.source) {
+    case LabMateAlertFrequency: return app->screen == LabMateScreenFrequency;
+    case LabMateAlertPulseDuty: return app->screen == LabMateScreenPulse;
+    case LabMateAlertCounter: return app->screen == LabMateScreenCounter;
+    case LabMateAlertButtonSettle: return app->screen == LabMateScreenButton;
+    default: return false;
+    }
+}
+
 /* ---------- DRAWING (stateful screens) ---------- */
 
 static void render_callback(
@@ -780,6 +827,17 @@ static void render_callback(
     case LabMateScreenButton:
         draw_button(canvas, app);
         break;
+    case LabMateScreenAlerts:
+        draw_alerts(canvas, app);
+        break;
+    }
+
+    /* A latched alarm is visible on its measurement screen until acknowledged.
+     * Drawing stays passive; this only replaces a small top-right UI badge.
+     */
+    if(app->threshold.armed && app->threshold.latched &&
+       threshold_matches_screen(app)) {
+        ui_badge(canvas, 92, 1, 35, "ALERT", true);
     }
 
     furi_mutex_release(
@@ -841,6 +899,7 @@ int32_t labmate_app(void* p) {
     app->button_quiet_index = 1U; /* 10 ms quiet-time default */
     app->button_quiet_ms = 10U;
     labmate_button_capture_reset(app);
+    labmate_threshold_init(&app->threshold);
     app->screen = LabMateScreenMenu;
     app->capture_owner = LabMateCaptureNone;
     app->capture_pin_index = GPIO_COUNT;
@@ -945,6 +1004,7 @@ int32_t labmate_app(void* p) {
         if(app->screen == LabMateScreenButton) {
             labmate_button_capture_poll(app);
         }
+        threshold_update_from_measurement(app);
 
         /* Generator uses SHORT on key release, so LONG OK can enter the
          * STOP-only custom editor without an accidental START on press.
@@ -1021,6 +1081,10 @@ int32_t labmate_app(void* p) {
                         app->capture_blocked = false;
                         app->gpio_index = 4U; /* PB3 -> TIM2_CH2 hardware input */
                         labmate_event_counter_reset(app);
+                        break;
+
+                    case LabMateToolAlerts:
+                        app->screen = LabMateScreenAlerts;
                         break;
 
                     case LabMateToolGenerator:
@@ -1184,6 +1248,26 @@ int32_t labmate_app(void* p) {
                     app->history_loading = false;
                     history_close_requested = true;
                 }
+            } else if(app->screen == LabMateScreenAlerts) {
+                if(event.key == InputKeyLeft) {
+                    labmate_threshold_change_source(&app->threshold, -1);
+                } else if(event.key == InputKeyRight) {
+                    labmate_threshold_change_source(&app->threshold, 1);
+                } else if(event.key == InputKeyUp) {
+                    labmate_threshold_change_limit(&app->threshold, 1);
+                } else if(event.key == InputKeyDown) {
+                    if(app->threshold.armed) {
+                        labmate_threshold_acknowledge(&app->threshold);
+                    } else {
+                        labmate_threshold_change_limit(&app->threshold, -1);
+                    }
+                } else if(event.key == InputKeyOk) {
+                    labmate_threshold_toggle(&app->threshold);
+                } else if(event.key == InputKeyBack) {
+                    /* Alerts do not claim GPIO; keep config across navigation. */
+                    app->screen = LabMateScreenMenu;
+                }
+
             } else if(app->screen == LabMateScreenButton) {
                 if(event.key == InputKeyOk) {
                     if(app->button_active) {
