@@ -32,6 +32,8 @@ BUTTON = (ROOT / "labmate_button_capture.c").read_text(encoding="utf-8")
 BUTTON_H = (ROOT / "labmate_button_capture.h").read_text(encoding="utf-8")
 BUTTON_LOGIC = (ROOT / "labmate_button_logic.c").read_text(encoding="utf-8")
 BUTTON_LOGIC_H = (ROOT / "labmate_button_logic.h").read_text(encoding="utf-8")
+THRESHOLD = (ROOT / "labmate_threshold.c").read_text(encoding="utf-8")
+THRESHOLD_H = (ROOT / "labmate_threshold.h").read_text(encoding="utf-8")
 SCREENS = (ROOT / "labmate_ui_screens.c").read_text(encoding="utf-8")
 SCREENS_H = (ROOT / "labmate_ui_screens.h").read_text(encoding="utf-8")
 INTERNAL_H = (ROOT / "labmate_internal.h").read_text(encoding="utf-8")
@@ -62,6 +64,7 @@ SCREENS_EXPECTED = [
     "draw_generator",
     "draw_counter",
     "draw_button",
+    "draw_alerts",
     "draw_logger",
     "draw_history",
     "draw_history_detail",
@@ -332,6 +335,41 @@ expect("case LabMateScreenButton:" in MAIN
 expect((ROOT / "tests/test_button_logic.c.inc").is_file()
        and not (ROOT / "tests/test_button_logic.c").exists(),
        "Button logic host-native tests must never link into FAP")
+
+# Threshold Alerts never claim a peripheral, touch storage, or read ISR state
+# from Canvas. One latched visual threshold can monitor a live instrument.
+expect("LabMateToolAlerts" in (ROOT / "labmate_navigation.h").read_text(encoding="utf-8")
+       and '"Threshold Alerts"' in NAVIGATION
+       and "case LabMateToolAlerts:" in MAIN
+       and "case LabMateScreenAlerts:" in MAIN,
+       "Threshold Alerts must have a menu entry and passive configuration screen")
+expect("LabMateThreshold threshold;" in INTERNAL_H
+       and "labmate_threshold_init(&app->threshold)" in MAIN
+       and "threshold_update_from_measurement(app);" in MAIN
+       and "app->threshold.latched" in MAIN
+       and "threshold_matches_screen(app)" in MAIN,
+       "Live threshold monitoring and on-instrument visual banner must be wired")
+for operation in ("init", "change_source", "change_limit", "toggle", "acknowledge", "update"):
+    fn = f"labmate_threshold_{operation}"
+    expect(fn + "(" in THRESHOLD and fn + "(" in THRESHOLD_H,
+           f"Missing portable alert operation {fn}")
+expect("!app->hold" in MAIN
+       and "app->frequency_valid" in MAIN
+       and "app->pulse_period_valid" in MAIN
+       and "app->counter_active" in MAIN
+       and "app->button_active" in MAIN
+       and "app->frequency_millihz / 1000U" in MAIN
+       and "app->pulse_duty_permille / 10U" in MAIN,
+       "Alert samples must be gated and converted to user-visible units")
+expect("storage_" not in THRESHOLD and "furi_" not in THRESHOLD
+       and "labmate_threshold_update(" not in SCREENS
+       and "labmate_threshold_change_limit(" not in SCREENS
+       and "draw_alerts(" in SCREENS
+       and '"TRIPPED - CHECK SIGNAL"' in SCREENS,
+       "Threshold evaluation must be host-testable and the display passive")
+expect((ROOT / "tests/test_threshold.c.inc").is_file()
+       and not (ROOT / "tests/test_threshold.c").exists(),
+       "Threshold tests must not be compiled into FAP")
 
 PWM_SETTINGS = (ROOT / "labmate_pwm_settings.c").read_text(encoding="utf-8")
 PWM_SETTINGS_H = (ROOT / "labmate_pwm_settings.h").read_text(encoding="utf-8")
