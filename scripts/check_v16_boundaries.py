@@ -243,6 +243,42 @@ for pwm_op in ("furi_hal_pwm_start(", "furi_hal_pwm_stop(", "furi_hal_pwm_set_pa
 expect("FuriHalPwmOutputIdTim1PA7" in GENERATOR,
        "Generator must retain TIM1/PA7 ownership")
 
+PWM_SETTINGS = (ROOT / "labmate_pwm_settings.c").read_text(encoding="utf-8")
+PWM_SETTINGS_H = (ROOT / "labmate_pwm_settings.h").read_text(encoding="utf-8")
+expect("LABMATE_PWM_MAX_HZ 50000U" in PWM_SETTINGS_H
+       and "LABMATE_PWM_MIN_HZ 1U" in PWM_SETTINGS_H
+       and "LABMATE_PWM_MIN_DUTY 5U" in PWM_SETTINGS_H
+       and "LABMATE_PWM_MAX_DUTY 95U" in PWM_SETTINGS_H,
+       "PWM Studio safety limits missing")
+expect("labmate_pwm_settings_valid(" in PWM_SETTINGS
+       and "labmate_pwm_adjust_duty(" in PWM_SETTINGS
+       and "labmate_pwm_adjust_hz(" in PWM_SETTINGS
+       and "labmate_pwm_settings_valid(hz, app->generator_duty_percent)" in GENERATOR,
+       "PWM output must use portable validated frequency/duty settings")
+expect("labmate_generator_change_duty(app" in MAIN
+       and "labmate_generator_begin_custom_edit(app)" in MAIN
+       and "labmate_generator_finish_custom_edit(app, false)" in MAIN
+       and "labmate_generator_finish_custom_edit(app, true)" in MAIN,
+       "PWM Studio controls or custom edit commit/cancel missing")
+expect("app->generator_running || app->generator_editing" in GENERATOR
+       and "if(!app->generator_editing || app->generator_running) return;" in GENERATOR,
+       "Custom editing must refuse running PWM")
+expect("InputTypeShort" in MAIN and "InputTypeLong" in MAIN
+       and "app->generator_skip_entry_ok" in MAIN
+       and "app->generator_skip_entry_ok = true;" in MAIN,
+       "Long-OK edit must not start PWM or consume menu OK release")
+expect("labmate_generator_frequency(app)" in SCREENS
+       and "app->generator_duty_percent" in SCREENS
+       and '"EDIT CUSTOM"' in SCREENS,
+       "PWM Studio must show custom Hz, duty and edit state")
+expect("app->generator_freq_index >= " in MAIN
+       and "LABMATE_PROFILE_GENERATOR_PRESETS" in MAIN
+       and "app->profile_notice = 7U;" in MAIN,
+       "Legacy profile records must reject unsupported custom frequency")
+expect((ROOT / "tests/test_pwm_settings.c.inc").is_file()
+       and not (ROOT / "tests/test_pwm_settings.c").exists(),
+       "PWM Studio native tests must not become FAP translation units")
+
 # The PB3/TIM2 hardware layer and EXTI trigger lifecycle now live in
 # dedicated modules. Exclusive capture ownership still belongs to the app.
 for fn in ("configure", "enable", "read", "shutdown"):
