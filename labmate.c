@@ -1,8 +1,6 @@
 #include <furi.h>
 #include <furi_hal.h>
 #include <furi_hal_resources.h>
-#include <furi_hal_bus.h>
-#include <stm32wbxx_ll_tim.h>
 #include <stm32wbxx_ll_exti.h>
 #include <gui/gui.h>
 #include <input/input.h>
@@ -10,6 +8,8 @@
 #include "labmate_ui_primitives.h"
 #include "labmate_internal.h"
 #include "labmate_generator.h"
+#include "labmate_frequency_tim2.h"
+#include "labmate_capture_exti.h"
 #include "labmate_ui_screens.h"
 #include "labmate_resource_policy.h"
 #include "labmate_frequency_gate.h"
@@ -142,14 +142,7 @@ static void frequency_hw_stop(LabMateApp* app) {
         return;
     }
 
-    LL_TIM_DisableCounter(TIM2);
-    LL_TIM_CC_DisableChannel(TIM2, LL_TIM_CHANNEL_CH2);
-
-    furi_hal_bus_disable(FuriHalBusTIM2);
-
-    furi_hal_gpio_init_simple(
-        &gpio_ext_pb3,
-        GpioModeAnalog);
+    labmate_frequency_tim2_shutdown();
 
     app->frequency_hw_active = false;
     app->frequency_hw_gate_started = false;
@@ -170,61 +163,8 @@ static void frequency_hw_start(LabMateApp* app) {
         return;
     }
 
-    /*
-     * PB3 -> TIM2_CH2
-     * TIM2 counts incoming rising edges directly in hardware.
-     * No interrupt is generated for each edge.
-     */
-    furi_hal_gpio_init_ex(
-        &gpio_ext_pb3,
-        GpioModeAltFunctionPushPull,
-        GpioPullNo,
-        GpioSpeedVeryHigh,
-        GpioAltFn1TIM2);
-
-    furi_hal_bus_enable(FuriHalBusTIM2);
-
-    LL_TIM_InitTypeDef timer_init = {0};
-    timer_init.Prescaler = 0;
-    timer_init.CounterMode = LL_TIM_COUNTERMODE_UP;
-    timer_init.Autoreload = UINT32_MAX;
-    timer_init.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
-
-    LL_TIM_Init(TIM2, &timer_init);
-
-    LL_TIM_IC_SetActiveInput(
-        TIM2,
-        LL_TIM_CHANNEL_CH2,
-        LL_TIM_ACTIVEINPUT_DIRECTTI);
-
-    LL_TIM_IC_SetPrescaler(
-        TIM2,
-        LL_TIM_CHANNEL_CH2,
-        LL_TIM_ICPSC_DIV1);
-
-    LL_TIM_IC_SetPolarity(
-        TIM2,
-        LL_TIM_CHANNEL_CH2,
-        LL_TIM_IC_POLARITY_RISING);
-
-    LL_TIM_IC_SetFilter(
-        TIM2,
-        LL_TIM_CHANNEL_CH2,
-        LL_TIM_IC_FILTER_FDIV1);
-
-    LL_TIM_SetTriggerInput(
-        TIM2,
-        LL_TIM_TS_TI2FP2);
-
-    LL_TIM_SetClockSource(
-        TIM2,
-        LL_TIM_CLOCKSOURCE_EXT_MODE1);
-
-    LL_TIM_CC_EnableChannel(
-        TIM2,
-        LL_TIM_CHANNEL_CH2);
-
-    LL_TIM_SetCounter(TIM2, 0);
+    /* Configure PB3/TIM2 with the counter stopped until ownership is published. */
+    labmate_frequency_tim2_configure();
 
     app->frequency_hw_last_count = 0;
     app->frequency_hw_last_poll_count = 0;
@@ -235,7 +175,7 @@ static void frequency_hw_start(LabMateApp* app) {
     app->capture_pin_index = app->gpio_index;
     app->capture_owner = LabMateCaptureFrequencyHigh;
 
-    LL_TIM_EnableCounter(TIM2);
+    labmate_frequency_tim2_enable();
 }
 static void __attribute__((unused)) frequency_interrupt_stop(LabMateApp* app) {
     if(!app->frequency_irq_active) return;
@@ -253,16 +193,6 @@ static void __attribute__((unused)) frequency_interrupt_stop(LabMateApp* app) {
             app->capture_owner, LabMateCaptureFrequencyLow);
         app->capture_pin_index = GPIO_COUNT;
     }
-}
-
-/* Centralized EXTI trigger cleanup. Preserve the exact critical-section
- * ordering of LOW PC1 pre-arm and Pulse IRQ teardown. */
-static void capture_exti_clear(uint32_t line, bool clear_rising) {
-    FURI_CRITICAL_ENTER();
-    if(clear_rising) LL_EXTI_DisableRisingTrig_0_31(line);
-    LL_EXTI_DisableFallingTrig_0_31(line);
-    LL_EXTI_ClearFlag_0_31(line);
-    FURI_CRITICAL_EXIT();
 }
 
 static void __attribute__((unused)) frequency_interrupt_start(LabMateApp* app) {
@@ -284,7 +214,7 @@ static void __attribute__((unused)) frequency_interrupt_start(LabMateApp* app) {
      * left by Pulse Analyzer's previous rise/fall EXTI configuration.
      * Without this, a 1 kHz square wave may appear as 2 kHz here.
      */
-    capture_exti_clear(LL_EXTI_LINE_1, false);
+    labmate_capture_exti_clear(LL_EXTI_LINE_1, false);
 
     furi_hal_gpio_init(
         pin,
@@ -423,7 +353,7 @@ static void pulse_interrupt_stop(LabMateApp* app) {
      * removing an interrupt callback leaves the rising/falling trigger
      * configuration behind on this firmware version.
      */
-    capture_exti_clear((uint32_t)pin->pin, true);
+    labmate_capture_exti_clear((uint32_t)pin->pin, true);
     app->pulse_irq_active = false;
     if(app->capture_owner == LabMateCapturePulse) {
         app->capture_owner = labmate_capture_owner_after_stop(
@@ -822,7 +752,7 @@ static void measurement_update(LabMateApp* app) {
                (uint32_t)(current_cycle - app->frequency_hw_last_poll_cycle) >=
                    (SystemCoreClock / 10U)) {
 
-                const uint32_t current_count = LL_TIM_GetCounter(TIM2);
+                const uint32_t current_count = labmate_frequency_tim2_read();
                 app->frequency_hw_last_poll_cycle = current_cycle;
                 app->edges = current_count;
 
@@ -1638,7 +1568,7 @@ int32_t labmate_app(void* p) {
                             measurement_reset(app);
                             if(app->screen == LabMateScreenFrequency &&
                                app->frequency_hw_active) {
-                                const uint32_t count = LL_TIM_GetCounter(TIM2);
+                                const uint32_t count = labmate_frequency_tim2_read();
                                 const uint32_t cycle = DWT->CYCCNT;
                                 app->frequency_hw_last_count = count;
                                 app->frequency_hw_last_poll_count = count;
