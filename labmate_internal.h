@@ -160,10 +160,19 @@ typedef struct {
     uint32_t pulse_min_duty_permille;
     uint32_t pulse_max_duty_permille;
 
-    /* Signal generator */
+    /* PWM Studio / TIM1 PA7. Runtime values persist across menu navigation.
+     * v1.6 profile records retain preset index only (0..14).
+     * Custom editing is STOP-only; no draft reaches TIM1.
+     */
     bool generator_running;
     bool generator_state;
-    uint8_t generator_freq_index;
+    uint8_t generator_freq_index; /* 0..14 presets, 15 = CUSTOM */
+    uint8_t generator_duty_percent; /* 5..95; default 50 */
+    uint32_t generator_custom_hz; /* committed custom frequency */
+    uint32_t generator_custom_draft_hz;
+    uint8_t generator_custom_step_index; /* 1/10/100/1000 Hz */
+    uint8_t generator_edit_original_index;
+    bool generator_editing;
     uint32_t generator_last_toggle;
 
     /* v1.5: SD logging uses app-thread snapshots, never GPIO IRQ writes. */
