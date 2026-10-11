@@ -11,6 +11,7 @@
 #include "labmate_navigation.h"
 #include "labmate_profile_storage.h"
 #include "labmate_pulse_math.h"
+#include "labmate_button_logic.h"
 
 #define LABMATE_VERSION_TEXT "v1.7d"
 /* Shared menu/pin counts: UI and input handling must agree. */
@@ -37,6 +38,7 @@ typedef enum {
     LabMateScreenAbout,
     LabMateScreenProfiles,
     LabMateScreenCounter, /* append: preserve existing screen numbers */
+    LabMateScreenButton, /* append: preserve original 0..10 */
 } LabMateScreen;
 
 typedef enum {
@@ -118,6 +120,18 @@ typedef struct {
     uint64_t counter_total;
     uint32_t counter_start_tick;
     uint32_t counter_elapsed_seconds;
+
+    /* Button Analyzer: ISR raw edges + app-thread debounced snapshot.
+     * PC1 EXTI1 with internal pull-up, LOW = pressed contact.
+     */
+    bool button_active;
+    uint8_t button_quiet_index; /* 0..3: 5/10/20/50 ms */
+    uint8_t button_quiet_ms;
+    volatile LabMateButtonState button_irq;
+    LabMateButtonStats button_stats;
+    uint32_t button_bounce_us;
+    uint32_t button_settle_ms;
+    uint32_t button_hold_ms;
 
     /* Pulse analyzer: edge timestamps captured in GPIO IRQ. */
     bool pulse_irq_active;
