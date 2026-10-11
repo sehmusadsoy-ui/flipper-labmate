@@ -878,17 +878,17 @@ void draw_logger(Canvas* canvas, LabMateApp* app) {
         if(app->pulse_period_valid) {
             const uint64_t us = pulse_cycles_to_us(app->pulse_period_cycles);
             if(us < 1000ULL) {
-                snprintf(live, sizeof(live), "P %luus D %lu.%lu%%",
+                snprintf(live, sizeof(live), "%luus / %lu.%lu%%",
                          (unsigned long)us,
                          (unsigned long)(app->pulse_duty_permille / 10U),
                          (unsigned long)(app->pulse_duty_permille % 10U));
             } else if(us < 1000000ULL) {
-                snprintf(live, sizeof(live), "P %lums D %lu.%lu%%",
+                snprintf(live, sizeof(live), "%lums / %lu.%lu%%",
                          (unsigned long)((us + 500ULL) / 1000ULL),
                          (unsigned long)(app->pulse_duty_permille / 10U),
                          (unsigned long)(app->pulse_duty_permille % 10U));
             } else {
-                snprintf(live, sizeof(live), "P %lus D %lu.%lu%%",
+                snprintf(live, sizeof(live), "%lus / %lu.%lu%%",
                          (unsigned long)((us + 500000ULL) / 1000000ULL),
                          (unsigned long)(app->pulse_duty_permille / 10U),
                          (unsigned long)(app->pulse_duty_permille % 10U));
@@ -941,7 +941,7 @@ void draw_logger(Canvas* canvas, LabMateApp* app) {
     ui_draw_header(canvas, "LOGGER");
     ui_badge(canvas, 91, 1, 35, badge, app->logger_recording);
     canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 3, 22, "SOURCE");
+    canvas_draw_str(canvas, 3, 22, "MODE");
     canvas_draw_str_aligned(canvas, 125, 22, AlignRight, AlignBottom, mode);
     canvas_draw_line(canvas, 2, 25, 125, 25);
     canvas_draw_str(canvas, 3, 35, "LIVE");
