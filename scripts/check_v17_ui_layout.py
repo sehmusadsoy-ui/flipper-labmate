@@ -20,7 +20,7 @@ def fits(text: str, x: int = 3, width: int = WIDTH) -> bool:
 # Full-width labels and contextual footers must fit the 128px screen.
 examples = {
     "Button contact": "SETTLING",
-    "Button status": "PC1 / PULL-UP",
+    "Button status": "PC1 / PULLUP",
     "Button controls": "<>DB vMORE OK RUN",
     "Button active": "v MORE  OK STOP  BK",
     "Button details": "v LIVE  OK TOGGLE",
@@ -48,6 +48,12 @@ for name, value in {
     assert len(value) * GLYPH <= 60, f"{name} exceeds column"
 assert len("18446744073709551615") * GLYPH <= 124, "Full counter overflows"
 
+# Right-column labels start at x=66. Full uint32 values are 10 digits.
+for name in ("RELEASE", "SETTLE ms", "BOUNCE N"):
+    assert 66 + GLYPH * len(name) <= 127, f"Button column overflow: {name}"
+assert 3 + GLYPH * len("PC1 / PULLUP") < 125 - GLYPH * len("DB 50 ms")
+assert 3 + GLYPH * len("EVENTS") < 125 - GLYPH * len("4294967295s")
+
 # Right-aligned alert threshold must not overlap the x=3 limit label.
 for value in ("1000000 edges", "50000 Hz", "1000 ms", "95 %"):
     assert WIDTH - GLYPH * len(value) > 3 + GLYPH * len("TRIP >=")
@@ -72,9 +78,9 @@ required = (
     '"BOUNCE us"',
     '"SETTLE ms"',
     '"HOLD ms"',
-    '"EXTRA EDGES"',
+    '"BOUNCE N"',
     '"PB3 / TIM2 / RISE"',
-    '"EVENT TOTAL"',
+    '"EVENTS"',
     '"SOURCE"',
     '"TRIP >="',
     '"TRIPPED / v ACK"',
