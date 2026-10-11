@@ -131,6 +131,9 @@ void ui_draw_menu_icon(
     case 8:
         ui_icon_frequency(canvas, x, y);
         break;
+    case 9:
+        ui_icon_pulse(canvas, x, y);
+        break;
     }
 }
 
