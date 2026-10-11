@@ -826,6 +826,8 @@ int32_t labmate_app(void* p) {
     app->profile_io = LabMateProfileIoEmpty;
     labmate_profile_store_init(&app->profiles);
     app->generator_freq_index = 0; /* 1 Hz */
+    app->generator_duty_percent = LABMATE_PWM_DEFAULT_DUTY;
+    app->generator_custom_hz = 1234U; /* independently editable 1 Hz steps */
     app->screen = LabMateScreenMenu;
     app->capture_owner = LabMateCaptureNone;
     app->capture_pin_index = GPIO_COUNT;
@@ -925,8 +927,15 @@ int32_t labmate_app(void* p) {
             measurement_update(app);
         }
 
+        /* Generator uses SHORT on key release, so LONG OK can enter the
+         * STOP-only custom editor without an accidental START on press.
+         * Existing tools preserve their original InputTypePress behavior.
+         */
         if(status == FuriStatusOk &&
-           event.type == InputTypePress) {
+           ((app->screen == LabMateScreenGenerator &&
+             (event.type == InputTypeShort || event.type == InputTypeLong)) ||
+            (app->screen != LabMateScreenGenerator &&
+             event.type == InputTypePress))) {
 
             if(app->screen ==
                LabMateScreenMenu) {
@@ -980,8 +989,9 @@ int32_t labmate_app(void* p) {
                         break;
 
                     case LabMateToolGenerator:
-                        app->screen =
-                            LabMateScreenGenerator;
+                        app->screen = LabMateScreenGenerator;
+                        /* InputTypeShort from the menu OK must not start PWM. */
+                        app->generator_skip_entry_ok = true;
                         break;
 
                     case LabMateToolLogger:
@@ -1083,6 +1093,13 @@ int32_t labmate_app(void* p) {
                             if(app->profile_action == 2U &&
                                !app->profiles.slots[app->profile_selected].present) {
                                 app->profile_notice = 3U; /* EMPTY */
+                            } else if(app->profile_action == 1U &&
+                                      app->generator_freq_index >=
+                                          LABMATE_PROFILE_GENERATOR_PRESETS) {
+                                /* Legacy 32-byte profile codec cannot encode CUSTOM.
+                                 * Refuse rather than write an invalid CRC profile.
+                                 */
+                                app->profile_notice = 7U; /* PRESET ONLY */
                             } else {
                                 app->profile_confirm = true;
                             }
@@ -1100,6 +1117,8 @@ int32_t labmate_app(void* p) {
                                 app->preferred_frequency_pin = profile->frequency_pin;
                                 app->preferred_pulse_pin = profile->pulse_pin;
                                 app->generator_freq_index = profile->generator_index;
+                                /* v1 profile files do not contain PWM duty. */
+                                app->generator_duty_percent = LABMATE_PWM_DEFAULT_DUTY;
                                 app->logger_source = profile->logger_source;
                                 app->profile_notice = 2U; /* LOADED */
                             }
@@ -1222,39 +1241,49 @@ int32_t labmate_app(void* p) {
                         LabMateScreenMenu;
                 }
 
-            } else if(
-                app->screen ==
-                LabMateScreenGenerator) {
-
-                if(event.key == InputKeyLeft) {
-                    labmate_generator_change_frequency(
-                        app,
-                        -1);
-
-                } else if(
-                    event.key == InputKeyRight) {
-                    labmate_generator_change_frequency(
-                        app,
-                        1);
-
-                } else if(
-                    event.key == InputKeyOk) {
-
-                    if(app->generator_running) {
-                        labmate_generator_stop(app);
-                    } else {
-                        labmate_generator_start(app);
+            } else if(app->screen == LabMateScreenGenerator) {
+                /* A menu-OK release is not a request to run the generator. */
+                if(app->generator_skip_entry_ok && event.key == InputKeyOk) {
+                    app->generator_skip_entry_ok = false;
+                } else if(app->generator_editing) {
+                    if(event.type == InputTypeShort) {
+                        if(event.key == InputKeyLeft) {
+                            labmate_generator_custom_adjust(app, -1);
+                        } else if(event.key == InputKeyRight) {
+                            labmate_generator_custom_adjust(app, 1);
+                        } else if(event.key == InputKeyUp) {
+                            labmate_generator_custom_step(app, 1);
+                        } else if(event.key == InputKeyDown) {
+                            labmate_generator_custom_step(app, -1);
+                        } else if(event.key == InputKeyOk) {
+                            labmate_generator_finish_custom_edit(app, true);
+                        } else if(event.key == InputKeyBack) {
+                            labmate_generator_finish_custom_edit(app, false);
+                        }
                     }
-
-                } else if(
-                    event.key == InputKeyBack) {
-
-                    /*
-                     * Keep generator running in background.
-                     * Use OK in Generator screen to stop it.
-                     */
-                    app->screen =
-                        LabMateScreenMenu;
+                } else if(event.type == InputTypeLong &&
+                          event.key == InputKeyOk) {
+                    /* Never reconfigure a live PWM output from an unfinished edit. */
+                    (void)labmate_generator_begin_custom_edit(app);
+                } else if(event.type == InputTypeShort) {
+                    if(event.key == InputKeyLeft) {
+                        labmate_generator_change_frequency(app, -1);
+                    } else if(event.key == InputKeyRight) {
+                        labmate_generator_change_frequency(app, 1);
+                    } else if(event.key == InputKeyUp) {
+                        labmate_generator_change_duty(app, 1);
+                    } else if(event.key == InputKeyDown) {
+                        labmate_generator_change_duty(app, -1);
+                    } else if(event.key == InputKeyOk) {
+                        if(app->generator_running) {
+                            labmate_generator_stop(app);
+                        } else {
+                            labmate_generator_start(app);
+                        }
+                    } else if(event.key == InputKeyBack) {
+                        /* TIM1/PA7 remains owned in the background until STOP or exit. */
+                        app->screen = LabMateScreenMenu;
+                    }
                 }
 
             } else {
