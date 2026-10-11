@@ -38,6 +38,10 @@ void labmate_frequency_tim2_enable(void) {
     LL_TIM_EnableCounter(TIM2);
 }
 
+void labmate_frequency_tim2_disable(void) {
+    LL_TIM_DisableCounter(TIM2);
+}
+
 uint32_t labmate_frequency_tim2_read(void) {
     return LL_TIM_GetCounter(TIM2);
 }
