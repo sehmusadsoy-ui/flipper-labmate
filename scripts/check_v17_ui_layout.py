@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""128x64 Canvas layout regression checks for LabMate v1.7 UI polish 2.
+"""128x64 Canvas layout regression checks for LabMate v1.7 final UI polish (including Records).
 
 Static, conservative glyph bounds only: each secondary char is budgeted at
 6 px and primary numeric glyph at 9 px. On-device inspection is still
@@ -60,7 +60,7 @@ for text in (
     '"PC1 / PULLUP"', '"CONTACT"', '"PRESSES"', '"RELEASES"',
     '"BOUNCE us"', '"SETTLE ms"', '"HOLD ms"', '"BOUNCE N"',
     '"SOURCE"', '"LIMIT"', '"ALERT LATCHED"', '"WAITING FOR INPUT"',
-    '"DISARMED"', '"OUTPUT FREQ"', '"UP/DN DUTY"',
+    '"DISARMED"', '"OUTPUT FREQ"', '"UP DOWN: DUTY"',
 ):
     assert text in UI, f"Missing visible metric or status: {text}"
 
@@ -93,6 +93,45 @@ for requirement in (
 ):
     assert requirement in UI
 
+# Records UI must preserve read-only history and all profile slots, while
+# using the same controls and 128px width rules as the rest of LabMate.
+for display in (
+    'void draw_logger(Canvas* canvas, LabMateApp* app)',
+    'void draw_history(Canvas* canvas, LabMateApp* app)',
+    'void draw_history_detail(Canvas* canvas, LabMateApp* app)',
+    'void draw_profiles(Canvas* canvas, LabMateApp* app)',
+    '"CAPTURE BLOCKED"', '"SD WRITE ERROR"', '"SAVING TO SD"',
+    '"REC %lu ROWS"', '"READY / 1 SEC SAMPLE"',
+    '"NO SAVED LOGS"', '"SCANNING SD..."', '"SD READ ERROR"',
+    '"READ ONLY"', '"FILE"', '"MODE"', '"ROWS"',
+    '"EMPTY"', '"LOADED"', # LOAD status is abbreviated for 35px badge; see check below
+):
+    if display == '"LOADED"':
+        assert 'state = "LOAD";' in UI, "Loaded status must fit badge"
+    else:
+        assert display in UI, f"Missing Records UI feature: {display}"
+
+for literal in (
+    "FREQ / PB3 HIGH", "FREQ / PC1 LOW", "PULSE / PC1",
+    "999ms / 100.0%", "4294.967kHz",
+):
+    # Value in the right-aligned LIVE field; MODE and LIVE labels use x=3.
+    label = "LIVE" if ("ms /" in literal or "kHz" in literal) else "MODE"
+    assert 125 - GLYPH * len(literal) >= 3 + GLYPH * len(label), (
+        f"Record field overlaps {label}: {literal}"
+    )
+assert 122 - GLYPH * len("PC1 / 50000Hz") > 5 + GLYPH * len("S1")
+assert 122 - GLYPH * len("log_65535.csv") > 5 + GLYPH * len("32")
+assert 125 - GLYPH * len("log_65535.csv") > 3 + GLYPH * len("FILE")
+assert 'app->profile_selected == i' in UI
+assert 'idx == app->history_selected' in UI
+assert 'app->profile_action == 2U ? "DELETE" : "SAVE"' in UI
+assert '"BACK", "NO"' in UI
+assert '"LR", "ACTION", "OK"' in UI
+assert '"UD", "FILE", "OK", "OPEN"' in UI
+assert '"OK", "STOP", "BACK", "SAVE"' in UI
+assert '"LR", "SOURCE", "OK", "RECORD"' in UI
+
 # The application still owns the actual input events; drawing never performs
 # IRQ, storage or PWM work. Screen switching remains presentation-only.
 assert "app->button_details_view = !app->button_details_view;" in APP
@@ -103,5 +142,5 @@ for tool in ("Gpio", "Frequency", "Pulse", "Generator", "Logger",
              "History", "About", "Profiles", "Counter", "Button", "Alerts"):
     assert f"case LabMateTool{tool}:" in PRIMITIVES, f"Missing icon {tool}"
 
-print(f"LabMate v1.7 UI polish 2 PASS: {len(footer_pairs)} context footers, "
+print(f"LabMate v1.7 final UI polish PASS: {len(footer_pairs)} context footers, "
       f"{len(pages)} help pages, 11 unique tool icons")
