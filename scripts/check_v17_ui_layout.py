@@ -104,12 +104,11 @@ for display in (
     '"REC %lu ROWS"', '"READY / 1 SEC SAMPLE"',
     '"NO SAVED LOGS"', '"SCANNING SD..."', '"SD READ ERROR"',
     '"READ ONLY"', '"FILE"', '"MODE"', '"ROWS"',
-    '"EMPTY"', '"LOADED"', # LOAD status is abbreviated for 35px badge; see check below
+    '"EMPTY"', '"LOADED"', '"DELETED"', '"PRESET"',
 ):
-    if display == '"LOADED"':
-        assert 'state = "LOAD";' in UI, "Loaded status must fit badge"
-    else:
-        assert display in UI, f"Missing Records UI feature: {display}"
+    assert display in UI, f"Missing Records UI feature: {display}"
+assert 'ui_badge(canvas, 77, 1, 49, state, false);' in UI
+assert 7 * GLYPH + 4 <= 49, "Profile status badge must fit DELETED"
 
 for literal in (
     "FREQ / PB3 HIGH", "FREQ / PC1 LOW", "PULSE / PC1",
