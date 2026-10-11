@@ -92,6 +92,13 @@ These are CI/compile results, **not** physical Flipper measurement validations.
 - **Event Counter** abbreviates its STOP footer; the full UINT64 decimal display is preserved.
 - Added `scripts/check_v17_ui_layout.py` to CI. It tests worst-case decimal string widths against a conservative 6px compact-font approximation and checks key interface labels/controls. Physical display inspection remains necessary; this is not pixel-perfect font raster validation.
 
+## Physical on-device validation — Test 1 (2026-10-11)
+
+- Installed the **exact CI-tested** v1.7 development FAP from workflow `38132070727`, source `8aebe8ae1a41a7ddfad8f6de1babc9479aa3638c`, on Flipper Zero over Windows/COM7. User's console confirmed matching GitHub Actions run SHA, SHA256 `AC521C13040B82657FE798C6CBFC3E432A663749B6BAE7CED9FBEABF7456345E`, full transfer and successful launch request.
+- **Device Test 1: 6/6 PASS**, user physically confirmed: v1.7d home version, Event Counter entry, Button Analyzer entry, Threshold Alerts entry, PWM Studio initially STOP, BACK/navigation without freeze.
+- This validates only menu/boot/safe-initial-state behavior. It is **not** PWM output measurement, GPIO capture metrology, alert crossing verification, or a completed v1.7 release gate.
+- Next focused physical Test 2: verify TIM1/PA7 PWM output looped into PC1 Pulse Analyzer using only 3.3 V-compatible digital signals; check known 100 Hz and duty against displayed HIGH/LOW/PERIOD/DUTY, then confirm STOP and PA7 ownership.
+
 ## Next
 
 - Review the app-level capture teardown coordinator and complete regression tests for transitions between LOW/HIGH/PULSE/LOGGER and PA7 background PWM.
