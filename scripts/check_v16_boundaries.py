@@ -271,8 +271,7 @@ expect("labmate_generator_frequency(app)" in SCREENS
        and "app->generator_duty_percent" in SCREENS
        and '"EDIT CUSTOM"' in SCREENS,
        "PWM Studio must show custom Hz, duty and edit state")
-expect("app->generator_freq_index >= " in MAIN
-       and "LABMATE_PROFILE_GENERATOR_PRESETS" in MAIN
+expect(re.search(r"app->generator_freq_index\\s*>=\\s*LABMATE_PROFILE_GENERATOR_PRESETS", MAIN)
        and "app->profile_notice = 7U;" in MAIN,
        "Legacy profile records must reject unsupported custom frequency")
 expect((ROOT / "tests/test_pwm_settings.c.inc").is_file()
