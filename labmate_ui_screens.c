@@ -1,5 +1,6 @@
 #include "labmate_ui_screens.h"
 #include "labmate_ui_primitives.h"
+#include "labmate_generator.h"
 
 #include <stdio.h>
 
@@ -22,6 +23,7 @@ void draw_profiles(Canvas* canvas, LabMateApp* app) {
     else if(app->profile_notice == 4U) state = "STOP PWM";
     else if(app->profile_notice == 5U) state = "WRITE ERR";
     else if(app->profile_notice == 6U) state = "DELETED";
+    else if(app->profile_notice == 7U) state = "PRESET ONLY";
     canvas_draw_str_aligned(canvas, 126, 10, AlignRight, AlignBottom, state);
 
     for(uint8_t i = 0U; i < LABMATE_PROFILE_SLOT_COUNT; ++i) {
@@ -375,28 +377,31 @@ void draw_frequency(Canvas* canvas, LabMateApp* app) {
     canvas_draw_str(canvas, 102, 61, "^RST");
 }
 
-/* Display-only Signal Generator renderer (TIM1 control remains in labmate.c). */
+/* Display-only PWM Studio renderer. No TIM1 / GPIO writes here. */
 void draw_generator(Canvas* canvas, LabMateApp* app) {
-    char value[32];
-    const uint32_t freq = labmate_generator_frequencies[app->generator_freq_index];
+    char value[24];
+    char duty[12];
+    char step[24];
+    const uint32_t freq = labmate_generator_frequency(app);
 
-    /* Output and RUN/STOP are visible even when switching presets. */
     canvas_set_font(canvas, FontPrimary);
-    canvas_draw_str(canvas, 2, 10, "GEN");
+    canvas_draw_str(canvas, 2, 10, "PWM");
     ui_badge(canvas, 34, 1, 55, "OUT PA7", false);
     ui_badge(canvas, 91, 1, 35, app->generator_running ? "RUN" : "STOP",
              app->generator_running);
     canvas_draw_line(canvas, 0, 13, 127, 13);
 
-    /* Only the visual presentation changes: PWM remains TIM1/PA7. */
     if(freq >= 1000U && (freq % 1000U) == 0U) {
         snprintf(value, sizeof(value), "%lu kHz", (unsigned long)(freq / 1000U));
     } else {
         snprintf(value, sizeof(value), "%lu Hz", (unsigned long)freq);
     }
+    snprintf(duty, sizeof(duty), "%u%%", (unsigned)app->generator_duty_percent);
 
     canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 3, 24, "OUTPUT FREQ");
+    canvas_draw_str(canvas, 3, 24, app->generator_editing ? "EDIT CUSTOM" :
+                    app->generator_freq_index == LABMATE_PWM_CUSTOM_INDEX ?
+                        "CUSTOM FREQ" : "OUTPUT FREQ");
     canvas_set_font(canvas, FontPrimary);
     canvas_draw_str(canvas, 4, 40, value);
 
@@ -404,11 +409,26 @@ void draw_generator(Canvas* canvas, LabMateApp* app) {
     canvas_set_font(canvas, FontSecondary);
     canvas_draw_str(canvas, 90, 27, "DUTY");
     canvas_set_font(canvas, FontPrimary);
-    canvas_draw_str(canvas, 90, 41, "50%");
+    canvas_draw_str(canvas, 90, 41, duty);
+
+    canvas_set_font(canvas, FontSecondary);
+    if(app->generator_editing) {
+        snprintf(step, sizeof(step), "STEP %lu Hz",
+                 (unsigned long)labmate_generator_custom_step_hz(app));
+        canvas_draw_str(canvas, 3, 49, step);
+    } else {
+        canvas_draw_str(canvas, 3, 49, app->generator_running ?
+                        "BACK: BG RUN" : "HOLD OK: CUSTOM");
+    }
 
     canvas_draw_line(canvas, 0, 52, 127, 52);
-    ui_key(canvas, 2, "<>", "FREQ");
-    ui_key(canvas, 70, "OK", app->generator_running ? "STOP" : "START");
+    canvas_set_font(canvas, FontSecondary);
+    if(app->generator_editing) {
+        canvas_draw_str(canvas, 2, 61, "<> Hz  ^v STEP  OK SAVE");
+    } else {
+        canvas_draw_str(canvas, 2, 61, app->generator_running ?
+                        "<> F  ^v D  OK STOP" : "<> F  ^v D  OK RUN");
+    }
 }
 
 /* Pulse screen formatters and Canvas renderers; measurements remain in app core. */
