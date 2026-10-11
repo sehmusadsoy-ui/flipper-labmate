@@ -171,11 +171,29 @@ void draw_history(Canvas* canvas, LabMateApp* app) {
     }
     ui_draw_header(canvas, "HISTORY");
     ui_badge(canvas, 91, 1, 35,
-             app->history_busy ? "SCAN" : app->history_error ? "ERR" : index,
-             false);
+             app->history_busy ? "WAIT" :
+             app->history_error ? "ERR" :
+             app->history_delete_notice == 2U ? "FAIL" :
+             app->history_delete_notice == 1U ? "DONE" : index, false);
     canvas_set_font(canvas, FontSecondary);
+
+    if(app->history_delete_confirm &&
+       app->history_selected < app->history_count) {
+        char file[20];
+        snprintf(file, sizeof(file), "log_%04u.csv",
+                 (unsigned)app->history_ids[app->history_selected]);
+        /* Explicit two-step, single-file confirmation. */
+        canvas_draw_str(canvas, 3, 23, "DELETE THIS FILE?");
+        canvas_draw_str(canvas, 3, 35, file);
+        canvas_draw_str(canvas, 3, 48, "CANNOT UNDO");
+        ui_footer_pair(canvas, "OK", "DELETE", "BACK", "NO");
+        return;
+    }
+
     if(app->history_busy) {
-        canvas_draw_str(canvas, 3, 36, "SCANNING SD...");
+        canvas_draw_str(canvas, 3, 36,
+                        app->history_delete_mode ? "DELETING / SCANNING" :
+                                                   "SCANNING SD...");
     } else if(app->history_error) {
         canvas_draw_str(canvas, 3, 36, "SD READ ERROR");
     } else if(app->history_count == 0U) {
@@ -205,7 +223,9 @@ void draw_history(Canvas* canvas, LabMateApp* app) {
         canvas_draw_line(canvas, 0, 52, 127, 52);
         canvas_draw_str(canvas, 6, 62, "BACK: MENU");
     } else {
-        ui_footer_pair(canvas, "UD", "FILE", "OK", "OPEN");
+        /* LEFT/RIGHT toggles action; OK previews or asks to delete. */
+        ui_footer_pair(canvas, "LR", "MODE", "OK",
+                       app->history_delete_mode ? "DELETE" : "OPEN");
     }
 }
 
