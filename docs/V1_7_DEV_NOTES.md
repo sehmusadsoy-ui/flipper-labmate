@@ -114,7 +114,8 @@ These are CI/compile results, **not** physical Flipper measurement validations.
 
 - User physically confirmed PASS for v1.7 Frequency Meter LOW PC1 (100 Hz), Pulse Analyzer HIGH/LOW/PERIOD/DUTY, and STATS/MIN/MAX while running a 3.3 V PA7 -> PC1 digital loopback.
 - User confirmed Pulse HOLD freezes values **while remaining on the Pulse screen**. Upon BACK, editing PWM to 200 Hz elsewhere and reopening Pulse, the reading updates to 200 Hz. This is the **intended existing lifecycle**: `case LabMateToolPulse` sets `app->hold = false`, resets measurement, and starts fresh capture. The prior test instruction incorrectly expected HOLD to persist across leaving/reentering the instrument; **not a device failure**.
-- Remaining focused check before closing Test 6A: while staying on Pulse Analyzer, press OK to HOLD and press OK again to LIVE, verify capture resumes and interface remains responsive. Do not change app HOLD persistence behavior without separately requested product change.
+- **Test 6A closure: PASS**. User confirmed on-device OK HOLD -> OK LIVE toggling without leaving Pulse Analyzer resumes valid measurement and remains responsive. Together with earlier user reports: Frequency LOW PC1, Pulse HIGH/LOW/PERIOD/DUTY, Pulse STATS/MIN/MAX, HOLD freeze and in-screen resume PASS. Reopening Pulse after leaving resets HOLD by design; no firmware bug reported and no firmware modification required.
+- **Next physical Test 6B:** retest Data Logger PC1 LOW frequency and PC1 Pulse with PA7 100 Hz/50% loopback, followed by PB3 HIGH frequency after STOP and cable change. Verify SD record start/stop and nonzero row count for each. Log History and existing Profiles S1 will be checked separately to avoid changing saved user profiles inadvertently.
 - Legacy Logger 3 modes, Log History and Profiles S1 remain to be retested on v1.7d. No change to v1.6.1 Stable.
 
 ## Next
