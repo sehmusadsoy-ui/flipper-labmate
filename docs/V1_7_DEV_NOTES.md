@@ -56,6 +56,7 @@ These are CI/compile results, **not** physical Flipper measurement validations.
 - Samples 32-bit TIM2 hardware snapshots in the app loop and accumulates an unsigned delta to a saturating **64-bit total**, including a 32-bit TIM2 wrap between successive polls. Requires fewer than 2^32 edges between two polls; under realistic 3.3 V signals this is a conservative limit. Frozen final snapshot taken after counter disable.
 - 128x64 display prints the full decimal total (up to UINT64_MAX) using a portable formatter instead of relying on target-libc 64-bit `printf` support, together with elapsed session seconds.
 - Expanded exclusive-owner transition tests across LOW PC1 / HIGH PB3 / PULSE / COUNTER and a portable counter wrap/saturation/formatting test; added dedicated CI step and static module-boundary assertions.
+- **CI checkpoint:** GitHub Actions `38130677078`, source `1fc24a81998ae6f197a0717e9beb4ef69057244d`, both compile/portable-test and Windows installer jobs succeeded; `labmate` FAP artifact and SHA256SUMS were created.
 - **Physical-device checks not yet performed:** 1/100/1000 Hz known-source event counts over timed windows, STOP/UP RESET behavior, BACK/exit release, Frequency HIGH/PULSE resource transitions, and simultaneous independent PA7 PWM. Do not treat CI as metrology calibration.
 
 ## Next
