@@ -529,7 +529,7 @@ void draw_generator(Canvas* canvas, LabMateApp* app) {
 
     canvas_set_font(canvas, FontSecondary);
     if(app->generator_editing) {
-        snprintf(step, sizeof(step), "STEP %luHz BK:CANCEL",
+        snprintf(step, sizeof(step), "STEP:%lu BK:CANCEL",
                  (unsigned long)labmate_generator_custom_step_hz(app));
         canvas_draw_str(canvas, 3, 49, step);
     } else {
