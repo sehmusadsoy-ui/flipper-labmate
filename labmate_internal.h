@@ -64,6 +64,7 @@ typedef struct {
     uint8_t selected; /* active row within root or current tool group */
     bool menu_in_group;
     uint8_t menu_group; /* LabMateMenuGroup, valid when menu_in_group */
+    uint8_t about_page; /* 0 overview, 1 repository, 2..12 tool quick guides */
     uint8_t gpio_index;
     uint8_t preferred_frequency_pin;
     uint8_t preferred_pulse_pin;
