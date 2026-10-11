@@ -395,7 +395,7 @@ void draw_counter(Canvas* canvas, LabMateApp* app) {
              app->capture_blocked ? "BUSY" : app->counter_active ? "RUN" : "STOP",
              app->counter_active);
     canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 2, 25, "PB3 / TIM2   RISING");
+    canvas_draw_str(canvas, 2, 25, "PB3 RISE / TIM2");
     canvas_draw_str(canvas, 2, 38, "TOTAL EDGES:");
     canvas_draw_str_aligned(canvas, 126, 38, AlignRight, AlignBottom, elapsed);
     canvas_set_font(canvas, FontSecondary);
