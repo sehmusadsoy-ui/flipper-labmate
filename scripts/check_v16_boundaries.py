@@ -197,7 +197,7 @@ for sentinel in [
 # v1.7 module boundary: PWM HAL ownership belongs to generator.c alone.
 for fn in ("start", "stop", "change_frequency"):
     name = f"labmate_generator_{fn}"
-    expect(len(re.findall(rf"(?m)^void\\s+{name}\\s*\\(", GENERATOR)) == 1,
+    expect(len(re.findall(rf"(?m)^void\s+{name}\s*\(", GENERATOR)) == 1,
            f"{name}: expected exactly one generator implementation")
     expect(f"void {name}(LabMateApp* app" in GENERATOR_H,
            f"{name}: public module declaration missing")
