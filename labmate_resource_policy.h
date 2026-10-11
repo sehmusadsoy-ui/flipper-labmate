@@ -33,6 +33,7 @@ typedef enum {
     LabMateCaptureFrequencyHigh,
     LabMateCapturePulse,
     LabMateCaptureCounter, /* PB3 / TIM2 external hardware rising-edge count */
+    LabMateCaptureButton, /* PC1 / EXTI1 active-low dry-contact analyzer */
 } LabMateCaptureOwner;
 
 // Reject invalid capture inputs (Pulse only permits PC0/PC1/PB2/PA4).
