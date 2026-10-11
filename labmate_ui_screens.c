@@ -12,64 +12,65 @@
 
 /* Profile storage only runs in app thread; this renderer is read-only. */
 void draw_profiles(Canvas* canvas, LabMateApp* app) {
-    ui_draw_header(canvas, "PROFILES");
-    canvas_set_font(canvas, FontSecondary);
-
     const char* state = "READY";
     if(app->profile_busy) state = "WAIT";
-    else if(app->profile_io == LabMateProfileIoCorrupt) state = "BAD CRC";
+    else if(app->profile_io == LabMateProfileIoCorrupt) state = "CRC";
     else if(app->profile_io == LabMateProfileIoError) state = "SD ERR";
     else if(app->profile_notice == 1U) state = "SAVED";
     else if(app->profile_notice == 2U) state = "LOADED";
     else if(app->profile_notice == 3U) state = "EMPTY";
-    else if(app->profile_notice == 4U) state = "STOP PWM";
-    else if(app->profile_notice == 5U) state = "WRITE ERR";
+    else if(app->profile_notice == 4U) state = "STOP";
+    else if(app->profile_notice == 5U) state = "ERR";
     else if(app->profile_notice == 6U) state = "DELETED";
-    else if(app->profile_notice == 7U) state = "PRESET ONLY";
-    canvas_draw_str_aligned(canvas, 126, 10, AlignRight, AlignBottom, state);
+    else if(app->profile_notice == 7U) state = "PRESET";
 
+    ui_draw_header(canvas, "PROFILES");
+    ui_badge(canvas, 91, 1, 35, state, false);
+    canvas_set_font(canvas, FontSecondary);
+
+    /* Highlight full-width slot rows, preserving the original three
+     * storage slots and their saved pin/PWM information.
+     */
     for(uint8_t i = 0U; i < LABMATE_PROFILE_SLOT_COUNT; ++i) {
         const uint8_t y = (uint8_t)(24U + 12U * i);
-        if(app->profile_selected == i) {
-            canvas_draw_box(canvas, 1, y - 10, 126, 12);
+        const bool selected = app->profile_selected == i;
+        if(selected) {
+            canvas_draw_box(canvas, 1, y - 9, 126, 11);
             canvas_set_color(canvas, ColorWhite);
         }
-        char line[32];
+        char slot_id[5];
+        char summary[22];
+        snprintf(slot_id, sizeof(slot_id), "S%u", (unsigned)(i + 1U));
         const LabMateProfile* slot = &app->profiles.slots[i];
         if(!slot->present) {
-            snprintf(line, sizeof(line), "S%u  EMPTY", (unsigned)(i + 1U));
+            snprintf(summary, sizeof(summary), "EMPTY");
         } else {
             const uint32_t freq = labmate_generator_frequencies[slot->generator_index];
             if(freq >= 1000U && freq % 1000U == 0U) {
-                snprintf(line, sizeof(line), "S%u %s %lukHz",
-                         (unsigned)(i + 1U),
+                snprintf(summary, sizeof(summary), "%s / %lukHz",
                          slot->frequency_pin == 4U ? "PB3" : "PC1",
                          (unsigned long)(freq / 1000U));
             } else {
-                snprintf(line, sizeof(line), "S%u %s %luHz",
-                         (unsigned)(i + 1U),
+                snprintf(summary, sizeof(summary), "%s / %luHz",
                          slot->frequency_pin == 4U ? "PB3" : "PC1",
                          (unsigned long)freq);
             }
         }
-        canvas_draw_str(canvas, 5, y, line);
-        if(app->profile_selected == i) canvas_set_color(canvas, ColorBlack);
+        canvas_draw_str(canvas, 5, y, slot_id);
+        canvas_draw_str_aligned(canvas, 122, y, AlignRight, AlignBottom, summary);
+        if(selected) canvas_set_color(canvas, ColorBlack);
     }
 
-    canvas_draw_line(canvas, 0, 52, 127, 52);
-    canvas_set_font(canvas, FontSecondary);
-    if(app->profile_confirm) {
-        canvas_draw_str(canvas, 2, 61, app->profile_action == 2U ?
-                        "OK DELETE  BACK CANCEL" : "OK SAVE  BACK CANCEL");
-    } else if(app->profile_busy) {
-        canvas_draw_str(canvas, 2, 61, "SD: PLEASE WAIT");
+    if(app->profile_busy) {
+        canvas_draw_line(canvas, 0, 52, 127, 52);
+        canvas_draw_str(canvas, 7, 62, "SD BUSY - PLEASE WAIT");
+    } else if(app->profile_confirm) {
+        ui_footer_pair(canvas, "OK",
+                       app->profile_action == 2U ? "DELETE" : "SAVE",
+                       "BACK", "NO");
     } else {
-        const char* footer = app->profile_action == 0U ?
-                             "<> LOAD   OK APPLY" :
-                             app->profile_action == 1U ?
-                             "<> SAVE   OK SELECT" :
-                             "<> DELETE OK SELECT";
-        canvas_draw_str(canvas, 2, 61, footer);
+        ui_footer_pair(canvas, "LR", "ACTION", "OK",
+                       app->profile_action == 0U ? "LOAD" : "SELECT");
     }
 }
 
@@ -162,60 +163,95 @@ void draw_about(Canvas* canvas, LabMateApp* app) {
 }
 
 void draw_history(Canvas* canvas, LabMateApp* app) {
-    ui_draw_header(canvas, "LOG HISTORY");
+    char index[10] = "0/0";
+    if(app->history_count > 0U) {
+        snprintf(index, sizeof(index), "%u/%u",
+                 (unsigned)(app->history_selected + 1U),
+                 (unsigned)app->history_count);
+    }
+    ui_draw_header(canvas, "HISTORY");
+    ui_badge(canvas, 91, 1, 35,
+             app->history_busy ? "SCAN" : app->history_error ? "ERR" : index,
+             false);
     canvas_set_font(canvas, FontSecondary);
     if(app->history_busy) {
-        canvas_draw_str(canvas, 2, 36, "SCANNING SD...");
+        canvas_draw_str(canvas, 3, 36, "SCANNING SD...");
     } else if(app->history_error) {
-        canvas_draw_str(canvas, 2, 36, "SD / READ ERROR");
+        canvas_draw_str(canvas, 3, 36, "SD READ ERROR");
     } else if(app->history_count == 0U) {
-        canvas_draw_str(canvas, 2, 36, "NO SAVED LOGS");
+        canvas_draw_str(canvas, 3, 36, "NO SAVED LOGS");
     } else {
-        uint8_t first = (uint8_t)((app->history_selected / 3U) * 3U);
+        const uint8_t first = (uint8_t)((app->history_selected / 3U) * 3U);
         for(uint8_t row = 0U; row < 3U; ++row) {
-            uint8_t idx = (uint8_t)(first + row);
+            const uint8_t idx = (uint8_t)(first + row);
             if(idx >= app->history_count) break;
-            char item[24];
-            snprintf(
-                item, sizeof(item), "%c log_%04u.csv",
-                idx == app->history_selected ? '>' : ' ',
-                (unsigned int)app->history_ids[idx]);
-            canvas_draw_str(canvas, 2, (uint8_t)(24U + row * 12U), item);
+            const uint8_t y = (uint8_t)(24U + row * 12U);
+            const bool selected = idx == app->history_selected;
+            if(selected) {
+                canvas_draw_box(canvas, 1, y - 9, 126, 11);
+                canvas_set_color(canvas, ColorWhite);
+            }
+            char number[5];
+            char filename[22];
+            snprintf(number, sizeof(number), "%02u", (unsigned)(idx + 1U));
+            snprintf(filename, sizeof(filename), "log_%04u.csv",
+                     (unsigned)app->history_ids[idx]);
+            canvas_draw_str(canvas, 5, y, number);
+            canvas_draw_str_aligned(canvas, 122, y, AlignRight, AlignBottom, filename);
+            if(selected) canvas_set_color(canvas, ColorBlack);
         }
     }
-    canvas_draw_str(canvas, 2, 61, "UP/DN  OK VIEW  BACK");
+    if(app->history_busy || app->history_error || app->history_count == 0U) {
+        canvas_draw_line(canvas, 0, 52, 127, 52);
+        canvas_draw_str(canvas, 6, 62, "BACK: MENU");
+    } else {
+        ui_footer_pair(canvas, "UD", "FILE", "OK", "OPEN");
+    }
 }
 
 void draw_history_detail(Canvas* canvas, LabMateApp* app) {
-    ui_draw_header(canvas, "LOG DETAIL");
+    const bool has_file = app->history_selected < app->history_count;
+    const char* state = app->history_busy ? "WAIT" :
+                        app->history_error ? "ERR" :
+                        app->history_loading ? "READ" : "CSV";
+
+    ui_draw_header(canvas, "LOG VIEW");
+    ui_badge(canvas, 91, 1, 35, state, false);
     canvas_set_font(canvas, FontSecondary);
-    if(app->history_selected >= app->history_count) {
-        canvas_draw_str(canvas, 2, 36, "NO LOG SELECTED");
+
+    if(!has_file) {
+        canvas_draw_str(canvas, 3, 35, "NO LOG SELECTED");
     } else {
-        char line[36];
-        snprintf(
-            line, sizeof(line), "log_%04u.csv",
-            (unsigned int)app->history_ids[app->history_selected]);
-        canvas_draw_str(canvas, 2, 24, line);
-        if(app->history_busy) {
-            canvas_draw_str(canvas, 2, 36, "OPENING...");
-        } else if(app->history_error) {
-            canvas_draw_str(canvas, 2, 36, "SD / READ ERROR");
+        char value[32];
+        snprintf(value, sizeof(value), "log_%04u.csv",
+                 (unsigned)app->history_ids[app->history_selected]);
+        canvas_draw_str(canvas, 3, 22, "FILE");
+        canvas_draw_str_aligned(canvas, 125, 22, AlignRight, AlignBottom, value);
+        canvas_draw_line(canvas, 2, 25, 125, 25);
+
+        if(app->history_busy || app->history_error) {
+            canvas_draw_str(canvas, 3, 39, app->history_busy ?
+                            "OPENING SD..." : "SD READ ERROR");
         } else {
-            const char* mode = "EMPTY / UNKNOWN";
+            const char* mode = "UNKNOWN";
             if(app->history_mode == 1U) mode = "FREQ / PC1";
             else if(app->history_mode == 2U) mode = "FREQ / PB3";
             else if(app->history_mode == 3U) mode = "PULSE / PC1";
-            canvas_draw_str(canvas, 2, 36, mode);
-            snprintf(
-                line, sizeof(line), "%s %lu  %lus",
-                app->history_loading ? "READ" : "ROWS",
-                (unsigned long)app->history_rows,
-                (unsigned long)(app->history_last_ms / 1000U));
-            canvas_draw_str(canvas, 2, 48, line);
+            canvas_draw_str(canvas, 3, 34, "MODE");
+            canvas_draw_str_aligned(canvas, 125, 34, AlignRight, AlignBottom, mode);
+            snprintf(value, sizeof(value), "%lu", (unsigned long)app->history_rows);
+            canvas_draw_str(canvas, 3, 43,
+                            app->history_loading ? "READ ROWS" : "ROWS");
+            canvas_draw_str_aligned(canvas, 125, 43, AlignRight, AlignBottom, value);
+            snprintf(value, sizeof(value), "%lu s",
+                     (unsigned long)(app->history_last_ms / 1000U));
+            canvas_draw_str(canvas, 3, 51, "TIME");
+            canvas_draw_str_aligned(canvas, 125, 51, AlignRight, AlignBottom, value);
         }
     }
-    canvas_draw_str(canvas, 2, 61, "BACK LIST  READ ONLY");
+    canvas_draw_line(canvas, 0, 52, 127, 52);
+    canvas_draw_str(canvas, 6, 62, "BACK: LIST");
+    canvas_draw_str_aligned(canvas, 125, 62, AlignRight, AlignBottom, "READ ONLY");
 }
 
 /* Step 2: read-only renderers migrated verbatim from labmate.c. */
