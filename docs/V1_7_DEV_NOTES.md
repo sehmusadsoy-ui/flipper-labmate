@@ -137,7 +137,7 @@ These are CI/compile results, **not** physical Flipper measurement validations.
 ## Next — v1.7 release candidate preparation
 
 - Treat `a514a04e...` as the device-tested LOW/PC1 initial-capture fix; newer asymmetric-duty fix `0b94a2f...` passed 2/2 CI jobs and Test 8A on-device LIVE and STATS checks passed. Review the exact candidate source/artifact and checksum before RC publication; do not conflate 3.3V loopback with independent calibration.
-- Decide whether to defer mechanical switch/bounce Test 4B explicitly in the candidate notes or wait for a real button; current clean-digital Button Analyzer tests cannot substitute for contact bounce validation.
+- **User-approved deferral:** real mechanical pushbutton Test 4B (press/release, bounce, debounce, settle, hold) and independent oscilloscope checks (PWM frequency/duty, 3.3 V output level, OFF level, waveform) are both postponed until the user obtains the equipment. The RC1 notes must disclose both as **NOT TESTED**, never PASS, while clearly distinguishing already passing self-loopback functional tests. Revisit these checks when parts become available; do not block preparation of a development RC candidate solely for this acknowledged scope limitation.
 - Preserve existing v1.6.1 stable release, profiles and logging files; do not publish or tag a stable v1.7 from this checkpoint.
 - Describe tested loopback PWM duty/frequency points as functional verification only, not external calibration of the 1–50 kHz range or electrical OFF-level measurements.
 - Before declaring RC ready, check on-device version labeling, the 128x64 UI, CI results and regression note consistency.
