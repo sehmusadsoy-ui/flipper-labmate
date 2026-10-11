@@ -15,6 +15,7 @@ on:
       - "tests/test_pulse_math.c.inc"
       - "tests/test_pwm_settings.c.inc"
       - "tests/test_counter_math.c.inc"
+      - "tests/test_button_logic.c.inc"
       - "scripts/install-labmate.ps1"
       - "scripts/install-from-github.ps1"
       - "application.fam"
@@ -108,6 +109,14 @@ jobs:
             labmate_counter_math.c tests/test_counter_math.c.inc \
             -o /tmp/labmate-counter-math-tests
           /tmp/labmate-counter-math-tests
+
+      - name: Test Button Analyzer bounce, settling and tick-wrap logic
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. -x c \
+            labmate_button_logic.c tests/test_button_logic.c.inc \
+            -o /tmp/labmate-button-logic-tests
+          /tmp/labmate-button-logic-tests
 
       - name: Compile with Momentum SDK
         id: compile
