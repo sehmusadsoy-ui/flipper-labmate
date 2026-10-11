@@ -9,6 +9,7 @@
 #include "labmate_generator.h"
 #include "labmate_frequency_tim2.h"
 #include "labmate_frequency_capture.h"
+#include "labmate_monitor_gpio.h"
 #include "labmate_capture_exti.h"
 #include "labmate_capture_core.h"
 #include "labmate_pulse_capture.h"
@@ -74,19 +75,6 @@ static void capture_stop_all(LabMateApp* app) {
     }
 }
 
-static void gpio_release(LabMateApp* app, uint8_t index) {
-    /* Never reclaim PA7 while the generator owns TIM1 PWM in background.
-     * The policy is checked here as a final guard against unsafe releases.
-     */
-    if(index >= GPIO_COUNT ||
-       !labmate_monitor_pin_allowed(index, app->generator_running)) {
-        return;
-    }
-    furi_hal_gpio_init_simple(
-        labmate_gpio_pins[index],
-        GpioModeAnalog);
-}
-
 static void measurement_reset(LabMateApp* app) {
     uint32_t now = furi_get_tick();
 
@@ -145,22 +133,7 @@ static void frequency_stats_record(LabMateApp* app) {
 static void pulse_stats_reset(LabMateApp* app);
 
 static void gpio_activate(LabMateApp* app) {
-    /* A previous session may have left PA7 selected before PWM started.
-     * Fall back to PC1 rather than silently reconfiguring the PWM output.
-     */
-    app->gpio_index =
-        labmate_monitor_entry_pin(app->gpio_index, app->generator_running);
-    furi_hal_gpio_init_simple(
-        labmate_gpio_pins[app->gpio_index],
-        GpioModeInput);
-
-    app->gpio_state =
-        furi_hal_gpio_read(
-            labmate_gpio_pins[app->gpio_index]);
-
-    app->gpio_previous_state =
-        app->gpio_state;
-
+    labmate_monitor_gpio_activate(app);
     measurement_reset(app);
 }
 
@@ -184,7 +157,7 @@ static void gpio_change(
 
         capture_stop_all(app);
 
-        gpio_release(app, app->gpio_index);
+        labmate_monitor_gpio_release(app, app->gpio_index);
 
         app->gpio_index = target_index;
         app->preferred_frequency_pin = target_index;
@@ -207,7 +180,7 @@ static void gpio_change(
         if(next_index == app->gpio_index) return;
         /* Detach the old EXTI callback before changing pin or IRQ state. */
         capture_stop_all(app);
-        gpio_release(app, app->gpio_index);
+        labmate_monitor_gpio_release(app, app->gpio_index);
         app->gpio_index = next_index;
         app->preferred_pulse_pin = next_index;
         app->hold = false;
@@ -218,7 +191,7 @@ static void gpio_change(
         return;
     }
 
-    gpio_release(app, app->gpio_index);
+    labmate_monitor_gpio_release(app, app->gpio_index);
 
     /* Preserve the original eight-pin navigation except that PA7 is not
      * selectable while Signal Generator keeps its PWM output active.
@@ -643,7 +616,7 @@ static void measurement_update(LabMateApp* app) {
     }
 
     /* GPIO Monitor retains its simple state/edge polling path. */
-    bool current = furi_hal_gpio_read(labmate_gpio_pins[app->gpio_index]);
+    bool current = labmate_monitor_gpio_read(app->gpio_index);
     if(current != app->gpio_previous_state) {
         app->edges++;
         app->gpio_previous_state = current;
@@ -658,7 +631,7 @@ static void measurement_update(LabMateApp* app) {
  */
 static void logger_capture_stop(LabMateApp* app) {
     capture_stop_all(app);
-    gpio_release(app, app->gpio_index);
+    labmate_monitor_gpio_release(app, app->gpio_index);
 }
 
 static void logger_capture_start(LabMateApp* app) {
@@ -1221,8 +1194,7 @@ int32_t labmate_app(void* p) {
                     } else {
                         app->hold = !app->hold;
                         if(!app->hold) {
-                            app->gpio_state = furi_hal_gpio_read(
-                                labmate_gpio_pins[app->gpio_index]);
+                            app->gpio_state = labmate_monitor_gpio_read(app->gpio_index);
                             app->gpio_previous_state = app->gpio_state;
                             measurement_reset(app);
                             if(app->screen == LabMateScreenFrequency &&
@@ -1243,7 +1215,7 @@ int32_t labmate_app(void* p) {
 
                     /* Release active capture before returning to Menu. */
                     capture_stop_all(app);
-                    gpio_release(app, app->gpio_index);
+                    labmate_monitor_gpio_release(app, app->gpio_index);
 
                     app->hold = false;
                     app->screen =
@@ -1424,7 +1396,7 @@ int32_t labmate_app(void* p) {
 
     if(screen_uses_gpio(app->screen)) {
         capture_stop_all(app);
-        gpio_release(app, app->gpio_index);
+        labmate_monitor_gpio_release(app, app->gpio_index);
     }
 
     gui_remove_view_port(
