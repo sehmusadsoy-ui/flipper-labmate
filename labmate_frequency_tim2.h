@@ -8,5 +8,7 @@
  */
 void labmate_frequency_tim2_configure(void);
 void labmate_frequency_tim2_enable(void);
+/* Freeze count without releasing PB3 ownership; used for final snapshot. */
+void labmate_frequency_tim2_disable(void);
 uint32_t labmate_frequency_tim2_read(void);
 void labmate_frequency_tim2_shutdown(void);
