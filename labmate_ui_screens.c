@@ -86,7 +86,7 @@ typedef struct {
 
 static const LabMateHelpPage labmate_help[LabMateToolCount] = {
     [LabMateToolGpio] = {
-        "GPIO MONITOR", "8 GPIO sampled levels",
+        "GPIO MONITOR", "8 GPIO logic levels",
         "EDGES = poll changes", "<>PIN  OK HOLD",
     },
     [LabMateToolFrequency] = {
@@ -122,7 +122,7 @@ static const LabMateHelpPage labmate_help[LabMateToolCount] = {
         "64-bit count / time", "OK RUN/STOP ^RESET",
     },
     [LabMateToolButton] = {
-        "BUTTON ANALYZER", "PC1 pull-up LOW=press",
+        "BUTTON ANALYZER", "PC1 LOW=press (PU)",
         "DB / BOUNCE / SETTLE", "OK RUN vDETAIL <>DB",
     },
     [LabMateToolAlerts] = {
