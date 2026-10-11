@@ -16,6 +16,10 @@ TIM2_CAPTURE = (ROOT / "labmate_frequency_tim2.c").read_text(encoding="utf-8")
 TIM2_CAPTURE_H = (ROOT / "labmate_frequency_tim2.h").read_text(encoding="utf-8")
 EXTI_CAPTURE = (ROOT / "labmate_capture_exti.c").read_text(encoding="utf-8")
 EXTI_CAPTURE_H = (ROOT / "labmate_capture_exti.h").read_text(encoding="utf-8")
+CAPTURE_CORE = (ROOT / "labmate_capture_core.c").read_text(encoding="utf-8")
+CAPTURE_CORE_H = (ROOT / "labmate_capture_core.h").read_text(encoding="utf-8")
+PULSE_CAPTURE = (ROOT / "labmate_pulse_capture.c").read_text(encoding="utf-8")
+PULSE_CAPTURE_H = (ROOT / "labmate_pulse_capture.h").read_text(encoding="utf-8")
 SCREENS = (ROOT / "labmate_ui_screens.c").read_text(encoding="utf-8")
 SCREENS_H = (ROOT / "labmate_ui_screens.h").read_text(encoding="utf-8")
 INTERNAL_H = (ROOT / "labmate_internal.h").read_text(encoding="utf-8")
@@ -116,7 +120,8 @@ expect(
     "Missing exclusive capture owner state",
 )
 expect(
-    MAIN.count("capture_can_start(app, LabMateCapture") == 3,
+    MAIN.count("labmate_capture_can_start(app, LabMateCapture") == 2
+    and PULSE_CAPTURE.count("labmate_capture_can_start(app, LabMateCapturePulse)") == 1,
     "All three capture start paths must check ownership and pin eligibility",
 )
 for owner in (
@@ -125,7 +130,7 @@ for owner in (
     "LabMateCapturePulse",
 ):
     expect(
-        f"app->capture_owner = {owner};" in MAIN,
+        f"app->capture_owner = {owner};" in (PULSE_CAPTURE if owner == "LabMateCapturePulse" else MAIN),
         f"Capture start must mark active owner: {owner}",
     )
 expect(
@@ -145,11 +150,13 @@ expect(
     "Missing pinned IRQ identity and blocked capture state",
 )
 expect(
-    MAIN.count("labmate_gpio_pins[app->capture_pin_index]") >= 3,
+    MAIN.count("labmate_gpio_pins[app->capture_pin_index]") >= 1
+    and PULSE_CAPTURE.count("labmate_gpio_pins[app->capture_pin_index]") >= 2,
     "Active IRQ callback and teardown must use the registered pin",
 )
 expect(
-    MAIN.count("app->capture_pin_index = app->gpio_index;") == 3,
+    MAIN.count("app->capture_pin_index = app->gpio_index;") == 2
+    and PULSE_CAPTURE.count("app->capture_pin_index = app->gpio_index;") == 1,
     "Each capture start path must record its actual selected pin",
 )
 expect(
@@ -192,11 +199,24 @@ expect(
 
 for sentinel in [
     "static void frequency_gpio_callback(",
-    "static void pulse_gpio_callback(",
     "static void frequency_hw_start(",
     "static void frequency_hw_stop(",
 ]:
     expect(sentinel in MAIN, f"Required capture/storage function missing: {sentinel}")
+expect("static void pulse_gpio_callback(" in PULSE_CAPTURE and
+       "static void pulse_gpio_callback(" not in MAIN,
+       "Pulse IRQ callback must live only in pulse module")
+for fn in ("start", "stop"):
+    name = f"labmate_pulse_capture_{fn}"
+    expect(len(re.findall(rf"(?m)^void\s+{name}\s*\(", PULSE_CAPTURE)) == 1 and
+           f"void {name}(LabMateApp* app);" in PULSE_CAPTURE_H and
+           f"{name}(app)" in MAIN,
+           f"Pulse lifecycle must be delegated: {fn}")
+expect("bool labmate_capture_can_start(" in CAPTURE_CORE and
+       "bool labmate_capture_can_start(" in CAPTURE_CORE_H and
+       "labmate_capture_can_acquire(" in CAPTURE_CORE and
+       "const GpioPin* const labmate_gpio_pins[GPIO_COUNT]" in CAPTURE_CORE,
+       "Common GPIO mapping and exclusive capture gate must be centralized")
 
 # v1.7 module boundary: PWM HAL ownership belongs to generator.c alone.
 for fn in ("start", "stop", "change_frequency"):
@@ -241,7 +261,8 @@ expect("FURI_CRITICAL_ENTER()" in EXTI_CAPTURE
        and "LL_EXTI_ClearFlag_0_31(line)" in EXTI_CAPTURE,
        "EXTI trigger release must retain tested critical-section sequence")
 expect("LL_EXTI_Disable" not in MAIN and "LL_EXTI_ClearFlag" not in MAIN
-       and MAIN.count("labmate_capture_exti_clear(") == 2,
+       and MAIN.count("labmate_capture_exti_clear(") == 1
+       and PULSE_CAPTURE.count("labmate_capture_exti_clear(") == 1,
        "LOW/PC1 pre-arm and Pulse stop must use common EXTI cleanup")
 
 HISTORY = (ROOT / "labmate_history.c").read_text(encoding="utf-8")
