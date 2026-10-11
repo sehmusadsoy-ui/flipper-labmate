@@ -348,7 +348,7 @@ expect("LabMateToolAlerts" in (ROOT / "labmate_navigation.h").read_text(encoding
 expect("LabMateThreshold threshold;" in INTERNAL_H
        and "labmate_threshold_init(&app->threshold)" in MAIN
        and "threshold_update_from_measurement(app);" in MAIN
-       and "app->threshold.latched" in MAIN
+       and "app->threshold.latched" in SCREENS
        and "app->threshold.source == LabMateAlertFrequency" in SCREENS
        and "app->threshold.source == LabMateAlertPulseDuty" in SCREENS
        and "app->threshold.source == LabMateAlertCounter" in SCREENS
