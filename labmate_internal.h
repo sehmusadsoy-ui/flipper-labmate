@@ -127,6 +127,7 @@ typedef struct {
      * PC1 EXTI1 with internal pull-up, LOW = pressed contact.
      */
     bool button_active;
+    bool button_details_view; /* alternate compact 128x64 metrics page */
     uint8_t button_quiet_index; /* 0..3: 5/10/20/50 ms */
     uint8_t button_quiet_ms;
     volatile LabMateButtonState button_irq;
