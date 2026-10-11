@@ -1,7 +1,6 @@
 #include <furi.h>
 #include <furi_hal.h>
 #include <furi_hal_resources.h>
-#include <stm32wbxx_ll_exti.h>
 #include <gui/gui.h>
 #include <input/input.h>
 #include <storage/storage.h>
@@ -9,6 +8,7 @@
 #include "labmate_internal.h"
 #include "labmate_generator.h"
 #include "labmate_frequency_tim2.h"
+#include "labmate_frequency_capture.h"
 #include "labmate_capture_exti.h"
 #include "labmate_capture_core.h"
 #include "labmate_pulse_capture.h"
@@ -53,168 +53,14 @@ static uint8_t pulse_gpio_next_index(uint8_t current, int8_t direction) {
     return pulse_gpio_indices[i];
 }
 
-static void frequency_gpio_callback(void* context) {
-    LabMateApp* app = context;
-
-    /*
-     * High-resolution timestamp.
-     * Unsigned subtraction also handles a single
-     * 32-bit CYCCNT wrap correctly.
-     */
-    uint32_t now_cycle = DWT->CYCCNT;
-
-    if(app->frequency_irq_last_cycle != 0) {
-        uint32_t period_cycles =
-            now_cycle -
-            app->frequency_irq_last_cycle;
-
-        /*
-         * Above roughly 1 kHz, average 32 complete
-         * periods inside the ISR before publishing.
-         * This reduces interrupt timing jitter.
-         */
-        if(SystemCoreClock > 0 &&
-           period_cycles <
-               (SystemCoreClock / 1000U)) {
-
-            app->frequency_irq_cycle_accumulator +=
-                period_cycles;
-
-            app->frequency_irq_accumulated_periods++;
-
-            if(app->frequency_irq_accumulated_periods >= 32U) {
-                app->frequency_irq_period_cycles =
-                    (app->frequency_irq_cycle_accumulator +
-                     16U) /
-                    32U;
-
-                app->frequency_irq_new_period = true;
-
-                app->frequency_irq_cycle_accumulator = 0;
-                app->frequency_irq_accumulated_periods = 0;
-            }
-        } else {
-            app->frequency_irq_cycle_accumulator = 0;
-            app->frequency_irq_accumulated_periods = 0;
-
-            app->frequency_irq_period_cycles =
-                period_cycles;
-
-            app->frequency_irq_new_period = true;
-        }
-    }
-
-    app->frequency_irq_last_cycle = now_cycle;
-    app->frequency_irq_last_tick = furi_get_tick();
-    app->frequency_irq_edges++;
-}
-
-static void frequency_hw_stop(LabMateApp* app) {
-    if(!app->frequency_hw_active) {
-        return;
-    }
-
-    labmate_frequency_tim2_shutdown();
-
-    app->frequency_hw_active = false;
-    app->frequency_hw_gate_started = false;
-    if(app->capture_owner == LabMateCaptureFrequencyHigh) {
-        app->capture_owner = labmate_capture_owner_after_stop(
-            app->capture_owner, LabMateCaptureFrequencyHigh);
-        app->capture_pin_index = GPIO_COUNT;
-    }
-    app->frequency_hw_last_count = 0;
-    app->frequency_hw_last_cycle = 0;
-    app->frequency_hw_last_poll_count = 0;
-    app->frequency_hw_last_poll_cycle = 0;
-}
-
-static void frequency_hw_start(LabMateApp* app) {
-    if(app->frequency_hw_active ||
-       !labmate_capture_can_start(app, LabMateCaptureFrequencyHigh)) {
-        return;
-    }
-
-    /* Configure PB3/TIM2 with the counter stopped until ownership is published. */
-    labmate_frequency_tim2_configure();
-
-    app->frequency_hw_last_count = 0;
-    app->frequency_hw_last_poll_count = 0;
-    app->frequency_hw_last_cycle = DWT->CYCCNT;
-    app->frequency_hw_last_poll_cycle = app->frequency_hw_last_cycle;
-    app->frequency_hw_active = true;
-    app->frequency_hw_gate_started = false;
-    app->capture_pin_index = app->gpio_index;
-    app->capture_owner = LabMateCaptureFrequencyHigh;
-
-    labmate_frequency_tim2_enable();
-}
-static void __attribute__((unused)) frequency_interrupt_stop(LabMateApp* app) {
-    if(!app->frequency_irq_active) return;
-
-    /* Detach exactly the pin on which this callback was registered. */
-    const GpioPin* pin =
-        labmate_gpio_pins[app->capture_pin_index];
-
-    furi_hal_gpio_disable_int_callback(pin);
-    furi_hal_gpio_remove_int_callback(pin);
-
-    app->frequency_irq_active = false;
-    if(app->capture_owner == LabMateCaptureFrequencyLow) {
-        app->capture_owner = labmate_capture_owner_after_stop(
-            app->capture_owner, LabMateCaptureFrequencyLow);
-        app->capture_pin_index = GPIO_COUNT;
-    }
-}
-
-static void __attribute__((unused)) frequency_interrupt_start(LabMateApp* app) {
-    if(app->frequency_irq_active ||
-       !labmate_capture_can_start(app, LabMateCaptureFrequencyLow)) {
-        return;
-    }
-    const GpioPin* pin =
-        labmate_gpio_pins[app->gpio_index];
-
-    app->frequency_irq_last_cycle = 0;
-    app->frequency_irq_period_cycles = 0;
-    app->frequency_irq_last_tick = 0;
-    app->frequency_irq_edges = 0;
-    app->frequency_irq_new_period = false;
-
-    /* Explicitly clear the old falling-edge trigger. Momentum's GPIO init
-     * enables rising interrupts but does not always clear falling triggers
-     * left by Pulse Analyzer's previous rise/fall EXTI configuration.
-     * Without this, a 1 kHz square wave may appear as 2 kHz here.
-     */
-    labmate_capture_exti_clear(LL_EXTI_LINE_1, false);
-
-    furi_hal_gpio_init(
-        pin,
-        GpioModeInterruptRise,
-        GpioPullNo,
-        GpioSpeedVeryHigh);
-
-    /* Publish pin identity before enabling interrupts. */
-    app->capture_pin_index = app->gpio_index;
-    furi_hal_gpio_add_int_callback(
-        pin,
-        frequency_gpio_callback,
-        app);
-
-    furi_hal_gpio_enable_int_callback(pin);
-
-    app->frequency_irq_active = true;
-    app->capture_owner = LabMateCaptureFrequencyLow;
-}
-
 /* Shared capture teardown. Each stop checks the existing active flags.
  * Detach capture IRQs and stop TIM2 before changing app->gpio_index.
  * Independent TIM1/PA7 background PWM is deliberately untouched.
  * Start paths and ISR timing remain unchanged in this first stage.
  */
 static void capture_stop_all(LabMateApp* app) {
-    frequency_hw_stop(app);
-    frequency_interrupt_stop(app);
+    labmate_frequency_high_stop(app);
+    labmate_frequency_low_stop(app);
     labmate_pulse_capture_stop(app);
     /* A failed/stale stop must not advertise a free capture owner. */
     if(labmate_capture_all_stopped(
@@ -348,9 +194,9 @@ static void gpio_change(
         measurement_reset(app);
 
         if(app->gpio_index == 4U) {
-            frequency_hw_start(app);
+            labmate_frequency_high_start(app);
         } else {
-            frequency_interrupt_start(app);
+            labmate_frequency_low_start(app);
         }
 
         return;
@@ -827,9 +673,9 @@ static void logger_capture_start(LabMateApp* app) {
     } else {
         frequency_stats_reset(app);
         if(app->logger_source == LoggerFrequencyHigh) {
-            frequency_hw_start(app);
+            labmate_frequency_high_start(app);
         } else {
-            frequency_interrupt_start(app);
+            labmate_frequency_low_start(app);
         }
     }
 }
@@ -1145,7 +991,7 @@ int32_t labmate_app(void* p) {
                         app->gpio_index = app->preferred_frequency_pin;
                         frequency_stats_reset(app);
                         measurement_reset(app);
-                        frequency_hw_start(app);
+                        labmate_frequency_high_start(app);
                         break;
 
                     case LabMateToolPulse:
