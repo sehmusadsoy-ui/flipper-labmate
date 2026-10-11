@@ -868,59 +868,91 @@ void draw_pulse(Canvas* canvas, LabMateApp* app) {
 
 /* Read-only Data Logger dashboard; all SD work stays in app loop. */
 void draw_logger(Canvas* canvas, LabMateApp* app) {
-    char mode[30];
-    char live[40];
-    char state[40];
+    char mode[24];
+    char live[32];
+    char state[32];
+    const char* badge = "READY";
 
-    ui_draw_header(canvas, "DATA LOGGER");
-    canvas_set_font(canvas, FontSecondary);
     if(app->logger_source == LoggerPulse) {
         snprintf(mode, sizeof(mode), "PULSE / PC1");
         if(app->pulse_period_valid) {
-            snprintf(
-                live, sizeof(live), "PER %lu us  DUTY %lu.%01lu%%",
-                (unsigned long)pulse_cycles_to_us(app->pulse_period_cycles),
-                (unsigned long)(app->pulse_duty_permille / 10U),
-                (unsigned long)(app->pulse_duty_permille % 10U));
+            const uint64_t us = pulse_cycles_to_us(app->pulse_period_cycles);
+            if(us < 1000ULL) {
+                snprintf(live, sizeof(live), "P %luus D %lu%%",
+                         (unsigned long)us,
+                         (unsigned long)(app->pulse_duty_permille / 10U));
+            } else if(us < 1000000ULL) {
+                snprintf(live, sizeof(live), "P %lums D %lu%%",
+                         (unsigned long)((us + 500ULL) / 1000ULL),
+                         (unsigned long)(app->pulse_duty_permille / 10U));
+            } else {
+                snprintf(live, sizeof(live), "P %lus D %lu%%",
+                         (unsigned long)((us + 500000ULL) / 1000000ULL),
+                         (unsigned long)(app->pulse_duty_permille / 10U));
+            }
         } else {
             snprintf(live, sizeof(live), "NO VALID PULSE");
         }
     } else {
-        snprintf(
-            mode, sizeof(mode), "FREQ / %s",
-            app->logger_source == LoggerFrequencyHigh ? "PB3 HIGH" : "PC1 LOW");
+        snprintf(mode, sizeof(mode), "%s",
+                 app->logger_source == LoggerFrequencyHigh ?
+                    "FREQ / PB3 HIGH" : "FREQ / PC1 LOW");
         if(app->frequency_valid) {
-            snprintf(
-                live, sizeof(live), "FREQ %lu.%03lu Hz",
-                (unsigned long)(app->frequency_millihz / 1000U),
-                (unsigned long)(app->frequency_millihz % 1000U));
+            const uint32_t mhz = app->frequency_millihz;
+            if(mhz >= 1000000U) {
+                snprintf(live, sizeof(live), "%lu.%03lukHz",
+                         (unsigned long)(mhz / 1000000U),
+                         (unsigned long)((mhz % 1000000U) / 1000U));
+            } else {
+                snprintf(live, sizeof(live), "%lu.%03luHz",
+                         (unsigned long)(mhz / 1000U),
+                         (unsigned long)(mhz % 1000U));
+            }
         } else {
             snprintf(live, sizeof(live), "NO VALID FREQ");
         }
     }
 
     if(app->logger_busy) {
-        snprintf(state, sizeof(state),
-                 app->logger_busy_stopping ? "SAVING / WAIT" : "OPENING / WAIT");
+        badge = "WAIT";
+        snprintf(state, sizeof(state), "%s",
+                 app->logger_busy_stopping ? "SAVING TO SD" : "OPENING SD");
     } else if(app->capture_blocked) {
+        badge = "BUSY";
         snprintf(state, sizeof(state), "CAPTURE BLOCKED");
     } else if(app->logger_error) {
-        snprintf(state, sizeof(state), "SD / WRITE ERROR");
+        badge = "ERR";
+        snprintf(state, sizeof(state), "SD WRITE ERROR");
     } else if(app->logger_recording) {
-        snprintf(state, sizeof(state), "REC: %lu rows", (unsigned long)app->logger_rows);
+        badge = "REC";
+        snprintf(state, sizeof(state), "REC %lu ROWS",
+                 (unsigned long)app->logger_rows);
     } else if(app->logger_path[0]) {
-        snprintf(state, sizeof(state), "SAVED: %lu rows", (unsigned long)app->logger_rows);
+        badge = "DONE";
+        snprintf(state, sizeof(state), "SAVED %lu",
+                 (unsigned long)app->logger_rows);
     } else {
-        snprintf(state, sizeof(state), "READY / 1 second");
+        snprintf(state, sizeof(state), "READY / 1 SEC SAMPLE");
     }
 
-    canvas_draw_str(canvas, 2, 24, mode);
-    canvas_draw_str(canvas, 2, 36, live);
-    canvas_draw_str(canvas, 2, 48, state);
-    canvas_draw_str(
-        canvas, 2, 61,
-        app->logger_busy ? "PLEASE WAIT" :
-        (app->logger_recording ? "OK STOP  BACK SAVE" : "< > MODE  OK REC"));
+    ui_draw_header(canvas, "LOGGER");
+    ui_badge(canvas, 91, 1, 35, badge, app->logger_recording);
+    canvas_set_font(canvas, FontSecondary);
+    canvas_draw_str(canvas, 3, 22, "SOURCE");
+    canvas_draw_str_aligned(canvas, 125, 22, AlignRight, AlignBottom, mode);
+    canvas_draw_line(canvas, 2, 25, 125, 25);
+    canvas_draw_str(canvas, 3, 35, "LIVE");
+    canvas_draw_str_aligned(canvas, 125, 35, AlignRight, AlignBottom, live);
+    canvas_draw_str(canvas, 3, 48, state);
+
+    if(app->logger_busy) {
+        canvas_draw_line(canvas, 0, 52, 127, 52);
+        canvas_draw_str(canvas, 7, 62, "SD BUSY - PLEASE WAIT");
+    } else if(app->logger_recording) {
+        ui_footer_pair(canvas, "OK", "STOP", "BACK", "SAVE");
+    } else {
+        ui_footer_pair(canvas, "LR", "SOURCE", "OK", "RECORD");
+    }
 }
 
 
