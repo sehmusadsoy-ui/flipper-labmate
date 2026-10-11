@@ -961,6 +961,9 @@ int32_t labmate_app(void* p) {
         bool history_scan_requested = false;
         bool history_open_requested = false;
         bool history_close_requested = false;
+        bool history_delete_requested = false;
+        uint16_t history_delete_id = 0U;
+        uint8_t history_delete_selected = 0U;
         bool profiles_read_requested = false;
         bool profiles_save_requested = false;
         bool profiles_delete_requested = false;
@@ -1095,6 +1098,9 @@ int32_t labmate_app(void* p) {
                         app->screen = LabMateScreenHistory;
                         app->history_busy = true;
                         app->history_error = false;
+                        app->history_delete_mode = false;
+                        app->history_delete_confirm = false;
+                        app->history_delete_notice = 0U;
                         history_scan_requested = true;
                         break;
 
@@ -1217,19 +1223,59 @@ int32_t labmate_app(void* p) {
                     }
                 }
             } else if(app->screen == LabMateScreenHistory) {
-                if(event.key == InputKeyUp && app->history_count > 0U) {
+                if(app->history_busy) {
+                    /* Ignore input while an SD operation is in progress. */
+                } else if(app->history_delete_confirm) {
+                    if(event.key == InputKeyBack) {
+                        app->history_delete_confirm = false;
+                    } else if(event.key == InputKeyOk &&
+                              app->history_selected < app->history_count) {
+                        /* Snapshot selected ID under lock, not a path.
+                         * Do not remove files while any reader/writer owns
+                         * a storage handle; perform I/O outside mutex.
+                         */
+                        if(app->logger_recording || app->logger_busy ||
+                           app->logger_file || app->logger_storage ||
+                           app->history_file || app->history_storage) {
+                            app->history_delete_notice = 2U;
+                            app->history_delete_confirm = false;
+                        } else {
+                            history_delete_id =
+                                app->history_ids[app->history_selected];
+                            history_delete_selected = app->history_selected;
+                            history_delete_requested = true;
+                            app->history_delete_confirm = false;
+                            app->history_delete_notice = 0U;
+                            app->history_busy = true;
+                        }
+                    }
+                } else if(event.key == InputKeyUp && app->history_count > 0U) {
                     app->history_selected = (uint8_t)(
                         (app->history_selected + app->history_count - 1U) %
                         app->history_count);
+                    app->history_delete_notice = 0U;
                 } else if(event.key == InputKeyDown && app->history_count > 0U) {
                     app->history_selected = (uint8_t)(
                         (app->history_selected + 1U) % app->history_count);
+                    app->history_delete_notice = 0U;
+                } else if((event.key == InputKeyLeft ||
+                           event.key == InputKeyRight) &&
+                          !app->history_error && app->history_count > 0U) {
+                    app->history_delete_mode = !app->history_delete_mode;
+                    app->history_delete_notice = 0U;
                 } else if(event.key == InputKeyOk &&
-                          !app->history_busy && app->history_count > 0U) {
-                    app->screen = LabMateScreenHistoryDetail;
-                    app->history_busy = true;
-                    history_open_requested = true;
+                          !app->history_error && app->history_count > 0U) {
+                    if(app->history_delete_mode) {
+                        app->history_delete_confirm = true;
+                        app->history_delete_notice = 0U;
+                    } else {
+                        app->screen = LabMateScreenHistoryDetail;
+                        app->history_busy = true;
+                        history_open_requested = true;
+                    }
                 } else if(event.key == InputKeyBack) {
+                    app->history_delete_mode = false;
+                    app->history_delete_confirm = false;
                     app->screen = LabMateScreenMenu;
                 }
             } else if(app->screen == LabMateScreenHistoryDetail) {
@@ -1513,6 +1559,30 @@ int32_t labmate_app(void* p) {
         if(history_close_requested) labmate_history_close(app);
         if(history_scan_requested) labmate_history_scan(app);
         if(history_open_requested) labmate_history_open(app);
+        if(history_delete_requested) {
+            /* Confirmation has already snapped a numeric ID. No logger,
+             * history reader or GPIO callback may write/remove CSV files.
+             */
+            const bool can_delete =
+                !app->logger_recording && !app->logger_busy &&
+                !app->logger_file && !app->logger_storage &&
+                !app->history_file && !app->history_storage;
+            const bool deleted =
+                can_delete && labmate_history_delete_file(history_delete_id);
+            if(deleted) labmate_history_scan(app);
+
+            furi_mutex_acquire(app->mutex, FuriWaitForever);
+            if(deleted && app->history_count > 0U) {
+                app->history_selected =
+                    history_delete_selected < app->history_count ?
+                    history_delete_selected : (uint8_t)(app->history_count - 1U);
+            }
+            app->history_delete_notice = deleted ? 1U : 2U;
+            app->history_delete_mode = !deleted;
+            app->history_delete_confirm = false;
+            app->history_busy = false;
+            furi_mutex_release(app->mutex);
+        }
         if(app->screen == LabMateScreenHistoryDetail && app->history_loading) {
             labmate_history_read_step(app);
         }
