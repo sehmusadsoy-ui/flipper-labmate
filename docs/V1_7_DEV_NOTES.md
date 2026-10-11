@@ -70,6 +70,18 @@ These are CI/compile results, **not** physical Flipper measurement validations.
 - Added host-native tests for clean presses, multi-edge bounce, rejected glitches, counter and CPU-cycle timer rollover, and an extended capture-ownership matrix; CI run `38131174602` at source `45d658c65e74a3cf78aeea41831a018a31a886f5` completed both build and Windows installer jobs successfully.
 - **Device gate still open:** verify real PC1 contact handling, measured bounce/settle timing, STOP/BACK release, interactions with LOW PC1 and Pulse PC1, and independent PA7 PWM with 3.3 V-compatible signals.
 
+## Threshold Alerts: initial visual alert engine (2026-10-11)
+
+- Added `Threshold Alerts` to OUTPUT as appended tool ID 10. Original tool IDs, existing menu groups, Stable tags and legacy profile data remain unchanged.
+- `labmate_threshold.c/.h` is a hardware-independent alert state machine, armed explicitly via OK. LEFT/RIGHT choose source while disarmed, UP/DOWN change the bound within conservative limits; DOWN acknowledges a latched event while armed. OK disarms and clears history; BACK leaves the configuration screen without implicitly disarming.
+- Four selectable sources: Frequency Meter rate threshold (1..50,000 Hz, 10-Hz steps), Pulse duty percentage (5..95%, 5% steps), true 64-bit Event Counter rising edges (1..1,000,000 edges, 10-edge steps) and Button Analyzer first-edge-to-stable settling time (1..1,000 ms, 5-ms steps). Changing source restores its default threshold.
+- App thread monitors only the **live and valid** corresponding instrument: Frequency and Pulse in LIVE rather than HOLD, Event Counter only while its PB3 TIM2 capture owns RUN, and Button only after its PC1 EXTI1 capture has produced a debounced transition. Other screens or invalid measurements do not generate new trips. Frequency mHz and duty permille are converted by truncating to whole Hz/percent before comparing to user-facing thresholds; a value below the limit never trips.
+- The first valid threshold crossing latches TRIPPED; while the signal remains above the bound it does not repeatedly increase the trip counter. Dropping below and returning above counts a new crossing. Invalid data stops the active indication but preserves the latch until explicit acknowledgement or disarm.
+- An on-instrument `ALERT` indicator appears in the top right for the selected measurement source when a trip is latched; the configuration screen shows ARM/OFF, source, limit and TRIPPED status.
+- **Visual-only**: no buzzer, vibration, automatic PWM changes, GPIO side effects, SD modifications or persisted thresholds. Alert settings survive menu navigation only while LabMate is running.
+- Added `tests/test_threshold.c.inc` for arming, source locks, bounds, valid/invalid data, latching, crossing and acknowledge semantics, plus source-boundary assertions and a dedicated CI job step.
+- **Physical device validation pending**: threshold at/below/above on each of Frequency/Pulse/Counter/Button, HOLD/STOP signal invalidation, source changes when disarmed, acknowledgement and visual badge legibility on the monochrome display.
+
 ## Next
 
 - Review the app-level capture teardown coordinator and complete regression tests for transitions between LOW/HIGH/PULSE/LOGGER and PA7 background PWM.
