@@ -36,6 +36,7 @@ typedef enum {
     LabMateScreenHistoryDetail,
     LabMateScreenAbout,
     LabMateScreenProfiles,
+    LabMateScreenCounter, /* append: preserve existing screen numbers */
 } LabMateScreen;
 
 typedef enum {
@@ -110,6 +111,13 @@ typedef struct {
     uint32_t frequency_period_samples[8];
     uint8_t frequency_sample_index;
     uint8_t frequency_sample_count;
+
+    /* Event Counter: true PB3/TIM2 rising-edge counts, not rate estimates. */
+    bool counter_active;
+    uint32_t counter_last_hw;
+    uint64_t counter_total;
+    uint32_t counter_start_tick;
+    uint32_t counter_elapsed_ticks;
 
     /* Pulse analyzer: edge timestamps captured in GPIO IRQ. */
     bool pulse_irq_active;
