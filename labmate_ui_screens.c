@@ -1,5 +1,6 @@
 #include "labmate_ui_screens.h"
 #include "labmate_ui_primitives.h"
+#include "labmate_counter_math.h"
 #include "labmate_generator.h"
 
 #include <stdio.h>
@@ -375,6 +376,37 @@ void draw_frequency(Canvas* canvas, LabMateApp* app) {
     canvas_draw_str(canvas, 2, 61, "<> MODE");
     canvas_draw_str(canvas, 49, 61, app->hold ? "OK LIVE" : "OK HOLD");
     canvas_draw_str(canvas, 102, 61, "^RST");
+}
+
+/* Event Counter is a passive 64-bit display of PB3/TIM2 rising edges.
+ * No hardware or timer access is performed from a Canvas callback.
+ */
+void draw_counter(Canvas* canvas, LabMateApp* app) {
+    char count[24];
+    char elapsed[24];
+    if(!labmate_counter_format(app->counter_total, count, sizeof(count))) {
+        snprintf(count, sizeof(count), "COUNT ERROR");
+    }
+    snprintf(elapsed, sizeof(elapsed), "%lu s",
+             (unsigned long)app->counter_elapsed_seconds);
+
+    ui_draw_header(canvas, "EVENT COUNTER");
+    ui_badge(canvas, 92, 15, 34,
+             app->capture_blocked ? "BUSY" : app->counter_active ? "RUN" : "STOP",
+             app->counter_active);
+    canvas_set_font(canvas, FontSecondary);
+    canvas_draw_str(canvas, 2, 25, "PB3 / TIM2   RISING");
+    canvas_draw_str(canvas, 2, 38, "TOTAL EDGES:");
+    canvas_set_font(canvas, FontSecondary);
+    canvas_draw_str(canvas, 2, 49, count);
+    canvas_draw_line(canvas, 0, 52, 127, 52);
+    canvas_set_font(canvas, FontSecondary);
+    canvas_draw_str(canvas, 2, 61, app->counter_active ?
+                    "OK STOP  BK EXIT" : "OK RUN  ^RESET  BK EXIT");
+    /* Session time is tracked and available for future rate/alerts.
+     * Keep the full-width count legible even at UINT64_MAX.
+     */
+    UNUSED(elapsed);
 }
 
 /* Display-only PWM Studio renderer. No TIM1 / GPIO writes here. */
