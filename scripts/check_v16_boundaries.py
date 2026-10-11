@@ -329,7 +329,9 @@ expect("case LabMateScreenButton:" in MAIN
        and "case LabMateToolButton:" in MAIN
        and "labmate_button_capture_stop(app);" in MAIN
        and "button_quiet_ms;" in INTERNAL_H
-       and '"BUTTON TEST"' in SCREENS
+       and '"BUTTON"' in SCREENS
+       and "app->button_details_view" in SCREENS
+       and "app->button_details_view = !app->button_details_view;" in MAIN
        and '"SET:"' not in SCREENS,  # Screen must label physical settling, not reaction time.
        "Button Analyzer must expose state, settling and BACK cleanup")
 expect((ROOT / "tests/test_button_logic.c.inc").is_file()
@@ -347,7 +349,10 @@ expect("LabMateThreshold threshold;" in INTERNAL_H
        and "labmate_threshold_init(&app->threshold)" in MAIN
        and "threshold_update_from_measurement(app);" in MAIN
        and "app->threshold.latched" in MAIN
-       and "threshold_matches_screen(app)" in MAIN,
+       and "app->threshold.source == LabMateAlertFrequency" in SCREENS
+       and "app->threshold.source == LabMateAlertPulseDuty" in SCREENS
+       and "app->threshold.source == LabMateAlertCounter" in SCREENS
+       and "app->threshold.source == LabMateAlertButtonSettle" in SCREENS,
        "Live threshold monitoring and on-instrument visual banner must be wired")
 for operation in ("init", "change_source", "change_limit", "toggle", "acknowledge", "update"):
     fn = f"labmate_threshold_{operation}"
@@ -365,7 +370,8 @@ expect("storage_" not in THRESHOLD and "furi_" not in THRESHOLD
        and "labmate_threshold_update(" not in SCREENS
        and "labmate_threshold_change_limit(" not in SCREENS
        and "draw_alerts(" in SCREENS
-       and '"TRIPPED - CHECK SIGNAL"' in SCREENS,
+       and '"TRIPPED: CHECK INPUT"' in SCREENS
+       and '"NO LIVE SAMPLE"' in SCREENS,
        "Threshold evaluation must be host-testable and the display passive")
 expect((ROOT / "tests/test_threshold.c.inc").is_file()
        and not (ROOT / "tests/test_threshold.c").exists(),
