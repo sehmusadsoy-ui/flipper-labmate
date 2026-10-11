@@ -31,7 +31,7 @@ static void check_sequence(bool generator_running) {
 static void check_capture_ownership(void) {
     for(uint8_t pin = 0U; pin <= LABMATE_MONITOR_PIN_COUNT; ++pin) {
         for(int requested = LabMateCaptureNone;
-            requested <= LabMateCaptureCounter;
+            requested <= LabMateCaptureButton;
             ++requested) {
             const LabMateCaptureOwner type = (LabMateCaptureOwner)requested;
             const bool permitted = labmate_capture_pin_allowed(type, pin);
@@ -40,14 +40,15 @@ static void check_capture_ownership(void) {
                 (type == LabMateCaptureFrequencyHigh && pin == 4U) ||
                 (type == LabMateCapturePulse &&
                  (pin == 0U || pin == 1U || pin == 3U || pin == 5U)) ||
-                (type == LabMateCaptureCounter && pin == 4U);
+                (type == LabMateCaptureCounter && pin == 4U) ||
+                (type == LabMateCaptureButton && pin == 1U);
             assert(permitted == expected);
             assert(labmate_capture_can_acquire(
                        LabMateCaptureNone, type, pin, false, false, false) == expected);
 
             /* No preemption, even when the old IRQ/TIM flags are stale. */
             for(int owner = LabMateCaptureFrequencyLow;
-                owner <= LabMateCaptureCounter;
+                owner <= LabMateCaptureButton;
                 ++owner) {
                 assert(!labmate_capture_can_acquire(
                     (LabMateCaptureOwner)owner, type, pin, false, false, false));
@@ -101,11 +102,11 @@ static void check_capture_snapshots(void) {
 static void check_resource_transitions(void) {
     const LabMateCaptureOwner kinds[] = {
         LabMateCaptureFrequencyLow, LabMateCaptureFrequencyHigh,
-        LabMateCapturePulse, LabMateCaptureCounter,
+        LabMateCapturePulse, LabMateCaptureCounter, LabMateCaptureButton,
     };
-    const uint8_t pins[] = {1U, 4U, 3U, 4U};
-    for(unsigned previous = 0U; previous < 4U; ++previous) {
-        for(unsigned next = 0U; next < 4U; ++next) {
+    const uint8_t pins[] = {1U, 4U, 3U, 4U, 1U};
+    for(unsigned previous = 0U; previous < 5U; ++previous) {
+        for(unsigned next = 0U; next < 5U; ++next) {
             assert(!labmate_capture_can_acquire(
                 kinds[previous], kinds[next], pins[next],
                 false, false, false));
@@ -135,8 +136,8 @@ static void check_resource_transitions(void) {
 }
 
 static void check_release_policy(void) {
-    for(int owner = LabMateCaptureNone; owner <= LabMateCaptureCounter; ++owner) {
-        for(int stopping = LabMateCaptureNone; stopping <= LabMateCaptureCounter; ++stopping) {
+    for(int owner = LabMateCaptureNone; owner <= LabMateCaptureButton; ++owner) {
+        for(int stopping = LabMateCaptureNone; stopping <= LabMateCaptureButton; ++stopping) {
             const LabMateCaptureOwner expected =
                 (owner == stopping && stopping != LabMateCaptureNone)
                     ? LabMateCaptureNone : (LabMateCaptureOwner)owner;
@@ -152,11 +153,11 @@ static void check_release_policy(void) {
 static void check_release_reacquire_matrix(void) {
     const LabMateCaptureOwner owners[] = {
         LabMateCaptureFrequencyLow, LabMateCaptureFrequencyHigh,
-        LabMateCapturePulse, LabMateCaptureCounter,
+        LabMateCapturePulse, LabMateCaptureCounter, LabMateCaptureButton,
     };
-    const uint8_t pins[] = {1U, 4U, 3U, 4U};
-    for(unsigned i = 0U; i < 4U; ++i) {
-        for(unsigned j = 0U; j < 4U; ++j) {
+    const uint8_t pins[] = {1U, 4U, 3U, 4U, 1U};
+    for(unsigned i = 0U; i < 5U; ++i) {
+        for(unsigned j = 0U; j < 5U; ++j) {
             const LabMateCaptureOwner active = owners[i];
             const LabMateCaptureOwner next = owners[j];
             /* A STOP request by a different capture cannot release owner. */
@@ -194,6 +195,9 @@ static void check_release_reacquire_matrix(void) {
         LabMateCaptureNone, LabMateCaptureCounter, 1U,
         false, false, false));
     assert(labmate_capture_pin_allowed(LabMateCaptureCounter, 4U));
+    assert(labmate_capture_pin_allowed(LabMateCaptureButton, 1U));
+    assert(!labmate_capture_pin_allowed(LabMateCaptureButton, 4U));
+    assert(!labmate_capture_pin_allowed(LabMateCaptureButton, 7U));
     assert(!labmate_capture_matches(
         LabMateCaptureCounter, LabMateCaptureCounter, 4U, 4U,
         false, false, false)); /* Counting has its own active state. */
