@@ -604,10 +604,7 @@ void draw_counter(Canvas* canvas, LabMateApp* app) {
      * of truncating or allowing it to run into the time column.
      */
     canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 3, 22, "PB3  RISING EDGES");
-    if(!app->counter_active && app->counter_total == 0U) {
-        canvas_draw_str_aligned(canvas, 125, 22, AlignRight, AlignBottom, "UP RESET");
-    }
+    canvas_draw_str(canvas, 3, 22, "PB3 / TIM2 / RISE");
 
     const size_t count_len = strlen(count);
     if(count_len > 11U) {
