@@ -83,6 +83,15 @@ These are CI/compile results, **not** physical Flipper measurement validations.
 - **Automated checkpoint PASS:** GitHub Actions `38131696438`, tested code commit `1f1de6d6aa70350ea135856026333e16bcdb69ce`, both native/Momentum build and Windows mock installer jobs passed; `labmate` artifact generated. This does not replace electrical device checks.
 - **Physical device validation pending**: threshold at/below/above on each of Frequency/Pulse/Counter/Button, HOLD/STOP signal invalidation, source changes when disarmed, acknowledgement and visual badge legibility on the monochrome display.
 
+## Stage 7 — focused 128x64 UI cleanup (2026-10-11)
+
+- **Button Analyzer** now has two read-only pages: SUMMARY (PC1/debounce/contact state/presses/releases) and TIMING (bounce width, electrical settling, contact hold, bounce edges). DOWN flips the page in RUN or STOP without touching EXTI; entering the instrument starts on SUMMARY. LEFT/RIGHT debounce changes remain STOP-only and UP reset remains STOP-only.
+- Full UINT32 decimal values use dedicated rows rather than concatenated multi-counter strings that clipped at 128 pixels. Secondary-font baselines are separated and the footer is bounded.
+- **Threshold Alerts** now differentiates DISARMED, NO LIVE SAMPLE, BELOW LIMIT, ABOVE LIMIT and TRIPPED. An alert takes the already existing status badge slot in the selected Frequency/Pulse/Counter/Button screen (ALRT), rather than drawing an extra badge that covered a title or state.
+- **PWM Studio** custom-edit hints are shorter and explicitly display BACK cancellation, with frequency-step controls retained.
+- **Event Counter** abbreviates its STOP footer; the full UINT64 decimal display is preserved.
+- Added `scripts/check_v17_ui_layout.py` to CI. It tests worst-case decimal string widths against a conservative 6px compact-font approximation and checks key interface labels/controls. Physical display inspection remains necessary; this is not pixel-perfect font raster validation.
+
 ## Next
 
 - Review the app-level capture teardown coordinator and complete regression tests for transitions between LOW/HIGH/PULSE/LOGGER and PA7 background PWM.
