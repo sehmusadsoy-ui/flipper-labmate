@@ -519,15 +519,15 @@ void draw_button(Canvas* canvas, LabMateApp* app) {
         canvas_draw_str_aligned(canvas, 125, 22, AlignRight, AlignBottom, value);
 
         /* Contact state is a distinct band, not mixed into counters. */
-        canvas_draw_frame(canvas, 2, 25, 124, 12);
-        canvas_draw_str(canvas, 6, 34, "CONTACT");
-        canvas_draw_str_aligned(canvas, 121, 34, AlignRight, AlignBottom,
+        canvas_draw_frame(canvas, 2, 24, 124, 10);
+        canvas_draw_str(canvas, 6, 32, "CONTACT");
+        canvas_draw_str_aligned(canvas, 121, 32, AlignRight, AlignBottom,
                                 app->button_stats.pending ? "SETTLING" :
                                 app->button_stats.stable_level ? "OPEN" : "CLOSED");
 
-        canvas_draw_line(canvas, 63, 38, 63, 51);
-        canvas_draw_str(canvas, 3, 44, "PRESSES");
-        canvas_draw_str(canvas, 67, 44, "RELEASES");
+        canvas_draw_line(canvas, 63, 35, 63, 51);
+        canvas_draw_str(canvas, 3, 42, "PRESSES");
+        canvas_draw_str(canvas, 67, 42, "RELEASES");
         snprintf(value, sizeof(value), "%lu",
                  (unsigned long)app->button_stats.presses);
         canvas_draw_str(canvas, 3, 51, value);
@@ -537,18 +537,18 @@ void draw_button(Canvas* canvas, LabMateApp* app) {
     } else {
         /* Dense data is split into a 2x2 grid with separate labels. */
         canvas_draw_line(canvas, 63, 17, 63, 51);
-        canvas_draw_line(canvas, 2, 35, 125, 35);
-        canvas_draw_str(canvas, 3, 23, "BOUNCE us");
-        canvas_draw_str(canvas, 67, 23, "SETTLE ms");
+        canvas_draw_line(canvas, 2, 33, 125, 33);
+        canvas_draw_str(canvas, 3, 22, "BOUNCE us");
+        canvas_draw_str(canvas, 67, 22, "SETTLE ms");
         snprintf(value, sizeof(value), "%lu",
                  (unsigned long)app->button_bounce_us);
-        canvas_draw_str(canvas, 3, 33, value);
+        canvas_draw_str(canvas, 3, 31, value);
         snprintf(value, sizeof(value), "%lu",
                  (unsigned long)app->button_settle_ms);
-        canvas_draw_str(canvas, 67, 33, value);
+        canvas_draw_str(canvas, 67, 31, value);
 
-        canvas_draw_str(canvas, 3, 43, "HOLD ms");
-        canvas_draw_str(canvas, 67, 43, "BOUNCE N");
+        canvas_draw_str(canvas, 3, 42, "HOLD ms");
+        canvas_draw_str(canvas, 67, 42, "BOUNCE N");
         snprintf(value, sizeof(value), "%lu",
                  (unsigned long)app->button_hold_ms);
         canvas_draw_str(canvas, 3, 51, value);
