@@ -164,7 +164,7 @@ expect(
     "Capture teardown must invalidate pin identity",
 )
 expect(
-    "app->capture_blocked = !allowed;" in MAIN,
+    "app->capture_blocked = !allowed;" in CAPTURE_CORE,
     "Software acquisition denial needs an observable status",
 )
 expect(
