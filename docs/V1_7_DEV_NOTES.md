@@ -97,7 +97,8 @@ These are CI/compile results, **not** physical Flipper measurement validations.
 - Installed the **exact CI-tested** v1.7 development FAP from workflow `38132070727`, source `8aebe8ae1a41a7ddfad8f6de1babc9479aa3638c`, on Flipper Zero over Windows/COM7. User's console confirmed matching GitHub Actions run SHA, SHA256 `AC521C13040B82657FE798C6CBFC3E432A663749B6BAE7CED9FBEABF7456345E`, full transfer and successful launch request.
 - **Device Test 1: 6/6 PASS**, user physically confirmed: v1.7d home version, Event Counter entry, Button Analyzer entry, Threshold Alerts entry, PWM Studio initially STOP, BACK/navigation without freeze.
 - This validates only menu/boot/safe-initial-state behavior. It is **not** PWM output measurement, GPIO capture metrology, alert crossing verification, or a completed v1.7 release gate.
-- Next focused physical Test 2: verify TIM1/PA7 PWM output looped into PC1 Pulse Analyzer using only 3.3 V-compatible digital signals; check known 100 Hz and duty against displayed HIGH/LOW/PERIOD/DUTY, then confirm STOP and PA7 ownership.
+- **Device Test 2A: 4/4 PASS**, user physically measured TIM1/PA7 PWM looped into PC1 Pulse Analyzer: 100 Hz at 50% duty HIGH=5 ms, LOW=5 ms, PERIOD=10 ms, DUTY=50%; and 100 Hz at 25% duty HIGH=2.5 ms, LOW=7.5 ms, PERIOD=10 ms, DUTY=25%. User reported the displayed values matched all expected figures, PWM persisted across BACK navigation, and explicit STOP worked correctly. Verified 3.3 V-compatible self-loop digital test only, not externally calibrated timing accuracy.
+- **Next Test 2B:** 1 kHz at 50% duty and STOP-only editable custom frequency (default 1234 Hz, adjust +1 Hz to 1235 Hz). Read HIGH/LOW/PERIOD/DUTY on PC1 Pulse Analyzer, verify custom edit commit and STOP, then proceed to PB3 Event Counter checks.
 
 ## Next
 
