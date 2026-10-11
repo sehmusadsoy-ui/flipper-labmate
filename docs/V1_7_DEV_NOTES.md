@@ -25,17 +25,19 @@ Only `v1.7-dev` is changed during this work.
 - `labmate_capture_core.c/.h`: shared physical pin table and exclusive-capture acquire gate.
 - `labmate_pulse_capture.c/.h`: Pulse rise/fall IRQ, current averaging windows, START/STOP.
 - `labmate_frequency_capture.c/.h`: LOW PC1 IRQ and HIGH PB3 capture lifecycle.
+- `labmate_monitor_gpio.c/.h`: GPIO Monitor activation/read/release, including PA7 PWM ownership guard.
 - `scripts/check_v16_boundaries.py`: updated source-boundary safety guards.
 - `.github/workflows/build-v1.7.yml`: separate v1.7 CI, including Momentum compile, portable tests and mock USB installer.
 
 **Automated checkpoints**:
 - Pulse extraction: run `38128588103`, all jobs success.
 - LOW/HIGH Frequency extraction: run `38128704441`, all jobs success.
+- GPIO Monitor extraction: run `38128855667`, all jobs success.
 These are CI/compile results, **not** physical Flipper measurement validations.
 
 ## Next
 
-- Review remaining GPIO Monitor hardware setup/release and capture stop coordination for further ownership cleanup.
+- Review the app-level capture teardown coordinator and complete regression tests for transitions between LOW/HIGH/PULSE/LOGGER and PA7 background PWM.
 - Add PWM Studio adjustable duty/custom frequency as *separate* functional changes, testing bounds, ownership and stop behavior.
 - Implement Event Counter, button analysis and alerts, respecting existing IRQ restrictions (PC3/PB3 EXTI3 and PA6 EXTI6 conflict with buttons; PWM owns PA7).
 - Bundle changes into focused on-device sessions, using only verified 3.3 V digital signals.
