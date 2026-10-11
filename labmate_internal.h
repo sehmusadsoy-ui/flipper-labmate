@@ -12,6 +12,7 @@
 #include "labmate_profile_storage.h"
 #include "labmate_pulse_math.h"
 #include "labmate_button_logic.h"
+#include "labmate_threshold.h"
 
 #define LABMATE_VERSION_TEXT "v1.7d"
 /* Shared menu/pin counts: UI and input handling must agree. */
@@ -39,6 +40,7 @@ typedef enum {
     LabMateScreenProfiles,
     LabMateScreenCounter, /* append: preserve existing screen numbers */
     LabMateScreenButton, /* append: preserve original 0..10 */
+    LabMateScreenAlerts, /* configuration: no extra GPIO ownership */
 } LabMateScreen;
 
 typedef enum {
@@ -197,6 +199,9 @@ typedef struct {
     bool generator_editing;
     bool generator_skip_entry_ok; /* ignore menu OK release on first entry */
     uint32_t generator_last_toggle;
+
+    /* Threshold Alerts: one active visual alert, app-thread only. */
+    LabMateThreshold threshold;
 
     /* v1.5: SD logging uses app-thread snapshots, never GPIO IRQ writes. */
     LabMateLoggerSource logger_source;
