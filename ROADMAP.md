@@ -1,9 +1,9 @@
 # LabMate Master Roadmap — v1.0 to v2.0
 
-**Status:** Updated 2026-10-10 after publication of v1.6 Stable.  
-**Current Stable baseline:** [v1.6 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6), published 2026-10-10 (FAP and SHA256).  
-**Previous Stable fallback:** [v1.5 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.5); v1.4 and older tags remain available.  
-**Next development milestone:** v1.7 — PWM Studio and Counter. v1.6 measurement and storage logic is now frozen in the `v1.6` release tag.
+**Status:** Updated 2026-10-11 after publication of v1.6.1 Stable and start of `v1.7-dev`.  
+**Current published Stable baseline:** [v1.6.1 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1), built from `bc63271afe572c393c1febd0f0ef7039404bc937` (FAP and SHA256).  
+**Previous Stable fallback:** [v1.6 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6), plus all historical release tags.  
+**Next development milestone:** v1.7 — PWM Studio and Counter. New code lives only on `v1.7-dev`, based on the device-tested v1.6.1 version-label-fix source `84f3741d`. Published Stable tags are immutable.
 
 ## Vision
 
@@ -70,12 +70,22 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
 - **Validated:** Menus, capture, STATS/HOLD, profiles, Data Logger/History and final Stable FAP startup smoke on a physical Flipper.
 - **Published:** [LabMate v1.6 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6). Independent reference calibration and destructive SD fault-injection remain outside the demonstrated test coverage.
 
+### v1.6.1 — Maintenance and verified Stable (published 2026-10-10)
+
+- **Delivered:** Additional capture ownership, GPIO/EXTI release and low/high frequency reliability hardening, plus modular logger and pulse/frequency math extraction.
+- **Validated:** Physical Gate A (8/8) and Gate B (6/6) on RC1 source; final INFO follow-up (3/3) on Stable source. These were not independent metrology calibration.
+- **Published:** [v1.6.1 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1) from `bc63271a`; release assets and checksum remain unchanged.
+- **Version label maintenance:** A later `v1.6.1-dev` build corrected the device display/manifest version without replacing the published Stable artifact. That locally installed build is the source baseline for `v1.7-dev`.
+- **Deferred to v1.7:** extraction of remaining physical capture drivers and stronger centralized GPIO/TIM/EXTI ownership, alongside the official v1.7 functional scope.
+
 ### v1.7 — PWM Studio and Counter
 
 - Adjustable PWM duty cycle, custom frequency selection, and safe persistent generator control.
 - Genuine event/pulse counting appropriate to the available GPIO and hardware timers.
 - Push-button bounce/response testing and configurable threshold alerts.
 - Validate output frequency, duty cycle, and switching behavior on device.
+- Complete the partially finished v1.6 modularity and capture ownership work during v1.7 development: split Frequency/Pulse/Generator hardware modules and consolidate GPIO/TIM/EXTI lifecycle without changing tested measurement behavior.
+- Treat modular refactoring and feature changes as separately reviewed/tested steps; do not mistake successful CI compilation for independent device accuracy or stability validation.
 
 ### v1.8 — Communication Tools
 
