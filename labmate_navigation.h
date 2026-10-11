@@ -16,6 +16,7 @@ typedef enum {
     LabMateToolAbout,
     LabMateToolProfiles, /* IDs 0..7 remain unchanged. */
     LabMateToolCounter, /* New in v1.7: append, never renumber profiles */
+    LabMateToolButton, /* PC1 contact bounce/settle analyzer */
     LabMateToolCount,
     LabMateToolInvalid = 255
 } LabMateTool;
@@ -28,7 +29,7 @@ typedef enum {
     LabMateGroupCount
 } LabMateMenuGroup;
 
-#define LABMATE_NAV_MAX_CHILDREN 4U
+#define LABMATE_NAV_MAX_CHILDREN 5U
 
 uint8_t labmate_nav_group_size(uint8_t group);
 uint8_t labmate_nav_tool_at(uint8_t group, uint8_t index);
