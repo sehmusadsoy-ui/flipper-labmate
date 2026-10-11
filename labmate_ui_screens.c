@@ -72,18 +72,92 @@ void draw_profiles(Canvas* canvas, LabMateApp* app) {
     }
 }
 
-void draw_about(Canvas* canvas) {
-    /* Monochrome 128x64: full GitHub address split at path separators.
-     * Preserve developer credit and the 3.3V safety notice. */
-    ui_draw_header(canvas, "LABMATE " LABMATE_VERSION_TEXT);
+/* ABOUT quick guide: 0 overview, 1 repository, 2..12 one page per tool.
+ * All strings are short enough for the 128x64 secondary 6px font.
+ * Descriptions reflect actual capture pins, controls and limits.
+ */
+typedef struct {
+    const char* purpose;
+    const char* input;
+    const char* method;
+    const char* control;
+} LabMateHelpPage;
+
+static const LabMateHelpPage labmate_help[LabMateToolCount] = {
+    [LabMateToolGpio] = {
+        "GPIO MONITOR", "8-pin logic level scan",
+        "EDGES = polled changes", "<>PIN  OK HOLD",
+    },
+    [LabMateToolFrequency] = {
+        "FREQUENCY METER", "PC1 LOW / PB3 HIGH",
+        "IRQ period / TIM2 count", "<> MODE  OK HOLD",
+    },
+    [LabMateToolPulse] = {
+        "PULSE ANALYZER", "PC1 edges: rise/fall",
+        "HIGH LOW PERIOD DUTY", "^ STATS  OK HOLD",
+    },
+    [LabMateToolGenerator] = {
+        "SIGNAL GENERATOR", "PA7 TIM1 PWM / 3.3V",
+        "1Hz-50kHz; duty 5-95", "<>Hz ^vDUTY OK RUN",
+    },
+    [LabMateToolLogger] = {
+        "DATA LOGGER", "PC1/PB3 -> microSD CSV",
+        "1 second sampling", "<>SRC  OK REC/STOP",
+    },
+    [LabMateToolHistory] = {
+        "LOG HISTORY", "Read-only saved CSV",
+        "MODE / ROWS / TIME", "^v FILE  OK VIEW",
+    },
+    [LabMateToolAbout] = {
+        "ABOUT / GUIDE", "13 pages, 11 tools",
+        "3.3V GPIO signals only", "<> PAGE  BK EXIT",
+    },
+    [LabMateToolProfiles] = {
+        "PROFILES", "S1/S2/S3 saved setups",
+        "LOAD never starts PWM", "<>ACTION OK SELECT",
+    },
+    [LabMateToolCounter] = {
+        "EVENT COUNTER", "PB3 TIM2 rising edges",
+        "64-bit count + seconds", "OK RUN/STOP ^RESET",
+    },
+    [LabMateToolButton] = {
+        "BUTTON ANALYZER", "PC1 pull-up; LOW press",
+        "DB / BOUNCE / SETTLE", "OK RUN vDETAIL <>DB",
+    },
+    [LabMateToolAlerts] = {
+        "THRESHOLD ALERTS", "FREQ DUTY COUNT SETTLE",
+        ">= limit latches ALRT", "<>SRC ^vLIM OK ARM",
+    },
+};
+
+void draw_about(Canvas* canvas, LabMateApp* app) {
+    const uint8_t total = (uint8_t)(LabMateToolCount + 2U);
+    const uint8_t page = app->about_page < total ? app->about_page : 0U;
+    char index[12];
+    snprintf(index, sizeof(index), "%u/%u", (unsigned)(page + 1U), (unsigned)total);
+    ui_draw_header(canvas, page == 0U ? "ABOUT" :
+                           page == 1U ? "PROJECT" : "TOOL GUIDE");
+    ui_badge(canvas, 91, 1, 35, index, false);
     canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 2, 24, "DEV: SauronLAB");
-    canvas_draw_str(canvas, 2, 34, "Sehmus");
-    canvas_draw_str_aligned(canvas, 126, 34, AlignRight, AlignBottom, "3.3V GPIO ONLY");
-    canvas_draw_line(canvas, 0, 38, 127, 38);
-    canvas_draw_str(canvas, 2, 47, "github.com/");
-    canvas_draw_str(canvas, 2, 55, "sehmusadsoy-ui/");
-    canvas_draw_str(canvas, 2, 63, "flipper-labmate");
+    if(page == 0U) {
+        canvas_draw_str(canvas, 3, 23, "LabMate " LABMATE_VERSION_TEXT);
+        canvas_draw_str(canvas, 3, 33, "SauronLAB / Sehmus");
+        canvas_draw_str(canvas, 3, 43, "11 instrument guides");
+        canvas_draw_str(canvas, 3, 51, "3.3V DIGITAL GPIO ONLY");
+    } else if(page == 1U) {
+        canvas_draw_str(canvas, 3, 23, "Source / releases:");
+        canvas_draw_str(canvas, 3, 33, "github.com/");
+        canvas_draw_str(canvas, 3, 43, "sehmusadsoy-ui/");
+        canvas_draw_str(canvas, 3, 51, "flipper-labmate");
+    } else {
+        const LabMateHelpPage* help = &labmate_help[page - 2U];
+        canvas_draw_str(canvas, 3, 23, help->purpose);
+        canvas_draw_str(canvas, 3, 33, help->input);
+        canvas_draw_str(canvas, 3, 43, help->method);
+        canvas_draw_str(canvas, 3, 51, help->control);
+    }
+    canvas_draw_line(canvas, 0, 53, 127, 53);
+    canvas_draw_str(canvas, 3, 62, "<> PAGE   BK MENU");
 }
 
 void draw_history(Canvas* canvas, LabMateApp* app) {
