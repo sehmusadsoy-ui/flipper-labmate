@@ -459,81 +459,100 @@ void draw_frequency(Canvas* canvas, LabMateApp* app) {
  * Monitoring and latch transitions occur in the application thread.
  */
 void draw_alerts(Canvas* canvas, LabMateApp* app) {
-    char line[36];
+    char limit[32];
+    const bool latched = app->threshold.armed && app->threshold.latched;
     ui_draw_header(canvas, "THRESHOLDS");
     ui_badge(canvas, 92, 1, 35,
-             app->threshold.armed ? "ARM" : "OFF",
+             latched ? "ALRT" : app->threshold.armed ? "ARM" : "OFF",
              app->threshold.armed);
+
+    /* Key/value rows make the active source and trip condition explicit. */
     canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 2, 24,
-                    labmate_threshold_source_name(app->threshold.source));
-    snprintf(line, sizeof(line), "AT >= %lu %s",
+    canvas_draw_str(canvas, 3, 23, "SOURCE");
+    canvas_draw_str_aligned(
+        canvas, 125, 23, AlignRight, AlignBottom,
+        labmate_threshold_source_name(app->threshold.source));
+    canvas_draw_line(canvas, 2, 26, 125, 26);
+    canvas_draw_str(canvas, 3, 35, "TRIP >=");
+    snprintf(limit, sizeof(limit), "%lu %s",
              (unsigned long)app->threshold.limit,
              labmate_threshold_source_unit(app->threshold.source));
-    canvas_draw_str(canvas, 2, 36, line);
-    if(!app->threshold.armed) {
-        canvas_draw_str(canvas, 2, 48, "DISARMED");
-    } else if(app->threshold.latched) {
-        canvas_draw_str(canvas, 2, 48, "TRIPPED: CHECK INPUT");
-    } else if(!app->threshold.has_sample) {
-        canvas_draw_str(canvas, 2, 48, "NO LIVE SAMPLE");
-    } else {
-        canvas_draw_str(canvas, 2, 48,
-                        app->threshold.active ? "ABOVE LIMIT" : "BELOW LIMIT");
-    }
-    canvas_draw_line(canvas, 0, 52, 127, 52);
-    canvas_draw_str(canvas, 2, 61, app->threshold.armed ?
-                    "v ACK OK OFF BK EXIT" : "<> SRC ^v LIM OK ARM");
+    canvas_draw_str_aligned(canvas, 125, 35, AlignRight, AlignBottom, limit);
+
+    canvas_draw_frame(canvas, 2, 39, 124, 12);
+    canvas_draw_str(canvas, 6, 48,
+                    !app->threshold.armed ? "DISARMED / CONFIG" :
+                    latched ? "TRIPPED / v ACK" :
+                    !app->threshold.has_sample ? "WAITING FOR SAMPLE" :
+                    app->threshold.active ? "AT / ABOVE LIMIT" :
+                                            "BELOW LIMIT");
+    canvas_draw_line(canvas, 0, 53, 127, 53);
+    canvas_draw_str(canvas, 3, 62, app->threshold.armed ?
+                    "v ACK  OK OFF  BK" : "<>SRC ^vLIM OK ARM");
 }
 
 /* Button Analyzer shows contact bounce and first-edge-to-stable latency.
  * This renderer reads only the app-thread published snapshot.
  */
 void draw_button(Canvas* canvas, LabMateApp* app) {
-    char line[36];
+    char value[32];
+    const bool alert = app->threshold.armed && app->threshold.latched &&
+                       app->threshold.source == LabMateAlertButtonSettle;
     ui_draw_header(canvas, "BUTTON");
-    ui_badge(canvas, 91, 1, 35,
-             app->threshold.armed && app->threshold.latched &&
-                     app->threshold.source == LabMateAlertButtonSettle ?
-                 "ALRT" :
-                 app->capture_blocked ? "BUSY" :
-                 app->button_active ? "RUN" : "STOP",
-             app->button_active);
+    ui_badge(canvas, 92, 1, 34,
+             alert ? "ALRT" : app->capture_blocked ? "BUSY" :
+             app->button_active ? "RUN" : "STOP", app->button_active);
 
-    /* 6px compact glyphs: rows fit even with full uint32 values. */
     canvas_set_font(canvas, FontSecondary);
     if(!app->button_details_view) {
-        snprintf(line, sizeof(line), "PC1  <>DB:%u ms",
+        /* Main page: pin / debounce, contact, and two independent totals. */
+        canvas_draw_str(canvas, 3, 23, "PC1 / PULL-UP");
+        snprintf(value, sizeof(value), "DB %u ms",
                  (unsigned)app->button_quiet_ms);
-        canvas_draw_str(canvas, 2, 23, line);
-        canvas_draw_str(canvas, 2, 32,
-                        app->button_stats.pending ? "CONTACT: SETTLING" :
-                        app->button_stats.stable_level ? "CONTACT: OPEN" :
-                                                         "CONTACT: CLOSED");
-        snprintf(line, sizeof(line), "PRESS:%lu",
+        canvas_draw_str_aligned(canvas, 125, 23, AlignRight, AlignBottom, value);
+
+        canvas_draw_frame(canvas, 2, 27, 124, 11);
+        canvas_draw_str(canvas, 5, 35, "CONTACT");
+        canvas_draw_str_aligned(canvas, 123, 35, AlignRight, AlignBottom,
+                                app->button_stats.pending ? "SETTLING" :
+                                app->button_stats.stable_level ? "OPEN" : "CLOSED");
+
+        canvas_draw_line(canvas, 63, 39, 63, 51);
+        canvas_draw_str(canvas, 3, 45, "PRESS");
+        canvas_draw_str(canvas, 66, 45, "RELEASE");
+        snprintf(value, sizeof(value), "%lu",
                  (unsigned long)app->button_stats.presses);
-        canvas_draw_str(canvas, 2, 41, line);
-        snprintf(line, sizeof(line), "RELEASE:%lu",
+        canvas_draw_str(canvas, 3, 52, value);
+        snprintf(value, sizeof(value), "%lu",
                  (unsigned long)app->button_stats.releases);
-        canvas_draw_str(canvas, 2, 50, line);
+        canvas_draw_str(canvas, 66, 52, value);
     } else {
-        snprintf(line, sizeof(line), "BOUNCE:%lu us",
+        /* Details use two 60px columns; worst-case unsigned values fit. */
+        canvas_draw_line(canvas, 63, 17, 63, 51);
+        canvas_draw_str(canvas, 3, 23, "BOUNCE us");
+        canvas_draw_str(canvas, 66, 23, "SETTLE ms");
+        snprintf(value, sizeof(value), "%lu",
                  (unsigned long)app->button_bounce_us);
-        canvas_draw_str(canvas, 2, 23, line);
-        snprintf(line, sizeof(line), "SETTLE:%lu ms",
+        canvas_draw_str(canvas, 3, 34, value);
+        snprintf(value, sizeof(value), "%lu",
                  (unsigned long)app->button_settle_ms);
-        canvas_draw_str(canvas, 2, 32, line);
-        snprintf(line, sizeof(line), "HOLD:%lu ms",
+        canvas_draw_str(canvas, 66, 34, value);
+
+        canvas_draw_line(canvas, 2, 37, 125, 37);
+        canvas_draw_str(canvas, 3, 44, "HOLD ms");
+        canvas_draw_str(canvas, 66, 44, "EXTRA EDGES");
+        snprintf(value, sizeof(value), "%lu",
                  (unsigned long)app->button_hold_ms);
-        canvas_draw_str(canvas, 2, 41, line);
-        snprintf(line, sizeof(line), "BOUNCE EDGES:%u",
+        canvas_draw_str(canvas, 3, 52, value);
+        snprintf(value, sizeof(value), "%u",
                  (unsigned)app->button_stats.last_bounce_edges);
-        canvas_draw_str(canvas, 2, 50, line);
+        canvas_draw_str(canvas, 66, 52, value);
     }
     canvas_draw_line(canvas, 0, 53, 127, 53);
-    canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 2, 62, app->button_active ?
-                    "v PAGE OK STOP BK" : "<>DB ^RST vPAGE OK");
+    canvas_draw_str(canvas, 3, 62,
+                    app->button_details_view ? "v LIVE  OK TOGGLE" :
+                    app->button_active ? "v MORE  OK STOP  BK" :
+                                         "<>DB vMORE OK RUN");
 }
 
 /* Event Counter is a passive 64-bit display of PB3/TIM2 rising edges.
@@ -545,26 +564,30 @@ void draw_counter(Canvas* canvas, LabMateApp* app) {
     if(!labmate_counter_format(app->counter_total, count, sizeof(count))) {
         snprintf(count, sizeof(count), "COUNT ERROR");
     }
-    snprintf(elapsed, sizeof(elapsed), "%lu s",
+    snprintf(elapsed, sizeof(elapsed), "%lus",
              (unsigned long)app->counter_elapsed_seconds);
 
-    ui_draw_header(canvas, "EVENT COUNTER");
-    ui_badge(canvas, 92, 15, 34,
+    ui_draw_header(canvas, "COUNTER");
+    ui_badge(canvas, 92, 1, 34,
              app->threshold.armed && app->threshold.latched &&
                      app->threshold.source == LabMateAlertCounter ?
                  "ALRT" : app->capture_blocked ? "BUSY" :
                  app->counter_active ? "RUN" : "STOP",
              app->counter_active);
+
     canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 2, 25, "PB3 RISE / TIM2");
-    canvas_draw_str(canvas, 2, 38, "TOTAL EDGES:");
-    canvas_draw_str_aligned(canvas, 126, 38, AlignRight, AlignBottom, elapsed);
+    canvas_draw_str(canvas, 3, 23, "PB3 / TIM2 / RISE");
+    canvas_draw_line(canvas, 2, 26, 125, 26);
+    canvas_draw_str(canvas, 3, 35, "EVENT TOTAL");
+    canvas_draw_str_aligned(canvas, 125, 35, AlignRight, AlignBottom, elapsed);
+
+    /* A short count is emphasized; full uint64 still fits the LCD. */
+    canvas_set_font(canvas, strlen(count) <= 8U ? FontPrimary : FontSecondary);
+    canvas_draw_str_aligned(canvas, 64, 50, AlignCenter, AlignBottom, count);
+    canvas_draw_line(canvas, 0, 53, 127, 53);
     canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 2, 49, count);
-    canvas_draw_line(canvas, 0, 52, 127, 52);
-    canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 2, 61, app->counter_active ?
-                    "OK STOP  BK EXIT" : "OK RUN  ^RST BK EXIT");
+    canvas_draw_str(canvas, 3, 62, app->counter_active ?
+                    "OK STOP  BK EXIT" : "OK RUN ^RST BK EXIT");
 }
 
 /* Display-only PWM Studio renderer. No TIM1 / GPIO writes here. */
