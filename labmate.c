@@ -9,6 +9,7 @@
 #include "labmate_generator.h"
 #include "labmate_frequency_tim2.h"
 #include "labmate_event_counter.h"
+#include "labmate_button_capture.h"
 #include "labmate_frequency_capture.h"
 #include "labmate_monitor_gpio.h"
 #include "labmate_capture_exti.h"
@@ -65,8 +66,9 @@ static void capture_stop_all(LabMateApp* app) {
     labmate_frequency_low_stop(app);
     labmate_pulse_capture_stop(app);
     labmate_event_counter_stop(app);
+    labmate_button_capture_stop(app);
     /* A failed/stale stop must not advertise a free capture owner. */
-    if(!app->counter_active && labmate_capture_all_stopped(
+    if(!app->counter_active && !app->button_active && labmate_capture_all_stopped(
            app->frequency_irq_active, app->frequency_hw_active,
            app->pulse_irq_active)) {
         app->capture_owner = LabMateCaptureNone;
@@ -775,6 +777,9 @@ static void render_callback(
     case LabMateScreenCounter:
         draw_counter(canvas, app);
         break;
+    case LabMateScreenButton:
+        draw_button(canvas, app);
+        break;
     }
 
     furi_mutex_release(
@@ -833,6 +838,9 @@ int32_t labmate_app(void* p) {
     app->generator_freq_index = 0; /* 1 Hz */
     app->generator_duty_percent = LABMATE_PWM_DEFAULT_DUTY;
     app->generator_custom_hz = 1234U; /* independently editable 1 Hz steps */
+    app->button_quiet_index = 1U; /* 10 ms quiet-time default */
+    app->button_quiet_ms = 10U;
+    labmate_button_capture_reset(app);
     app->screen = LabMateScreenMenu;
     app->capture_owner = LabMateCaptureNone;
     app->capture_pin_index = GPIO_COUNT;
@@ -934,6 +942,9 @@ int32_t labmate_app(void* p) {
         if(app->screen == LabMateScreenCounter) {
             labmate_event_counter_poll(app);
         }
+        if(app->screen == LabMateScreenButton) {
+            labmate_button_capture_poll(app);
+        }
 
         /* Generator uses SHORT on key release, so LONG OK can enter the
          * STOP-only custom editor without an accidental START on press.
@@ -994,6 +1005,13 @@ int32_t labmate_app(void* p) {
                         pulse_stats_reset(app);
                         measurement_reset(app);
                         labmate_pulse_capture_start(app);
+                        break;
+
+                    case LabMateToolButton:
+                        app->screen = LabMateScreenButton;
+                        app->gpio_index = LABMATE_MONITOR_PC1_INDEX;
+                        app->capture_blocked = false;
+                        labmate_button_capture_reset(app); /* No IRQ until OK RUN */
                         break;
 
                     case LabMateToolCounter:
@@ -1166,6 +1184,25 @@ int32_t labmate_app(void* p) {
                     app->history_loading = false;
                     history_close_requested = true;
                 }
+            } else if(app->screen == LabMateScreenButton) {
+                if(event.key == InputKeyOk) {
+                    if(app->button_active) {
+                        labmate_button_capture_stop(app);
+                    } else {
+                        labmate_button_capture_start(app);
+                    }
+                } else if(event.key == InputKeyUp) {
+                    /* Preserve measurements during RUN; clear them while stopped. */
+                    labmate_button_capture_reset(app);
+                } else if(event.key == InputKeyLeft) {
+                    labmate_button_capture_change_quiet(app, -1);
+                } else if(event.key == InputKeyRight) {
+                    labmate_button_capture_change_quiet(app, 1);
+                } else if(event.key == InputKeyBack) {
+                    capture_stop_all(app);
+                    app->screen = LabMateScreenMenu;
+                }
+
             } else if(app->screen == LabMateScreenCounter) {
                 if(event.key == InputKeyOk) {
                     if(app->counter_active) {
@@ -1462,6 +1499,7 @@ int32_t labmate_app(void* p) {
     }
     /* Defensive cleanup even if a future navigation path leaves counter RUN. */
     labmate_event_counter_stop(app);
+    labmate_button_capture_stop(app);
 
     gui_remove_view_port(
         gui,
