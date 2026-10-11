@@ -307,7 +307,7 @@ expect("labmate_counter_accumulate(" in COUNTER_MATH
        and "labmate_counter_format(app->counter_total" in SCREENS
        and "case LabMateScreenCounter:" in MAIN
        and "case LabMateToolCounter:" in MAIN
-       and "case 8:" in PRIMITIVES,
+       and "case LabMateToolCounter: ui_icon_counter(canvas, x, y);" in PRIMITIVES,
        "64-bit counter accumulation, UI, and navigation must be wired")
 expect((ROOT / "tests/test_counter_math.c.inc").is_file()
        and not (ROOT / "tests/test_counter_math.c").exists(),
@@ -391,8 +391,8 @@ expect("storage_" not in THRESHOLD and "furi_" not in THRESHOLD
        and "labmate_threshold_update(" not in SCREENS
        and "labmate_threshold_change_limit(" not in SCREENS
        and "draw_alerts(" in SCREENS
-       and '"TRIPPED: CHECK INPUT"' in SCREENS
-       and '"NO LIVE SAMPLE"' in SCREENS,
+       and '"TRIPPED / v ACK"' in SCREENS
+       and '"WAITING FOR SAMPLE"' in SCREENS,
        "Threshold evaluation must be host-testable and the display passive")
 expect((ROOT / "tests/test_threshold.c.inc").is_file()
        and not (ROOT / "tests/test_threshold.c").exists(),
