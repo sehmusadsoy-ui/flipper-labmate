@@ -32,6 +32,7 @@ typedef enum {
     LabMateCaptureFrequencyLow,
     LabMateCaptureFrequencyHigh,
     LabMateCapturePulse,
+    LabMateCaptureCounter, /* PB3 / TIM2 external hardware rising-edge count */
 } LabMateCaptureOwner;
 
 // Reject invalid capture inputs (Pulse only permits PC0/PC1/PB2/PA4).
