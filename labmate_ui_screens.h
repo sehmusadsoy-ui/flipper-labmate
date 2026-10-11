@@ -15,5 +15,6 @@ void draw_frequency(Canvas* canvas, LabMateApp* app);
 void draw_generator(Canvas* canvas, LabMateApp* app);
 void draw_counter(Canvas* canvas, LabMateApp* app);
 void draw_button(Canvas* canvas, LabMateApp* app);
+void draw_alerts(Canvas* canvas, LabMateApp* app);
 void draw_pulse(Canvas* canvas, LabMateApp* app);
 void draw_logger(Canvas* canvas, LabMateApp* app);
