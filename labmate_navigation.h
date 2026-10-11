@@ -17,6 +17,7 @@ typedef enum {
     LabMateToolProfiles, /* IDs 0..7 remain unchanged. */
     LabMateToolCounter, /* New in v1.7: append, never renumber profiles */
     LabMateToolButton, /* PC1 contact bounce/settle analyzer */
+    LabMateToolAlerts, /* v1.7: configurable visual threshold alerts */
     LabMateToolCount,
     LabMateToolInvalid = 255
 } LabMateTool;
