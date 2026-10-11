@@ -17,12 +17,12 @@ void draw_profiles(Canvas* canvas, LabMateApp* app) {
     else if(app->profile_io == LabMateProfileIoCorrupt) state = "CRC";
     else if(app->profile_io == LabMateProfileIoError) state = "SD ERR";
     else if(app->profile_notice == 1U) state = "SAVED";
-    else if(app->profile_notice == 2U) state = "LOADED";
+    else if(app->profile_notice == 2U) state = "LOAD";
     else if(app->profile_notice == 3U) state = "EMPTY";
     else if(app->profile_notice == 4U) state = "STOP";
     else if(app->profile_notice == 5U) state = "ERR";
-    else if(app->profile_notice == 6U) state = "DELETED";
-    else if(app->profile_notice == 7U) state = "PRESET";
+    else if(app->profile_notice == 6U) state = "DEL";
+    else if(app->profile_notice == 7U) state = "ONLY";
 
     ui_draw_header(canvas, "PROFILES");
     ui_badge(canvas, 91, 1, 35, state, false);
@@ -554,14 +554,14 @@ void draw_button(Canvas* canvas, LabMateApp* app) {
                  (unsigned)app->button_quiet_ms);
         canvas_draw_str_aligned(canvas, 125, 22, AlignRight, AlignBottom, value);
 
-        /* Contact state is a distinct band, not mixed into counters. */
-        canvas_draw_frame(canvas, 2, 24, 124, 10);
-        canvas_draw_str(canvas, 6, 32, "CONTACT");
-        canvas_draw_str_aligned(canvas, 121, 32, AlignRight, AlignBottom,
+        /* Simple status row avoids crowding text inside a narrow frame.
+         * A single divider separates contact state from measurements. */
+        canvas_draw_str(canvas, 3, 31, "CONTACT");
+        canvas_draw_str_aligned(canvas, 125, 31, AlignRight, AlignBottom,
                                 app->button_stats.pending ? "SETTLING" :
                                 app->button_stats.stable_level ? "OPEN" : "CLOSED");
-
-        canvas_draw_line(canvas, 63, 35, 63, 51);
+        canvas_draw_line(canvas, 2, 34, 125, 34);
+        canvas_draw_line(canvas, 63, 36, 63, 51);
         canvas_draw_str(canvas, 3, 42, "PRESSES");
         canvas_draw_str(canvas, 67, 42, "RELEASES");
         snprintf(value, sizeof(value), "%lu",
@@ -613,7 +613,7 @@ void draw_counter(Canvas* canvas, LabMateApp* app) {
     }
     const uint32_t seconds = app->counter_elapsed_seconds;
     if(seconds < 60U) {
-        snprintf(time_text, sizeof(time_text), "%lus", (unsigned long)seconds);
+        snprintf(time_text, sizeof(time_text), "%lu s", (unsigned long)seconds);
     } else if(seconds < 3600U) {
         snprintf(time_text, sizeof(time_text), "%lu:%02lu",
                  (unsigned long)(seconds / 60U),
@@ -656,7 +656,7 @@ void draw_counter(Canvas* canvas, LabMateApp* app) {
         canvas_set_font(canvas, count_len <= 7U ? FontPrimary : FontSecondary);
         canvas_draw_str(canvas, 4, 49, count);
         canvas_set_font(canvas, strlen(time_text) <= 4U ? FontPrimary : FontSecondary);
-        canvas_draw_str(canvas, 86, 49, time_text);
+        canvas_draw_str_aligned(canvas, 106, 49, AlignCenter, AlignBottom, time_text);
     }
 
     if(app->counter_active) {
@@ -706,7 +706,7 @@ void draw_generator(Canvas* canvas, LabMateApp* app) {
         canvas_draw_str(canvas, 3, 49, step);
         ui_footer_pair(canvas, "LR", "HZ", "OK", "SAVE");
     } else {
-        canvas_draw_str(canvas, 3, 49, "UP/DN DUTY");
+        canvas_draw_str(canvas, 3, 49, "UP DOWN: DUTY");
         if(app->generator_running) {
             ui_footer_pair(canvas, "OK", "STOP", "BACK", "MENU");
         } else {
@@ -878,17 +878,20 @@ void draw_logger(Canvas* canvas, LabMateApp* app) {
         if(app->pulse_period_valid) {
             const uint64_t us = pulse_cycles_to_us(app->pulse_period_cycles);
             if(us < 1000ULL) {
-                snprintf(live, sizeof(live), "P %luus D %lu%%",
+                snprintf(live, sizeof(live), "P %luus D %lu.%lu%%",
                          (unsigned long)us,
-                         (unsigned long)(app->pulse_duty_permille / 10U));
+                         (unsigned long)(app->pulse_duty_permille / 10U),
+                         (unsigned long)(app->pulse_duty_permille % 10U));
             } else if(us < 1000000ULL) {
-                snprintf(live, sizeof(live), "P %lums D %lu%%",
+                snprintf(live, sizeof(live), "P %lums D %lu.%lu%%",
                          (unsigned long)((us + 500ULL) / 1000ULL),
-                         (unsigned long)(app->pulse_duty_permille / 10U));
+                         (unsigned long)(app->pulse_duty_permille / 10U),
+                         (unsigned long)(app->pulse_duty_permille % 10U));
             } else {
-                snprintf(live, sizeof(live), "P %lus D %lu%%",
+                snprintf(live, sizeof(live), "P %lus D %lu.%lu%%",
                          (unsigned long)((us + 500000ULL) / 1000000ULL),
-                         (unsigned long)(app->pulse_duty_permille / 10U));
+                         (unsigned long)(app->pulse_duty_permille / 10U),
+                         (unsigned long)(app->pulse_duty_permille % 10U));
             }
         } else {
             snprintf(live, sizeof(live), "NO VALID PULSE");
