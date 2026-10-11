@@ -8,6 +8,7 @@
 #include "labmate_internal.h"
 #include "labmate_generator.h"
 #include "labmate_frequency_tim2.h"
+#include "labmate_event_counter.h"
 #include "labmate_frequency_capture.h"
 #include "labmate_monitor_gpio.h"
 #include "labmate_capture_exti.h"
@@ -63,8 +64,9 @@ static void capture_stop_all(LabMateApp* app) {
     labmate_frequency_high_stop(app);
     labmate_frequency_low_stop(app);
     labmate_pulse_capture_stop(app);
+    labmate_event_counter_stop(app);
     /* A failed/stale stop must not advertise a free capture owner. */
-    if(labmate_capture_all_stopped(
+    if(!app->counter_active && labmate_capture_all_stopped(
            app->frequency_irq_active, app->frequency_hw_active,
            app->pulse_irq_active)) {
         app->capture_owner = LabMateCaptureNone;
@@ -770,6 +772,9 @@ static void render_callback(
     case LabMateScreenProfiles:
         draw_profiles(canvas, app);
         break;
+    case LabMateScreenCounter:
+        draw_counter(canvas, app);
+        break;
     }
 
     furi_mutex_release(
@@ -926,6 +931,9 @@ int32_t labmate_app(void* p) {
                app->screen)) {
             measurement_update(app);
         }
+        if(app->screen == LabMateScreenCounter) {
+            labmate_event_counter_poll(app);
+        }
 
         /* Generator uses SHORT on key release, so LONG OK can enter the
          * STOP-only custom editor without an accidental START on press.
@@ -986,6 +994,15 @@ int32_t labmate_app(void* p) {
                         pulse_stats_reset(app);
                         measurement_reset(app);
                         labmate_pulse_capture_start(app);
+                        break;
+
+                    case LabMateToolCounter:
+                        /* Counter remains STOP until an explicit OK press. */
+                        app->screen = LabMateScreenCounter;
+                        app->hold = false;
+                        app->capture_blocked = false;
+                        app->gpio_index = 4U; /* PB3 -> TIM2_CH2 hardware input */
+                        labmate_event_counter_reset(app);
                         break;
 
                     case LabMateToolGenerator:
@@ -1149,6 +1166,22 @@ int32_t labmate_app(void* p) {
                     app->history_loading = false;
                     history_close_requested = true;
                 }
+            } else if(app->screen == LabMateScreenCounter) {
+                if(event.key == InputKeyOk) {
+                    if(app->counter_active) {
+                        labmate_event_counter_stop(app);
+                    } else {
+                        labmate_event_counter_start(app);
+                    }
+                } else if(event.key == InputKeyUp) {
+                    /* Preserve the previous result while RUN; reset only STOP. */
+                    labmate_event_counter_reset(app);
+                } else if(event.key == InputKeyBack) {
+                    /* Never carry TIM2 counting into another tool. */
+                    capture_stop_all(app);
+                    app->screen = LabMateScreenMenu;
+                }
+
             } else if(app->screen == LabMateScreenLogger) {
                 if(event.key == InputKeyLeft) {
                     logger_capture_change(app, -1);
@@ -1427,6 +1460,8 @@ int32_t labmate_app(void* p) {
         capture_stop_all(app);
         labmate_monitor_gpio_release(app, app->gpio_index);
     }
+    /* Defensive cleanup even if a future navigation path leaves counter RUN. */
+    labmate_event_counter_stop(app);
 
     gui_remove_view_port(
         gui,
