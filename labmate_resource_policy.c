@@ -43,6 +43,8 @@ bool labmate_capture_pin_allowed(LabMateCaptureOwner requested, uint8_t pin_inde
     case LabMateCapturePulse:
         return pin_index == 0U || pin_index == 1U ||
                pin_index == 3U || pin_index == 5U;
+    case LabMateCaptureCounter:
+        return pin_index == 4U; /* PB3/TIM2 exclusive, same physical input as HIGH */
     case LabMateCaptureNone:
     default:
         return false;
