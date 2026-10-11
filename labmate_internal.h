@@ -12,13 +12,13 @@
 #include "labmate_profile_storage.h"
 #include "labmate_pulse_math.h"
 
-#define LABMATE_VERSION_TEXT "v1.6.1"
+#define LABMATE_VERSION_TEXT "v1.7d"
 /* Shared menu/pin counts: UI and input handling must agree. */
 #define MENU_COUNT LabMateToolCount
 #define GPIO_COUNT LABMATE_MONITOR_PIN_COUNT
 /* Shared immutable GPIO labels, used by both migrated and legacy renderers. */
 extern const char* const labmate_gpio_names[GPIO_COUNT];
-/* One source of truth for TIM1/PA7 preset frequencies, also displayed in UI. */
+/* TIM1/PA7 presets live in labmate_generator.c and are shared with UI. */
 extern const uint32_t labmate_generator_frequencies[];
 /* Keep only the latest 32 log IDs in RAM; read CSV contents incrementally. */
 #define LOGGER_HISTORY_LIMIT 32U
