@@ -98,7 +98,8 @@ These are CI/compile results, **not** physical Flipper measurement validations.
 - **Device Test 1: 6/6 PASS**, user physically confirmed: v1.7d home version, Event Counter entry, Button Analyzer entry, Threshold Alerts entry, PWM Studio initially STOP, BACK/navigation without freeze.
 - This validates only menu/boot/safe-initial-state behavior. It is **not** PWM output measurement, GPIO capture metrology, alert crossing verification, or a completed v1.7 release gate.
 - **Device Test 2A: 4/4 PASS**, user physically measured TIM1/PA7 PWM looped into PC1 Pulse Analyzer: 100 Hz at 50% duty HIGH=5 ms, LOW=5 ms, PERIOD=10 ms, DUTY=50%; and 100 Hz at 25% duty HIGH=2.5 ms, LOW=7.5 ms, PERIOD=10 ms, DUTY=25%. User reported the displayed values matched all expected figures, PWM persisted across BACK navigation, and explicit STOP worked correctly. Verified 3.3 V-compatible self-loop digital test only, not externally calibrated timing accuracy.
-- **Next Test 2B:** 1 kHz at 50% duty and STOP-only editable custom frequency (default 1234 Hz, adjust +1 Hz to 1235 Hz). Read HIGH/LOW/PERIOD/DUTY on PC1 Pulse Analyzer, verify custom edit commit and STOP, then proceed to PB3 Event Counter checks.
+- **Device Test 2B: 4/4 PASS**, user physically confirmed 1 kHz at 50% duty HIGH/LOW/PERIOD/DUTY correct, STOP-only CUSTOM 1235 Hz edit and save successful, 1235 Hz at 50% duty Pulse Analyzer readings correct, and PWM remained active across menu navigation until explicit STOP. Together Tests 2A+2B total **8/8 PASS** for targeted PWM Studio checks; not a calibration claim for the entire 1–50 kHz range.
+- **Next physical Test 3:** Event Counter PB3/TIM2 rising-edge checks using known PA7 3.3 V PWM source, count growth, final STOP snapshot, STOP-only reset, BACK release, and return to Frequency HIGH.
 
 ## Next
 
