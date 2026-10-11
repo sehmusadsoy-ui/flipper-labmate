@@ -10,6 +10,8 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 MAIN = (ROOT / "labmate.c").read_text(encoding="utf-8")
+GENERATOR = (ROOT / "labmate_generator.c").read_text(encoding="utf-8")
+GENERATOR_H = (ROOT / "labmate_generator.h").read_text(encoding="utf-8")
 SCREENS = (ROOT / "labmate_ui_screens.c").read_text(encoding="utf-8")
 SCREENS_H = (ROOT / "labmate_ui_screens.h").read_text(encoding="utf-8")
 INTERNAL_H = (ROOT / "labmate_internal.h").read_text(encoding="utf-8")
@@ -88,9 +90,10 @@ expect(
     "Shared pulse unit-conversion declaration is absent",
 )
 expect(
-    "const uint32_t labmate_generator_frequencies[]" in MAIN
+    "const uint32_t labmate_generator_frequencies[]" in GENERATOR
+    and "const uint32_t labmate_generator_frequencies[]" not in MAIN
     and "extern const uint32_t labmate_generator_frequencies[]" in INTERNAL_H,
-    "Shared generator presets must have one core definition",
+    "Shared generator presets must have one definition in generator module",
 )
 expect(
     "const char* const labmate_gpio_names[GPIO_COUNT]" in SCREENS
@@ -188,10 +191,24 @@ for sentinel in [
     "static void pulse_gpio_callback(",
     "static void frequency_hw_start(",
     "static void frequency_hw_stop(",
-    "static void generator_start(",
-    "static void generator_stop(",
 ]:
     expect(sentinel in MAIN, f"Required capture/storage function missing: {sentinel}")
+
+# v1.7 module boundary: PWM HAL ownership belongs to generator.c alone.
+for fn in ("start", "stop", "change_frequency"):
+    name = f"labmate_generator_{fn}"
+    expect(len(re.findall(rf"(?m)^void\\s+{name}\\s*\\(", GENERATOR)) == 1,
+           f"{name}: expected exactly one generator implementation")
+    expect(f"void {name}(LabMateApp* app" in GENERATOR_H,
+           f"{name}: public module declaration missing")
+    expect(f"{name}(app" in MAIN,
+           f"{name}: application must delegate to generator module")
+expect("furi_hal_pwm_" not in MAIN and "furi_hal_pwm_" not in SCREENS,
+       "PWM HAL calls must remain inside generator.c")
+for pwm_op in ("furi_hal_pwm_start(", "furi_hal_pwm_stop(", "furi_hal_pwm_set_params("):
+    expect(pwm_op in GENERATOR, f"Missing generator HAL operation {pwm_op}")
+expect("FuriHalPwmOutputIdTim1PA7" in GENERATOR,
+       "Generator must retain TIM1/PA7 ownership")
 
 HISTORY = (ROOT / "labmate_history.c").read_text(encoding="utf-8")
 HISTORY_H = (ROOT / "labmate_history.h").read_text(encoding="utf-8")
@@ -265,8 +282,8 @@ expect(
     "labmate_logger_storage_stop(" not in SCREENS,
     "CSV app capture and drawing must remain separate from SD I/O",
 )
-expect('"v1.6.1"' in INTERNAL_H, "v1.6.1 display label required")
-expect('fap_version="1.6.1"' in MANIFEST, "v1.6.1 manifest version required")
+expect('"v1.7d"' in INTERNAL_H, "v1.7 development label required")
+expect('fap_version="1.7"' in MANIFEST, "v1.7 manifest version required")
 expect(
     'sources=["*.c"]' in MANIFEST,
     "FAP source list must explicitly exclude native C test fixtures",
