@@ -173,6 +173,7 @@ typedef struct {
     uint8_t generator_custom_step_index; /* 1/10/100/1000 Hz */
     uint8_t generator_edit_original_index;
     bool generator_editing;
+    bool generator_skip_entry_ok; /* ignore menu OK release on first entry */
     uint32_t generator_last_toggle;
 
     /* v1.5: SD logging uses app-thread snapshots, never GPIO IRQ writes. */
