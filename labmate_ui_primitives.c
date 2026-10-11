@@ -128,6 +128,9 @@ void ui_draw_menu_icon(
     case 7:
         ui_icon_generator(canvas, x, y);
         break;
+    case 8:
+        ui_icon_frequency(canvas, x, y);
+        break;
     }
 }
 
