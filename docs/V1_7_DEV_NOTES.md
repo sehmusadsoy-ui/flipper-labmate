@@ -35,10 +35,22 @@ Only `v1.7-dev` is changed during this work.
 - GPIO Monitor extraction: run `38128855667`, all jobs success.
 These are CI/compile results, **not** physical Flipper measurement validations.
 
+## PWM Studio: first v1.7 functional feature slice (2026-10-11)
+
+- The original 15 TIM1/PA7 presets are unchanged. An additional CUSTOM selection provides 1..50,000 Hz in 1 Hz resolution, with selectable edit steps of 1/10/100/1000 Hz.
+- PWM duty is adjustable in 5% steps from 5% through 95%; default 50%. Live parameter changes use `furi_hal_pwm_set_params` without stopping/reclaiming TIM1.
+- Normal controls: LEFT/RIGHT cycle presets plus CUSTOM, UP/DOWN adjust duty, short OK START/STOP, BACK returns to menu while the active generator keeps running.
+- STOP-only custom editor: long OK enters, LEFT/RIGHT change Hz by the selected step, UP/DOWN select the step size, short OK commits; BACK cancels. Draft changes never reach a running PWM output.
+- Generator input intentionally uses key-release SHORT instead of PRESS so long OK cannot accidentally START PWM. The menu-opening OK release is suppressed when entering the screen.
+- The app still stops PWM on final exit, preserves PA7 reservation in the background, and retains the v1.6.1 capture/resource policies.
+- **Profiles compatibility:** the existing 32-byte CRC codec holds only preset indices 0..14, not duty/custom Hz. CUSTOM SAVE is blocked with `PRESET ONLY`; loading a legacy preset resets duty to 50%. Profiles are not silently re-encoded or corrupted. A future versioned profile schema is needed for full PWM Studio settings storage.
+- Added portable bounds/stepping tests `tests/test_pwm_settings.c.inc` to v1.7 CI and extended source-boundary guards.
+- Physical Flipper validation of frequency, duty, key behavior, and PA7 ownership is still pending; successful automated builds are not a calibration claim.
+
 ## Next
 
 - Review the app-level capture teardown coordinator and complete regression tests for transitions between LOW/HIGH/PULSE/LOGGER and PA7 background PWM.
-- Add PWM Studio adjustable duty/custom frequency as *separate* functional changes, testing bounds, ownership and stop behavior.
+- Validate the PWM Studio feature slice on the physical Flipper and check PA7 background ownership under navigation/monitoring.
 - Implement Event Counter, button analysis and alerts, respecting existing IRQ restrictions (PC3/PB3 EXTI3 and PA6 EXTI6 conflict with buttons; PWM owns PA7).
 - Bundle changes into focused on-device sessions, using only verified 3.3 V digital signals.
 - Prior to v1.7 RC, verify physical output frequency/duty and switching, menu reentry, frequency/pulse STATS and HOLD, Logger/History and Profiles. Avoid claims of calibrated metrology.
