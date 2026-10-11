@@ -651,7 +651,9 @@ expect(
     "app->profile_confirm = true;" in MAIN and
     "profiles_delete_requested = app->profile_action == 2U;" in MAIN and
     "memset(profile, 0, sizeof(*profile));" in MAIN and
-    '"OK DELETE  BACK CANCEL"' in SCREENS and
+    'app->profile_action == 2U ? "DELETE" : "SAVE"' in SCREENS and
+    'ui_footer_pair(canvas, "OK",' in SCREENS and
+    '"BACK", "NO"' in SCREENS and
     "app->preferred_frequency_pin = profile->frequency_pin;" in MAIN and
     "app->preferred_pulse_pin = profile->pulse_pin;" in MAIN and
     "app->generator_running ||" in MAIN,
