@@ -325,7 +325,10 @@ void draw_frequency(Canvas* canvas, LabMateApp* app) {
     canvas_draw_str(canvas, 2, 10, "FREQ");
     ui_badge(canvas, 34, 1, 55, high_mode ? "HIGH PB3" : "LOW PC1", false);
     ui_badge(canvas, 91, 1, 35,
-             app->capture_blocked ? "ERR" : (app->hold ? "HOLD" : "LIVE"),
+             app->threshold.armed && app->threshold.latched &&
+                     app->threshold.source == LabMateAlertFrequency ?
+                 "ALRT" : app->capture_blocked ? "ERR" :
+                 (app->hold ? "HOLD" : "LIVE"),
              !app->hold);
     canvas_draw_line(canvas, 0, 13, 127, 13);
 
@@ -390,17 +393,19 @@ void draw_alerts(Canvas* canvas, LabMateApp* app) {
     canvas_set_font(canvas, FontSecondary);
     canvas_draw_str(canvas, 2, 24,
                     labmate_threshold_source_name(app->threshold.source));
-    snprintf(line, sizeof(line), "LIMIT >= %lu %s",
+    snprintf(line, sizeof(line), "AT >= %lu %s",
              (unsigned long)app->threshold.limit,
              labmate_threshold_source_unit(app->threshold.source));
     canvas_draw_str(canvas, 2, 36, line);
-    if(app->threshold.latched) {
-        canvas_draw_str(canvas, 2, 48, "TRIPPED - CHECK SIGNAL");
-    } else if(app->threshold.active) {
-        canvas_draw_str(canvas, 2, 48, "ABOVE LIMIT");
+    if(!app->threshold.armed) {
+        canvas_draw_str(canvas, 2, 48, "DISARMED");
+    } else if(app->threshold.latched) {
+        canvas_draw_str(canvas, 2, 48, "TRIPPED: CHECK INPUT");
+    } else if(!app->threshold.has_sample) {
+        canvas_draw_str(canvas, 2, 48, "NO LIVE SAMPLE");
     } else {
         canvas_draw_str(canvas, 2, 48,
-                        app->threshold.armed ? "WAITING / BELOW" : "DISARMED");
+                        app->threshold.active ? "ABOVE LIMIT" : "BELOW LIMIT");
     }
     canvas_draw_line(canvas, 0, 52, 127, 52);
     canvas_draw_str(canvas, 2, 61, app->threshold.armed ?
@@ -412,31 +417,49 @@ void draw_alerts(Canvas* canvas, LabMateApp* app) {
  */
 void draw_button(Canvas* canvas, LabMateApp* app) {
     char line[36];
-    ui_draw_header(canvas, "BUTTON TEST");
-    ui_badge(canvas, 91, 14, 35,
-             app->capture_blocked ? "BUSY" : app->button_active ? "RUN" : "STOP",
+    ui_draw_header(canvas, "BUTTON");
+    ui_badge(canvas, 91, 1, 35,
+             app->threshold.armed && app->threshold.latched &&
+                     app->threshold.source == LabMateAlertButtonSettle ?
+                 "ALRT" :
+                 app->capture_blocked ? "BUSY" :
+                 app->button_active ? "RUN" : "STOP",
              app->button_active);
+
+    /* 6px compact glyphs: rows fit even with full uint32 values. */
     canvas_set_font(canvas, FontSecondary);
-    snprintf(line, sizeof(line), "PC1 LOW=PRESS DB:%ums",
-             (unsigned)app->button_quiet_ms);
-    canvas_draw_str(canvas, 2, 25, line);
-    snprintf(line, sizeof(line), "P:%lu R:%lu EDGES:%u",
-             (unsigned long)app->button_stats.presses,
-             (unsigned long)app->button_stats.releases,
-             (unsigned)app->button_stats.last_bounce_edges);
-    canvas_draw_str(canvas, 2, 35, line);
-    snprintf(line, sizeof(line), "BOUNCE:%luus SET:%lums",
-             (unsigned long)app->button_bounce_us,
-             (unsigned long)app->button_settle_ms);
-    canvas_draw_str(canvas, 2, 45, line);
-    snprintf(line, sizeof(line), "HOLD:%lums %s",
-             (unsigned long)app->button_hold_ms,
-             app->button_stats.pending ? "WAIT" :
-                 app->button_stats.stable_level ? "OPEN" : "CLOSED");
-    canvas_draw_str(canvas, 2, 51, line);
+    if(!app->button_details_view) {
+        snprintf(line, sizeof(line), "PC1  <>DB:%u ms",
+                 (unsigned)app->button_quiet_ms);
+        canvas_draw_str(canvas, 2, 23, line);
+        canvas_draw_str(canvas, 2, 32,
+                        app->button_stats.pending ? "CONTACT: SETTLING" :
+                        app->button_stats.stable_level ? "CONTACT: OPEN" :
+                                                         "CONTACT: CLOSED");
+        snprintf(line, sizeof(line), "PRESS:%lu",
+                 (unsigned long)app->button_stats.presses);
+        canvas_draw_str(canvas, 2, 41, line);
+        snprintf(line, sizeof(line), "RELEASE:%lu",
+                 (unsigned long)app->button_stats.releases);
+        canvas_draw_str(canvas, 2, 50, line);
+    } else {
+        snprintf(line, sizeof(line), "BOUNCE:%lu us",
+                 (unsigned long)app->button_bounce_us);
+        canvas_draw_str(canvas, 2, 23, line);
+        snprintf(line, sizeof(line), "SETTLE:%lu ms",
+                 (unsigned long)app->button_settle_ms);
+        canvas_draw_str(canvas, 2, 32, line);
+        snprintf(line, sizeof(line), "HOLD:%lu ms",
+                 (unsigned long)app->button_hold_ms);
+        canvas_draw_str(canvas, 2, 41, line);
+        snprintf(line, sizeof(line), "BOUNCE EDGES:%u",
+                 (unsigned)app->button_stats.last_bounce_edges);
+        canvas_draw_str(canvas, 2, 50, line);
+    }
     canvas_draw_line(canvas, 0, 53, 127, 53);
+    canvas_set_font(canvas, FontSecondary);
     canvas_draw_str(canvas, 2, 62, app->button_active ?
-                    "OK STOP  BK EXIT" : "OK RUN <>DB ^RST BK");
+                    "v PAGE OK STOP BK" : "<>DB ^RST vPAGE OK");
 }
 
 /* Event Counter is a passive 64-bit display of PB3/TIM2 rising edges.
@@ -453,7 +476,10 @@ void draw_counter(Canvas* canvas, LabMateApp* app) {
 
     ui_draw_header(canvas, "EVENT COUNTER");
     ui_badge(canvas, 92, 15, 34,
-             app->capture_blocked ? "BUSY" : app->counter_active ? "RUN" : "STOP",
+             app->threshold.armed && app->threshold.latched &&
+                     app->threshold.source == LabMateAlertCounter ?
+                 "ALRT" : app->capture_blocked ? "BUSY" :
+                 app->counter_active ? "RUN" : "STOP",
              app->counter_active);
     canvas_set_font(canvas, FontSecondary);
     canvas_draw_str(canvas, 2, 25, "PB3 RISE / TIM2");
@@ -464,7 +490,7 @@ void draw_counter(Canvas* canvas, LabMateApp* app) {
     canvas_draw_line(canvas, 0, 52, 127, 52);
     canvas_set_font(canvas, FontSecondary);
     canvas_draw_str(canvas, 2, 61, app->counter_active ?
-                    "OK STOP  BK EXIT" : "OK RUN  ^RESET  BK EXIT");
+                    "OK STOP  BK EXIT" : "OK RUN  ^RST BK EXIT");
 }
 
 /* Display-only PWM Studio renderer. No TIM1 / GPIO writes here. */
@@ -503,7 +529,7 @@ void draw_generator(Canvas* canvas, LabMateApp* app) {
 
     canvas_set_font(canvas, FontSecondary);
     if(app->generator_editing) {
-        snprintf(step, sizeof(step), "STEP %lu Hz",
+        snprintf(step, sizeof(step), "STEP %luHz BK:CANCEL",
                  (unsigned long)labmate_generator_custom_step_hz(app));
         canvas_draw_str(canvas, 3, 49, step);
     } else {
@@ -514,7 +540,7 @@ void draw_generator(Canvas* canvas, LabMateApp* app) {
     canvas_draw_line(canvas, 0, 52, 127, 52);
     canvas_set_font(canvas, FontSecondary);
     if(app->generator_editing) {
-        canvas_draw_str(canvas, 2, 61, "<> Hz  ^v STEP  OK SAVE");
+        canvas_draw_str(canvas, 2, 61, "<>Hz ^vSTEP OK:SET");
     } else {
         canvas_draw_str(canvas, 2, 61, app->generator_running ?
                         "<> F  ^v D  OK STOP" : "<> F  ^v D  OK RUN");
@@ -627,7 +653,10 @@ void draw_pulse(Canvas* canvas, LabMateApp* app) {
     canvas_draw_str(canvas, 2, 10, "PULSE");
     ui_badge(canvas, 56, 1, 33, labmate_gpio_names[app->gpio_index], false);
     ui_badge(canvas, 91, 1, 35,
-             app->capture_blocked ? "ERR" : (app->hold ? "HOLD" : "LIVE"),
+             app->threshold.armed && app->threshold.latched &&
+                     app->threshold.source == LabMateAlertPulseDuty ?
+                 "ALRT" : app->capture_blocked ? "ERR" :
+                 (app->hold ? "HOLD" : "LIVE"),
              !app->hold);
     canvas_draw_line(canvas, 0, 13, 127, 13);
 
