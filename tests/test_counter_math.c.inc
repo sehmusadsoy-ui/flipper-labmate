@@ -17,11 +17,11 @@ int main(void) {
     char formatted[24];
     char too_small[2];
     assert(labmate_counter_format(0U, formatted, sizeof(formatted)));
-    assert(formatted[0] == '0' && formatted[1] == '\\0');
+    assert(formatted[0] == '0' && formatted[1] == '\0');
     assert(labmate_counter_format(18446744073709551615ULL, formatted, sizeof(formatted)));
     assert(strcmp(formatted, "18446744073709551615") == 0);
     assert(!labmate_counter_format(123U, too_small, sizeof(too_small)));
-    assert(too_small[0] == '\\0');
+    assert(too_small[0] == '\0');
     puts("Event Counter TIM2 wrap/saturation and decimal formatting tests PASS");
     return 0;
 }
