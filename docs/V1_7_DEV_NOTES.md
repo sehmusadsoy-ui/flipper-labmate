@@ -59,6 +59,17 @@ These are CI/compile results, **not** physical Flipper measurement validations.
 - **CI checkpoint:** GitHub Actions `38130677078`, source `1fc24a81998ae6f197a0717e9beb4ef69057244d`, both compile/portable-test and Windows installer jobs succeeded; `labmate` FAP artifact and SHA256SUMS were created.
 - **Physical-device checks not yet performed:** 1/100/1000 Hz known-source event counts over timed windows, STOP/UP RESET behavior, BACK/exit release, Frequency HIGH/PULSE resource transitions, and simultaneous independent PA7 PWM. Do not treat CI as metrology calibration.
 
+## Button Analyzer: first PC1 dry-contact analyzer (2026-10-11)
+
+- Added `Button Analyzer` as tool ID 9 in the MEASURE group, without renumbering original tools or changing Profiles data. MEASURE's 5 items use the existing scrollable three-row menu.
+- Input is **PC1 / EXTI1**, armed for both edges with an internal pull-up (LOW = contact closed). Testing is intended for a dry contact between PC1 and GND or an independently verified 3.3 V-compatible digital input; never connect higher voltages. EXTI3/6 reserved system-button lines and PA7 generator output are not used.
+- `LabMateCaptureButton` is distinct from Pulse/LOW PC1/HIGH PB3/Counter capture owners. START requires full exclusive acquisition; STOP/BACK detaches callback, clears both EXTI triggers, restores analog pin mode, and releases ownership.
+- ISR records timestamped level changes only. `labmate_button_logic.c/.h` is a portable debouncer that confirms transitions after a selectable 5/10/20/50 ms quiet interval, reports bounce edges, DWT-cycle bounce width, first-edge-to-stable settling latency, confirmed presses/releases and stable press-hold time. Bounce glitches that return to the original level are rejected.
+- **Meaning of response:** electrical first-contact-edge to debounced stable-state detection, **not** mechanical actuation-before-first-contact or human reaction latency. DWT edge timing is subject to interrupt timestamp latency and requires physical validation; the settle timestamp also depends on the app polling cadence.
+- Controls: OK START/STOP, LEFT/RIGHT set debounce while STOP, UP reset while STOP, BACK stops/releases and returns to menu. The UI is read-only and uses an IRQ-safe published snapshot.
+- Added host-native tests for clean presses, multi-edge bounce, rejected glitches, counter and CPU-cycle timer rollover, and an extended capture-ownership matrix; CI run `38131174602` at source `45d658c65e74a3cf78aeea41831a018a31a886f5` completed both build and Windows installer jobs successfully.
+- **Device gate still open:** verify real PC1 contact handling, measured bounce/settle timing, STOP/BACK release, interactions with LOW PC1 and Pulse PC1, and independent PA7 PWM with 3.3 V-compatible signals.
+
 ## Next
 
 - Review the app-level capture teardown coordinator and complete regression tests for transitions between LOW/HIGH/PULSE/LOGGER and PA7 background PWM.
