@@ -1,5 +1,6 @@
 #include "labmate_ui_primitives.h"
 #include "labmate_navigation.h"
+#include <string.h>
 
 /* ---------- STATELESS DRAWING PRIMITIVES (v1.6-dev) ---------- */
 
@@ -36,6 +37,35 @@ void ui_key(
     canvas_set_font(canvas, FontSecondary);
     canvas_draw_str(canvas, x + 3, 61, key);
     canvas_draw_str(canvas, x + 21, 61, label);
+}
+
+/* Two balanced 62px footer zones with readable outlined keycaps.
+ * A max 4-letter key + 4-letter action fits inside each 62px zone;
+ * short keys can pair with longer actions (e.g. LR/SOURCE).
+ * Avoid glyph arrows: they are not reliably legible on all LCD fonts.
+ */
+static void ui_footer_action(
+    Canvas* canvas,
+    uint8_t x,
+    const char* key,
+    const char* action) {
+    const size_t key_chars = strlen(key);
+    const uint8_t key_width = (uint8_t)(key_chars * 6U + 6U);
+    canvas_draw_frame(canvas, x, 54, key_width, 10);
+    canvas_set_font(canvas, FontSecondary);
+    canvas_draw_str(canvas, x + 3, 62, key);
+    canvas_draw_str(canvas, x + key_width + 3, 62, action);
+}
+
+void ui_footer_pair(
+    Canvas* canvas,
+    const char* left_key,
+    const char* left_action,
+    const char* right_key,
+    const char* right_action) {
+    canvas_draw_line(canvas, 0, 52, 127, 52);
+    ui_footer_action(canvas, 2, left_key, left_action);
+    ui_footer_action(canvas, 66, right_key, right_action);
 }
 
 /* Small, distinct 12x12 instrument pictograms.
