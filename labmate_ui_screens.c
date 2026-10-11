@@ -397,16 +397,13 @@ void draw_counter(Canvas* canvas, LabMateApp* app) {
     canvas_set_font(canvas, FontSecondary);
     canvas_draw_str(canvas, 2, 25, "PB3 / TIM2   RISING");
     canvas_draw_str(canvas, 2, 38, "TOTAL EDGES:");
+    canvas_draw_str_aligned(canvas, 126, 38, AlignRight, AlignBottom, elapsed);
     canvas_set_font(canvas, FontSecondary);
     canvas_draw_str(canvas, 2, 49, count);
     canvas_draw_line(canvas, 0, 52, 127, 52);
     canvas_set_font(canvas, FontSecondary);
     canvas_draw_str(canvas, 2, 61, app->counter_active ?
                     "OK STOP  BK EXIT" : "OK RUN  ^RESET  BK EXIT");
-    /* Session time is tracked and available for future rate/alerts.
-     * Keep the full-width count legible even at UINT64_MAX.
-     */
-    UNUSED(elapsed);
 }
 
 /* Display-only PWM Studio renderer. No TIM1 / GPIO writes here. */
