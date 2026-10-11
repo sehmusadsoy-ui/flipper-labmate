@@ -758,16 +758,6 @@ static void threshold_update_from_measurement(LabMateApp* app) {
     labmate_threshold_update(&app->threshold, valid, sample);
 }
 
-static bool threshold_matches_screen(const LabMateApp* app) {
-    switch(app->threshold.source) {
-    case LabMateAlertFrequency: return app->screen == LabMateScreenFrequency;
-    case LabMateAlertPulseDuty: return app->screen == LabMateScreenPulse;
-    case LabMateAlertCounter: return app->screen == LabMateScreenCounter;
-    case LabMateAlertButtonSettle: return app->screen == LabMateScreenButton;
-    default: return false;
-    }
-}
-
 /* ---------- DRAWING (stateful screens) ---------- */
 
 static void render_callback(
@@ -830,14 +820,6 @@ static void render_callback(
     case LabMateScreenAlerts:
         draw_alerts(canvas, app);
         break;
-    }
-
-    /* A latched alarm is visible on its measurement screen until acknowledged.
-     * Drawing stays passive; this only replaces a small top-right UI badge.
-     */
-    if(app->threshold.armed && app->threshold.latched &&
-       threshold_matches_screen(app)) {
-        ui_badge(canvas, 92, 1, 35, "ALERT", true);
     }
 
     furi_mutex_release(
@@ -1069,6 +1051,7 @@ int32_t labmate_app(void* p) {
 
                     case LabMateToolButton:
                         app->screen = LabMateScreenButton;
+                        app->button_details_view = false;
                         app->gpio_index = LABMATE_MONITOR_PC1_INDEX;
                         app->capture_blocked = false;
                         labmate_button_capture_reset(app); /* No IRQ until OK RUN */
@@ -1282,6 +1265,9 @@ int32_t labmate_app(void* p) {
                     labmate_button_capture_change_quiet(app, -1);
                 } else if(event.key == InputKeyRight) {
                     labmate_button_capture_change_quiet(app, 1);
+                } else if(event.key == InputKeyDown) {
+                    /* Paging is display-only; never reset or re-arm EXTI. */
+                    app->button_details_view = !app->button_details_view;
                 } else if(event.key == InputKeyBack) {
                     capture_stop_all(app);
                     app->screen = LabMateScreenMenu;
