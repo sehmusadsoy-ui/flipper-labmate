@@ -13,6 +13,7 @@ on:
       - "tests/test_frequency_gate.c.inc"
       - "tests/test_logger_codec.c.inc"
       - "tests/test_pulse_math.c.inc"
+      - "tests/test_pwm_settings.c.inc"
       - "scripts/install-labmate.ps1"
       - "scripts/install-from-github.ps1"
       - "application.fam"
@@ -90,6 +91,14 @@ jobs:
             labmate_pulse_math.c tests/test_pulse_math.c.inc \
             -o /tmp/labmate-pulse-math-tests
           /tmp/labmate-pulse-math-tests
+
+      - name: Test PWM Studio frequency and duty bounds (portable C)
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. -x c \
+            labmate_pwm_settings.c tests/test_pwm_settings.c.inc \
+            -o /tmp/labmate-pwm-settings-tests
+          /tmp/labmate-pwm-settings-tests
 
       - name: Compile with Momentum SDK
         id: compile
