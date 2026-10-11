@@ -201,7 +201,7 @@ for fn in ("start", "stop", "change_frequency"):
            f"{name}: expected exactly one generator implementation")
     expect(f"void {name}(LabMateApp* app" in GENERATOR_H,
            f"{name}: public module declaration missing")
-    expect(f"{name}(app" in MAIN,
+    expect(re.search(rf"\b{re.escape(name)}\s*\(\s*app\b", MAIN) is not None,
            f"{name}: application must delegate to generator module")
 expect("furi_hal_pwm_" not in MAIN and "furi_hal_pwm_" not in SCREENS,
        "PWM HAL calls must remain inside generator.c")
