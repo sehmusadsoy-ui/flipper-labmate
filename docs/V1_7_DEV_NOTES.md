@@ -47,6 +47,17 @@ These are CI/compile results, **not** physical Flipper measurement validations.
 - Added portable bounds/stepping tests `tests/test_pwm_settings.c.inc` to v1.7 CI and extended source-boundary guards.
 - Physical Flipper validation of frequency, duty, key behavior, and PA7 ownership is still pending; successful automated builds are not a calibration claim.
 
+## Event Counter: first hardware-counting implementation (2026-10-11)
+
+- Added **Event Counter** as the fourth MEASURE instrument. Historical tool IDs 0..7 are preserved; new Counter is appended as ID 8.
+- Counts actual **rising edges** on **PB3 / TIM2_CH2** in hardware external-clock mode, not inferred Hz multiplied by time and not CPU-side GPIO edge polling. Input must be compatible with 3.3 V Flipper GPIO levels.
+- `LabMateCaptureCounter` owns the PB3/TIM2 peripheral separately from Frequency HIGH; the common capture core rejects overlapping capture acquisitions. Counter START/STOP holds/releases exactly one owner.
+- `labmate_event_counter.c/.h`: STOP-only entry, OK to begin a new count/reset hardware baseline, OK to freeze the counter, UP resets *only when stopped*, BACK always stops and returns to menu.
+- Samples 32-bit TIM2 hardware snapshots in the app loop and accumulates an unsigned delta to a saturating **64-bit total**, including a 32-bit TIM2 wrap between successive polls. Requires fewer than 2^32 edges between two polls; under realistic 3.3 V signals this is a conservative limit. Frozen final snapshot taken after counter disable.
+- 128x64 display prints the full decimal total (up to UINT64_MAX) using a portable formatter instead of relying on target-libc 64-bit `printf` support, together with elapsed session seconds.
+- Expanded exclusive-owner transition tests across LOW PC1 / HIGH PB3 / PULSE / COUNTER and a portable counter wrap/saturation/formatting test; added dedicated CI step and static module-boundary assertions.
+- **Physical-device checks not yet performed:** 1/100/1000 Hz known-source event counts over timed windows, STOP/UP RESET behavior, BACK/exit release, Frequency HIGH/PULSE resource transitions, and simultaneous independent PA7 PWM. Do not treat CI as metrology calibration.
+
 ## Next
 
 - Review the app-level capture teardown coordinator and complete regression tests for transitions between LOW/HIGH/PULSE/LOGGER and PA7 background PWM.
