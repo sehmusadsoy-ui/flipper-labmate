@@ -219,7 +219,8 @@ typedef struct {
     Storage* logger_storage;
     File* logger_file;
 
-    /* Read-only history browser. The list is bounded; CSV parsing is streamed. */
+    /* Bounded history browser. CSV reads are streamed; deletion is an
+     * explicit second-confirmed, app-thread-only operation on one log ID. */
     uint16_t history_ids[LOGGER_HISTORY_LIMIT];
     uint8_t history_count;
     uint8_t history_selected;
@@ -227,6 +228,9 @@ typedef struct {
     bool history_busy;
     bool history_error;
     bool history_loading;
+    bool history_delete_mode; /* LEFT/RIGHT toggles VIEW or DELETE */
+    bool history_delete_confirm; /* BACK cancels, OK confirms exact file */
+    uint8_t history_delete_notice; /* 0=none, 1=deleted, 2=delete failed */
     Storage* history_storage;
     File* history_file;
     uint32_t history_rows;
