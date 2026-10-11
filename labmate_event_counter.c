@@ -16,7 +16,7 @@ void labmate_event_counter_start(LabMateApp* app) {
     app->counter_last_hw = 0U;
     app->counter_total = 0U;
     app->counter_start_tick = furi_get_tick();
-    app->counter_elapsed_ticks = 0U;
+    app->counter_elapsed_seconds = 0U;
     app->counter_active = true;
     app->capture_pin_index = app->gpio_index;
     app->capture_owner = LabMateCaptureCounter;
@@ -29,7 +29,11 @@ void labmate_event_counter_poll(LabMateApp* app) {
     app->counter_total =
         labmate_counter_accumulate(app->counter_total, app->counter_last_hw, current);
     app->counter_last_hw = current;
-    app->counter_elapsed_ticks = (uint32_t)(furi_get_tick() - app->counter_start_tick);
+    const uint32_t tick_frequency = furi_kernel_get_tick_frequency();
+    if(tick_frequency > 0U) {
+        app->counter_elapsed_seconds =
+            (uint32_t)((furi_get_tick() - app->counter_start_tick) / tick_frequency);
+    }
 }
 
 void labmate_event_counter_stop(LabMateApp* app) {
@@ -56,5 +60,5 @@ void labmate_event_counter_reset(LabMateApp* app) {
     app->counter_total = 0U;
     app->counter_last_hw = 0U;
     app->counter_start_tick = 0U;
-    app->counter_elapsed_ticks = 0U;
+    app->counter_elapsed_seconds = 0U;
 }
