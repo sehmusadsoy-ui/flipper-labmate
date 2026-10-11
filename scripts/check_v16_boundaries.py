@@ -20,6 +20,8 @@ CAPTURE_CORE = (ROOT / "labmate_capture_core.c").read_text(encoding="utf-8")
 CAPTURE_CORE_H = (ROOT / "labmate_capture_core.h").read_text(encoding="utf-8")
 PULSE_CAPTURE = (ROOT / "labmate_pulse_capture.c").read_text(encoding="utf-8")
 PULSE_CAPTURE_H = (ROOT / "labmate_pulse_capture.h").read_text(encoding="utf-8")
+FREQ_CAPTURE = (ROOT / "labmate_frequency_capture.c").read_text(encoding="utf-8")
+FREQ_CAPTURE_H = (ROOT / "labmate_frequency_capture.h").read_text(encoding="utf-8")
 SCREENS = (ROOT / "labmate_ui_screens.c").read_text(encoding="utf-8")
 SCREENS_H = (ROOT / "labmate_ui_screens.h").read_text(encoding="utf-8")
 INTERNAL_H = (ROOT / "labmate_internal.h").read_text(encoding="utf-8")
@@ -120,7 +122,7 @@ expect(
     "Missing exclusive capture owner state",
 )
 expect(
-    MAIN.count("labmate_capture_can_start(app, LabMateCapture") == 2
+    FREQ_CAPTURE.count("labmate_capture_can_start(app, LabMateCapture") == 2
     and PULSE_CAPTURE.count("labmate_capture_can_start(app, LabMateCapturePulse)") == 1,
     "All three capture start paths must check ownership and pin eligibility",
 )
@@ -130,7 +132,7 @@ for owner in (
     "LabMateCapturePulse",
 ):
     expect(
-        f"app->capture_owner = {owner};" in (PULSE_CAPTURE if owner == "LabMateCapturePulse" else MAIN),
+        f"app->capture_owner = {owner};" in (PULSE_CAPTURE if owner == "LabMateCapturePulse" else FREQ_CAPTURE),
         f"Capture start must mark active owner: {owner}",
     )
 expect(
@@ -150,12 +152,12 @@ expect(
     "Missing pinned IRQ identity and blocked capture state",
 )
 expect(
-    MAIN.count("labmate_gpio_pins[app->capture_pin_index]") >= 1
+    FREQ_CAPTURE.count("labmate_gpio_pins[app->capture_pin_index]") >= 1
     and PULSE_CAPTURE.count("labmate_gpio_pins[app->capture_pin_index]") >= 2,
     "Active IRQ callback and teardown must use the registered pin",
 )
 expect(
-    MAIN.count("app->capture_pin_index = app->gpio_index;") == 2
+    FREQ_CAPTURE.count("app->capture_pin_index = app->gpio_index;") == 2
     and PULSE_CAPTURE.count("app->capture_pin_index = app->gpio_index;") == 1,
     "Each capture start path must record its actual selected pin",
 )
@@ -197,12 +199,17 @@ expect(
     "App exit must call shared teardown",
 )
 
-for sentinel in [
-    "static void frequency_gpio_callback(",
-    "static void frequency_hw_start(",
-    "static void frequency_hw_stop(",
-]:
-    expect(sentinel in MAIN, f"Required capture/storage function missing: {sentinel}")
+expect("static void frequency_gpio_callback(" in FREQ_CAPTURE and
+       "static void frequency_gpio_callback(" not in MAIN,
+       "Frequency GPIO ISR must live in frequency module")
+for kind in ("high", "low"):
+    for operation in ("start", "stop"):
+        name = f"labmate_frequency_{kind}_{operation}"
+        expect(len(re.findall(rf"(?m)^void\s+{name}\s*\(", FREQ_CAPTURE)) == 1 and
+               f"void {name}(LabMateApp* app);" in FREQ_CAPTURE_H and
+               f"{name}(app)" in MAIN,
+               f"Frequency lifecycle must be delegated: {name}")
+
 expect("static void pulse_gpio_callback(" in PULSE_CAPTURE and
        "static void pulse_gpio_callback(" not in MAIN,
        "Pulse IRQ callback must live only in pulse module")
@@ -242,8 +249,8 @@ for fn in ("configure", "enable", "read", "shutdown"):
            f"TIM2 driver missing exactly one {name} implementation")
     expect(f"{name}(void);" in TIM2_CAPTURE_H,
            f"TIM2 driver header missing {name}")
-    expect(f"{name}(" in MAIN,
-           f"Application no longer calls TIM2 driver {name}")
+    expect(f"{name}(" in (MAIN if fn == "read" else FREQ_CAPTURE),
+           f"TIM2 driver is not called by expected owner: {name}")
 expect("LL_TIM_" not in MAIN and "furi_hal_bus_" not in MAIN,
        "TIM2 LL and bus handling must stay out of labmate.c")
 for fragment in ("GpioAltFn1TIM2", "LL_TIM_CLOCKSOURCE_EXT_MODE1",
@@ -261,7 +268,7 @@ expect("FURI_CRITICAL_ENTER()" in EXTI_CAPTURE
        and "LL_EXTI_ClearFlag_0_31(line)" in EXTI_CAPTURE,
        "EXTI trigger release must retain tested critical-section sequence")
 expect("LL_EXTI_Disable" not in MAIN and "LL_EXTI_ClearFlag" not in MAIN
-       and MAIN.count("labmate_capture_exti_clear(") == 1
+       and FREQ_CAPTURE.count("labmate_capture_exti_clear(") == 1
        and PULSE_CAPTURE.count("labmate_capture_exti_clear(") == 1,
        "LOW/PC1 pre-arm and Pulse stop must use common EXTI cleanup")
 
