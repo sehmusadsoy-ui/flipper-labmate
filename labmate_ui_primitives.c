@@ -134,6 +134,9 @@ void ui_draw_menu_icon(
     case 9:
         ui_icon_pulse(canvas, x, y);
         break;
+    case 10:
+        ui_icon_info(canvas, x, y);
+        break;
     }
 }
 
