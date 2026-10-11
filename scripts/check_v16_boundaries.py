@@ -12,6 +12,10 @@ ROOT = Path(__file__).resolve().parents[1]
 MAIN = (ROOT / "labmate.c").read_text(encoding="utf-8")
 GENERATOR = (ROOT / "labmate_generator.c").read_text(encoding="utf-8")
 GENERATOR_H = (ROOT / "labmate_generator.h").read_text(encoding="utf-8")
+TIM2_CAPTURE = (ROOT / "labmate_frequency_tim2.c").read_text(encoding="utf-8")
+TIM2_CAPTURE_H = (ROOT / "labmate_frequency_tim2.h").read_text(encoding="utf-8")
+EXTI_CAPTURE = (ROOT / "labmate_capture_exti.c").read_text(encoding="utf-8")
+EXTI_CAPTURE_H = (ROOT / "labmate_capture_exti.h").read_text(encoding="utf-8")
 SCREENS = (ROOT / "labmate_ui_screens.c").read_text(encoding="utf-8")
 SCREENS_H = (ROOT / "labmate_ui_screens.h").read_text(encoding="utf-8")
 INTERNAL_H = (ROOT / "labmate_internal.h").read_text(encoding="utf-8")
@@ -209,6 +213,36 @@ for pwm_op in ("furi_hal_pwm_start(", "furi_hal_pwm_stop(", "furi_hal_pwm_set_pa
     expect(pwm_op in GENERATOR, f"Missing generator HAL operation {pwm_op}")
 expect("FuriHalPwmOutputIdTim1PA7" in GENERATOR,
        "Generator must retain TIM1/PA7 ownership")
+
+# The PB3/TIM2 hardware layer and EXTI trigger lifecycle now live in
+# dedicated modules. Exclusive capture ownership still belongs to the app.
+for fn in ("configure", "enable", "read", "shutdown"):
+    name = f"labmate_frequency_tim2_{fn}"
+    expect(len(re.findall(rf"(?m)^(?:void|uint32_t)\s+{name}\s*\(", TIM2_CAPTURE)) == 1,
+           f"TIM2 driver missing exactly one {name} implementation")
+    expect(f"{name}(void);" in TIM2_CAPTURE_H,
+           f"TIM2 driver header missing {name}")
+    expect(f"{name}(" in MAIN,
+           f"Application no longer calls TIM2 driver {name}")
+expect("LL_TIM_" not in MAIN and "furi_hal_bus_" not in MAIN,
+       "TIM2 LL and bus handling must stay out of labmate.c")
+for fragment in ("GpioAltFn1TIM2", "LL_TIM_CLOCKSOURCE_EXT_MODE1",
+                 "LL_TIM_IC_POLARITY_RISING", "FuriHalBusTIM2",
+                 "LL_TIM_DisableCounter(", "GpioModeAnalog"):
+    expect(fragment in TIM2_CAPTURE,
+           f"TIM2 driver lost the tested hardware setting: {fragment}")
+expect("labmate_capture_exti_clear(" in EXTI_CAPTURE_H
+       and "labmate_capture_exti_clear(" in EXTI_CAPTURE,
+       "Common EXTI release helper missing")
+expect("FURI_CRITICAL_ENTER()" in EXTI_CAPTURE
+       and "FURI_CRITICAL_EXIT()" in EXTI_CAPTURE
+       and "LL_EXTI_DisableRisingTrig_0_31(line)" in EXTI_CAPTURE
+       and "LL_EXTI_DisableFallingTrig_0_31(line)" in EXTI_CAPTURE
+       and "LL_EXTI_ClearFlag_0_31(line)" in EXTI_CAPTURE,
+       "EXTI trigger release must retain tested critical-section sequence")
+expect("LL_EXTI_Disable" not in MAIN and "LL_EXTI_ClearFlag" not in MAIN
+       and MAIN.count("labmate_capture_exti_clear(") == 2,
+       "LOW/PC1 pre-arm and Pulse stop must use common EXTI cleanup")
 
 HISTORY = (ROOT / "labmate_history.c").read_text(encoding="utf-8")
 HISTORY_H = (ROOT / "labmate_history.h").read_text(encoding="utf-8")
