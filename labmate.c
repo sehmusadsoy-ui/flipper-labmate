@@ -10,6 +10,8 @@
 #include "labmate_generator.h"
 #include "labmate_frequency_tim2.h"
 #include "labmate_capture_exti.h"
+#include "labmate_capture_core.h"
+#include "labmate_pulse_capture.h"
 #include "labmate_ui_screens.h"
 #include "labmate_resource_policy.h"
 #include "labmate_frequency_gate.h"
@@ -23,17 +25,6 @@
 /* Flush buffered records every ten 1-second samples to limit data loss. */
 #define LOGGER_SYNC_EVERY_ROWS 10U
 
-
-static const GpioPin* labmate_gpio_pins[GPIO_COUNT] = {
-    &gpio_ext_pc0,
-    &gpio_ext_pc1,
-    &gpio_ext_pc3,
-    &gpio_ext_pb2,
-    &gpio_ext_pb3,
-    &gpio_ext_pa4,
-    &gpio_ext_pa6,
-    &gpio_ext_pa7,
-};
 
 /* Pulse Analyzer uses GPIO edge interrupts, not polling.
  * STM32 EXTI lines are shared across GPIO ports, and the firmware already
@@ -60,25 +51,6 @@ static uint8_t pulse_gpio_next_index(uint8_t current, int8_t direction) {
         i = (i + PULSE_GPIO_COUNT - 1U) % PULSE_GPIO_COUNT;
     }
     return pulse_gpio_indices[i];
-}
-
-/* Capture starts may only claim a free owner and an allowed physical pin.
- * Invalid or overlapping requests leave GPIO, EXTI and timers untouched.
- * UI/mode switching still calls capture_stop_all() before changing pins.
- */
-static bool capture_can_start(LabMateApp* app, LabMateCaptureOwner requested) {
-    const bool allowed = labmate_capture_can_acquire(
-        app->capture_owner,
-        requested,
-        app->gpio_index,
-        app->frequency_irq_active,
-        app->frequency_hw_active,
-        app->pulse_irq_active);
-    /* GPIO callback and bus-enable HAL functions return void.
-     * This status means policy rejected the request, NOT a detected HAL fault.
-     */
-    app->capture_blocked = !allowed;
-    return allowed;
 }
 
 static void frequency_gpio_callback(void* context) {
@@ -159,7 +131,7 @@ static void frequency_hw_stop(LabMateApp* app) {
 
 static void frequency_hw_start(LabMateApp* app) {
     if(app->frequency_hw_active ||
-       !capture_can_start(app, LabMateCaptureFrequencyHigh)) {
+       !labmate_capture_can_start(app, LabMateCaptureFrequencyHigh)) {
         return;
     }
 
@@ -197,7 +169,7 @@ static void __attribute__((unused)) frequency_interrupt_stop(LabMateApp* app) {
 
 static void __attribute__((unused)) frequency_interrupt_start(LabMateApp* app) {
     if(app->frequency_irq_active ||
-       !capture_can_start(app, LabMateCaptureFrequencyLow)) {
+       !labmate_capture_can_start(app, LabMateCaptureFrequencyLow)) {
         return;
     }
     const GpioPin* pin =
@@ -235,165 +207,6 @@ static void __attribute__((unused)) frequency_interrupt_start(LabMateApp* app) {
     app->capture_owner = LabMateCaptureFrequencyLow;
 }
 
-/* Pulse Analyzer uses BOTH edges and the CPU cycle counter.
- * ISR only captures timestamps; all arithmetic stays in the app thread.
- * Like other GPIO tools, it is intended for 3.3V digital signals only.
- */
-static void pulse_gpio_callback(void* context) {
-    LabMateApp* app = context;
-    /* Keep IRQ capture tied to the registered pin, not UI navigation. */
-    const GpioPin* pin = labmate_gpio_pins[app->capture_pin_index];
-    const uint32_t cycle = DWT->CYCCNT;
-    const bool level = furi_hal_gpio_read(pin);
-
-    if(level == app->pulse_irq_level) return;
-
-    if(app->pulse_irq_seen) {
-        const uint32_t delta = cycle - app->pulse_irq_last_cycle;
-        if(delta > 0U) {
-            /* At ordinary frequencies preserve the 16-sample response.
-             * For very short pulses, collect 128 HIGH and 128 LOW widths
-             * and publish them TOGETHER. Independent publications could
-             * otherwise mix widths from different moments on the LCD.
-             * This reduces random timing jitter, not systematic latency.
-             */
-            const uint32_t fast_half_period = SystemCoreClock / 1000U;
-            const uint32_t short_half_period = SystemCoreClock / 25000U;
-            const bool wide_window =
-                short_half_period > 0U && delta <= short_half_period;
-
-            if(app->pulse_irq_wide_window != wide_window) {
-                app->pulse_irq_high_sum = 0U;
-                app->pulse_irq_low_sum = 0U;
-                app->pulse_irq_high_samples = 0U;
-                app->pulse_irq_low_samples = 0U;
-                app->pulse_irq_wide_window = wide_window;
-            }
-
-            if(fast_half_period > 0U && delta <= fast_half_period) {
-                if(app->pulse_irq_level) {
-                    app->pulse_irq_high_sum += delta;
-                    ++app->pulse_irq_high_samples;
-                    if(!wide_window && app->pulse_irq_high_samples >= 16U) {
-                        app->pulse_irq_high_cycles =
-                            (app->pulse_irq_high_sum + 8U) >> 4;
-                        app->pulse_irq_high_valid = true;
-                        app->pulse_irq_high_sum = 0U;
-                        app->pulse_irq_high_samples = 0U;
-                    }
-                } else {
-                    app->pulse_irq_low_sum += delta;
-                    ++app->pulse_irq_low_samples;
-                    if(!wide_window && app->pulse_irq_low_samples >= 16U) {
-                        app->pulse_irq_low_cycles =
-                            (app->pulse_irq_low_sum + 8U) >> 4;
-                        app->pulse_irq_low_valid = true;
-                        app->pulse_irq_low_sum = 0U;
-                        app->pulse_irq_low_samples = 0U;
-                    }
-                }
-
-                if(wide_window &&
-                   app->pulse_irq_high_samples >= 128U &&
-                   app->pulse_irq_low_samples >= 128U) {
-                    app->pulse_irq_high_cycles =
-                        (app->pulse_irq_high_sum +
-                         app->pulse_irq_high_samples / 2U) /
-                        app->pulse_irq_high_samples;
-                    app->pulse_irq_low_cycles =
-                        (app->pulse_irq_low_sum +
-                         app->pulse_irq_low_samples / 2U) /
-                        app->pulse_irq_low_samples;
-                    app->pulse_irq_high_valid = true;
-                    app->pulse_irq_low_valid = true;
-                    app->pulse_irq_high_sum = 0U;
-                    app->pulse_irq_low_sum = 0U;
-                    app->pulse_irq_high_samples = 0U;
-                    app->pulse_irq_low_samples = 0U;
-                }
-            } else {
-                app->pulse_irq_high_sum = 0U;
-                app->pulse_irq_low_sum = 0U;
-                app->pulse_irq_high_samples = 0U;
-                app->pulse_irq_low_samples = 0U;
-                if(app->pulse_irq_level) {
-                    app->pulse_irq_high_cycles = delta;
-                    app->pulse_irq_high_valid = true;
-                } else {
-                    app->pulse_irq_low_cycles = delta;
-                    app->pulse_irq_low_valid = true;
-                }
-            }
-        }
-    }
-
-    app->pulse_irq_level = level;
-    app->pulse_irq_seen = true;
-    app->pulse_irq_last_cycle = cycle;
-    /* Avoid a kernel tick call on every edge (20,000 IRQ/s at 10 kHz).
-     * Refresh the stale-signal timestamp at most once every 10 ms.
-     * A slow signal still updates it on each edge.
-     */
-    const uint32_t tick_gap_cycles = SystemCoreClock / 100U;
-    if(tick_gap_cycles == 0U ||
-       (uint32_t)(cycle - app->pulse_irq_tick_cycle) >= tick_gap_cycles) {
-        app->pulse_irq_last_tick = furi_get_tick();
-        app->pulse_irq_tick_cycle = cycle;
-    }
-    app->pulse_irq_edges++;
-}
-
-static void pulse_interrupt_stop(LabMateApp* app) {
-    if(!app->pulse_irq_active) return;
-    const GpioPin* pin = labmate_gpio_pins[app->capture_pin_index];
-    furi_hal_gpio_disable_int_callback(pin);
-    furi_hal_gpio_remove_int_callback(pin);
-
-    /* Release both EXTI edge triggers as well as the callback. Merely
-     * removing an interrupt callback leaves the rising/falling trigger
-     * configuration behind on this firmware version.
-     */
-    labmate_capture_exti_clear((uint32_t)pin->pin, true);
-    app->pulse_irq_active = false;
-    if(app->capture_owner == LabMateCapturePulse) {
-        app->capture_owner = labmate_capture_owner_after_stop(
-            app->capture_owner, LabMateCapturePulse);
-        app->capture_pin_index = GPIO_COUNT;
-    }
-}
-
-static void pulse_interrupt_start(LabMateApp* app) {
-    if(app->pulse_irq_active ||
-       !capture_can_start(app, LabMateCapturePulse)) return;
-    const GpioPin* pin = labmate_gpio_pins[app->gpio_index];
-
-    app->pulse_irq_seen = false;
-    app->pulse_irq_high_valid = false;
-    app->pulse_irq_low_valid = false;
-    app->pulse_irq_high_cycles = 0;
-    app->pulse_irq_low_cycles = 0;
-    app->pulse_irq_edges = 0;
-    app->pulse_irq_high_sum = 0;
-    app->pulse_irq_low_sum = 0;
-    app->pulse_irq_high_samples = 0;
-    app->pulse_irq_low_samples = 0;
-    app->pulse_irq_wide_window = false;
-
-    furi_hal_gpio_init(
-        pin, GpioModeInterruptRiseFall, GpioPullNo, GpioSpeedVeryHigh);
-    app->pulse_irq_level = furi_hal_gpio_read(pin);
-    app->pulse_irq_last_cycle = DWT->CYCCNT;
-    app->pulse_irq_tick_cycle = app->pulse_irq_last_cycle;
-    app->pulse_irq_last_tick = furi_get_tick();
-
-    /* Publish pin identity before callback activation. */
-    app->capture_pin_index = app->gpio_index;
-    furi_hal_gpio_add_int_callback(pin, pulse_gpio_callback, app);
-    furi_hal_gpio_enable_int_callback(pin);
-    app->pulse_irq_active = true;
-    app->capture_owner = LabMateCapturePulse;
-}
-
 /* Shared capture teardown. Each stop checks the existing active flags.
  * Detach capture IRQs and stop TIM2 before changing app->gpio_index.
  * Independent TIM1/PA7 background PWM is deliberately untouched.
@@ -402,7 +215,7 @@ static void pulse_interrupt_start(LabMateApp* app) {
 static void capture_stop_all(LabMateApp* app) {
     frequency_hw_stop(app);
     frequency_interrupt_stop(app);
-    pulse_interrupt_stop(app);
+    labmate_pulse_capture_stop(app);
     /* A failed/stale stop must not advertise a free capture owner. */
     if(labmate_capture_all_stopped(
            app->frequency_irq_active, app->frequency_hw_active,
@@ -555,7 +368,7 @@ static void gpio_change(
         app->pulse_stats_view = false;
         pulse_stats_reset(app);
         measurement_reset(app);
-        pulse_interrupt_start(app);
+        labmate_pulse_capture_start(app);
         return;
     }
 
@@ -1010,7 +823,7 @@ static void logger_capture_start(LabMateApp* app) {
 
     if(app->logger_source == LoggerPulse) {
         pulse_stats_reset(app);
-        pulse_interrupt_start(app);
+        labmate_pulse_capture_start(app);
     } else {
         frequency_stats_reset(app);
         if(app->logger_source == LoggerFrequencyHigh) {
@@ -1344,7 +1157,7 @@ int32_t labmate_app(void* p) {
                         app->pulse_stats_view = false;
                         pulse_stats_reset(app);
                         measurement_reset(app);
-                        pulse_interrupt_start(app);
+                        labmate_pulse_capture_start(app);
                         break;
 
                     case LabMateToolGenerator:
@@ -1552,11 +1365,11 @@ int32_t labmate_app(void* p) {
                              * Keep prior recorded extrema across HOLD/LIVE. */
                             pulse_stats_window_reset(app);
                             measurement_reset(app);
-                            pulse_interrupt_start(app);
+                            labmate_pulse_capture_start(app);
                             app->hold = false;
                         } else {
                             /* Freeze displayed values and stop IRQ load. */
-                            pulse_interrupt_stop(app);
+                            labmate_pulse_capture_stop(app);
                             app->hold = true;
                         }
                     } else {
