@@ -7,6 +7,7 @@ on:
       - "*.c"
       - "*.h"
       - "scripts/check_v16_boundaries.py"
+      - "scripts/check_v17_ui_layout.py"
       - "tests/test_resource_policy.c.inc"
       - "tests/test_navigation.c.inc"
       - "tests/test_profiles.c.inc"
@@ -45,6 +46,9 @@ jobs:
 
       - name: Guard passive UI and hardware boundaries
         run: python3 scripts/check_v16_boundaries.py
+
+      - name: Guard 128x64 v1.7 UI layout bounds
+        run: python3 scripts/check_v17_ui_layout.py
 
       - name: Test portable GPIO / PA7 ownership policy
         run: |
