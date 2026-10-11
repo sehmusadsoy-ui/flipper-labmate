@@ -378,6 +378,35 @@ void draw_frequency(Canvas* canvas, LabMateApp* app) {
     canvas_draw_str(canvas, 102, 61, "^RST");
 }
 
+/* Threshold configuration is read-only from the Canvas callback.
+ * Monitoring and latch transitions occur in the application thread.
+ */
+void draw_alerts(Canvas* canvas, LabMateApp* app) {
+    char line[36];
+    ui_draw_header(canvas, "THRESHOLDS");
+    ui_badge(canvas, 92, 1, 35,
+             app->threshold.armed ? "ARM" : "OFF",
+             app->threshold.armed);
+    canvas_set_font(canvas, FontSecondary);
+    canvas_draw_str(canvas, 2, 24,
+                    labmate_threshold_source_name(app->threshold.source));
+    snprintf(line, sizeof(line), "LIMIT >= %lu %s",
+             (unsigned long)app->threshold.limit,
+             labmate_threshold_source_unit(app->threshold.source));
+    canvas_draw_str(canvas, 2, 36, line);
+    if(app->threshold.latched) {
+        canvas_draw_str(canvas, 2, 48, "TRIPPED - CHECK SIGNAL");
+    } else if(app->threshold.active) {
+        canvas_draw_str(canvas, 2, 48, "ABOVE LIMIT");
+    } else {
+        canvas_draw_str(canvas, 2, 48,
+                        app->threshold.armed ? "WAITING / BELOW" : "DISARMED");
+    }
+    canvas_draw_line(canvas, 0, 52, 127, 52);
+    canvas_draw_str(canvas, 2, 61, app->threshold.armed ?
+                    "v ACK OK OFF BK EXIT" : "<> SRC ^v LIM OK ARM");
+}
+
 /* Button Analyzer shows contact bounce and first-edge-to-stable latency.
  * This renderer reads only the app-thread published snapshot.
  */
