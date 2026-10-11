@@ -391,8 +391,8 @@ expect("storage_" not in THRESHOLD and "furi_" not in THRESHOLD
        and "labmate_threshold_update(" not in SCREENS
        and "labmate_threshold_change_limit(" not in SCREENS
        and "draw_alerts(" in SCREENS
-       and '"TRIPPED / v ACK"' in SCREENS
-       and '"WAITING FOR SAMPLE"' in SCREENS,
+       and '"ALERT LATCHED"' in SCREENS
+       and '"WAITING FOR INPUT"' in SCREENS,
        "Threshold evaluation must be host-testable and the display passive")
 expect((ROOT / "tests/test_threshold.c.inc").is_file()
        and not (ROOT / "tests/test_threshold.c").exists(),
