@@ -31,7 +31,7 @@ permissions:
 concurrency:
   # Separate current ownership-policy CI from a prior stale UI runner.
   # Keep cancelling outdated intermediate-source builds on this branch.
-  group: labmate-v1.7-dev-ci
+  group: labmate-v1.7-dev-threshold-ci
   cancel-in-progress: true
 
 jobs:
