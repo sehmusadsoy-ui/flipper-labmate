@@ -15,13 +15,14 @@ static const char* const tool_titles[LabMateToolCount] = {
     "Profiles",
     "Event Counter",
     "Button Analyzer",
+    "Threshold Alerts",
 };
 
 /* Each instrument remains reachable once, with its previous tool ID. */
-static const uint8_t group_sizes[LabMateGroupCount] = {5U, 1U, 3U, 1U};
+static const uint8_t group_sizes[LabMateGroupCount] = {5U, 2U, 3U, 1U};
 static const uint8_t group_tools[LabMateGroupCount][LABMATE_NAV_MAX_CHILDREN] = {
     {LabMateToolGpio, LabMateToolFrequency, LabMateToolPulse, LabMateToolCounter, LabMateToolButton},
-    {LabMateToolGenerator, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
+    {LabMateToolGenerator, LabMateToolAlerts, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
     {LabMateToolLogger, LabMateToolHistory, LabMateToolProfiles, LabMateToolInvalid, LabMateToolInvalid},
     {LabMateToolAbout, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid}
 };
