@@ -110,6 +110,13 @@ These are CI/compile results, **not** physical Flipper measurement validations.
 - **Threshold Alerts physical checkpoint: 16/16 PASS** across Frequency 5A, Pulse Duty 5B, Event Counter 5C and Button Settle 5D. Real-switch Test 4B remains deferred due to unavailable mechanical button.
 - **Next device gate: legacy v1.6.1 feature regression on v1.7d**, including Frequency LOW PC1 / Pulse LIVE-HOLD-STATS, Logger modes, History and Profiles S1; make no change to v1.6.1 Stable release.
 
+## Legacy feature regression — Test 6A (2026-10-11)
+
+- User physically confirmed PASS for v1.7 Frequency Meter LOW PC1 (100 Hz), Pulse Analyzer HIGH/LOW/PERIOD/DUTY, and STATS/MIN/MAX while running a 3.3 V PA7 -> PC1 digital loopback.
+- User confirmed Pulse HOLD freezes values **while remaining on the Pulse screen**. Upon BACK, editing PWM to 200 Hz elsewhere and reopening Pulse, the reading updates to 200 Hz. This is the **intended existing lifecycle**: `case LabMateToolPulse` sets `app->hold = false`, resets measurement, and starts fresh capture. The prior test instruction incorrectly expected HOLD to persist across leaving/reentering the instrument; **not a device failure**.
+- Remaining focused check before closing Test 6A: while staying on Pulse Analyzer, press OK to HOLD and press OK again to LIVE, verify capture resumes and interface remains responsive. Do not change app HOLD persistence behavior without separately requested product change.
+- Legacy Logger 3 modes, Log History and Profiles S1 remain to be retested on v1.7d. No change to v1.6.1 Stable.
+
 ## Next
 
 - Review the app-level capture teardown coordinator and complete regression tests for transitions between LOW/HIGH/PULSE/LOGGER and PA7 background PWM.
