@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 int main(void) {
     assert(labmate_counter_accumulate(0U, 0U, 0U) == 0U);
@@ -13,6 +14,14 @@ int main(void) {
     assert(labmate_counter_accumulate(UINT64_MAX - 2U, 0U, 10U) == UINT64_MAX);
     assert(labmate_counter_accumulate(UINT64_MAX, 11U, 12U) == UINT64_MAX);
     assert(labmate_counter_accumulate(45U, 777U, 777U) == 45U);
-    puts("Event Counter TIM2 wrap/saturation tests PASS");
+    char formatted[24];
+    char too_small[2];
+    assert(labmate_counter_format(0U, formatted, sizeof(formatted)));
+    assert(formatted[0] == '0' && formatted[1] == '\\0');
+    assert(labmate_counter_format(18446744073709551615ULL, formatted, sizeof(formatted)));
+    assert(strcmp(formatted, "18446744073709551615") == 0);
+    assert(!labmate_counter_format(123U, too_small, sizeof(too_small)));
+    assert(too_small[0] == '\\0');
+    puts("Event Counter TIM2 wrap/saturation and decimal formatting tests PASS");
     return 0;
 }
