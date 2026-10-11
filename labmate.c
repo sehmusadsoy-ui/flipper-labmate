@@ -1034,7 +1034,13 @@ int32_t labmate_app(void* p) {
                         app->gpio_index = app->preferred_frequency_pin;
                         frequency_stats_reset(app);
                         measurement_reset(app);
-                        labmate_frequency_high_start(app);
+                        /* A loaded profile may select PC1 LOW instead of PB3 HIGH.
+                         * Start the capture engine that owns the selected pin. */
+                        if(app->gpio_index == 4U) {
+                            labmate_frequency_high_start(app);
+                        } else {
+                            labmate_frequency_low_start(app);
+                        }
                         break;
 
                     case LabMateToolPulse:
