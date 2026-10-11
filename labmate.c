@@ -806,7 +806,7 @@ static void render_callback(
         break;
 
     case LabMateScreenAbout:
-        draw_about(canvas);
+        draw_about(canvas, app);
         break;
     case LabMateScreenProfiles:
         draw_profiles(canvas, app);
@@ -1100,6 +1100,7 @@ int32_t labmate_app(void* p) {
 
                     case LabMateToolAbout:
                         app->screen = LabMateScreenAbout;
+                        app->about_page = 0U;
                         break;
 
                     case LabMateToolProfiles:
@@ -1237,6 +1238,18 @@ int32_t labmate_app(void* p) {
                     app->history_loading = false;
                     history_close_requested = true;
                 }
+            } else if(app->screen == LabMateScreenAbout) {
+                /* Pure UI paging. Never touches capture/GPIO or stored profiles. */
+                if(event.key == InputKeyRight || event.key == InputKeyDown) {
+                    app->about_page = labmate_nav_wrap(
+                        app->about_page, (uint8_t)(LabMateToolCount + 2U), 1);
+                } else if(event.key == InputKeyLeft || event.key == InputKeyUp) {
+                    app->about_page = labmate_nav_wrap(
+                        app->about_page, (uint8_t)(LabMateToolCount + 2U), -1);
+                } else if(event.key == InputKeyBack) {
+                    app->screen = LabMateScreenMenu;
+                }
+
             } else if(app->screen == LabMateScreenAlerts) {
                 if(event.key == InputKeyLeft) {
                     labmate_threshold_change_source(&app->threshold, -1);
