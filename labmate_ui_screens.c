@@ -17,15 +17,15 @@ void draw_profiles(Canvas* canvas, LabMateApp* app) {
     else if(app->profile_io == LabMateProfileIoCorrupt) state = "CRC";
     else if(app->profile_io == LabMateProfileIoError) state = "SD ERR";
     else if(app->profile_notice == 1U) state = "SAVED";
-    else if(app->profile_notice == 2U) state = "LOAD";
+    else if(app->profile_notice == 2U) state = "LOADED";
     else if(app->profile_notice == 3U) state = "EMPTY";
-    else if(app->profile_notice == 4U) state = "STOP";
+    else if(app->profile_notice == 4U) state = "PWM ON";
     else if(app->profile_notice == 5U) state = "ERR";
-    else if(app->profile_notice == 6U) state = "DEL";
-    else if(app->profile_notice == 7U) state = "ONLY";
+    else if(app->profile_notice == 6U) state = "DELETED";
+    else if(app->profile_notice == 7U) state = "PRESET";
 
     ui_draw_header(canvas, "PROFILES");
-    ui_badge(canvas, 91, 1, 35, state, false);
+    ui_badge(canvas, 77, 1, 49, state, false);
     canvas_set_font(canvas, FontSecondary);
 
     /* Highlight full-width slot rows, preserving the original three
