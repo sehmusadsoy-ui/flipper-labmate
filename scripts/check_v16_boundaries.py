@@ -28,6 +28,10 @@ COUNTER = (ROOT / "labmate_event_counter.c").read_text(encoding="utf-8")
 COUNTER_H = (ROOT / "labmate_event_counter.h").read_text(encoding="utf-8")
 COUNTER_MATH = (ROOT / "labmate_counter_math.c").read_text(encoding="utf-8")
 COUNTER_MATH_H = (ROOT / "labmate_counter_math.h").read_text(encoding="utf-8")
+BUTTON = (ROOT / "labmate_button_capture.c").read_text(encoding="utf-8")
+BUTTON_H = (ROOT / "labmate_button_capture.h").read_text(encoding="utf-8")
+BUTTON_LOGIC = (ROOT / "labmate_button_logic.c").read_text(encoding="utf-8")
+BUTTON_LOGIC_H = (ROOT / "labmate_button_logic.h").read_text(encoding="utf-8")
 SCREENS = (ROOT / "labmate_ui_screens.c").read_text(encoding="utf-8")
 SCREENS_H = (ROOT / "labmate_ui_screens.h").read_text(encoding="utf-8")
 INTERNAL_H = (ROOT / "labmate_internal.h").read_text(encoding="utf-8")
@@ -57,6 +61,7 @@ SCREENS_EXPECTED = [
     "draw_pulse",
     "draw_generator",
     "draw_counter",
+    "draw_button",
     "draw_logger",
     "draw_history",
     "draw_history_detail",
@@ -255,9 +260,9 @@ expect('LabMateCaptureCounter' in POLICY_H
        and "LabMateToolCounter" in (ROOT / "labmate_navigation.h").read_text(encoding="utf-8")
        and '"Event Counter"' in NAVIGATION,
        "Event Counter must be a distinct PB3-only capture tool")
-expect("!app->counter_active && labmate_capture_can_acquire(" in CAPTURE_CORE
+expect("!app->counter_active && !app->button_active &&" in CAPTURE_CORE
        and "labmate_event_counter_stop(app);" in MAIN
-       and "!app->counter_active && labmate_capture_all_stopped(" in MAIN,
+       and "!app->counter_active && !app->button_active && labmate_capture_all_stopped(" in MAIN,
        "Counter ownership must block other capture tools and preserve cleanup")
 for name in ("start", "poll", "stop", "reset"):
     decl = f"labmate_event_counter_{name}"
@@ -284,6 +289,49 @@ expect((ROOT / "tests/test_counter_math.c.inc").is_file()
        and not (ROOT / "tests/test_counter_math.c").exists(),
        "Counter host-native tests must never link into the FAP")
 
+
+# Button Analyzer must not use EXTI3/6 or claim PA7/PB3.
+expect("LabMateCaptureButton" in POLICY_H
+       and "case LabMateCaptureButton:" in POLICY
+       and "LABMATE_MONITOR_PC1_INDEX" in POLICY
+       and "LabMateToolButton" in (ROOT / "labmate_navigation.h").read_text(encoding="utf-8")
+       and '"Button Analyzer"' in NAVIGATION,
+       "Button Analyzer must own only PC1 and preserve existing tool IDs")
+for operation in ("start", "poll", "stop", "reset", "change_quiet"):
+    name = f"labmate_button_capture_{operation}"
+    expect(len(re.findall(rf"(?m)^void\s+{name}\s*\(", BUTTON)) == 1
+           and f"void {name}(LabMateApp* app" in BUTTON_H
+           and f"{name}(app" in MAIN,
+           f"Button capture missing lifecycle method {name}")
+expect("GpioModeInterruptRiseFall" in BUTTON and "GpioPullUp" in BUTTON
+       and "labmate_capture_can_start(app, LabMateCaptureButton)" in BUTTON
+       and "labmate_capture_exti_clear(" in BUTTON
+       and "furi_hal_gpio_remove_int_callback(" in BUTTON
+       and "GpioModeAnalog" in BUTTON
+       and "app->capture_owner = LabMateCaptureButton;" in BUTTON,
+       "Button EXTI setup/teardown must remain PC1-only and exclusive")
+expect("LL_EXTI_" not in BUTTON and "FURI_CRITICAL_ENTER()" in BUTTON
+       and "FURI_CRITICAL_EXIT()" in BUTTON
+       and "labmate_button_edge(" in BUTTON
+       and "labmate_button_poll(" in BUTTON
+       and "labmate_button_snapshot(" in BUTTON,
+       "Button ISR must publish raw edges; app thread must validate snapshot atomically")
+expect("labmate_button_state_init(" in BUTTON_LOGIC
+       and "labmate_button_poll(" in BUTTON_LOGIC
+       and "labmate_button_snapshot(" in BUTTON_LOGIC
+       and "storage_" not in BUTTON_LOGIC
+       and "furi_" not in BUTTON_LOGIC,
+       "Portable contact logic must be isolated from firmware, GPIO and SD")
+expect("case LabMateScreenButton:" in MAIN
+       and "case LabMateToolButton:" in MAIN
+       and "labmate_button_capture_stop(app);" in MAIN
+       and "button_quiet_ms;" in INTERNAL_H
+       and '"BUTTON TEST"' in SCREENS
+       and '"SET:"' not in SCREENS,  # Screen must label physical settling, not reaction time.
+       "Button Analyzer must expose state, settling and BACK cleanup")
+expect((ROOT / "tests/test_button_logic.c.inc").is_file()
+       and not (ROOT / "tests/test_button_logic.c").exists(),
+       "Button logic host-native tests must never link into FAP")
 
 PWM_SETTINGS = (ROOT / "labmate_pwm_settings.c").read_text(encoding="utf-8")
 PWM_SETTINGS_H = (ROOT / "labmate_pwm_settings.h").read_text(encoding="utf-8")
