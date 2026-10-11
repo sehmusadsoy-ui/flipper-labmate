@@ -4,6 +4,7 @@
 #include "labmate_generator.h"
 
 #include <stdio.h>
+#include <string.h>
 
 /* Passive UI renderers only: app state is read under the UI mutex.
  * No SD, IRQ, GPIO or timer access in this module.
@@ -143,7 +144,7 @@ void draw_about(Canvas* canvas, LabMateApp* app) {
         canvas_draw_str(canvas, 3, 23, "LabMate " LABMATE_VERSION_TEXT);
         canvas_draw_str(canvas, 3, 33, "SauronLAB / Sehmus");
         canvas_draw_str(canvas, 3, 43, "11 instrument guides");
-        canvas_draw_str(canvas, 3, 51, "3.3V DIGITAL GPIO ONLY");
+        canvas_draw_str(canvas, 3, 51, "3.3V GPIO ONLY");
     } else if(page == 1U) {
         canvas_draw_str(canvas, 3, 23, "Source / releases:");
         canvas_draw_str(canvas, 3, 33, "github.com/");
