@@ -507,7 +507,7 @@ void draw_button(Canvas* canvas, LabMateApp* app) {
     canvas_set_font(canvas, FontSecondary);
     if(!app->button_details_view) {
         /* Main page: pin / debounce, contact, and two independent totals. */
-        canvas_draw_str(canvas, 3, 23, "PC1 / PULL-UP");
+        canvas_draw_str(canvas, 3, 23, "PC1 / PULLUP");
         snprintf(value, sizeof(value), "DB %u ms",
                  (unsigned)app->button_quiet_ms);
         canvas_draw_str_aligned(canvas, 125, 23, AlignRight, AlignBottom, value);
@@ -541,7 +541,7 @@ void draw_button(Canvas* canvas, LabMateApp* app) {
 
         canvas_draw_line(canvas, 2, 37, 125, 37);
         canvas_draw_str(canvas, 3, 44, "HOLD ms");
-        canvas_draw_str(canvas, 66, 44, "EXTRA EDGES");
+        canvas_draw_str(canvas, 66, 44, "BOUNCE N");
         snprintf(value, sizeof(value), "%lu",
                  (unsigned long)app->button_hold_ms);
         canvas_draw_str(canvas, 3, 52, value);
@@ -579,7 +579,7 @@ void draw_counter(Canvas* canvas, LabMateApp* app) {
     canvas_set_font(canvas, FontSecondary);
     canvas_draw_str(canvas, 3, 23, "PB3 / TIM2 / RISE");
     canvas_draw_line(canvas, 2, 26, 125, 26);
-    canvas_draw_str(canvas, 3, 35, "EVENT TOTAL");
+    canvas_draw_str(canvas, 3, 35, "EVENTS");
     canvas_draw_str_aligned(canvas, 125, 35, AlignRight, AlignBottom, elapsed);
 
     /* A short count is emphasized; full uint64 still fits the LCD. */
