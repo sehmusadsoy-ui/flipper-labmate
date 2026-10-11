@@ -5,7 +5,7 @@
 /* View-only drawing: called from render_callback with the app mutex held.
  * These functions never access GPIO, timers, interrupts or microSD.
  */
-void draw_about(Canvas* canvas);
+void draw_about(Canvas* canvas, LabMateApp* app);
 void draw_profiles(Canvas* canvas, LabMateApp* app);
 void draw_history(Canvas* canvas, LabMateApp* app);
 void draw_history_detail(Canvas* canvas, LabMateApp* app);
