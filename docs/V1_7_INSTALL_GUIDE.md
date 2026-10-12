@@ -2,8 +2,10 @@
 
 **Published Stable:** [v1.7](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7)
 with two assets, `labmate.fap` and `SHA256SUMS.txt`.
-This is an **in-place maintenance/documentation update**, not a new
-version or a modification of published binary/tag assets.
+The v1.7 release keeps its **original tag/version**, but its FAP and
+SHA256SUMS assets received an in-place, 4/4 device-tested PWM Studio
+menu/About naming correction on 2026-10-12. Older v1.6.1/RC1 assets
+and tags remain unchanged.
 
 The released installer `scripts/install-v17-from-github.ps1` checks
 the official release's tag, commit, Stable/prerelease status and SHA256,
@@ -14,10 +16,13 @@ not flash firmware or intentionally delete CSV/Profile data.
   compatible local Momentum Firmware checkout (usually
   `$HOME\Momentum-Firmware`) with `scripts\toolchain\fbtenv.cmd`
   and `scripts\runfap.py`, and a USB-connected Flipper for installation.
-- **Published source tag:** `v1.7` at
-  `d0e1bc6a95b257841533f0aa8745e3a79bbc8dcd`.
-- **Official FAP SHA256:**
-  `5A7CB0EAE601EEAC8856790211C4D2831A9198C31853631E1DAF0308CE724335`.
+- **Original published source tag:** `v1.7` at
+  `d0e1bc6a95b257841533f0aa8745e3a79bbc8dcd` (unchanged).
+- **Source of current FAP:** `0aeb0ca7ceba092c8adb6e44add0a2212cae1a74` from CI 38290044094
+  (2/2 PASS, 4/4 user-reported on-device label/regression checks).
+  The latest asset is a disclosed post-tag update, not a new release.
+- **Current official FAP SHA256:**
+  `A0B305E5FD8D71C85C51480EE06A8B7E5EBD5BEE0E82935B0ED3B7E74E7EBCEA` (supersedes `5A7CB0EAE601EEAC8856790211C4D2831A9198C31853631E1DAF0308CE724335`).
   The installer verifies the checksum file; it does not perform independent
   calibration of a GPIO signal.
 
