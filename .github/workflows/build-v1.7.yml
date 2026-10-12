@@ -234,3 +234,11 @@ jobs:
             throw 'v1.6.1 dev and v1.6 Stable installer targets must remain isolated.'
           }
           Write-Host 'Mock USB tests and installer isolation passed; no Flipper connected.'
+
+      - name: Verify v1.7 release-to-USB path with mocked GitHub and transport
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & ./scripts/test-v17-installer-mock.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'v1.7 installer mock regressions failed' }
+
