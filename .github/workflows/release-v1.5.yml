@@ -43,13 +43,13 @@ jobs:
         if: steps.previous.outputs.exists == 'false'
         run: |
           set -euo pipefail
-          grep -Fq '#define LABMATE_VERSION_TEXT "v1.5"' labmate.c
+          grep -Fq '#define LABMATE_VERSION_TEXT "v1.5"' src/labmate.c
           grep -Fq 'fap_version="1.5"' application.fam
-          if grep -Fq 'v1.5d' labmate.c; then
+          if grep -Fq 'v1.5d' src/labmate.c; then
             echo "::error::Development version marker remains"
             exit 1
           fi
-          test -s RELEASE_NOTES_v1.5.md
+          test -s docs/releases/RELEASE_NOTES_v1.5.md
 
       - name: Compile using Momentum SDK
         id: compile
@@ -72,7 +72,7 @@ jobs:
           mkdir -p release
           cp "$FAP" release/labmate-v1.5.fap
           (cd release && sha256sum labmate-v1.5.fap > SHA256SUMS.txt && sha256sum -c SHA256SUMS.txt)
-          cp RELEASE_NOTES_v1.5.md release/RELEASE_NOTES_v1.5.md
+          cp docs/releases/RELEASE_NOTES_v1.5.md release/docs/releases/RELEASE_NOTES_v1.5.md
           {
             echo
             echo "### CI artifact provenance"
@@ -81,7 +81,7 @@ jobs:
             echo "using Momentum Firmware dev SDK (API: \`$BUILT_API_VERSION\`)."
             echo "The preceding hardware validation was on the development build;"
             echo "the published CI FAP was not independently device-installed."
-          } >> release/RELEASE_NOTES_v1.5.md
+          } >> release/docs/releases/RELEASE_NOTES_v1.5.md
           file release/labmate-v1.5.fap
           ls -lh release/
 
@@ -102,11 +102,11 @@ jobs:
           gh release create v1.5 \
             release/labmate-v1.5.fap \
             release/SHA256SUMS.txt \
-            release/RELEASE_NOTES_v1.5.md \
+            release/docs/releases/RELEASE_NOTES_v1.5.md \
             --repo "${{ github.repository }}" \
             --target "${{ github.sha }}" \
             --title "LabMate v1.5 Stable" \
-            --notes-file release/RELEASE_NOTES_v1.5.md \
+            --notes-file release/docs/releases/RELEASE_NOTES_v1.5.md \
             --latest
           gh release view v1.5 --repo "${{ github.repository }}" --json tagName,assets,url
           mkdir -p verify
