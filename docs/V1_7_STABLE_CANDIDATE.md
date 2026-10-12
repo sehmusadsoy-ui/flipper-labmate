@@ -15,16 +15,22 @@ Status: **WORK IN PROGRESS / NOT STABLE / NOT PUBLISHED**.
 
 ## Candidate work
 
-- [ ] Complete extraction of app-thread measurements into
-  `labmate_measurements.c/.h`, preserve capture IRQ/pin ownership and
-  all frequency/pulse statistics, run source-architecture and native tests.
-- [ ] Verify one-command `scripts/install-v17-from-github.ps1` release
-  selection, SHA256 verification, fixed destination and error handling
-  with Windows mock transport. The Stable channel is unavailable until a
-  separate `v1.7` Stable release exists; RC1 is already published.
+- [x] Extracted app-thread measurements into `labmate_measurements.c/.h`,
+  CSV row snapshots into `labmate_logger_snapshot.c/.h` and Threshold
+  validity gating into `labmate_alerts_bridge.c/.h`. Capture IRQ/PA7 pin
+  ownership remains in the existing source modules. Source boundary,
+  portable logic and Momentum SDK CI checks PASS (physical regression pending).
+- [x] One-command `scripts/install-v17-from-github.ps1` includes pinned RC1
+  and future Stable release channels, SHA256 checks, single-FAP destination,
+  and rejects metadata/hash/USB errors in Windows mock tests.
+  **Not yet physically verified** with the future Stable release. Stable
+  remains unavailable until the separate `v1.7` release exists.
 - [ ] Freeze remaining changes; use an on-device build with Stable
   version label `v1.7` only after code/installer QA.
-- [ ] Run candidate CI compile + portable tests + mock Windows installer.
+- [x] Candidate CI [38191036835](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38191036835)
+  **2/2 PASS** on source `bdb1de1058961b9d5285944c3d41e16c19183478`:
+  SDK FAP compile, architecture and host tests, Windows mock installer.
+  CI artifact `labmate`; this is **not** physically tested yet.
 - [ ] SHA256-verify exact candidate FAP; install over USB and repeat key
   device smoke/regression: startup, PA7 STOP on exit, 100 Hz 5/95% duty
   with Pulse, LOW/HIGH Frequency, PB3 Counter, clean PC1 Button,
@@ -44,3 +50,5 @@ Status: **WORK IN PROGRESS / NOT STABLE / NOT PUBLISHED**.
 stable-candidate FAP. Do not mark unperformed hardware checks PASS. Physical
 mechanical button, independent scope/electrical output validation, full SD
 fault-injection and all edge cases are currently deferred.
+
+Current operating policy: keep `docs/DEFERRED_HARDWARE_TESTS.md` open across releases; do not report mechanical/scope/SD fault cases PASS without actual equipment evidence.
