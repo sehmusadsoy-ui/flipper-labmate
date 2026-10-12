@@ -1,9 +1,11 @@
 # LabMate v1.8 — UART Terminal development plan
 
 **Status:** UART RX/TX **development candidate implemented** and SDK 87.1
-CI PASS. **First real Flipper loopback checkpoint U1–U4: 4/4 PASS**
-(operator-reported, 2026-10-13). Baud variants, full regression, external
-3.3 V peer interoperability, BUSY/overflow behavior remain PENDING. This branch was created
+CI PASS. **First two real Flipper local-loopback checkpoints U1–U8:
+8/8 PASS** (operator-reported, 2026-10-13). Basic baud variants,
+UART STOP/BACK cleanup and selected legacy-tool/data regression passed.
+**External 3.3 V peer interoperability, BUSY/overflow behavior,
+independent baud calibration and UART endurance remain PENDING.** This branch was created
 from the already merged, CI-passing Counter STOP/RESUME baseline
 (`main`, PR #6). No Stable release, installer or tag is changed.
 
@@ -99,6 +101,29 @@ signal levels, unknown voltage sources, motor controllers or mains.
   `labmate_uart_ui.c`, `labmate_input_uart.c`. Main coordinator
   remains under 200 lines, legacy tool IDs and saved profile format intact.
 
+## Real Flipper local-loopback test suite — U1–U8 complete
+
+**Result: 8/8 user-reported PASS.** All tests were on the previously
+installed test candidate; code commit and SHA256 remain those documented
+under checkpoint A. These results were supplied by the device operator,
+not independently instrumented measurements.
+
+### Checkpoint B — U5–U8: 4/4 PASS (operator report, 2026-10-13)
+
+- **U5 PASS:** 9600 and 38400 baud selected while stopped; AT local
+  loopback observed after RUN/TX SEND at each.
+- **U6 PASS:** repeated UART RUN/STOP and BACK/re-entry operated
+  without freeze or unexpected BUSY; UART entered STOP.
+- **U7 PASS:** PWM Studio, Event Counter, Frequency Meter, Profiles S1
+  and existing Log History remained functional following UART use.
+- **U8 PASS:** loopback removed with UART stopped, LabMate app exited
+  and relaunched; no reported freeze or lost settings/history.
+
+U5–U8 do not demonstrate an external serial peer, electrical timing
+accuracy, UART error/overflow warning under stress, or a real resource
+conflict with another UART owner. Those are separate remaining
+acceptance gates.
+
 ## First real Flipper test suite (in progress)
 
 ### Checkpoint A — U1–U4: 4/4 PASS (operator report, 2026-10-13)
@@ -115,11 +140,10 @@ FAP SHA256
 - U4 **PASS:** SEND `AT` then BACK into RX view displays `AT`
   on Flipper TX 13 → RX 14 local loopback.
 
-These PASS reports establish functional local loopback in the requested
-scenario, but do not by themselves independently verify all 11 older
-tools, repeated sends/byte counts, exact baud timing, electrical signal
-quality or interoperability with external MCU hardware. U5–U8 and
-external two-way checks are still mandatory before merging PR #7.
+These PASS reports established the initial 115200-baud local loopback.
+Checkpoint B subsequently passed U5–U8. External two-way UART,
+electrical/timing validation and BUSY/overflow/error behavior remain
+unverified and mandatory before merging PR #7.
 
 
 **Preparation:** Stop PWM and fully exit LabMate before rewiring.
@@ -133,13 +157,13 @@ Never connect 5 V/RS-232/unknown voltages to GPIO.
 - [x] U3: OK RUN works and no BUSY/ERR, DOWN enters TX editor
 - [x] U4: TX editor initial `AT`; press OK SEND; RX view shows
       `AT` loopback; repeated sends increase byte count without crash
-- [ ] U5: STOP, select 9600 with LEFT/RIGHT, RUN, send `AT` and
+- [x] U5: STOP, select 9600 with LEFT/RIGHT, RUN, send `AT` and
       confirm correct RX; verify second 38400 baud setting too
-- [ ] U6: STOP/START repeatedly and BACK leave UART without freezing;
+- [x] U6: STOP/START repeatedly and BACK leave UART without freezing;
       re-entry starts STOP; no background UART resource retained
-- [ ] U7: PA7 PWM Generator, PB3 Counter/Frequency, Profiles S1 and
+- [x] U7: PA7 PWM Generator, PB3 Counter/Frequency, Profiles S1 and
       saved CSV History remain usable after UART screen
-- [ ] U8: Remove loopback only while UART STOP; exit and relaunch app;
+- [x] U8: Remove loopback only while UART STOP; exit and relaunch app;
       no freeze or corrupted state
 
 **After self-loopback:** verify external 3.3 V UART peer RX and TX
