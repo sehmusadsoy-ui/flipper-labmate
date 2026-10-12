@@ -149,6 +149,13 @@ jobs:
           mkdir -p build-artifacts
           cp "$FAP" build-artifacts/labmate.fap
           (cd build-artifacts && sha256sum labmate.fap > SHA256SUMS.txt && sha256sum -c SHA256SUMS.txt)
+          # Expose the exact FAP checksum independently of the Actions ZIP hash.
+          echo "Final candidate FAP SHA256:"
+          cat build-artifacts/SHA256SUMS.txt
+          printf '%s\n' '### LabMate v1.7 Candidate FAP SHA256' >> "$GITHUB_STEP_SUMMARY"
+          printf '\x60\x60\x60\n' >> "$GITHUB_STEP_SUMMARY"
+          cat build-artifacts/SHA256SUMS.txt >> "$GITHUB_STEP_SUMMARY"
+          printf '\x60\x60\x60\n' >> "$GITHUB_STEP_SUMMARY"
           echo "Momentum SDK API: $BUILT_API_VERSION"
           ls -lh build-artifacts
 
