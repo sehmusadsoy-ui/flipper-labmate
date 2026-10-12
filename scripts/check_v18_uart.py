@@ -34,7 +34,7 @@ assert "labmate_uart_reenter(&app->uart);" in menu
 assert "labmate_uart_reset(&app->uart);" not in menu
 assert "void labmate_uart_reenter(LabMateUart* uart)" in uart
 reenter = uart.split("void labmate_uart_reenter(LabMateUart* uart) {", 1)[1].split(
-    "\\n}", 1
+    "\n}", 1
 )[0]
 assert "saved_baud_index = uart->baud_index;" in reenter
 assert "labmate_uart_stop(uart);" in reenter
