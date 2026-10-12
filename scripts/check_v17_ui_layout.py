@@ -10,6 +10,7 @@ import re
 
 ROOT = Path(__file__).resolve().parents[1]
 UI = (ROOT / "labmate_ui_screens.c").read_text(encoding="utf-8")
+NAV = (ROOT / "labmate_navigation.c").read_text(encoding="utf-8")
 APP = (ROOT / "labmate.c").read_text(encoding="utf-8")
 PRIMITIVES = (ROOT / "labmate_ui_primitives.c").read_text(encoding="utf-8")
 PRIMITIVES_H = (ROOT / "labmate_ui_primitives.h").read_text(encoding="utf-8")
@@ -51,6 +52,10 @@ pages = re.findall(
     r'\s*"([^"]+)",\s*"([^"]+)",\s*\}', UI,
 )
 assert len(pages) == 11, f"Expected 11 About tool guides; got {len(pages)}"
+assert '"PWM Studio"' in NAV, "Menu must display PWM Studio"
+assert '"Signal Generator"' not in NAV, "Obsolete menu label returned"
+assert '"PWM STUDIO"' in UI, "About tool guide must say PWM STUDIO"
+assert '"SIGNAL GENERATOR"' not in UI, "Obsolete About label returned"
 for page in pages:
     for line in page:
         assert fits(line), f"About text would exceed 128px: {line}"
