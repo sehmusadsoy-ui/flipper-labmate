@@ -14,7 +14,7 @@
 #include "labmate_button_logic.h"
 #include "labmate_threshold.h"
 
-#define LABMATE_VERSION_TEXT "v1.7rc1"
+#define LABMATE_VERSION_TEXT "v1.7"
 /* Shared menu/pin counts: UI and input handling must agree. */
 #define MENU_COUNT LabMateToolCount
 #define GPIO_COUNT LABMATE_MONITOR_PIN_COUNT
