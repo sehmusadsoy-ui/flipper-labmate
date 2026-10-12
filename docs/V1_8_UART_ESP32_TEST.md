@@ -1,6 +1,6 @@
 # LabMate v1.8 UART ↔ ESP32 Interoperability Test
 
-**Status: ESP32-S2 UART E1–E6 = 6/6 operator-reported PASS (2026-10-13), including bidirectional 115200 and 9600 baud. SR1 diagnosed: old FAP reset baud to 115200; setting 9600 restored clean RX (diagnosis PASS). Fixed FAP SHA256-verified and installed on Flipper COM7 (operator-reported PASS); corrected behavior still needs physical SR1 retest. BUSY/resource conflict and controlled overflow remain PENDING; PR #7 stays draft.**
+**Status: ESP32-S2 UART E1–E6 = 6/6 operator-reported PASS (2026-10-13), including bidirectional 115200 and 9600 baud. SR1-R1 corrected FAP **device PASS** (operator-reported, 2026-10-13): 9600 baud retained across STOP/BACK/re-entry and 2-minute RX stable. Previous SR1 FAIL diagnosed/resolved; controlled BUSY/overflow gates remain pending. BUSY/resource conflict and controlled overflow remain PENDING; PR #7 stays draft.**
 The user identified an **ESP32-S2-WROVER Flipper Dev Board**. The
 official Flipper Wi-Fi Developer Board schematics were checked:
 https://cdn.flipperzero.one/Flipper_Zero_WI-FI_Module_V1_Schematic.PDF
@@ -283,6 +283,25 @@ turns nonprintable characters into `.`. This is consistent with
 all reported symptoms; confirm by observing UART baud after re-entry
 and retesting 9600.
 
+### SR1-R1 corrected-baud-retention real-device retest — PASS (operator report, 2026-10-13)
+
+The operator tested the newly installed SR1-fix FAP
+SHA256 `7bfdcb21c344b76bc3dbebfca7c979870b7bbfba28a34c9fe7c63e6ec5e76a20`
+against the previously flashed ESP32-S2 peer at **9600 baud / 8N1**.
+
+- **Baud preservation: PASS** — 9600 selection persisted after
+  STOP → BACK → re-entering UART (rather than reverting to 115200).
+- **Receive stability: PASS** — 2-minute RX test and resumed RUN
+  after re-entry succeeded without the previously observed garbled
+  text / rising error counter problem (operator report).
+- This closes the **specific SR1 baud-reset bug** and validates the
+  CI-built FAP on the actual Flipper. The earlier deliberate mismatched
+  baud errors do **not** count as RX-queue overflow.
+- **Not yet demonstrated:** real UART serial-owner `BUSY` denial,
+  high-rate `DROP`/overflow path, or instrumented electrical baud
+  calibration. These are independent checks and do not become PASS
+  just because SR1-R1 passed.
+
 ### SR1 patched FAP installation — PASS (operator report, 2026-10-13, 01:56 local)
 
 The operator pasted the Windows install transcript for the CI-built
@@ -295,9 +314,10 @@ LabMate FAP from commit `ae396a588225f700d93a0940db7d4d9141dedfb8`:
 - `SUCCESS: runfap.py exited 0 and requested app launch.`
 - `LABMATE SR1 FIX INSTALL PASS`.
 
-This is **installation PASS only**; corrected UART retention and
-two-minute receive stability have **not yet been validated on the
-new FAP**. Devboard firmware stays at 9600; no ESP32 flashing needed.
+The operator subsequently **validated both the corrected baud
+retention and the 2-minute RX stability on this newly installed FAP**:
+SR1-R1 PASS (see operator checkpoint below). The ESP32 peer stayed at
+9600, and no additional firmware flashing was needed.
 
 **Next test SR1-R1:** Unplug Flipper USB as appropriate, STOP UART
 and power equipment off before reconnecting the original ESP32-S2
