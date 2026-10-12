@@ -17,8 +17,13 @@ VIEW_COORDINATOR = (SRC / "labmate_view.c").read_text(encoding="utf-8")
 DEFERRED_IO = (SRC / "labmate_deferred.c").read_text(encoding="utf-8")
 # v1.6/v1.7 boundary assertions follow operations across the new
 # coordinator modules, rather than assuming all were inside labmate.c.
-MAIN = "\n".join((COORDINATOR, INPUT_DISPATCH, CAPTURE_SESSION,
-                  VIEW_COORDINATOR, DEFERRED_IO))
+SCREEN_HANDLERS = "\n".join(
+    (SRC / filename).read_text(encoding="utf-8") for filename in (
+        "labmate_input_menu.c", "labmate_input_profiles.c",
+        "labmate_input_history.c", "labmate_input_measure.c",
+        "labmate_input_output.c"))
+MAIN = "\n".join((COORDINATOR, INPUT_DISPATCH, SCREEN_HANDLERS,
+                  CAPTURE_SESSION, VIEW_COORDINATOR, DEFERRED_IO))
 MEASUREMENTS = (SRC / "labmate_measurements.c").read_text(encoding="utf-8")
 MEASUREMENTS_H = (SRC / "labmate_measurements.h").read_text(encoding="utf-8")
 LOGGER_SNAPSHOT = (SRC / "labmate_logger_snapshot.c").read_text(encoding="utf-8")
@@ -760,8 +765,13 @@ expect(len(COORDINATOR.splitlines()) < 250,
        "v1.8 coordinator must stay below 250 lines")
 expect("void labmate_input_dispatch(" in INPUT_DISPATCH
        and "labmate_input_dispatch(app, status, event, &work);" in COORDINATOR
-       and "case LabMateToolGenerator:" in INPUT_DISPATCH,
+       and "case LabMateToolGenerator:" in SCREEN_HANDLERS,
        "Input event dispatch must be owned only by input module")
+expect(len(INPUT_DISPATCH.splitlines()) <= 80
+       and "switch(app->screen)" in INPUT_DISPATCH
+       and "labmate_input_generator(app, event, work);" in INPUT_DISPATCH
+       and "labmate_input_profiles(app, event, work);" in INPUT_DISPATCH,
+       "Input dispatcher must only route events to dedicated screen handlers")
 expect("void labmate_capture_stop_all(" in CAPTURE_SESSION
        and "labmate_capture_stop_all(app);" in COORDINATOR
        and "furi_hal_pwm_" not in CAPTURE_SESSION,
