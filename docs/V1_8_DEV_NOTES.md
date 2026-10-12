@@ -66,16 +66,37 @@ The drawing path must never write SD or configure a peripheral.
   the exact binary hash.
 - Official published v1.7 release assets and original tag unchanged.
 
+## Physical regression checkpoint A: 4/4 PASS (user-reported, 2026-10-12)
+
+**Exact installed candidate:** CI `38294967172`, FAP SHA256
+`08B830A6D7FB07D065663E2BEDEBA65E389801CED5A018F6CBF54871D446B2D0`.
+The tester submitted all four PASS responses to the initial on-device
+regression screen; this is an operator report, not independent instrument
+calibration or a fresh CI build.
+
+- **A1 PASS:** `v1.8dev` version label and MEASURE, OUTPUT, RECORDS, INFO
+  groups navigable. Individual access to all 11 tools remains for R10.
+- **A2 PASS:** PWM Studio starts STOP; 100 Hz, 50% duty RUN/STOP works.
+- **A3 PASS:** PWM RUN persists when backing into in-app menu and reopening
+  PWM Studio; leaving LabMate fully stops it before next launch.
+- **A4 PASS:** existing saved Profiles S1 and earlier Log History CSV
+  records remain visible after install. Full profile write guards, Logger
+  capture, CSV open/delete confirmations remain to test in R8/R9.
+
+**Remaining:** complete R3 through R10 (and all 11 tool entry checks in
+R10); neither overall refactor validation nor a v1.8 release is yet PASS.
+Do not merge the draft PR until device regression is complete.
+
 ## Operator-required regression before merging/using as baseline
 
 The v1.8dev FAP must be installed to a physical Flipper by a tester.
 Use safe internally generated 3.3 V GPIO signals only and remove any
 GPIO wiring while switching tools; no unknown voltages, 5 V or mains.
 
-- [ ] R1: Menu shows `v1.8dev`; 4 groups; all 11 original tools reachable
-- [ ] R2: PWM Studio starts STOP, 100 Hz/50% RUN and STOP; leaving
-      Studio via BACK does not silently stop an intentional in-app RUN;
-      exiting LabMate stops output
+- [ ] R1: `v1.8dev` label and 4 groups **PASS** (A1); all 11 original tools reachable **PENDING** (R10)
+- [x] R2: PWM Studio starts STOP, 100 Hz/50% RUN and STOP; leaving
+      Studio via BACK keeps intentional in-app RUN; exiting LabMate
+      stops output (**PASS** A2/A3, user-reported)
 - [ ] R3: Pulse PC1 100 Hz/50% with compatible PA7 loopback; HOLD/LIVE;
       5%/95% duty cases if available
 - [ ] R4: Frequency Meter PC1 low mode and PB3 high mode after selection;
@@ -86,7 +107,7 @@ GPIO wiring while switching tools; no unknown voltages, 5 V or mains.
 - [ ] R7: Threshold Alerts source, limit, ARM/ACK without crashes
 - [ ] R8: Data Logger each of 3 sources records CSV, STOP closes the file;
       History opens existing/new records and BACK returns safely
-- [ ] R9: Profiles S1 survives install; LOAD/SAVE/DELETE confirmation;
+- [ ] R9: Profiles S1 survives install (**PASS** A4); LOAD/SAVE/DELETE confirmation;
       active PWM/capture guard blocks profile writes
 - [ ] R10: About pages, menu navigation, repeated tool entry/exit and
       application exit work without freeze; saved CSVs remain present
