@@ -45,6 +45,27 @@ The drawing path must never write SD or configure a peripheral.
 - Windows PowerShell mocked USB installer tests
 - **No automatic publication** to Stable and no mutation of the v1.7 tag
 
+## Real Windows/Flipper USB install: PASS (operator logs, 2026-10-12)
+
+- Tested **exact development artifact** from CI [38294967172](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38294967172), source commit `f9bac4d30330428792bafee6df8732af46ddb273`.
+- Artifact SHA256 was verified both by `Get-FileHash` and installer `-VerifyOnly`:
+  `08B830A6D7FB07D065663E2BEDEBA65E389801CED5A018F6CBF54871D446B2D0`.
+- `install-labmate.ps1 -Port COM7` verified the same FAP, transferred it to
+  `/ext/apps/Tools/labmate.fap` (8/8 chunks at 100%), requested app close
+  and relaunch, returned `SUCCESS: runfap.py exited 0` and exit code 0.
+- **Result: operator-provided install/launch command PASS**, **not** the
+  R1–R10 on-device functional regression. No screenshots or hardware
+  measurements supplied with this installation log.
+- First `gh run download` in a pre-existing temp directory returned
+  `error extracting "SHA256SUMS.txt": ... file exists`. This was a
+  destination collision rather than a binary checksum failure: the
+  already-existing FAP passed explicit SHA256 checks before installation.
+  For any fresh artifact download, use a new directory per invocation:
+  `$dir = Join-Path $env:TEMP ("labmate-v18-" + [guid]::NewGuid().ToString("N"))`.
+  Never ignore a failed download without independently verifying
+  the exact binary hash.
+- Official published v1.7 release assets and original tag unchanged.
+
 ## Operator-required regression before merging/using as baseline
 
 The v1.8dev FAP must be installed to a physical Flipper by a tester.
