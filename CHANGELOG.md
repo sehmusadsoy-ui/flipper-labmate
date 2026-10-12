@@ -16,8 +16,10 @@ Profiles guards, menu/About and app exit/persistence.
 
 The exact final-label FAP passed separate Test 7G **4/4 PASS**;
 the last release CI reproduced the same SHA256 and published verified
-assets. Real-Windows `-Channel RC1 -VerifyOnly` passed; live Stable-channel
-USB installer verification remains pending operator confirmation.
+assets. Real-Windows `-Channel RC1 -VerifyOnly` passed, and the
+published Stable-channel `-VerifyOnly` plus actual COM7 USB installation
+passed on 2026-10-12 with matching SHA256 and single-FAP destination.
+A separate post-reinstall UI/profile/CSV check remains pending.
 
 **In-place documentation maintenance (no new version/tag/FAP):**
 updated current-Stable pointers and installer instructions;
