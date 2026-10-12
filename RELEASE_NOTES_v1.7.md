@@ -1,9 +1,14 @@
 # LabMate v1.7 Stable
 
-> **Documentation maintenance notice:** These clarifications are on the
-> default branch after the v1.7 Stable release. The already published
-> `v1.7` tag/FAP/release assets are unchanged. This is not a new
-> version or new binary.
+> **In-place UI name update (2026-10-12):** The same published `v1.7`
+> release now downloads the FAP from source `0aeb0ca7ceba092c8adb6e44add0a2212cae1a74`
+> (CI 38290044094, 2/2 PASS; on-device PWM Studio label tests 4/4 PASS).
+> The OUTPUT menu and About now show PWM Studio instead of Signal Generator.
+> **Current downloadable FAP SHA256: `A0B305E5FD8D71C85C51480EE06A8B7E5EBD5BEE0E82935B0ED3B7E74E7EBCEA`.**
+> The original v1.7 tag stays pinned to `d0e1bc6a95b257841533f0aa8745e3a79bbc8dcd`;
+> the originally published FAP hash `5A7CB0EAE601EEAC8856790211C4D2831A9198C31853631E1DAF0308CE724335` is superseded.
+> The latest asset was reverified after uploading. No new version/tag;
+> previous v1.6.1 Stable and v1.7 RC1 releases remain unchanged.
 
 **Flipper Zero / Momentum Firmware — 3.3 V digital signal diagnostics.**
 
