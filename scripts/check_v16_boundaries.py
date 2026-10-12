@@ -721,9 +721,9 @@ expect(
 LOGGER_CODEC = (ROOT / "labmate_logger_codec.c").read_text(encoding="utf-8")
 LOGGER_HEADER = (ROOT / "labmate_logger_codec.h").read_text(encoding="utf-8")
 expect(
-    '"labmate_logger_codec.h"' in MAIN and
+    '"labmate_logger_codec.h"' in LOGGER_SNAPSHOT and
     "labmate_logger_filename_id(" in LOGGER_STORAGE and
-    "labmate_logger_format_row(" in MAIN and
+    "labmate_logger_format_row(" in LOGGER_SNAPSHOT and
     "static bool logger_filename_id(" not in MAIN,
     "Missing extracted logger codec calls",
 )
