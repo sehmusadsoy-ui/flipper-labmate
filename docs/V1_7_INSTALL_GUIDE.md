@@ -51,16 +51,23 @@ if ($LASTEXITCODE -ne 0) { throw 'LabMate v1.7 Stable USB installation FAILED' }
 Write-Host 'LabMate v1.7 Stable USB install PASS' -ForegroundColor Green
 ```
 
-Change COM7 if the device uses a different port. An explicit USB
-installation test with `-Channel Stable` was **not yet operator-confirmed**
-when this document was written; CI Windows transport mocks and a
-real-Windows `-Channel RC1 -VerifyOnly` did pass. Do not record
-an unperformed live Stable-channel USB test as PASS.
+Change COM7 if the device uses a different port.
+
+**Verified on actual Windows/COM7, 2026-10-12:** the operator provided
+successful `-Channel Stable -VerifyOnly` output and actual
+`-Channel Stable -Port COM7` execution, matching the published `v1.7`
+source tag, exact official SHA256 and fixed FAP destination. USB tool
+reported `Launching app` and `SUCCESS: v1.7 installed`. **Stable release
+installer/USB path: PASS.** A separate post-install visual check of
+`v1.7`, PWM STOP, S1 and preserved CSV files is still to be reported.
+The verification did not modify the published release.
 
 ## 3. Device regression after install
 
-Check the menu/About version text `v1.7`, initial PWM STOP,
-Profile S1 retention and previously saved History CSV files. A
+**Pending explicit post-install check:** inspect menu/About version
+`v1.7`, initial PWM STOP, Profile S1 retention and previously saved
+History CSV files. A successful USB installer exit alone does not prove
+these post-install screens and stored records were inspected. A
 freshly installed FAP should overwrite the same single Tools app
 entry; no duplicate LabMate app is expected. Stop PWM before
 changing any jumper wiring; use known 3.3 V-compatible signals only.
