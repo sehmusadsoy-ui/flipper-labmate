@@ -12,11 +12,11 @@
 
 static constexpr int UART_RX_GPIO = 44;
 static constexpr int UART_TX_GPIO = 43;
-static constexpr size_t LINE_MAX = 31;
+static constexpr size_t UART_LINE_CAP = 31;
 static HardwareSerial peer(1); // ESP32-S2 UART1; GPIO matrix maps it to 44/43.
 static uint32_t currentBaud = 115200;
 static uint32_t lastReady = 0;
-static char peerLine[LINE_MAX + 1] = {};
+static char peerLine[UART_LINE_CAP + 1] = {};
 static size_t peerLen = 0;
 static char usbLine[16] = {};
 static size_t usbLen = 0;
@@ -51,7 +51,7 @@ static void onPeerByte(char ch) {
         return;
     }
     if(ch < 32 || ch > 126) return;
-    if(peerLen == LINE_MAX) {
+    if(peerLen == UART_LINE_CAP) {
         peerLen = 0;
         peer.print("ESP32_OVERFLOW\r\n");
         return;
