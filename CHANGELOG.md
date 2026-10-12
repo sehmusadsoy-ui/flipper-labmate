@@ -1,5 +1,46 @@
 # Changelog
 
+## [1.7 RC1 preparation] - Unreleased
+
+This entry is a **draft on `v1.7-dev`**, not a published RC1 or Stable
+tag. Stable v1.6.1 assets remain intact. Candidate LCD label/packaging,
+fresh RC1 CI and device smoke tests are still pending.
+
+### New tools and signal generation
+- PWM Studio adds adjustable TIM1/PA7 PWM duty (5..95%, step 5%) and
+  STOP-only CUSTOM frequency (1..50,000 Hz), preserving the original
+  15 presets and safe output shutdown on application exit.
+- Event Counter counts actual PB3/TIM2 rising edges as a saturating
+  64-bit total with RUN/STOP/RESET and elapsed time.
+- Button Analyzer measures PC1 pull-up dry-contact transitions, with
+  configurable debounce and bounce/settle/hold telemetry.
+- Threshold Alerts provides four visual latch/acknowledge thresholds
+  for frequency, pulse duty, rising-edge count and button settle.
+
+### Interface and Records
+- Added differentiated monochrome icons for 11 tools and a paginated
+  13-page About field guide; redesigned Button/Counter/Thresholds/PWM
+  and Data Logger, History/detail and Profiles screens for 128x64.
+- Log History can remove **one explicitly selected CSV** only after a
+  second, file-named confirmation; BACK cancels. Existing log filenames,
+  CSV formats and profile storage remain compatible.
+- Profiles retain their legacy codec: PWM CUSTOM and duty/threshold
+  settings are **not** persisted.
+
+### Fixes and verification boundaries
+- Fixed Frequency Meter's saved LOW PC1 entry initially starting the
+  wrong PB3 capture engine.
+- Fixed Pulse Analyzer's asymmetric duty accumulation bug at 95% and
+  5% duty, confirmed against clean PA7->PC1 digital loopback.
+- User-reported on-device functional and UI regression results and
+  GitHub Actions `38185793925` (2/2 jobs PASS) support the development
+  source `b5bbd318...`; the RC1-labeled FAP has not yet been built.
+- **NOT TESTED:** physical mechanical switch bounce and independent
+  oscilloscope/voltage/frequency calibration (equipment deferred).
+  Full/corrupted SD and other destructive error-path checks also remain
+  unverified. See `docs/V1_7_RC1_RELEASE_NOTES_DRAFT.md` and
+  `docs/V1_7_RC1_CHECKLIST.md`.
+
 ## [1.6] - 2026-10-10 (Stable)
 
 ### Architecture, resources and navigation
