@@ -24,6 +24,7 @@
 
 #include "labmate_input_tools.h"
 void labmate_input_alerts(LabMateApp* app, InputEvent event, LabMateDeferredWork* work) {
+    UNUSED(work);
 
                 if(event.key == InputKeyLeft) {
                     labmate_threshold_change_source(&app->threshold, -1);
@@ -47,6 +48,7 @@ void labmate_input_alerts(LabMateApp* app, InputEvent event, LabMateDeferredWork
 }
 
 void labmate_input_generator(LabMateApp* app, InputEvent event, LabMateDeferredWork* work) {
+    UNUSED(work);
 
                 /* A menu-OK release is not a request to run the generator. */
                 if(app->generator_skip_entry_ok && event.key == InputKeyOk) {
