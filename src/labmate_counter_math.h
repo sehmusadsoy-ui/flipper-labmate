@@ -11,3 +11,9 @@
 uint64_t labmate_counter_accumulate(uint64_t total, uint32_t previous, uint32_t current);
 /* Decimal rendering without depending on embedded libc support for %llu. */
 bool labmate_counter_format(uint64_t count, char* output, size_t capacity);
+
+/* Active-time accumulation across STOP/RESUME (exclude paused duration).
+ * Saturate on tick/second overflow; never divide by zero.
+ */
+uint64_t labmate_counter_add_ticks(uint64_t total_ticks, uint32_t segment_ticks);
+uint32_t labmate_counter_elapsed_seconds(uint64_t total_ticks, uint32_t tick_frequency);

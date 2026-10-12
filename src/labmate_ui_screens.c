@@ -711,7 +711,8 @@ void draw_counter(Canvas* canvas, LabMateApp* app) {
     if(app->counter_active) {
         ui_footer_pair(canvas, "OK", "STOP", "BACK", "EXIT");
     } else {
-        ui_footer_pair(canvas, "OK", "START", "UP", "RESET");
+        const bool paused = app->counter_total != 0U || app->counter_elapsed_ticks != 0U;
+        ui_footer_pair(canvas, "OK", paused ? "RESUME" : "START", "UP", "RESET");
     }
 }
 

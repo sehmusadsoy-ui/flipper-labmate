@@ -121,7 +121,8 @@ typedef struct {
     bool counter_active;
     uint32_t counter_last_hw;
     uint64_t counter_total;
-    uint32_t counter_start_tick;
+    uint32_t counter_start_tick; /* tick at beginning of current RUN segment */
+    uint64_t counter_elapsed_ticks; /* completed RUN segments; STOP time excluded */
     uint32_t counter_elapsed_seconds;
 
     /* Button Analyzer: ISR raw edges + app-thread debounced snapshot.
