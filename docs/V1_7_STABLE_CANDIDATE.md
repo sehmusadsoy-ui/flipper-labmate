@@ -68,9 +68,14 @@ Status: **WORK IN PROGRESS / NOT STABLE / NOT PUBLISHED**.
   all eight checks working, without screenshots for this phase.
   Cumulative Test 7A+7B+7C+7D+7E: **30/30 PASS**
   (user-reported; 7B measurements screenshot-reviewed).
-- [ ] Test 7F: full 11-tool grouped menu, 13 About pages, screen
-  clipping, repeated menu / capture handoffs, short connected
-  navigation stability and clean app exit.
+- [x] Test 7F: **6/6 PASS (user-reported)** on the same installed
+  Stable Candidate FAP, 2026-10-12. Four groups (5/2/3/1), all 11 tools,
+  all 13 About pages and the major tool layouts rendered without clipping;
+  ~5-minute menu navigation had no freeze/crash; repeated capture
+  handoffs and STOP/START showed no stuck BUSY/ERR; after exit/relaunch
+  PWM remains STOP and Profile S1/CSV history persisted. No defects reported.
+  Cumulative **Test 7A–7F = 36/36 PASS**. This excludes deferred
+  external oscilloscope, real mechanical button and SD fault-injection tests.
 - [ ] Check resource-hand-off and repeated navigation/STOP/START; check
   storage error behavior when practicable on disposable test data.
 - [ ] Review full 11-tool menu, 13-page About and 128x64 clipping.
