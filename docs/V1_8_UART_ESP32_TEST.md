@@ -1,6 +1,6 @@
 # LabMate v1.8 UART ↔ ESP32 Interoperability Test
 
-**Status: ESP32-S2 Arduino CLI compile and USB upload PASS; first external UART test E1 ESP32 → Flipper PASS (user-reported 2026-10-13). E2–E6 and stress/resource checks remain PENDING.**
+**Status: ESP32-S2 Arduino CLI compile/upload PASS; external UART E1–E3 **3/3 PASS** (operator-reported, 2026-10-13). E4 9600-baud, E5 lifecycle, E6 legacy regression, BUSY/overflow and sustained-load tests remain PENDING.**
 The user identified an **ESP32-S2-WROVER Flipper Dev Board**. The
 official Flipper Wi-Fi Developer Board schematics were checked:
 https://cdn.flipperzero.one/Flipper_Zero_WI-FI_Module_V1_Schematic.PDF
@@ -18,12 +18,13 @@ runs Marauder and explicitly agrees to replace its firmware temporarily
 for UART testing, with an independent reinstall plan afterward.
 The operator flashed the Arduino test sketch, replacing Marauder on
 the ESP32-S2 board for this test. The assistant did not access the
-physical device. The operator has now observed the test firmware's periodic
-`ESP32_READY` on Flipper RX (E1 PASS). Return traffic is not yet confirmed. The operator can reinstall
+physical device. The operator observed the test firmware's periodic `ESP32_READY`
+on Flipper RX (E1 PASS) and the conditional `ESP32_OK` reply after
+LabMate sent `AT` (E2–E3 PASS). The operator can reinstall
 Marauder after completing tests.
 
 Prepared and operator-reported compiled and uploaded successfully
-(external ESP32 → Flipper RX E1 subsequently passed on device):
+(external ESP32 ↔ Flipper E1–E3 later passed on device):
 [`tests/esp32_s2_wrover_uart_peer/esp32_s2_wrover_uart_peer.ino`](../tests/esp32_s2_wrover_uart_peer/esp32_s2_wrover_uart_peer.ino).
 Uses ESP32-S2 **UART1** remapped to RX GPIO44 / TX GPIO43 and separate
 native USB CDC for debug prints, default 115200/8N1, periodic
@@ -98,16 +99,55 @@ for each verification round. Avoid automatic transmissions during
 rewiring. Exact pin definitions and copy/paste-ready sketch will follow
 after identifying the ESP32 board, to avoid driving reserved pins.
 
+## External UART checkpoint — E1–E3 3/3 PASS (operator report, 2026-10-13)
+
+- **E1 PASS:** Flipper UART RX shows periodic `ESP32_READY` generated
+  by the separate ESP32-S2 Wi-Fi Devboard at 115200 baud/8N1.
+- **E2 PASS:** With LabMate RUN and TX editor open, the operator
+  explicitly sent `AT\r\n` toward ESP32-S2.
+- **E3 PASS:** Flipper RX displayed the ESP32 test firmware's
+  **conditional** `ESP32_OK` response. That response is produced
+  only after the ESP32 sketch receives `AT`, so it demonstrates
+  the external Flipper TX → ESP32 RX direction as well as return RX.
+  A USB serial monitor log was not separately supplied or required
+  for this functional echo-response test.
+
+**Scope:** Results are operator-reported functional checks, not an
+independent timing/electrical calibration or stress validation.
+The original LabMate FAP and ESP32 peer firmware remain unchanged
+for E1–E3. **No external UART result is inferred for E4–E6.**
+
+### Next gate without reflashing: E5 and E6 first
+
+- E5: Keep both sides at **115200**, send `AT` several times and
+  observe `ESP32_OK` each time, toggle LabMate STOP/RUN three
+  times, BACK/re-enter the UART page and ensure the RX keeps
+  receiving `ESP32_READY` without BUSY, crashes or unexpected
+  TX. Note any `ERR` or `DROP` indicators.
+- E6: STOP UART, power down before removing the Wi-Fi Devboard.
+  After disconnecting it, check PWM Studio PA7, Counter PB3,
+  Frequency Meter, Profiles S1 and existing CSV Log History.
+  Existing records must remain intact.
+- E4 **requires matching ESP32 peer baud**. The flashed sketch
+  initializes at **115200 every reboot**. Changing only Flipper to
+  9600 produces an expected baud mismatch, *not* a functional
+  failure. Defer E4 until a safe method of setting both baud
+  rates to 9600 is prepared (e.g. compile/flash peer sketch
+  configured to boot at 9600 while detached from Flipper).
+  Do not attach USB power to the seated Devboard to send a
+  configuration command without verifying the board's
+  power-isolation behavior.
+
 ## E1–E6 external peer PASS/FAIL matrix
 
 - [x] **E1, ESP32 → Flipper:** With both UARTs at the sketch's default
       **115200 8N1**, ESP32 sends `ESP32_READY` about every 3 s;
       LabMate RX view displays it legibly.
-- [ ] **E2, Flipper → ESP32:** LabMate TX editor explicitly sends
+- [x] **E2, Flipper → ESP32:** LabMate TX editor explicitly sends
       `AT\r\n`. If Flipper then receives the *conditional*
       `ESP32_OK`, this also confirms the ESP32 received `AT`;
       separate USB Serial Monitor logs are optional, not necessary.
-- [ ] **E3, Response:** ESP32 returns `ESP32_OK\r\n` only after
+- [x] **E3, Response:** ESP32 returns `ESP32_OK\r\n` only after
       it receives `AT`; Flipper UART RX shows the correct response
       (not merely another `ESP32_READY`).
 - [ ] **E4, 9600:** With both UARTs stopped/reconfigured to **9600**,
@@ -203,7 +243,7 @@ connected while the board is attached/powered via Flipper unless
 its power isolation is independently established. E2/E3 require no
 extra cables, firmware replacement or Arduino IDE.
 
-### Next immediate test — E1 only, no external GPIO jumper
+### Previous E1 setup (completed; historical procedure)
 
 1. Stop Flipper UART/PWM. Disconnect the original Flipper pin 13 ↔ 14
    self-loopback jumper and USB leads. Power equipment down before
