@@ -1,8 +1,35 @@
 # LabMate v1.8 UART ↔ ESP32 Interoperability Test
 
 **Status: PLANNED / PENDING. No external ESP32 PASS has been reported.**
-User has an ESP32 board; exact variant/pinout is still to be confirmed.
-This is a test plan, not a claim that source or installed FAP changed.
+The user identified an **ESP32-S2-WROVER Flipper Dev Board**. The
+official Flipper Wi-Fi Developer Board schematics were checked:
+https://cdn.flipperzero.one/Flipper_Zero_WI-FI_Module_V1_Schematic.PDF
+(ESP module pins and header connector sheets).
+
+The official board's Flipper USART pins 13/14 are already wired to the
+ESP32-S2's **GPIO44 RXD0** and **GPIO43 TXD0**, respectively.
+Ground is shared through the board connector. No additional UART jumper
+or voltage supply wire is needed when the original board is correctly
+plugged into Flipper. Do not assume this pinout for aftermarket boards.
+
+**Firmware preservation gate:** The official Wi-Fi Devboard normally
+ships with Blackmagic debugging firmware; third-party boards may
+instead run Marauder/other software. Flashing an Arduino test sketch
+**replaces that firmware** and may require restoration afterward.
+Do not initiate firmware upload before the operator explicitly confirms
+they are willing to replace/reinstall the existing ESP32 firmware.
+
+Prepared (not uploaded, not compiled or device-tested):
+[`tests/esp32_s2_wrover_uart_peer/esp32_s2_wrover_uart_peer.ino`](../tests/esp32_s2_wrover_uart_peer/esp32_s2_wrover_uart_peer.ino).
+Uses ESP32-S2 **UART1** remapped to RX GPIO44 / TX GPIO43 and separate
+native USB CDC for debug prints, default 115200/8N1, periodic
+`ESP32_READY` and `AT` -> `ESP32_OK` responses. Change baud by entering
+`9600`, `38400`, or `115200` in Arduino USB Serial Monitor.
+Arduino IDE compatible board family: `ESP32S2 Dev Module` and
+`USB CDC On Boot: Enabled`, `Upload Mode: Internal USB`.
+Confirm upload options before flashing. Sources:
+https://docs.espressif.com/projects/arduino-esp32/en/latest/api/serial.html
+https://docs.espressif.com/projects/arduino-esp32/en/latest/tutorials/cdc_dfu_flash.html
 
 ## Validated existing baseline
 
@@ -20,9 +47,10 @@ This is a test plan, not a claim that source or installed FAP changed.
 
 ## Model gate — confirm before assigning ESP32 pins
 
-Ask for exact board/module (ESP32-WROOM-32, ESP32-WROVER,
-ESP32-S3, ESP32-C3, other) and framework (Arduino IDE or ESP-IDF).
-The Espressif Arduino-ESP32 serial API supports selecting RX/TX pins:
+Board identification completed as **ESP32-S2-WROVER Flipper
+Dev Board** (official Wi-Fi Devboard pin map verified from the V1
+schematic). The Espressif Arduino-ESP32 API supports selecting
+RX/TX pins:
 https://docs.espressif.com/projects/arduino-esp32/en/latest/api/serial.html
 
 Espressif's ESP32-DevKitC documentation explicitly warns that
@@ -95,3 +123,31 @@ after identifying the ESP32 board, to avoid driving reserved pins.
 
 **No merge / no v1.8 Stable** until external peer and required
 stress/resource checks are reported PASS or explicitly reconciled.
+
+## Board-specific test sequence — pending consent to change ESP32 firmware
+
+1. Identify firmware currently running (Blackmagic, Marauder, custom).
+   Preserve or arrange a recovery path before any Arduino upload.
+2. With the module detached from the Flipper, use its native USB-C
+   connection to prepare/program the Arduino peer. If using Arduino IDE,
+   target ESP32S2 Dev Module, enable USB CDC On Boot, and select
+   Internal USB upload mode. This sketch is **not verified on this
+   particular board** and may need adjustment after initial compile.
+3. When power is disconnected and all GPIO tools are stopped, seat
+   the module normally in the Flipper's header. The board internally
+   provides TX↔RX crossed lines and common ground, no extra jumper.
+4. Open LabMate COMM → UART, check STOP / 115200, then press RUN.
+   The module should produce `ESP32_READY` about every 3 seconds.
+5. Open TX editor, send `AT` (CRLF) explicitly. Back to RX; check
+   that `ESP32_OK` appears. Because the visible terminal has only
+   two rows and READY is periodic, a reply may scroll rapidly;
+   inspect RX byte counts as additional evidence.
+6. For baud 9600/38400: use the board's USB Serial Monitor to
+   set baud first, then match LabMate UART while stopped. Do not
+   change wiring while either device is communicating.
+7. Record outcomes E1–E6 and any BUSY/ERR/DROP conditions; leave
+   PR #7 draft until these are verified.
+
+No claims of ESP32 external PASS until the operator actually returns
+device results. Do not overwrite an installed debugging/pentest
+firmware merely for a smoke test without informed agreement.
