@@ -574,10 +574,10 @@ expect('"3.3V GPIO ONLY"' in SCREENS, "Safety indication missing from About scre
 # implementation, with app core only calling the new typed service API.
 for name in ("measurement_reset", "frequency_stats_reset", "pulse_stats_reset", "measurement_update"):
     expect(
-        len(re.findall(rf"(?m)^void\\s+{name}\\s*\\(", MEASUREMENTS)) == 1
+        len(re.findall(rf"(?m)^void\s+{name}\s*\(", MEASUREMENTS)) == 1
         and f"void {name}(LabMateApp* app);" in MEASUREMENTS_H
         and f"{name}(app)" in MAIN
-        and re.search(rf"(?m)^(?:static\\s+)?void\\s+{name}\\s*\\(", MAIN) is None,
+        and re.search(rf"(?m)^(?:static\s+)?void\s+{name}\s*\(", MAIN) is None,
         f"Measurement aggregator {name} must be in labmate_measurements.c only",
     )
 expect("storage_" not in MEASUREMENTS and "furi_hal_pwm_" not in MEASUREMENTS,
