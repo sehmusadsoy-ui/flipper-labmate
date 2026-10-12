@@ -1137,6 +1137,14 @@ int32_t labmate_app(void* p) {
                         } else if(event.key == InputKeyOk &&
                                   (app->profile_io == LabMateProfileIoOk ||
                                    app->profile_io == LabMateProfileIoEmpty)) {
+                            /* Recheck at final confirmation: no SD mutation while
+                             * PWM or an input/logger resource remains active. */
+                            if(app->generator_running ||
+                               app->capture_owner != LabMateCaptureNone ||
+                               app->logger_recording) {
+                                app->profile_notice = app->generator_running ? 4U : 8U;
+                                app->profile_confirm = false;
+                            } else {
                             /* Snapshot under mutex. Commit SD only afterward. */
                             proposed_profiles = app->profiles;
                             LabMateProfile* profile =
@@ -1161,6 +1169,7 @@ int32_t labmate_app(void* p) {
                             app->profile_busy = true;
                             app->profile_confirm = false;
                             app->profile_notice = 0U;
+                            }
                         }
                     } else if(event.key == InputKeyUp) {
                         app->profile_selected = labmate_nav_wrap(
@@ -1177,8 +1186,14 @@ int32_t labmate_app(void* p) {
                             (uint8_t)((app->profile_action + 2U) % 3U);
                         app->profile_notice = 0U;
                     } else if(event.key == InputKeyOk) {
-                        if(app->profile_io != LabMateProfileIoOk &&
-                           app->profile_io != LabMateProfileIoEmpty) {
+                        /* A blocked LOAD must not become an active SAVE/DELETE
+                         * merely because LEFT/RIGHT changed the action. */
+                        if(app->generator_running ||
+                           app->capture_owner != LabMateCaptureNone ||
+                           app->logger_recording) {
+                            app->profile_notice = app->generator_running ? 4U : 8U;
+                        } else if(app->profile_io != LabMateProfileIoOk &&
+                                  app->profile_io != LabMateProfileIoEmpty) {
                             /* Do not overwrite fully corrupt or unreadable SD. */
                         } else if(app->profile_action == 1U ||
                                   app->profile_action == 2U) {
@@ -1203,10 +1218,6 @@ int32_t labmate_app(void* p) {
                                 &app->profiles.slots[app->profile_selected];
                             if(!profile->present) {
                                 app->profile_notice = 3U; /* EMPTY */
-                            } else if(app->generator_running ||
-                                      app->capture_owner != LabMateCaptureNone ||
-                                      app->logger_recording) {
-                                app->profile_notice = 4U; /* STOP PWM */
                             } else {
                                 /* LOAD never starts PWM or arms an IRQ. */
                                 app->preferred_frequency_pin = profile->frequency_pin;
