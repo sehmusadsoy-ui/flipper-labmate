@@ -561,7 +561,7 @@ expect(
     "labmate_logger_storage_stop(" not in SCREENS,
     "CSV app capture and drawing must remain separate from SD I/O",
 )
-expect('"v1.7rc1"' in INTERNAL_H, "v1.7 RC1 candidate label required")
+expect('"v1.7"' in INTERNAL_H, "v1.7 Stable candidate LCD label required")
 expect('fap_version="1.7"' in MANIFEST, "v1.7 manifest version required")
 expect(
     'sources=["*.c"]' in MANIFEST,
