@@ -31,6 +31,7 @@ screens = {
     "Frequency": "labmate_input_measure.c",
     "Pulse": "labmate_input_measure.c",
     "Generator": "labmate_input_output.c",
+    "Uart": "labmate_input_uart.c",
 }
 handlers = [read(p) for p in sorted(set(screens.values()))]
 assert len(main.splitlines()) < 250, "labmate.c must be a thin coordinator"
@@ -48,7 +49,7 @@ for name in screens:
     needle = f"case LabMateScreen{name}:"
     assert router.count(needle) == 1, f"Unrouted screen {name}"
 for name in ("Gpio", "Frequency", "Pulse", "Counter", "Button", "Alerts",
-             "Generator", "Logger", "History", "About", "Profiles"):
+             "Generator", "Logger", "History", "About", "Profiles", "Uart"):
     assert sum(x.count(f"case LabMateTool{name}:") for x in handlers) == 1, (
         f"Missing or duplicate tool launch: {name}"
     )
@@ -105,5 +106,5 @@ for forbidden in ("storage_file_write(", "storage_file_open(", "storage_file_clo
         f"SD operation leaked into mutex-protected input handling: {forbidden}"
     )
 
-print("LabMate v1.8 coordinator PASS: 13 screen routes, 11 tools, ownership, "
+print("LabMate v1.8 coordinator PASS: 14 screen routes, 12 tools, ownership, "
       "PWM safeguards, deferred I/O, bounded coordinator")

@@ -33,8 +33,10 @@ void draw_uart(Canvas* canvas, LabMateApp* app) {
     if(uart->rx_total == 0U) {
         canvas_draw_str(canvas, 4, 43, uart->active ? "WAITING RX..." : "OK START / LR BAUD");
     } else {
-        for(uint8_t i = 1U; i < LABMATE_UART_ROWS; ++i) {
-            canvas_draw_str(canvas, 3, (uint8_t)(34U + 9U * i), uart->terminal.rows[i]);
+        const uint8_t first = uart->terminal.cursor_row < 2U ? 0U : 1U;
+        for(uint8_t i = 0U; i < 2U; ++i) {
+            canvas_draw_str(canvas, 3, (uint8_t)(43U + 9U * i),
+                            uart->terminal.rows[first + i]);
         }
     }
     if(uart->active) ui_footer_pair(canvas, "OK", "STOP", "DN", "TX");

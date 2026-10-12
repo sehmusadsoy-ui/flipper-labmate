@@ -56,7 +56,7 @@ pages = re.findall(
     r'\[LabMateTool\w+\]\s*=\s*\{\s*"([^"]+)",\s*"([^"]+)",'
     r'\s*"([^"]+)",\s*"([^"]+)",\s*\}', UI,
 )
-assert len(pages) == 11, f"Expected 11 About tool guides; got {len(pages)}"
+assert len(pages) == 12, f"Expected 12 About tool guides; got {len(pages)}"
 assert '"PWM Studio"' in NAV, "Menu must display PWM Studio"
 assert '"Signal Generator"' not in NAV, "Obsolete menu label returned"
 assert '"PWM STUDIO"' in UI, "About tool guide must say PWM STUDIO"
@@ -173,8 +173,8 @@ assert "app->about_page = labmate_nav_wrap(" in APP
 assert 'canvas_draw_line(canvas, 0, 52, 127, 52);' in PRIMITIVES
 
 for tool in ("Gpio", "Frequency", "Pulse", "Generator", "Logger",
-             "History", "About", "Profiles", "Counter", "Button", "Alerts"):
+             "History", "About", "Profiles", "Counter", "Button", "Alerts", "Uart"):
     assert f"case LabMateTool{tool}:" in PRIMITIVES, f"Missing icon {tool}"
 
 print(f"LabMate v1.7 final UI polish PASS: {len(footer_pairs)} context footers, "
-      f"{len(pages)} help pages, 11 unique tool icons")
+      f"{len(pages)} help pages, 12 unique tool icons")
