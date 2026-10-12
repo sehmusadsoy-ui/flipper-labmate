@@ -12,6 +12,10 @@ ROOT = Path(__file__).resolve().parents[1]
 MAIN = (ROOT / "labmate.c").read_text(encoding="utf-8")
 MEASUREMENTS = (ROOT / "labmate_measurements.c").read_text(encoding="utf-8")
 MEASUREMENTS_H = (ROOT / "labmate_measurements.h").read_text(encoding="utf-8")
+LOGGER_SNAPSHOT = (ROOT / "labmate_logger_snapshot.c").read_text(encoding="utf-8")
+LOGGER_SNAPSHOT_H = (ROOT / "labmate_logger_snapshot.h").read_text(encoding="utf-8")
+ALERT_BRIDGE = (ROOT / "labmate_alerts_bridge.c").read_text(encoding="utf-8")
+ALERT_BRIDGE_H = (ROOT / "labmate_alerts_bridge.h").read_text(encoding="utf-8")
 GENERATOR = (ROOT / "labmate_generator.c").read_text(encoding="utf-8")
 GENERATOR_H = (ROOT / "labmate_generator.h").read_text(encoding="utf-8")
 TIM2_CAPTURE = (ROOT / "labmate_frequency_tim2.c").read_text(encoding="utf-8")
@@ -381,13 +385,13 @@ for operation in ("init", "change_source", "change_limit", "toggle", "acknowledg
     fn = f"labmate_threshold_{operation}"
     expect(fn + "(" in THRESHOLD and fn + "(" in THRESHOLD_H,
            f"Missing portable alert operation {fn}")
-expect("!app->hold" in MAIN
-       and "app->frequency_valid" in MAIN
-       and "app->pulse_period_valid" in MAIN
-       and "app->counter_active" in MAIN
-       and "app->button_active" in MAIN
-       and "app->frequency_millihz / 1000U" in MAIN
-       and "app->pulse_duty_permille / 10U" in MAIN,
+expect("!app->hold" in ALERT_BRIDGE
+       and "app->frequency_valid" in ALERT_BRIDGE
+       and "app->pulse_period_valid" in ALERT_BRIDGE
+       and "app->counter_active" in ALERT_BRIDGE
+       and "app->button_active" in ALERT_BRIDGE
+       and "app->frequency_millihz / 1000U" in ALERT_BRIDGE
+       and "app->pulse_duty_permille / 10U" in ALERT_BRIDGE,
        "Alert samples must be gated and converted to user-visible units")
 expect("storage_" not in THRESHOLD and "furi_" not in THRESHOLD
        and "labmate_threshold_update(" not in SCREENS
@@ -582,6 +586,20 @@ for name in ("measurement_reset", "frequency_stats_reset", "pulse_stats_reset", 
     )
 expect("storage_" not in MEASUREMENTS and "furi_hal_pwm_" not in MEASUREMENTS,
        "Measurement aggregation must never write SD or own PWM hardware")
+
+# Sample-formatting and alert validity remain app-thread only after extraction.
+expect("bool logger_prepare_row(LabMateApp* app, char* row, size_t capacity)" in LOGGER_SNAPSHOT
+       and "bool logger_prepare_row(LabMateApp* app, char* row, size_t capacity);" in LOGGER_SNAPSHOT_H
+       and "logger_prepare_row(app, pending_log_row, sizeof(pending_log_row))" in MAIN
+       and "labmate_logger_format_row(" in LOGGER_SNAPSHOT
+       and "storage_" not in LOGGER_SNAPSHOT and "furi_hal_" not in LOGGER_SNAPSHOT,
+       "CSV snapshots must be pure app-thread data sampling, without SD or GPIO calls")
+expect("void threshold_update_from_measurement(LabMateApp* app)" in ALERT_BRIDGE
+       and "void threshold_update_from_measurement(LabMateApp* app);" in ALERT_BRIDGE_H
+       and "threshold_update_from_measurement(app);" in MAIN
+       and "labmate_threshold_update(&app->threshold, valid, sample)" in ALERT_BRIDGE
+       and "storage_" not in ALERT_BRIDGE and "furi_hal_" not in ALERT_BRIDGE,
+       "Threshold sample validity adapter must have no hardware/storage side-effects")
 
 # A background TIM1 PWM output owns PA7. The GPIO Monitor must not
 # reconfigure that pin (including on entry with a stale PA7 selection).
