@@ -130,7 +130,7 @@ assert 'app->profile_selected == i' in UI
 assert 'idx == app->history_selected' in UI
 assert 'app->profile_action == 2U ? "DELETE" : "SAVE"' in UI
 assert '"BACK", "NO"' in UI
-assert '"LR", "ACTION", "OK"' in UI
+assert 'ui_footer_pair(canvas, "LR", action, "OK", blocked ? "BLOCK" : "SELECT");' in UI
 assert '"LR", "MODE", "OK"' in UI
 assert 'app->history_delete_mode ? "DELETE" : "OPEN"' in UI
 assert 'app->history_delete_confirm' in UI
@@ -140,6 +140,20 @@ assert '"OK", "DELETE", "BACK", "NO"' in UI
 assert '"FAIL"' in UI and '"DONE"' in UI
 assert '"OK", "STOP", "BACK", "SAVE"' in UI
 assert '"LR", "SOURCE", "OK", "RECORD"' in UI
+
+# Profiles: current action must stay explicit during PWM RUN, and every
+# operation/confirmation must refuse to alter RAM/SD while tools are active.
+for literal in (
+    '"OVERWRITE S%u?"', '"SAVE TO S%u?"', '"DELETE S%u?"',
+    '"CANNOT UNDO"', '"REPLACES SAVED DATA"', '"NEW PROFILE"',
+    'app->generator_running', '"PWM ON"',
+    'blocked ? "BLOCK" : "SELECT"',
+):
+    assert literal in UI, f"Profiles safety screen missing {literal}"
+assert APP.count('app->profile_notice = app->generator_running ? 4U : 8U;') == 2, \\
+    "Both profile actions and final SAVE/DELETE confirmation must check PWM/capture/logger"
+assert APP.count('app->capture_owner != LabMateCaptureNone ||') >= 2
+assert APP.count('app->logger_recording) {') >= 2
 
 # The application still owns the actual input events; drawing never performs
 # IRQ, storage or PWM work. Screen switching remains presentation-only.
