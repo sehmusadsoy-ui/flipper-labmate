@@ -12,12 +12,14 @@ Ground is shared through the board connector. No additional UART jumper
 or voltage supply wire is needed when the original board is correctly
 plugged into Flipper. Do not assume this pinout for aftermarket boards.
 
-**Firmware preservation gate:** The official Wi-Fi Devboard normally
-ships with Blackmagic debugging firmware; third-party boards may
-instead run Marauder/other software. Flashing an Arduino test sketch
-**replaces that firmware** and may require restoration afterward.
-Do not initiate firmware upload before the operator explicitly confirms
-they are willing to replace/reinstall the existing ESP32 firmware.
+**Firmware preservation gate (consent given, upload not performed):**
+The operator reports their ESP32-S2-WROVER Wi-Fi Devboard currently
+runs Marauder and explicitly agrees to replace its firmware temporarily
+for UART testing, with an independent reinstall plan afterward.
+Flashing an Arduino test sketch **replaces the firmware**. No flash,
+backup, firmware restoration, or on-device test has yet been performed
+by the assistant. The operator must use the board's native USB-C
+connection and choose the proper ESP32-S2 target/port.
 
 Prepared (not uploaded, not compiled or device-tested):
 [`tests/esp32_s2_wrover_uart_peer/esp32_s2_wrover_uart_peer.ino`](../tests/esp32_s2_wrover_uart_peer/esp32_s2_wrover_uart_peer.ino).
@@ -124,7 +126,35 @@ after identifying the ESP32 board, to avoid driving reserved pins.
 **No merge / no v1.8 Stable** until external peer and required
 stress/resource checks are reported PASS or explicitly reconciled.
 
-## Board-specific test sequence — pending consent to change ESP32 firmware
+## Operator preparation in Arduino IDE (not yet executed)
+
+1. Stop LabMate UART/PWM and **remove the Devboard from Flipper**.
+   Use a known data-capable USB-C cable for the Devboard's own USB
+   connector. Distinguish the Devboard's new serial port from the
+   Flipper's original COM7.
+2. In Arduino IDE, install the **Espressif Systems esp32** board package
+   using the official stable Boards Manager JSON:
+   https://espressif.github.io/arduino-esp32/package_esp32_index.json
+3. Open
+   `tests/esp32_s2_wrover_uart_peer/esp32_s2_wrover_uart_peer.ino`.
+   Board: **ESP32S2 Dev Module**. For native USB Serial Monitor,
+   **USB CDC On Boot: Enabled**, **Upload Mode: Internal USB**.
+4. Press Verify/Compile before any firmware write; report errors rather
+   than changing board/flash settings speculatively.
+5. For initial USB enumeration where needed: hold Devboard **BOOT**,
+   press/release **RESET**, then release BOOT; select the newly
+   appearing Devboard serial port. This is distinct from Flipper COM7.
+   Follow Espressif USB CDC documentation:
+   https://docs.espressif.com/projects/arduino-esp32/en/latest/tutorials/cdc_dfu_flash.html
+6. Only after successful Verify and correct Devboard port identification,
+   press Upload. Then press RESET to launch sketch if required by
+   USB-C flashing. USB serial monitor at **115200 baud** is separate
+   from GPIO44/43 hardware UART used by LabMate.
+7. Do not presume an upload succeeded; report Arduino compile/upload
+   output and observed sketch messages. The Flipper-side FAP is
+   unchanged from the previously user-tested v1.8dev UART candidate.
+
+## Board-specific test sequence — consent given; preparation/upload still pending
 
 1. Identify firmware currently running (Blackmagic, Marauder, custom).
    Preserve or arrange a recovery path before any Arduino upload.
