@@ -43,10 +43,10 @@ These are **functional tests using the Flipper's own 3.3 V loopback**, not indep
 - **Profiles format:** saved profiles do not include CUSTOM PWM frequency, duty cycle or Threshold settings; CUSTOM SAVE is intentionally refused and a preset LOAD resets duty to 50%. LOAD never starts PWM.
 - Back up important CSV and profile data; a confirmed History CSV DELETE is irreversible.
 
-See [deferred test register](docs/DEFERRED_HARDWARE_TESTS.md) and [Stable Candidate device evidence](docs/V1_7_STABLE_CANDIDATE.md).
+See [deferred test register](../DEFERRED_HARDWARE_TESTS.md) and [Stable Candidate device evidence](../V1_7_STABLE_CANDIDATE.md).
 
 ## Installation
 
-Download `labmate.fap` and `SHA256SUMS.txt` from this **v1.7 Stable** release; verify SHA256 before installing to `/ext/apps/Tools/labmate.fap` on a compatible Momentum Firmware device. The official [PowerShell USB installer](scripts/install-v17-from-github.ps1) with `-Channel Stable` validates official tag/release metadata and FAP SHA256; see [installation guide](docs/V1_7_INSTALL_GUIDE.md). It does not remove existing CSV/profile data.
+Download `labmate.fap` and `SHA256SUMS.txt` from this **v1.7 Stable** release; verify SHA256 before installing to `/ext/apps/Tools/labmate.fap` on a compatible Momentum Firmware device. The official [PowerShell USB installer](../../scripts/install-v17-from-github.ps1) with `-Channel Stable` validates official tag/release metadata and FAP SHA256; see [installation guide](../V1_7_INSTALL_GUIDE.md). It does not remove existing CSV/profile data.
 
 **GPIO safety:** use only known **3.3 V-compatible** digital signals, STOP PWM before moving connections, and never apply 5 V, mains, automotive or unknown signals directly to Flipper GPIO.

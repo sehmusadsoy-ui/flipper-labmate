@@ -14,7 +14,7 @@ The original `v1.7` tag stays pinned to `d0e1bc6a95b257841533f0aa8745e3a79bbc8dc
 
 **[Download v1.7 labmate.fap](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/download/v1.7/labmate.fap)** ·
 [SHA256SUMS.txt](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/download/v1.7/SHA256SUMS.txt) ·
-[Stable release notes](RELEASE_NOTES_v1.7.md) ·
+[Stable release notes](docs/releases/RELEASE_NOTES_v1.7.md) ·
 [Installation guide](docs/V1_7_INSTALL_GUIDE.md) ·
 [Roadmap](ROADMAP.md) ·
 [Deferred hardware / compatibility tests](docs/DEFERRED_HARDWARE_TESTS.md)
@@ -29,6 +29,25 @@ reported device checks; the exact final v1.7 FAP passed a separate
 > **3.3 V GPIO ONLY.** Never connect unknown voltage, 5 V, automotive,
 > mains or other high-voltage signals directly to Flipper Zero GPIO.
 > Use only verified, compatible digital signals and safe equipment.
+
+## Repository layout
+
+The top level is intentionally short; development resources live in grouped folders.
+
+| Path | Contents |
+| --- | --- |
+| [`src/`](src/) | LabMate app entry point and all C/header measurement, UI, storage and GPIO modules |
+| [`docs/releases/`](docs/releases/) | Historical and current release notes; downloadable binaries remain in GitHub Releases |
+| [`docs/archive/`](docs/archive/) | Old v1.5 development/draft planning notes, retained for reference |
+| [`docs/`](docs/) | Hardware QA backlog, architecture, installation guide and device test records |
+| [`tests/`](tests/) | Portable native C regression fixtures (not compiled into Flipper FAP) |
+| [`scripts/`](scripts/) | SHA256-verified Windows USB installers and static checks |
+| [`.github/workflows/`](.github/workflows/) | CI and historical release automation |
+| [`dist/`](dist/) / [`screenshots/`](screenshots/) | Historical build examples and UI screenshots |
+
+The app manifest [`application.fam`](application.fam) remains at the root and builds
+`src/*.c`. The binary is distributed from the official [v1.7 release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7);
+moving source folders does **not** modify any previously published tag or release asset.
 
 ## What's new in v1.7 Stable
 
@@ -78,7 +97,7 @@ remain available.
 - **Safer generator/resource handling:** PA7 is reserved when PWM is
   running, and a stopped generator releases the pin.
 
-See the [v1.6 release notes](RELEASE_NOTES_v1.6.md) and
+See the [v1.6 release notes](docs/releases/RELEASE_NOTES_v1.6.md) and
 [physical test record](docs/V1_6_FIRST_DEVICE_TEST.md) for
 test coverage, limitations and detailed outcomes.
 
@@ -175,7 +194,7 @@ share timing references; agreement does **not** constitute
 independent calibration or certified accuracy. External inputs and
 all duty/frequency combinations are not exhaustively verified.
 Deliberate full/corrupt/unmounted microSD and abrupt power loss
-fault tests remain undone. See [v1.7 release notes](RELEASE_NOTES_v1.7.md)
+fault tests remain undone. See [v1.7 release notes](docs/releases/RELEASE_NOTES_v1.7.md)
 and [deferred checks](docs/DEFERRED_HARDWARE_TESTS.md).
 
 ## Build from source
@@ -199,12 +218,12 @@ Firmware/API mismatches may require a rebuild.
 ## Project links
 
 - [LabMate v1.7 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7) ·
-  [Stable release notes](RELEASE_NOTES_v1.7.md) ·
+  [Stable release notes](docs/releases/RELEASE_NOTES_v1.7.md) ·
   [Previous v1.6.1 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1)
 - [Master roadmap](ROADMAP.md) ·
   [Changelog](CHANGELOG.md) ·
   [v1.6 device test report](docs/V1_6_FIRST_DEVICE_TEST.md)
-- [Source code](labmate.c) · [App manifest](application.fam) ·
+- [Source code](src/labmate.c) · [App manifest](application.fam) ·
   [Historical v1.2 screenshots](screenshots/v1.2/)
 
 ## Author and license

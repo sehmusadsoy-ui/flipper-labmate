@@ -4,8 +4,8 @@ on:
   push:
     branches: [v1.6.1-dev]
     paths:
-      - "*.c"
-      - "*.h"
+      - "src/*.c"
+      - "src/*.h"
       - "scripts/check_v16_boundaries.py"
       - "tests/test_resource_policy.c.inc"
       - "tests/test_navigation.c.inc"
@@ -44,48 +44,48 @@ jobs:
         run: |
           set -euo pipefail
           # .c.inc stays outside the FAP wildcard source list.
-          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. -x c \
-            labmate_resource_policy.c tests/test_resource_policy.c.inc \
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc -x c \
+            src/labmate_resource_policy.c tests/test_resource_policy.c.inc \
             -o /tmp/labmate-resource-policy-tests
           /tmp/labmate-resource-policy-tests
 
       - name: Test grouped menu mapping on host
         run: |
           set -euo pipefail
-          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. -x c \
-            labmate_navigation.c tests/test_navigation.c.inc \
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc -x c \
+            src/labmate_navigation.c tests/test_navigation.c.inc \
             -o /tmp/labmate-navigation-tests
           /tmp/labmate-navigation-tests
 
       - name: Test profile codec (portable C)
         run: |
           set -euo pipefail
-          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. -x c \
-            labmate_profiles.c tests/test_profiles.c.inc \
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc -x c \
+            src/labmate_profiles.c tests/test_profiles.c.inc \
             -o /tmp/labmate-profile-tests
           /tmp/labmate-profile-tests
 
       - name: Test portable logger CSV and filename codec
         run: |
           set -euo pipefail
-          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. -x c \
-            labmate_logger_codec.c tests/test_logger_codec.c.inc \
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc -x c \
+            src/labmate_logger_codec.c tests/test_logger_codec.c.inc \
             -o /tmp/labmate-logger-codec-tests
           /tmp/labmate-logger-codec-tests
 
       - name: Test PB3 adaptive frequency gate (portable C)
         run: |
           set -euo pipefail
-          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. -x c \
-            labmate_frequency_gate.c tests/test_frequency_gate.c.inc \
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc -x c \
+            src/labmate_frequency_gate.c tests/test_frequency_gate.c.inc \
             -o /tmp/labmate-frequency-gate-tests
           /tmp/labmate-frequency-gate-tests
 
       - name: Test pure Pulse period/duty and median math
         run: |
           set -euo pipefail
-          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. -x c \
-            labmate_pulse_math.c tests/test_pulse_math.c.inc \
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc -x c \
+            src/labmate_pulse_math.c tests/test_pulse_math.c.inc \
             -o /tmp/labmate-pulse-math-tests
           /tmp/labmate-pulse-math-tests
 

@@ -54,7 +54,7 @@ FAP checksum and mocked Windows installer transport passed in the
 
 These are operator-reported functional measurements and tests,
 not third-party laboratory calibration. Detailed evidence is in
-[docs/V1_6_FIRST_DEVICE_TEST.md](docs/V1_6_FIRST_DEVICE_TEST.md).
+[docs/V1_6_FIRST_DEVICE_TEST.md](../V1_6_FIRST_DEVICE_TEST.md).
 
 ## Known limitations
 

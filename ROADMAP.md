@@ -63,7 +63,7 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
   succeeded; see [deferred compatibility checks](docs/DEFERRED_HARDWARE_TESTS.md).
   No paid Excel purchase is required for the current Stable maintenance.
 - **Published:** [LabMate v1.5 Stable release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.5), with FAP, release notes and SHA-256. Physical-device tests were performed on the preceding development build; the final CI-produced FAP was installed afterward.
-- **Known untested scenario:** Real microSD failure/recovery (e.g. read/write failures, full/corrupt/unmounted media or long blocked I/O) was **not** hardware-validated; see [v1.5 release notes](RELEASE_NOTES_v1.5.md). This is a documented limitation, not an outstanding condition requiring further v1.5 tests.
+- **Known untested scenario:** Real microSD failure/recovery (e.g. read/write failures, full/corrupt/unmounted media or long blocked I/O) was **not** hardware-validated; see [v1.5 release notes](docs/releases/RELEASE_NOTES_v1.5.md). This is a documented limitation, not an outstanding condition requiring further v1.5 tests.
 
 ### v1.6 — Navigation, resource safety and Profiles (Stable published 2026-10-10)
 

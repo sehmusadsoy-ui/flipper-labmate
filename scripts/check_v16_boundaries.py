@@ -9,49 +9,50 @@ import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-MAIN = (ROOT / "labmate.c").read_text(encoding="utf-8")
-MEASUREMENTS = (ROOT / "labmate_measurements.c").read_text(encoding="utf-8")
-MEASUREMENTS_H = (ROOT / "labmate_measurements.h").read_text(encoding="utf-8")
-LOGGER_SNAPSHOT = (ROOT / "labmate_logger_snapshot.c").read_text(encoding="utf-8")
-LOGGER_SNAPSHOT_H = (ROOT / "labmate_logger_snapshot.h").read_text(encoding="utf-8")
-ALERT_BRIDGE = (ROOT / "labmate_alerts_bridge.c").read_text(encoding="utf-8")
-ALERT_BRIDGE_H = (ROOT / "labmate_alerts_bridge.h").read_text(encoding="utf-8")
-GENERATOR = (ROOT / "labmate_generator.c").read_text(encoding="utf-8")
-GENERATOR_H = (ROOT / "labmate_generator.h").read_text(encoding="utf-8")
-TIM2_CAPTURE = (ROOT / "labmate_frequency_tim2.c").read_text(encoding="utf-8")
-TIM2_CAPTURE_H = (ROOT / "labmate_frequency_tim2.h").read_text(encoding="utf-8")
-EXTI_CAPTURE = (ROOT / "labmate_capture_exti.c").read_text(encoding="utf-8")
-EXTI_CAPTURE_H = (ROOT / "labmate_capture_exti.h").read_text(encoding="utf-8")
-CAPTURE_CORE = (ROOT / "labmate_capture_core.c").read_text(encoding="utf-8")
-CAPTURE_CORE_H = (ROOT / "labmate_capture_core.h").read_text(encoding="utf-8")
-PULSE_CAPTURE = (ROOT / "labmate_pulse_capture.c").read_text(encoding="utf-8")
-PULSE_CAPTURE_H = (ROOT / "labmate_pulse_capture.h").read_text(encoding="utf-8")
-FREQ_CAPTURE = (ROOT / "labmate_frequency_capture.c").read_text(encoding="utf-8")
-FREQ_CAPTURE_H = (ROOT / "labmate_frequency_capture.h").read_text(encoding="utf-8")
-MONITOR_GPIO = (ROOT / "labmate_monitor_gpio.c").read_text(encoding="utf-8")
-MONITOR_GPIO_H = (ROOT / "labmate_monitor_gpio.h").read_text(encoding="utf-8")
-COUNTER = (ROOT / "labmate_event_counter.c").read_text(encoding="utf-8")
-COUNTER_H = (ROOT / "labmate_event_counter.h").read_text(encoding="utf-8")
-COUNTER_MATH = (ROOT / "labmate_counter_math.c").read_text(encoding="utf-8")
-COUNTER_MATH_H = (ROOT / "labmate_counter_math.h").read_text(encoding="utf-8")
-BUTTON = (ROOT / "labmate_button_capture.c").read_text(encoding="utf-8")
-BUTTON_H = (ROOT / "labmate_button_capture.h").read_text(encoding="utf-8")
-BUTTON_LOGIC = (ROOT / "labmate_button_logic.c").read_text(encoding="utf-8")
-BUTTON_LOGIC_H = (ROOT / "labmate_button_logic.h").read_text(encoding="utf-8")
-THRESHOLD = (ROOT / "labmate_threshold.c").read_text(encoding="utf-8")
-THRESHOLD_H = (ROOT / "labmate_threshold.h").read_text(encoding="utf-8")
-SCREENS = (ROOT / "labmate_ui_screens.c").read_text(encoding="utf-8")
-SCREENS_H = (ROOT / "labmate_ui_screens.h").read_text(encoding="utf-8")
-INTERNAL_H = (ROOT / "labmate_internal.h").read_text(encoding="utf-8")
-PRIMITIVES = (ROOT / "labmate_ui_primitives.c").read_text(encoding="utf-8")
-NAVIGATION = (ROOT / "labmate_navigation.c").read_text(encoding="utf-8")
+SRC = ROOT / "src"
+MAIN = (SRC / "labmate.c").read_text(encoding="utf-8")
+MEASUREMENTS = (SRC / "labmate_measurements.c").read_text(encoding="utf-8")
+MEASUREMENTS_H = (SRC / "labmate_measurements.h").read_text(encoding="utf-8")
+LOGGER_SNAPSHOT = (SRC / "labmate_logger_snapshot.c").read_text(encoding="utf-8")
+LOGGER_SNAPSHOT_H = (SRC / "labmate_logger_snapshot.h").read_text(encoding="utf-8")
+ALERT_BRIDGE = (SRC / "labmate_alerts_bridge.c").read_text(encoding="utf-8")
+ALERT_BRIDGE_H = (SRC / "labmate_alerts_bridge.h").read_text(encoding="utf-8")
+GENERATOR = (SRC / "labmate_generator.c").read_text(encoding="utf-8")
+GENERATOR_H = (SRC / "labmate_generator.h").read_text(encoding="utf-8")
+TIM2_CAPTURE = (SRC / "labmate_frequency_tim2.c").read_text(encoding="utf-8")
+TIM2_CAPTURE_H = (SRC / "labmate_frequency_tim2.h").read_text(encoding="utf-8")
+EXTI_CAPTURE = (SRC / "labmate_capture_exti.c").read_text(encoding="utf-8")
+EXTI_CAPTURE_H = (SRC / "labmate_capture_exti.h").read_text(encoding="utf-8")
+CAPTURE_CORE = (SRC / "labmate_capture_core.c").read_text(encoding="utf-8")
+CAPTURE_CORE_H = (SRC / "labmate_capture_core.h").read_text(encoding="utf-8")
+PULSE_CAPTURE = (SRC / "labmate_pulse_capture.c").read_text(encoding="utf-8")
+PULSE_CAPTURE_H = (SRC / "labmate_pulse_capture.h").read_text(encoding="utf-8")
+FREQ_CAPTURE = (SRC / "labmate_frequency_capture.c").read_text(encoding="utf-8")
+FREQ_CAPTURE_H = (SRC / "labmate_frequency_capture.h").read_text(encoding="utf-8")
+MONITOR_GPIO = (SRC / "labmate_monitor_gpio.c").read_text(encoding="utf-8")
+MONITOR_GPIO_H = (SRC / "labmate_monitor_gpio.h").read_text(encoding="utf-8")
+COUNTER = (SRC / "labmate_event_counter.c").read_text(encoding="utf-8")
+COUNTER_H = (SRC / "labmate_event_counter.h").read_text(encoding="utf-8")
+COUNTER_MATH = (SRC / "labmate_counter_math.c").read_text(encoding="utf-8")
+COUNTER_MATH_H = (SRC / "labmate_counter_math.h").read_text(encoding="utf-8")
+BUTTON = (SRC / "labmate_button_capture.c").read_text(encoding="utf-8")
+BUTTON_H = (SRC / "labmate_button_capture.h").read_text(encoding="utf-8")
+BUTTON_LOGIC = (SRC / "labmate_button_logic.c").read_text(encoding="utf-8")
+BUTTON_LOGIC_H = (SRC / "labmate_button_logic.h").read_text(encoding="utf-8")
+THRESHOLD = (SRC / "labmate_threshold.c").read_text(encoding="utf-8")
+THRESHOLD_H = (SRC / "labmate_threshold.h").read_text(encoding="utf-8")
+SCREENS = (SRC / "labmate_ui_screens.c").read_text(encoding="utf-8")
+SCREENS_H = (SRC / "labmate_ui_screens.h").read_text(encoding="utf-8")
+INTERNAL_H = (SRC / "labmate_internal.h").read_text(encoding="utf-8")
+PRIMITIVES = (SRC / "labmate_ui_primitives.c").read_text(encoding="utf-8")
+NAVIGATION = (SRC / "labmate_navigation.c").read_text(encoding="utf-8")
 MANIFEST = (ROOT / "application.fam").read_text(encoding="utf-8")
-PROFILES = (ROOT / "labmate_profiles.c").read_text(encoding="utf-8")
-POLICY = (ROOT / "labmate_resource_policy.c").read_text(encoding="utf-8")
-FREQUENCY_GATE = (ROOT / "labmate_frequency_gate.c").read_text(encoding="utf-8")
-POLICY_H = (ROOT / "labmate_resource_policy.h").read_text(encoding="utf-8")
-LOGGER_STORAGE = (ROOT / "labmate_logger_storage.c").read_text(encoding="utf-8")
-LOGGER_STORAGE_H = (ROOT / "labmate_logger_storage.h").read_text(encoding="utf-8")
+PROFILES = (SRC / "labmate_profiles.c").read_text(encoding="utf-8")
+POLICY = (SRC / "labmate_resource_policy.c").read_text(encoding="utf-8")
+FREQUENCY_GATE = (SRC / "labmate_frequency_gate.c").read_text(encoding="utf-8")
+POLICY_H = (SRC / "labmate_resource_policy.h").read_text(encoding="utf-8")
+LOGGER_STORAGE = (SRC / "labmate_logger_storage.c").read_text(encoding="utf-8")
+LOGGER_STORAGE_H = (SRC / "labmate_logger_storage.h").read_text(encoding="utf-8")
 
 
 failures: list[str] = []
@@ -287,7 +288,7 @@ expect("FuriHalPwmOutputIdTim1PA7" in GENERATOR,
 expect('LabMateCaptureCounter' in POLICY_H
        and "case LabMateCaptureCounter:" in POLICY
        and "return pin_index == 4U;" in POLICY
-       and "LabMateToolCounter" in (ROOT / "labmate_navigation.h").read_text(encoding="utf-8")
+       and "LabMateToolCounter" in (SRC / "labmate_navigation.h").read_text(encoding="utf-8")
        and '"Event Counter"' in NAVIGATION,
        "Event Counter must be a distinct PB3-only capture tool")
 expect("!app->counter_active && !app->button_active &&" in CAPTURE_CORE
@@ -324,7 +325,7 @@ expect((ROOT / "tests/test_counter_math.c.inc").is_file()
 expect("LabMateCaptureButton" in POLICY_H
        and "case LabMateCaptureButton:" in POLICY
        and "LABMATE_MONITOR_PC1_INDEX" in POLICY
-       and "LabMateToolButton" in (ROOT / "labmate_navigation.h").read_text(encoding="utf-8")
+       and "LabMateToolButton" in (SRC / "labmate_navigation.h").read_text(encoding="utf-8")
        and '"Button Analyzer"' in NAVIGATION,
        "Button Analyzer must own only PC1 and preserve existing tool IDs")
 for operation in ("start", "poll", "stop", "reset", "change_quiet"):
@@ -367,7 +368,7 @@ expect((ROOT / "tests/test_button_logic.c.inc").is_file()
 
 # Threshold Alerts never claim a peripheral, touch storage, or read ISR state
 # from Canvas. One latched visual threshold can monitor a live instrument.
-expect("LabMateToolAlerts" in (ROOT / "labmate_navigation.h").read_text(encoding="utf-8")
+expect("LabMateToolAlerts" in (SRC / "labmate_navigation.h").read_text(encoding="utf-8")
        and '"Threshold Alerts"' in NAVIGATION
        and "case LabMateToolAlerts:" in MAIN
        and "case LabMateScreenAlerts:" in MAIN,
@@ -404,8 +405,8 @@ expect((ROOT / "tests/test_threshold.c.inc").is_file()
        and not (ROOT / "tests/test_threshold.c").exists(),
        "Threshold tests must not be compiled into FAP")
 
-PWM_SETTINGS = (ROOT / "labmate_pwm_settings.c").read_text(encoding="utf-8")
-PWM_SETTINGS_H = (ROOT / "labmate_pwm_settings.h").read_text(encoding="utf-8")
+PWM_SETTINGS = (SRC / "labmate_pwm_settings.c").read_text(encoding="utf-8")
+PWM_SETTINGS_H = (SRC / "labmate_pwm_settings.h").read_text(encoding="utf-8")
 expect("LABMATE_PWM_MAX_HZ 50000U" in PWM_SETTINGS_H
        and "LABMATE_PWM_MIN_HZ 1U" in PWM_SETTINGS_H
        and "LABMATE_PWM_MIN_DUTY 5U" in PWM_SETTINGS_H
@@ -470,9 +471,9 @@ expect("LL_EXTI_Disable" not in MAIN and "LL_EXTI_ClearFlag" not in MAIN
        and PULSE_CAPTURE.count("labmate_capture_exti_clear(") == 1,
        "LOW/PC1 pre-arm and Pulse stop must use common EXTI cleanup")
 
-HISTORY = (ROOT / "labmate_history.c").read_text(encoding="utf-8")
-HISTORY_H = (ROOT / "labmate_history.h").read_text(encoding="utf-8")
-STORAGE_PATHS = (ROOT / "labmate_storage_paths.h").read_text(encoding="utf-8")
+HISTORY = (SRC / "labmate_history.c").read_text(encoding="utf-8")
+HISTORY_H = (SRC / "labmate_history.h").read_text(encoding="utf-8")
+STORAGE_PATHS = (SRC / "labmate_storage_paths.h").read_text(encoding="utf-8")
 for fn in ("scan", "open", "read_step", "close"):
     name = f"labmate_history_{fn}"
     expect(
@@ -514,8 +515,8 @@ expect(
     '#define LOGGER_DIR LABMATE_LOGGER_DIR' in HISTORY,
     "Storage path must stay shared and compatible with older CSV logs",
 )
-PULSE_MATH = (ROOT / "labmate_pulse_math.c").read_text(encoding="utf-8")
-PULSE_MATH_H = (ROOT / "labmate_pulse_math.h").read_text(encoding="utf-8")
+PULSE_MATH = (SRC / "labmate_pulse_math.c").read_text(encoding="utf-8")
+PULSE_MATH_H = (SRC / "labmate_pulse_math.h").read_text(encoding="utf-8")
 expect(
     "labmate_pulse_period_and_duty(" in MEASUREMENTS and
     "labmate_pulse_median5(" in MEASUREMENTS and
@@ -564,7 +565,7 @@ expect(
 expect('"v1.7"' in INTERNAL_H, "v1.7 Stable candidate LCD label required")
 expect('fap_version="1.7"' in MANIFEST, "v1.7 manifest version required")
 expect(
-    'sources=["*.c"]' in MANIFEST,
+    'sources=["src/*.c"]' in MANIFEST,
     "FAP source list must explicitly exclude native C test fixtures",
 )
 expect(
@@ -718,8 +719,8 @@ expect(
     "Profile I/O needs deferred main-thread work and verified codec",
 )
 
-LOGGER_CODEC = (ROOT / "labmate_logger_codec.c").read_text(encoding="utf-8")
-LOGGER_HEADER = (ROOT / "labmate_logger_codec.h").read_text(encoding="utf-8")
+LOGGER_CODEC = (SRC / "labmate_logger_codec.c").read_text(encoding="utf-8")
+LOGGER_HEADER = (SRC / "labmate_logger_codec.h").read_text(encoding="utf-8")
 expect(
     '"labmate_logger_codec.h"' in LOGGER_SNAPSHOT and
     "labmate_logger_filename_id(" in LOGGER_STORAGE and

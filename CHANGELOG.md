@@ -74,7 +74,7 @@ import remains **NOT TESTED**; LibreOffice Calc import succeeded.
   oscilloscope/voltage/frequency calibration (equipment deferred).
   Full/corrupted SD and other destructive error-path checks, plus
   Microsoft Excel CSV import, remain unverified. See
-  `docs/DEFERRED_HARDWARE_TESTS.md` and `RELEASE_NOTES_v1.7.md`.
+  `docs/DEFERRED_HARDWARE_TESTS.md` and `docs/releases/RELEASE_NOTES_v1.7.md`.
 
 ## [1.6] - 2026-10-10 (Stable)
 
@@ -105,7 +105,7 @@ import remains **NOT TESTED**; LibreOffice Calc import succeeded.
   passed [GitHub Actions run 38007158577](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38007158577).
 - Self-measurements using Flipper's own generator are not independent
   calibration; full/corrupt/absent-SD and sudden power-loss testing
-  remain unverified. See [v1.6 release notes](RELEASE_NOTES_v1.6.md).
+  remain unverified. See [v1.6 release notes](docs/releases/RELEASE_NOTES_v1.6.md).
 
 
 ## [1.5] - 2026-10-09
@@ -120,7 +120,7 @@ import remains **NOT TESTED**; LibreOffice Calc import succeeded.
 ### Stable acceptance and limitations
 - The user confirmed final v1.5-dev checks: development labels match in menu/About, USB-connected STOP/save, BACK-to-save and opening both new files in Log History.
 - Final stable-labeled source displays v1.5 in the main menu and About. The Stable publishing workflow verifies the final FAP, checksums, source commit and Momentum SDK provenance.
-- Real microSD fault recovery, simultaneous host writes to a live CSV, Microsoft Excel import and external-reference calibration remain unverified; see [v1.5 Stable release notes](RELEASE_NOTES_v1.5.md).
+- Real microSD fault recovery, simultaneous host writes to a live CSV, Microsoft Excel import and external-reference calibration remain unverified; see [v1.5 Stable release notes](docs/releases/RELEASE_NOTES_v1.5.md).
 
 ## [1.4] - 2026-10-08
 
