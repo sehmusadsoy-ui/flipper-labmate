@@ -108,6 +108,28 @@ Do not represent this as a complete 10-scenario device regression.
 R10 full tool navigation/exit, plus individual all-11-tool access in R1.
 Draft PR #5 remains unmerged until those device tests pass.
 
+## Physical regression checkpoint C: R6–R8 3/3 PASS (user-reported, 2026-10-12)
+
+The operator reported **PASS** for the third device-test group on the
+previously installed v1.8dev refactor candidate:
+
+- **R6 Button Analyzer: PASS** — the requested STOP-on-entry,
+  RUN/STOP, RESET, details and quiet-time/debounce UI checks passed as
+  reported. No claim of calibrated real mechanical contact bounce.
+- **R7 Threshold Alerts: PASS** — the requested source/threshold
+  adjustments, ARM/ACK and navigation checks passed as reported.
+- **R8 Data Logger / Log History: PASS** — the requested low-frequency,
+  high-frequency and pulse CSV logging modes, STOP/close and existing/new
+  History access checks passed as reported. No SD-fault injection,
+  independent CSV parser validation or destructive History test claimed.
+
+**Cumulative:** A1–A4 (4/4), R3–R5 (3/3) and R6–R8 (3/3) =
+**10/10 reported individual checks** across the first three test groups.
+The remaining mandatory scenarios are **R9 full Profiles LOAD/SAVE/DELETE
+and write-guard verification**, plus **R10 About, all 11 tool launches,
+repeated navigation and clean exit**. The complete R1–R10 suite is
+**not finished**. Draft PR #5 is still unmerged.
+
 ## R5 UX observation — current STOP / RUN resets count (2026-10-12)
 
 During operator testing, a subsequent RUN after STOP restarted the Counter
@@ -142,11 +164,11 @@ GPIO wiring while switching tools; no unknown voltages, 5 V or mains.
       **PASS** (operator-reported); no independent frequency calibration
 - [x] R5: Event Counter PB3 RUN/STOP/RESET **PASS** (operator-reported);
       no independent long-duration resource-leak/soak test
-- [ ] R6: Button Analyzer enters STOP, details/debounce screen without
-      unexpected IRQ; no real-contact bounce claims without hardware
-- [ ] R7: Threshold Alerts source, limit, ARM/ACK without crashes
-- [ ] R8: Data Logger each of 3 sources records CSV, STOP closes the file;
-      History opens existing/new records and BACK returns safely
+- [x] R6: Button Analyzer STOP/entry, controls, details/debounce UI **PASS**
+      (user-reported); no physical bounce calibration
+- [x] R7: Threshold Alerts source, limit, ARM/ACK **PASS** (user-reported)
+- [x] R8: Data Logger three modes, STOP/close, new and existing CSV History
+      access **PASS** (user-reported)
 - [ ] R9: Profiles S1 survives install (**PASS** A4); LOAD/SAVE/DELETE confirmation;
       active PWM/capture guard blocks profile writes
 - [ ] R10: About pages, menu navigation, repeated tool entry/exit and
