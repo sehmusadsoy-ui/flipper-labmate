@@ -4,7 +4,7 @@
 **Current published Stable:** [v1.7 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7), source `d0e1bc6a95b257841533f0aa8745e3a79bbc8dcd`; verified FAP SHA256 `5A7CB0EAE601EEAC8856790211C4D2831A9198C31853631E1DAF0308CE724335`.  
 **Previous Stable fallback:** [v1.6.1 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1), [v1.6 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6), and older unchanged releases.  
 **Previous pre-release:** [v1.7 RC1](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7-rc1) remains available at unchanged source `d55eec03`.
-**Validation:** v1.7 refactored Stable Candidate passed 36/36 user-reported device regressions (7B screenshots); exact final `v1.7` FAP passed Test 7G 4/4 device smoke; Test 7H PowerShell `-Channel RC1 -VerifyOnly` passed; approved Stable release CI passed. Full `-Channel Stable` physical USB installation remains to be operator-confirmed, without new versioning. **Next milestone: v1.8 Communication Tools**, followed by **v1.9 Logic Scope and Signal Compare**, then **v2.0 Ultimate**.
+**Validation:** v1.7 refactored Stable Candidate passed 36/36 user-reported device regressions (7B screenshots); exact final `v1.7` FAP passed Test 7G 4/4 device smoke; Test 7H PowerShell `-Channel RC1 -VerifyOnly` passed; approved Stable release CI passed. Published `-Channel Stable -VerifyOnly` and actual `-Channel Stable -Port COM7` USB installation both passed on Windows 2026-10-12; a separate post-reinstall on-screen/data smoke remains pending. No new version was created. **Next milestone: v1.8 Communication Tools**, followed by **v1.9 Logic Scope and Signal Compare**, then **v2.0 Ultimate**.
 
 ## Vision
 
