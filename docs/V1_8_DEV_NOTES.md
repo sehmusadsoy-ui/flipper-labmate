@@ -108,6 +108,24 @@ Do not represent this as a complete 10-scenario device regression.
 R10 full tool navigation/exit, plus individual all-11-tool access in R1.
 Draft PR #5 remains unmerged until those device tests pass.
 
+## R5 UX observation — current STOP / RUN resets count (2026-10-12)
+
+During operator testing, a subsequent RUN after STOP restarted the Counter
+at zero rather than resuming the previous total. Source inspection confirms
+this is the **unchanged v1.7 behavior**: `labmate_event_counter_start()`
+resets `app->counter_total` and elapsed seconds every start. It is **not
+a coordinator-refactor regression** and R5 function testing remains PASS.
+The STOP operation itself preserves the displayed result.
+
+**Potential v1.8 usability refinement (not yet implemented):** distinguish
+pause/resume from explicit UP RESET: STOP freezes, subsequent RUN continues
+the software total while resetting only the hardware delta baseline; UP
+RESET (only while stopped) clears the total. Entering a new counter session
+may still explicitly clear values. If adopted, recheck wrap/overflow,
+timer ownership, time accumulation, reset and menu-exit behavior on-device.
+Do not describe this as the current behavior until a separate patch is
+implemented and tested.
+
 ## Operator-required regression before merging/using as baseline
 
 The v1.8dev FAP must be installed to a physical Flipper by a tester.
