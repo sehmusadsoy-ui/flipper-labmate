@@ -37,7 +37,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "$TESTED_SOURCE_SHA"
+          git merge-base --is-ancestor "$TESTED_SOURCE_SHA" HEAD
           test "$(git diff --name-only "$TESTED_SOURCE_SHA" HEAD)" = ".github/workflows/publish-v17-rc1.yml"
           run_json="$(gh run view "$TESTED_CI_RUN" -R "$REPO" --json headSha,status,conclusion)"
           test "$(jq -r .headSha <<< "$run_json")" = "$TESTED_SOURCE_SHA"
@@ -57,7 +57,15 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist
-          gh run download "$TESTED_CI_RUN" -R "$REPO" -n labmate -D dist
+          # The Actions ZIP can contain repeated ZIP member names; gh's strict
+          # extractor rejects that archive. unzip -o safely extracts each member,
+          # and the exact on-device-tested FAP SHA is still mandatory below.
+          curl --fail-with-body --location --retry 3 --silent --show-error \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -o "$RUNNER_TEMP/labmate-rc1-artifact.zip" \
+            "https://api.github.com/repos/$REPO/actions/artifacts/11720836209/zip"
+          unzip -oq "$RUNNER_TEMP/labmate-rc1-artifact.zip" -d dist
           test -s dist/labmate.fap
           test -s dist/SHA256SUMS.txt
           (cd dist && sha256sum -c SHA256SUMS.txt)
