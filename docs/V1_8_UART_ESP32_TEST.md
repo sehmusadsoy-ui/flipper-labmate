@@ -1,6 +1,6 @@
 # LabMate v1.8 UART ↔ ESP32 Interoperability Test
 
-**Status: PLANNED / PENDING. No external ESP32 PASS has been reported.**
+**Status: ESP32-S2 Arduino CLI 3.3.12 compile PASS (user-reported, 2026-10-13). External ESP32 flash and communication tests PENDING; no external UART PASS reported.**
 The user identified an **ESP32-S2-WROVER Flipper Dev Board**. The
 official Flipper Wi-Fi Developer Board schematics were checked:
 https://cdn.flipperzero.one/Flipper_Zero_WI-FI_Module_V1_Schematic.PDF
@@ -21,7 +21,7 @@ backup, firmware restoration, or on-device test has yet been performed
 by the assistant. The operator must use the board's native USB-C
 connection and choose the proper ESP32-S2 target/port.
 
-Prepared (not uploaded, not compiled or device-tested):
+Prepared and user-reported compiled successfully (not uploaded or device-tested):
 [`tests/esp32_s2_wrover_uart_peer/esp32_s2_wrover_uart_peer.ino`](../tests/esp32_s2_wrover_uart_peer/esp32_s2_wrover_uart_peer.ino).
 Uses ESP32-S2 **UART1** remapped to RX GPIO44 / TX GPIO43 and separate
 native USB CDC for debug prints, default 115200/8N1, periodic
@@ -128,19 +128,22 @@ stress/resource checks are reported PASS or explicitly reconciled.
 
 ## Windows Arduino CLI compile checkpoint — user-reported FAIL; fix pending
 
-On 2026-10-13, the operator installed `esp32:esp32` 3.3.12 and attempted
-`arduino-cli compile` for ESP32-S2. The compiler returned exit status 1;
-the user shared only the tail of the failure, ending at a caret marker.
-A subsequent green `Write-Host` line was executed separately and **did
-not** establish build success. No ESP32 firmware upload occurred.
+The operator provided the complete original compiler diagnostic on
+2026-10-13: `line 15: error: expected unqualified-id before numeric constant`
+at `static constexpr size_t LINE_MAX = 31;`, which confirms the
+`LINE_MAX` macro collision. Changed the identifier to `UART_LINE_CAP`
+in code commit `cdf6ce92aab155167b1f4300a54890d55f5434c6`.
 
-One likely source-level issue is the sketch's `LINE_MAX` identifier
-colliding with a POSIX/preprocessor macro from toolchain headers.
-Renamed it to `UART_LINE_CAP` in code commit
-`cdf6ce92aab155167b1f4300a54890d55f5434c6`. This is a hypothesis,
-**not a confirmed diagnosis** without the first compiler `error:` line.
-The revised sketch still needs to be downloaded and compiled with
-the user's installed ESP32 core; no Arduino build PASS claimed.
+**Corrected build: user-reported PASS** with Arduino CLI, ESP32 Arduino
+core `esp32:esp32@3.3.12`, FQBN
+`esp32:esp32:esp32s2:CDCOnBoot=cdc,UploadMode=cdc`.
+Compiler reported sketch 304,748 bytes of 1,310,720 bytes (23%);
+global variables 49,000 bytes of 327,680 bytes (14%), leaving
+278,680 bytes. Exit status 0 and conditional PASS output shown.
+
+No ESP32-S2 firmware upload, ESP32 board/COM-port identification or
+external communication has been reported yet. Marauder remains on
+the board until the operator performs the explicit USB firmware upload.
 
 ## Operator preparation in Arduino IDE (not yet executed)
 
