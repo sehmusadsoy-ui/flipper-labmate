@@ -2,6 +2,19 @@
 
 Status: **WORK IN PROGRESS / NOT STABLE / NOT PUBLISHED**.
 
+**Final label candidate branch:** `v1.7-stable-final`, forked from
+`v1.7-stable-candidate` after tests 7A–7F (36/36 PASS).
+The final branch changes the on-device version text from
+`v1.7rc1` to `v1.7` and updates release documentation/test guards.
+The functional regression results belong to the earlier,
+exact SHA256-matched `v1.7rc1` **stable-candidate FAP**, not
+automatically to the newly labeled final FAP.
+
+**Mandatory remaining gate:** verify final CI/manifest and SHA256,
+USB-install the final `v1.7`-labeled candidate, run a short startup,
+About/menu, PWM STOP and S1/CSV smoke check, then request **separate
+explicit Stable publication authorization**.
+
 ## Immutable baseline and isolated development
 
 - Source baseline: published `v1.7-rc1` at commit
@@ -76,11 +89,16 @@ Status: **WORK IN PROGRESS / NOT STABLE / NOT PUBLISHED**.
   PWM remains STOP and Profile S1/CSV history persisted. No defects reported.
   Cumulative **Test 7A–7F = 36/36 PASS**. This excludes deferred
   external oscilloscope, real mechanical button and SD fault-injection tests.
-- [ ] Check resource-hand-off and repeated navigation/STOP/START; check
-  storage error behavior when practicable on disposable test data.
-- [ ] Review full 11-tool menu, 13-page About and 128x64 clipping.
-- [ ] Update README/ROADMAP/CHANGELOG/release notes; list hardware test
-  gaps from [DEFERRED_HARDWARE_TESTS.md](DEFERRED_HARDWARE_TESTS.md).
+- [x] Short resource handoff and repeated START/STOP/navigation
+  on tested candidate FAP: user-reported Test 7F PASS. **Not** an
+  exhaustive long-duration/fault-injection test; SD failures remain deferred.
+- [x] All 11 tools, 13 About pages and 128x64 clipping reviewed on the
+  prior candidate FAP: user-reported Test 7F PASS.
+  Final `v1.7` display label needs a fresh short device check.
+- [x] Prepared README/ROADMAP/CHANGELOG and an explicitly
+  **not-published** Stable release-notes draft. Deferred mechanical
+  contact, calibrated PWM and fault-injection gaps disclosed; final
+  release commit/checksum fields remain PENDING until final CI.
 - [ ] Obtain separate explicit approval for **v1.7 Stable**, then pin
   final source commit, create and verify final release + SHA256 assets.
 - [ ] Verify stable release non-prerelease, correct tag/FAP/checksum,
