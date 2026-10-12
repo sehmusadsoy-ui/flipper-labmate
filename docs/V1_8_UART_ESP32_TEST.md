@@ -1,6 +1,6 @@
 # LabMate v1.8 UART ↔ ESP32 Interoperability Test
 
-**Status: ESP32-S2 115200/9600 build and upload PASS (operator-reported, 2026-10-13); external UART E1/E2/E3/E5/E6 = 5/6 PASS. E4 9600 baud Flipper↔ESP32 device test PENDING; BUSY, overflow and sustained-load checks PENDING.**
+**Status: ESP32-S2 UART E1–E6 = 6/6 operator-reported PASS (2026-10-13), including bidirectional 115200 and 9600 baud. Independent BUSY/resource ownership, overflow/error reporting, and sustained-RX tests remain PENDING; PR #7 is draft.**
 The user identified an **ESP32-S2-WROVER Flipper Dev Board**. The
 official Flipper Wi-Fi Developer Board schematics were checked:
 https://cdn.flipperzero.one/Flipper_Zero_WI-FI_Module_V1_Schematic.PDF
@@ -209,8 +209,9 @@ ESP32-S2 9600 UPLOAD PASS
 
 This confirms a successful reported upload of the dedicated 9600 test
 sketch to ESP32-S2 COM12; the pasted final lines do not independently
-show every preceding esptool flash block. **E4 hardware UART test has
-not yet been performed/reported**, so E4 remains UNCHECKED. The
+show every preceding esptool flash block. **E4 hardware UART test was subsequently performed and reported PASS**
+by the operator; see checkpoint below. The upload log independently
+shows only completion, not physical UART test measurements. The
 Flipper-side LabMate FAP and its previous v1.7 Stable release have
 not been changed.
 
@@ -218,7 +219,7 @@ not been changed.
 built and uploaded via the USB COM12 link. No more firmware upload
 is needed for the immediate E4 functional test.
 
-**Next operator E4 test (pending):** with Flipper UART STOP and any
+**Previous E4 operator test procedure (completed):** with Flipper UART STOP and any
 external USB power unplugged, detach USB-C from ESP32 and reconnect
 the official devboard to the Flipper header in the correct orientation,
 with no extra jumper or power wire. Start LabMate COMM → UART; while
@@ -229,6 +230,39 @@ then DOWN → TX editor `AT` → OK SEND → BACK to RX; expect conditional
 Mark E4 PASS only after the operator reports both messages at 9600.
 If the response does not appear, report exactly what the Flipper shows
 and keep E4 pending/FAIL as appropriate.
+
+## External ESP32-S2 checkpoint E4 — PASS (operator report, 2026-10-13)
+
+After successfully compiling and flashing the separate `currentBaud =
+9600` peer sketch, the operator selected 9600 on Flipper UART while
+STOP, entered RUN and reported:
+
+- `ESP32_READY`: **PASS** (ESP32 → Flipper).
+- Flipper TX `AT` → conditional `ESP32_OK` RX: **PASS**
+  (Flipper → ESP32 → Flipper).
+- **E4 9600 external UART PASS**; overall external E1–E6 = **6/6
+  user-reported PASS**.
+
+This corroborates functional UART interoperability at **115200 and
+9600 baud, 8N1**. The result is not an instrumented baud-rate
+accuracy measurement or a controlled overflow / ownership conflict
+test. Those remain separate acceptance gates.
+
+### Next low-risk test — sustained low-rate receive (SR1 pending)
+
+Use the *already flashed* ESP32-S2 9600-baud firmware, without
+reflashing or changing wires. LabMate UART STOP → select **9600** → RUN.
+Wait **2 minutes** while the ESP32 peer sends `ESP32_READY` roughly
+every 3 seconds; then note `R:`, `D:`, `E:` and status badge,
+and ensure the GUI remains responsive. STOP, BACK, then re-enter
+UART to verify resource cleanup. **SR1 PASS** is warranted only
+if UART stays usable, RX count rises, no unexpected BUSY, and
+`D:0 E:0` under this moderate rate.
+
+This checks stable ordinary RX service, **not** the overflow branch.
+It must not be recorded as proof that DROP/ERR warnings work. A
+controlled stress/overflow test, and a legitimate existing serial-owner
+BUSY conflict, remain PENDING.
 
 ## E1–E6 external peer PASS/FAIL matrix
 
@@ -242,7 +276,7 @@ and keep E4 pending/FAIL as appropriate.
 - [x] **E3, Response:** ESP32 returns `ESP32_OK\r\n` only after
       it receives `AT`; Flipper UART RX shows the correct response
       (not merely another `ESP32_READY`).
-- [ ] **E4, 9600:** With both UARTs stopped/reconfigured to **9600**,
+- [x] **E4, 9600:** With both UARTs stopped/reconfigured to **9600**,
       repeat E1–E3; avoid interpreting setup/boot noise as PASS.
 - [x] **E5, Lifecycle:** Repeat short exchanges, STOP and START UART,
       then BACK and re-enter. No freezes, unexpected repeated TX, or
