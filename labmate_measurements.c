@@ -87,7 +87,7 @@ static void pulse_recalculate(LabMateApp* app) {
 
 /* Keep running extrema across HOLD and signal loss, but discard an
  * incomplete smoothing window whenever the capture source restarts. */
-static void pulse_stats_window_reset(LabMateApp* app) {
+void pulse_stats_window_reset(LabMateApp* app) {
     app->pulse_stats_recent_count = 0U;
     app->pulse_stats_recent_next = 0U;
     app->pulse_stats_recent_tick = 0U;
