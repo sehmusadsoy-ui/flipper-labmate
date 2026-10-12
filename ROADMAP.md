@@ -4,7 +4,7 @@
 **Current published Stable baseline:** [v1.6.1 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1), built from `bc63271afe572c393c1febd0f0ef7039404bc937` (FAP and SHA256).  
 **Previous Stable fallback:** [v1.6 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6), plus all historical release tags.  
 **Current pre-release:** [v1.7 RC1](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7-rc1) pinned to hardware-tested source `d55eec03`.
-**In progress:** `v1.7-stable-candidate` (new modularization, verified RC1/future Stable USB installer and final regression). v1.7 Stable does **not** exist yet; released RC1 and previous Stable tags/assets are immutable.
+**Validation:** `v1.7-stable-candidate` FAP completed 36/36 user-reported device regressions (7B screenshots). **In progress:** isolated `v1.7-stable-final` branch with final LCD version label, fresh candidate CI, final physical smoke, review and explicit publish approval. v1.7 Stable does **not** exist yet; existing Stable and RC1 tags/assets remain unchanged.
 
 ## Vision
 
@@ -93,10 +93,13 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
   independent calibrated PWM voltage/frequency/duty/OFF measurement,
   destructive SD failure cases and exhaustive extremes. These stay on the
   living [hardware test backlog](docs/DEFERRED_HARDWARE_TESTS.md).
-- **Stable candidate:** modularized measurement, logger snapshot and threshold
-  adapter files; verified one-command GitHub-to-USB PowerShell installer;
-  candidate CI 2/2 PASS. New candidate FAP still needs fresh Flipper
-  regression before Stable publication. No new Stable tag/release exists.
+- **Stable candidate:** modularized measurement, logger snapshot and
+  threshold adapter files; checksum-verified GitHub-to-USB PowerShell
+  installer passed Windows mock checks. Source `bdb1de10` CI 2/2 PASS,
+  and exact FAP completed 36/36 on-device tests (user-reported, 7B
+  screenshots reviewed). Isolated `v1.7-stable-final` prepares
+  final `v1.7` LCD label and requires fresh CI + abbreviated device
+  handoff before publishing. **No v1.7 Stable tag/release exists yet.**
 
 ### v1.8 — Communication Tools
 
@@ -138,7 +141,7 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
 | v1.4 | Frequency and pulse MIN/MAX, signal-loss behavior, UI stability | Stable published |
 | **v1.5** | **Data Logger, CSV recording and Log History** | **Stable published 2026-10-09** |
 | v1.6 | Code/UI refactor | Stable published; v1.6.1 is the current Stable baseline |
-| v1.7 | PWM Studio and Counter | RC1 published; isolated Stable candidate under QA |
+| v1.7 | PWM Studio and Counter | RC1 published; 36/36 candidate regressions passed, final Stable label/handoff and approval pending |
 | v1.8 | UART, I²C, possible 1-Wire tools | Planned |
 | v1.9 | Logic Scope and Signal Compare | Planned |
 | v2.0 | LabMate Ultimate / Signal Doctor | Planned |
