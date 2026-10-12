@@ -2,7 +2,7 @@ name: LabMate v1.7 RC1 Candidate CI
 
 on:
   push:
-    branches: [v1.7-rc1]
+    branches: [v1.7-rc1, v1.7-profiles-ux-fix]
     paths:
       - "*.c"
       - "*.h"
@@ -31,7 +31,7 @@ permissions:
 
 concurrency:
   # Candidate builds never cancel dev or stable jobs.
-  group: labmate-v1.7-rc1-ci
+  group: labmate-v1.7-${{ github.ref_name }}-ci
   cancel-in-progress: true
 
 jobs:
