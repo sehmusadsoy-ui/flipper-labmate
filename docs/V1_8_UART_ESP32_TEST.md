@@ -283,12 +283,20 @@ turns nonprintable characters into `.`. This is consistent with
 all reported symptoms; confirm by observing UART baud after re-entry
 and retesting 9600.
 
-**Development fix prepared (not yet device-installed or verified):**
+**Development fix committed and CI PASS, but device retest pending:**
 the UART menu now invokes `labmate_uart_reenter` to preserve selected
 `baud_index`, while clearing per-session text/counters and ensuring
-hardware stays STOP. A source guard was added to prevent reverting
-to reset-on-every-entry. A fresh Momentum SDK CI and Flipper
-device retest are mandatory before marking this fix PASS.
+hardware stays STOP. A source guard prevents reverting to the
+reset-on-every-entry behavior.
+
+Commit `ae396a588225f700d93a0940db7d4d9141dedfb8` built
+successfully on [CI run 38318186745](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38318186745):
+Momentum SDK API 87.1, native checks, Linux candidate build, and
+Windows installer mock **2/2 jobs PASS**. Candidate `labmate.fap`
+SHA256: `7bfdcb21c344b76bc3dbebfca7c979870b7bbfba28a34c9fe7c63e6ec5e76a20`.
+This is a **new development candidate**; the old user-installed FAP
+does not yet contain the fix, and on-device SR1 retest has not
+been reported. No merge or release performed.
 
 **Immediate workaround on old FAP:** after re-entering UART,
 verify displayed baud, STOP, select **9600**, then RUN.
