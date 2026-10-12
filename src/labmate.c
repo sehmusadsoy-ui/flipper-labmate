@@ -16,6 +16,7 @@
 #include "labmate_alerts_bridge.h"
 #include "labmate_history.h"
 #include "labmate_logger_storage.h"
+#include "labmate_monitor_gpio.h"
 
 /* App coordinator: lifecycle, sampling, dispatch and teardown only. */
 int32_t labmate_app(void* p) {
@@ -104,7 +105,7 @@ int32_t labmate_app(void* p) {
         viewport,
         GuiLayerFullscreen);
 
-    InputEvent event;
+    InputEvent event = {0};
 
     LabMateRedrawThrottle redraw;
     labmate_redraw_init(&redraw);
