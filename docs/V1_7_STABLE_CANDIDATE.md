@@ -89,6 +89,20 @@ explicit Stable publication authorization**.
   PWM remains STOP and Profile S1/CSV history persisted. No defects reported.
   Cumulative **Test 7A–7F = 36/36 PASS**. This excludes deferred
   external oscilloscope, real mechanical button and SD fault-injection tests.
+- [x] **Test 7G: 4/4 PASS (user-reported), 2026-10-12.** Final
+  `v1.7`-labeled FAP source
+  `1f7a47b2b44e48a4792e1ddce81e3a82f7f3137b`, CI
+  [38234204272](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38234204272)
+  **2/2 PASS** (Momentum SDK 87.1 + Windows mock transport), checksum
+  `5A7CB0EAE601EEAC8856790211C4D2831A9198C31853631E1DAF0308CE724335`
+  from CI log `SHA256SUMS.txt`. User reports successful checksum-guarded
+  USB install, menu/About displaying `v1.7`, clean startup and PWM STOP,
+  preserved S1 and historical CSV files, and 100 Hz/50% PWM->Pulse
+  measurement with STOP after exit. This is a **4/4 on-device smoke** on
+  the new label build, not a repeat of the earlier 36/36 regression.
+- [ ] Verify the final release installer using the published RC1
+  `-Channel RC1 -VerifyOnly` on actual Windows/GitHub CLI, including
+  failure handling. Do not claim this completed from CI mocks alone.
 - [x] Short resource handoff and repeated START/STOP/navigation
   on tested candidate FAP: user-reported Test 7F PASS. **Not** an
   exhaustive long-duration/fault-injection test; SD failures remain deferred.
