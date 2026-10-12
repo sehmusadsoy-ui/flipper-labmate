@@ -1,5 +1,10 @@
 # LabMate v1.7 Stable
 
+> **Documentation maintenance notice:** These clarifications are on the
+> default branch after the v1.7 Stable release. The already published
+> `v1.7` tag/FAP/release assets are unchanged. This is not a new
+> version or new binary.
+
 **Flipper Zero / Momentum Firmware — 3.3 V digital signal diagnostics.**
 
 This is the first **v1.7 Stable** release following the published v1.7 RC1 pre-release. Published v1.6.1 Stable and v1.7 RC1 remain available and unchanged. Install only with compatible Momentum Firmware SDK/API. This external `labmate.fap` does not update device firmware.
@@ -28,6 +33,7 @@ These are **functional tests using the Flipper's own 3.3 V loopback**, not indep
 - **Not independently calibrated:** no oscilloscope/reference validation of PA7 frequency, duty, voltage levels or electrical OFF state.
 - **Mechanical button not tested:** only clean digital simulation was available, so mechanical bounce/settle measurements are not independently verified.
 - **Storage fault scenarios not exhaustively tested:** full, disconnected or corrupted microSD, interruption during writes, and extended continuous sessions remain deferred.
+- **Microsoft Excel CSV import/analysis: NOT TESTED.** LabMate CSV import was demonstrated in LibreOffice Calc, but actual Microsoft Excel was unavailable in the test environment. Excel compatibility is tracked as deferred QA-01; no paid software purchase is required for this maintenance.
 - **Additional hardware and edge cases:** external safe reference signals, all pins and every extreme PWM frequency/duty combination remain untested.
 - **Profiles format:** saved profiles do not include CUSTOM PWM frequency, duty cycle or Threshold settings; CUSTOM SAVE is intentionally refused and a preset LOAD resets duty to 50%. LOAD never starts PWM.
 - Back up important CSV and profile data; a confirmed History CSV DELETE is irreversible.
