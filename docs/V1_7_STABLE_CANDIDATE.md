@@ -16,9 +16,11 @@ Official source tag: `d0e1bc6a95b257841533f0aa8745e3a79bbc8dcd`;
 official FAP SHA256: `5A7CB0EAE601EEAC8856790211C4D2831A9198C31853631E1DAF0308CE724335`.
 **Maintenance status:** `-Channel Stable` checksum verification and live
 USB installation passed on Windows/COM7 (operator-provided console logs,
-2026-10-12). Microsoft Excel CSV import, final post-reinstall screen/data
-inspection and deferred physical equipment tests remain open. No new
-version or release asset change was made.
+2026-10-12). **Post-reinstall Test 7J: 4/4 PASS (operator-reported),
+2026-10-12**: `v1.7` menu/About label, initial PWM STOP, preserved
+Profile S1 and older History CSV files opening. Excel import in
+Microsoft Excel and other deferred physical equipment tests remain open.
+No new version or release asset change was made.
 
 ## Immutable baseline and isolated development
 
@@ -120,8 +122,12 @@ version or release asset change was made.
   **PASS: official Stable release/USB installer path**, separate from
   earlier candidate/flipper device checks. The logs do not independently
   establish the post-reinstall on-screen state/CSV/Profile retention.
-- [ ] Post-reinstall UI/data smoke on Flipper: confirm `v1.7`, default
-  PWM STOP, original S1 profile and Log History still available.
+- [x] **Test 7J: post-USB-reinstall on-device 4/4 PASS (user-reported),
+  2026-10-12.** Flipper menu/About show `v1.7`; PWM Studio starts STOP;
+  prior Profile S1 data are intact; previously saved Log History CSV
+  records can still be opened. This test confirms preservation after
+  installation. No fresh screenshots/raw CSV provided for Test 7J;
+  treat as an operator report, not independent laboratory verification.
 - [x] Short resource handoff and repeated START/STOP/navigation
   on tested candidate FAP: user-reported Test 7F PASS. **Not** an
   exhaustive long-duration/fault-injection test; SD failures remain deferred.
@@ -137,7 +143,8 @@ version or release asset change was made.
 - [x] GitHub latest v1.7 release, non-prerelease, tag commit, FAP digest,
   historical v1.6.1 Stable and v1.7 RC1 immutability verified.
   Installer mock, RC1/Stable VerifyOnly and Stable live USB install
-  verified; post-reinstall on-screen/data smoke remains to be reported.
+  verified; post-reinstall on-screen/data Test 7J passed 4/4 on device
+  according to the operator.
 
 **IMPORTANT:** RC1 tests do not automatically validate a modified
 stable-candidate FAP. Do not mark unperformed hardware checks PASS. Physical
