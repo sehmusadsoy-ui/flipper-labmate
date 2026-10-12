@@ -4,7 +4,7 @@
 **Current published Stable baseline:** [v1.6.1 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1), built from `bc63271afe572c393c1febd0f0ef7039404bc937` (FAP and SHA256).  
 **Previous Stable fallback:** [v1.6 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6), plus all historical release tags.  
 **Current pre-release:** [v1.7 RC1](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7-rc1) pinned to hardware-tested source `d55eec03`.
-**Validation:** `v1.7-stable-candidate` FAP completed 36/36 user-reported device regressions (7B screenshots). **In progress:** isolated `v1.7-stable-final` branch with final LCD version label, fresh candidate CI, final physical smoke, review and explicit publish approval. v1.7 Stable does **not** exist yet; existing Stable and RC1 tags/assets remain unchanged.
+**Validation:** `v1.7-stable-candidate` FAP completed 36/36 user-reported device regressions (7B screenshots). Isolated `v1.7-stable-final` branch successfully CI-built the final LCD `v1.7` label and completed Test 7G 4/4 user-reported on-device smoke. Final installer/publication provenance review and separate explicit publish approval are pending. v1.7 Stable does **not** exist yet; existing Stable and RC1 tags/assets remain unchanged.
 
 ## Vision
 
