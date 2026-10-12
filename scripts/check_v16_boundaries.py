@@ -10,7 +10,20 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
-MAIN = (SRC / "labmate.c").read_text(encoding="utf-8")
+COORDINATOR = (SRC / "labmate.c").read_text(encoding="utf-8")
+INPUT_DISPATCH = (SRC / "labmate_input.c").read_text(encoding="utf-8")
+CAPTURE_SESSION = (SRC / "labmate_capture_session.c").read_text(encoding="utf-8")
+VIEW_COORDINATOR = (SRC / "labmate_view.c").read_text(encoding="utf-8")
+DEFERRED_IO = (SRC / "labmate_deferred.c").read_text(encoding="utf-8")
+# v1.6/v1.7 boundary assertions follow operations across the new
+# coordinator modules, rather than assuming all were inside labmate.c.
+SCREEN_HANDLERS = "\n".join(
+    (SRC / filename).read_text(encoding="utf-8") for filename in (
+        "labmate_input_menu.c", "labmate_input_profiles.c",
+        "labmate_input_history.c", "labmate_input_measure.c",
+        "labmate_input_output.c"))
+MAIN = "\n".join((COORDINATOR, INPUT_DISPATCH, SCREEN_HANDLERS,
+                  CAPTURE_SESSION, VIEW_COORDINATOR, DEFERRED_IO))
 MEASUREMENTS = (SRC / "labmate_measurements.c").read_text(encoding="utf-8")
 MEASUREMENTS_H = (SRC / "labmate_measurements.h").read_text(encoding="utf-8")
 LOGGER_SNAPSHOT = (SRC / "labmate_logger_snapshot.c").read_text(encoding="utf-8")
@@ -205,19 +218,19 @@ expect(
 # Capture STOP paths share one idempotent teardown helper; Pulse HOLD is
 # deliberately excluded because it stops only its own IRQ.
 expect(
-    MAIN.count("static void capture_stop_all(LabMateApp* app)") == 1,
+    CAPTURE_SESSION.count("void labmate_capture_stop_all(LabMateApp* app)") == 1,
     "Unified capture teardown helper must exist exactly once",
 )
 expect(
-    MAIN.count("capture_stop_all(app);") >= 5,
+    MAIN.count("labmate_capture_stop_all(app);") >= 5,
     "Mode switching, logger, BACK and exit must share capture teardown",
 )
 expect(
-    "static void logger_capture_stop(LabMateApp* app) {\n    capture_stop_all(app);" in MAIN,
+    "void labmate_logger_capture_stop(LabMateApp* app) {\n    labmate_capture_stop_all(app);" in MAIN,
     "Logger stop must call shared teardown",
 )
 expect(
-    "if(screen_uses_gpio(app->screen)) {\n        capture_stop_all(app);" in MAIN,
+    "if(labmate_screen_uses_gpio(app->screen)) {\n        labmate_capture_stop_all(app);" in MAIN,
     "App exit must call shared teardown",
 )
 
@@ -499,8 +512,8 @@ expect(
     "storage_common_remove(storage, path) == FSE_OK" in HISTORY and
     "storage_file_exists(storage, path)" in HISTORY and
     "storage_simply_remove_recursive" not in HISTORY and
-    "labmate_history_delete_file(history_delete_id)" in MAIN and
-    "history_delete_requested = true;" in MAIN and
+    "labmate_history_delete_file(work->history_delete_id)" in MAIN and
+    "work->history_delete_requested = true;" in MAIN and
     "app->history_delete_confirm = true;" in MAIN and
     "history_delete_target" not in MAIN and
     "app->history_delete_mode = !app->history_delete_mode;" in MAIN and
@@ -557,13 +570,13 @@ expect(
 )
 expect(
     "logger_prepare_row(" in MAIN and
-    "capture_stop_all(" in MAIN and
+    "labmate_capture_stop_all(" in MAIN and
     "labmate_logger_storage_start(" not in SCREENS and
     "labmate_logger_storage_stop(" not in SCREENS,
     "CSV app capture and drawing must remain separate from SD I/O",
 )
-expect('"v1.7"' in INTERNAL_H, "v1.7 Stable candidate LCD label required")
-expect('fap_version="1.7"' in MANIFEST, "v1.7 manifest version required")
+expect('"v1.8dev"' in INTERNAL_H, "v1.8 dev LCD label required")
+expect('fap_version="1.8"' in MANIFEST, "v1.8 dev manifest version required")
 expect(
     'sources=["src/*.c"]' in MANIFEST,
     "FAP source list must explicitly exclude native C test fixtures",
@@ -591,7 +604,7 @@ expect("storage_" not in MEASUREMENTS and "furi_hal_pwm_" not in MEASUREMENTS,
 # Sample-formatting and alert validity remain app-thread only after extraction.
 expect("bool logger_prepare_row(LabMateApp* app, char* row, size_t capacity)" in LOGGER_SNAPSHOT
        and "bool logger_prepare_row(LabMateApp* app, char* row, size_t capacity);" in LOGGER_SNAPSHOT_H
-       and "logger_prepare_row(app, pending_log_row, sizeof(pending_log_row))" in MAIN
+       and "logger_prepare_row(app, work->pending_log_row, sizeof(work->pending_log_row))" in MAIN
        and "labmate_logger_format_row(" in LOGGER_SNAPSHOT
        and "storage_" not in LOGGER_SNAPSHOT and "furi_hal_" not in LOGGER_SNAPSHOT,
        "CSV snapshots must be pure app-thread data sampling, without SD or GPIO calls")
@@ -702,7 +715,7 @@ expect(
 )
 expect(
     "app->profile_confirm = true;" in MAIN and
-    "profiles_delete_requested = app->profile_action == 2U;" in MAIN and
+    "work->profiles_delete_requested = app->profile_action == 2U;" in MAIN and
     "memset(profile, 0, sizeof(*profile));" in MAIN and
     'app->profile_action == 2U ? "DELETE" : "SAVE"' in SCREENS and
     'ui_footer_pair(canvas, "OK",' in SCREENS and
@@ -744,3 +757,34 @@ if failures:
 print(f"LabMate v1.6 boundaries OK: {len(SCREENS_EXPECTED)} view-only screens")
 print("GPIO IRQ and PWM retained in core; history and logger storage modules extracted")
 print("NOTE: static checks cannot verify behavior on the physical Flipper")
+
+# v1.8 coordinator responsibility gates: smaller entry point, single
+# dispatch owner, passive rendering, bounded deferred samples and one
+# shared capture teardown path. Never silently regress the monolith.
+expect(len(COORDINATOR.splitlines()) < 250,
+       "v1.8 coordinator must stay below 250 lines")
+expect("void labmate_input_dispatch(" in INPUT_DISPATCH
+       and "labmate_input_dispatch(app, status, event, &work);" in COORDINATOR
+       and "case LabMateToolGenerator:" in SCREEN_HANDLERS,
+       "Input event dispatch must be owned only by input module")
+expect(len(INPUT_DISPATCH.splitlines()) <= 80
+       and "switch(app->screen)" in INPUT_DISPATCH
+       and "labmate_input_generator(app, event, work);" in INPUT_DISPATCH
+       and "labmate_input_profiles(app, event, work);" in INPUT_DISPATCH,
+       "Input dispatcher must only route events to dedicated screen handlers")
+expect("void labmate_capture_stop_all(" in CAPTURE_SESSION
+       and "labmate_capture_stop_all(app);" in COORDINATOR
+       and "furi_hal_pwm_" not in CAPTURE_SESSION,
+       "Capture teardown ownership and independent PWM isolation broken")
+expect("void labmate_deferred_prepare(" in DEFERRED_IO
+       and "void labmate_deferred_execute(" in DEFERRED_IO
+       and "labmate_deferred_prepare(app, &work);" in COORDINATOR
+       and "furi_mutex_release(app->mutex);\n\n        labmate_deferred_execute(" in COORDINATOR
+       and "storage_file_write(app->logger_file," in DEFERRED_IO
+       and "storage_file_write(" not in COORDINATOR,
+       "SD work must remain deferred until after UI mutex release")
+expect("void labmate_view_render_callback(" in VIEW_COORDINATOR
+       and "view_port_update(viewport)" in VIEW_COORDINATOR
+       and "storage_file_" not in VIEW_COORDINATOR
+       and "furi_hal_gpio_" not in VIEW_COORDINATOR,
+       "GUI module must remain passive and avoid direct hardware/SD IO")

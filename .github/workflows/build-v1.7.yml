@@ -1,14 +1,15 @@
-name: LabMate v1.7 Candidate CI
+name: LabMate Source CI (v1.7 baseline / v1.8 dev)
 
 on:
   push:
-    branches: [main, v1.7-rc1, v1.7-profiles-ux-fix, v1.7-stable-candidate, v1.7-stable-final]
+    branches: [main, dev/v1.8-coordinator-refactor, v1.7-rc1, v1.7-profiles-ux-fix, v1.7-stable-candidate, v1.7-stable-final]
     paths:
       - "src/*.c"
       - "src/*.h"
       - "scripts/check_v16_boundaries.py"
       - "scripts/check_v17_ui_layout.py"
       - "scripts/check_repo_layout.py"
+      - "scripts/check_v18_coordinator.py"
       - "tests/test_resource_policy.c.inc"
       - "tests/test_navigation.c.inc"
       - "tests/test_profiles.c.inc"
@@ -39,7 +40,7 @@ concurrency:
 
 jobs:
   build:
-    name: Compile LabMate v1.7 candidate FAP (unpublished)
+    name: Compile LabMate development FAP (unpublished)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -54,6 +55,9 @@ jobs:
 
       - name: Guard source directory and Markdown links
         run: python3 scripts/check_repo_layout.py
+
+      - name: Guard v1.8 coordinator and deferred I/O boundaries
+        run: python3 scripts/check_v18_coordinator.py
 
       - name: Test portable GPIO / PA7 ownership policy
         run: |
