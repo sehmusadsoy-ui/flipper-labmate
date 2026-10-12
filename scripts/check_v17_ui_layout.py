@@ -41,9 +41,9 @@ for fragment in ('"DOWN", "MAIN"', '"DOWN", "MORE"',
                  'app->button_active ? "STOP" : "START"'):
     assert fragment in UI, f"Missing Button footer mode: {fragment}"
 
-# RC1 version text needs wider menu badge; never clip candidate suffix.
+# Stable version text fits the same badge used by RC1; do not alter UI layout.
 assert 'ui_badge(canvas, 70, 1, 56, LABMATE_VERSION_TEXT, false);' in UI
-assert len("v1.7rc1") * GLYPH + 8 <= 56
+assert len("v1.7") * GLYPH + 8 <= 56
 
 # Entire help guide and its safety/credit page must remain readable.
 pages = re.findall(
