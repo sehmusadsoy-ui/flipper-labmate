@@ -21,6 +21,9 @@ typedef struct {
     uint8_t proposed_copy;
     char pending_log_row[160];
     bool pending_log;
+    bool uart_tx_requested;
+    uint8_t uart_tx_len;
+    uint8_t uart_tx_payload[LABMATE_UART_TX_CAP + 2U];
 } LabMateDeferredWork;
 void labmate_deferred_prepare(LabMateApp* app, LabMateDeferredWork* work);
 void labmate_deferred_execute(LabMateApp* app, LabMateDeferredWork* work,

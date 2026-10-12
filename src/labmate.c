@@ -16,6 +16,7 @@
 #include "labmate_alerts_bridge.h"
 #include "labmate_history.h"
 #include "labmate_logger_storage.h"
+#include "labmate_uart.h"
 #include "labmate_monitor_gpio.h"
 
 /* App coordinator: lifecycle, sampling, dispatch and teardown only. */
@@ -52,6 +53,7 @@ int32_t labmate_app(void* p) {
     app->button_quiet_ms = 10U;
     labmate_button_capture_reset(app);
     labmate_threshold_init(&app->threshold);
+    labmate_uart_reset(&app->uart);
     app->screen = LabMateScreenMenu;
     app->capture_owner = LabMateCaptureNone;
     app->capture_pin_index = GPIO_COUNT;
@@ -134,6 +136,7 @@ int32_t labmate_app(void* p) {
             labmate_button_capture_poll(app);
         }
         threshold_update_from_measurement(app);
+        if(app->screen == LabMateScreenUart) labmate_uart_poll(&app->uart);
 
         labmate_input_dispatch(app, status, event, &work);
         labmate_deferred_prepare(app, &work);
@@ -142,6 +145,9 @@ int32_t labmate_app(void* p) {
         labmate_deferred_execute(app, &work, viewport);
         labmate_redraw_maybe(&redraw, app, status, event, viewport);
     }
+
+    /* Defensive cleanup even if a future route exits while UART RUN. */
+    labmate_uart_stop(&app->uart);
 
     if(app->generator_running) {
         labmate_generator_stop(app);

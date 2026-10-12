@@ -168,6 +168,14 @@ static void ui_icon_alerts(Canvas* c, uint8_t x, uint8_t y) {
     canvas_draw_dot(c, x + 6, y + 9);
 }
 
+static void ui_icon_uart(Canvas* c, uint8_t x, uint8_t y) {
+    canvas_draw_frame(c, x, y + 1, 13, 11);
+    canvas_draw_line(c, x + 2, y + 4, x + 5, y + 4);
+    canvas_draw_line(c, x + 7, y + 4, x + 11, y + 4);
+    canvas_draw_line(c, x + 2, y + 8, x + 6, y + 8);
+    canvas_draw_line(c, x + 8, y + 8, x + 11, y + 8);
+}
+
 void ui_draw_menu_icon(Canvas* canvas, uint8_t item, uint8_t x, uint8_t y) {
     switch(item) {
     case LabMateToolGpio: ui_icon_gpio(canvas, x, y); break;
@@ -181,6 +189,7 @@ void ui_draw_menu_icon(Canvas* canvas, uint8_t item, uint8_t x, uint8_t y) {
     case LabMateToolCounter: ui_icon_counter(canvas, x, y); break;
     case LabMateToolButton: ui_icon_button(canvas, x, y); break;
     case LabMateToolAlerts: ui_icon_alerts(canvas, x, y); break;
+    case LabMateToolUart: ui_icon_uart(canvas, x, y); break;
     default: break;
     }
 }

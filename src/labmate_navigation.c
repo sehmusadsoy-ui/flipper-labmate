@@ -1,7 +1,7 @@
 #include "labmate_navigation.h"
 
 static const char* const group_titles[LabMateGroupCount] = {
-    "MEASURE", "OUTPUT", "RECORDS", "INFO"
+    "MEASURE", "OUTPUT", "RECORDS", "INFO", "COMM"
 };
 
 static const char* const tool_titles[LabMateToolCount] = {
@@ -16,15 +16,17 @@ static const char* const tool_titles[LabMateToolCount] = {
     "Event Counter",
     "Button Analyzer",
     "Threshold Alerts",
+    "UART Terminal",
 };
 
 /* Each instrument remains reachable once, with its previous tool ID. */
-static const uint8_t group_sizes[LabMateGroupCount] = {5U, 2U, 3U, 1U};
+static const uint8_t group_sizes[LabMateGroupCount] = {5U, 2U, 3U, 1U, 1U};
 static const uint8_t group_tools[LabMateGroupCount][LABMATE_NAV_MAX_CHILDREN] = {
     {LabMateToolGpio, LabMateToolFrequency, LabMateToolPulse, LabMateToolCounter, LabMateToolButton},
     {LabMateToolGenerator, LabMateToolAlerts, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
     {LabMateToolLogger, LabMateToolHistory, LabMateToolProfiles, LabMateToolInvalid, LabMateToolInvalid},
-    {LabMateToolAbout, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid}
+    {LabMateToolAbout, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
+    {LabMateToolUart, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid}
 };
 
 uint8_t labmate_nav_group_size(uint8_t group) {

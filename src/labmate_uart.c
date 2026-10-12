@@ -154,7 +154,5 @@ bool labmate_uart_send(LabMateUart* uart, const uint8_t* payload, size_t length)
        length == 0U || length > LABMATE_UART_TX_CAP + 2U) return false;
     furi_hal_serial_tx(uart->serial, payload, length);
     furi_hal_serial_tx_wait_complete(uart->serial);
-    if(UINT32_MAX - uart->tx_total < length) uart->tx_total = UINT32_MAX;
-    else uart->tx_total += (uint32_t)length;
     return true;
 }

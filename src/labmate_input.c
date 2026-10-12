@@ -51,6 +51,9 @@ void labmate_input_dispatch(LabMateApp* app, FuriStatus status,
     case LabMateScreenGenerator:
         labmate_input_generator(app, event, work);
         break;
+    case LabMateScreenUart:
+        labmate_input_uart(app, event, work);
+        break;
     default:
         if(event.key == InputKeyBack) app->screen = LabMateScreenMenu;
         break;

@@ -25,6 +25,7 @@ typedef struct {
     volatile uint32_t rx_errors;
     uint32_t rx_total;
     uint32_t tx_total;
+    bool tx_sent;
     uint8_t baud_index;
     bool tx_editing;
     char tx_text[LABMATE_UART_TX_CAP + 1U];

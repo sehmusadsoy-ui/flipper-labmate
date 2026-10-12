@@ -23,6 +23,7 @@
 #include "labmate_view.h"
 
 #include "labmate_input_tools.h"
+#include "labmate_uart.h"
 void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork* work) {
 
                 /* One navigation source defines both renderer and key map.
@@ -124,6 +125,11 @@ void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                         app->history_delete_confirm = false;
                         app->history_delete_notice = 0U;
                         work->history_scan_requested = true;
+                        break;
+
+                    case LabMateToolUart:
+                        app->screen = LabMateScreenUart;
+                        labmate_uart_reset(&app->uart);
                         break;
 
                     case LabMateToolAbout:
