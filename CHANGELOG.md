@@ -1,18 +1,28 @@
 # Changelog
 
-## [1.7 Stable candidate] - Unreleased (2026-10-12)
+## [1.7] - 2026-10-12 (Stable published)
 
-**v1.7 RC1 was published as a pre-release.** The `v1.7-stable-candidate`
-build completed user-reported on-device regression Test 7A–7F,
-**36/36 PASS**; 7B measurements were screenshot-reviewed. This covered
-PWM/Pulse, LOW/HIGH Frequency, Event Counter, clean-digital Button,
-Threshold, all Logger modes, History cancel/delete, Profiles guards,
-menu and About, app exit and a short ~5-minute navigation session.
+**[v1.7 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7)**
+is publicly released (not a prerelease). The `v1.7` tag and FAP are
+immutable: source `d0e1bc6a95b257841533f0aa8745e3a79bbc8dcd`,
+FAP SHA256 `5A7CB0EAE601EEAC8856790211C4D2831A9198C31853631E1DAF0308CE724335`.
+Old v1.6.1 Stable and v1.7 RC1 tags/assets were preserved.
 
-The isolated `v1.7-stable-final` branch contains the final on-screen
-`v1.7` version label. CI 38234204272 completed 2/2 PASS and the
-exact final-label FAP passed user-reported Test 7G 4/4 device checks.
-**No v1.7 Stable tag or release exists yet; v1.6.1 remains published Stable.**
+The refactored Stable Candidate FAP completed operator-reported
+on-device regression Test 7A–7F **36/36 PASS** (7B timing screenshots
+reviewed): PWM/Pulse, LOW/HIGH Frequency, Event Counter, clean-digital
+Button, Thresholds, three Logger modes, History cancel/delete,
+Profiles guards, menu/About and app exit/persistence.
+
+The exact final-label FAP passed separate Test 7G **4/4 PASS**;
+the last release CI reproduced the same SHA256 and published verified
+assets. Real-Windows `-Channel RC1 -VerifyOnly` passed; live Stable-channel
+USB installer verification remains pending operator confirmation.
+
+**In-place documentation maintenance (no new version/tag/FAP):**
+updated current-Stable pointers and installer instructions;
+Microsoft Excel import explicitly remains **NOT TESTED** until access
+is available. LibreOffice Calc import succeeded.
 
 ### New tools and signal generation
 - PWM Studio adds adjustable TIM1/PA7 PWM duty (5..95%, step 5%) and
@@ -45,7 +55,7 @@ exact final-label FAP passed user-reported Test 7G 4/4 device checks.
 - Stable candidate `bdb1de10` FAP SHA256
   `94883B517D526EAA0F64E2AEAC89F89D181F85FD4F3ABB9056F3EEC2B68123E0`
   passed CI 2/2 plus 36/36 targeted user-reported device checks.
-  The final on-screen `v1.7` build remains a separate, pending check.
+  The final on-screen `v1.7` FAP received a separate 4/4 on-device smoke check.
 - Refactoring extracted measurement updates, CSV sample preparation and
   Threshold sample-validity gating from `labmate.c` into separate
   modules without changing the intended acquisition logic.
@@ -53,9 +63,9 @@ exact final-label FAP passed user-reported Test 7G 4/4 device checks.
   SHA256 and fixed-FAP-path guards passed Windows mock tests.
 - **NOT TESTED:** physical mechanical switch bounce and independent
   oscilloscope/voltage/frequency calibration (equipment deferred).
-  Full/corrupted SD and other destructive error-path checks also remain
-  unverified. See `docs/DEFERRED_HARDWARE_TESTS.md` and
-  `docs/V1_7_STABLE_RELEASE_NOTES_DRAFT.md`.
+  Full/corrupted SD and other destructive error-path checks, plus
+  Microsoft Excel CSV import, remain unverified. See
+  `docs/DEFERRED_HARDWARE_TESTS.md` and `RELEASE_NOTES_v1.7.md`.
 
 ## [1.6] - 2026-10-10 (Stable)
 
