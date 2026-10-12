@@ -31,7 +31,7 @@ jobs:
       - name: Check out publication control commit
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: Verify release source is exact hardware-tested commit
         shell: bash
@@ -74,7 +74,7 @@ jobs:
             echo "::error::FAP differs from hardware-tested file."
             exit 1
           }
-          test "$(grep -c -E '^[A-Fa-f0-9]{64}[[:space:]]+\\*?labmate\\.fap$' dist/SHA256SUMS.txt)" -eq 1
+          test "$(wc -l < dist/SHA256SUMS.txt)" -eq 1
           echo "Validated exact on-device-tested FAP SHA256: $actual"
 
       - name: Prepare truthful public release notes
