@@ -1,6 +1,6 @@
 # LabMate v1.8 UART ↔ ESP32 Interoperability Test
 
-**Status: ESP32-S2 UART E1–E6 = 6/6 operator-reported PASS (2026-10-13), including bidirectional 115200 and 9600 baud. SR1 UART STOP/BACK/re-entry FAIL diagnosed as lost baud selection (fix pending CI/device validation); BUSY/resource ownership and controlled overflow remain PENDING; PR #7 is draft.**
+**Status: ESP32-S2 UART E1–E6 = 6/6 operator-reported PASS (2026-10-13), including bidirectional 115200 and 9600 baud. SR1 diagnosed: old FAP returns to 115200, manually restoring 9600 gives clean UART (operator PASS); code fix CI PASS, new FAP device retest PENDING. BUSY/resource conflict and controlled overflow remain PENDING; PR #7 stays draft.**
 The user identified an **ESP32-S2-WROVER Flipper Dev Board**. The
 official Flipper Wi-Fi Developer Board schematics were checked:
 https://cdn.flipperzero.one/Flipper_Zero_WI-FI_Module_V1_Schematic.PDF
@@ -282,6 +282,20 @@ resetting baud encounters a 9600↔115200 mismatch. ASCII renderer
 turns nonprintable characters into `.`. This is consistent with
 all reported symptoms; confirm by observing UART baud after re-entry
 and retesting 9600.
+
+### SR1 controlled diagnosis — PASS (operator report, 2026-10-13)
+
+- Reopened UART screen on the **old** installed LabMate FAP:
+  displayed **115200 baud** despite previously selecting 9600.
+- Manually selected **9600 while STOP** and started UART:
+  **PASS**, `ESP32_READY` readable and `D:0 E:0`.
+- The ESP32-S2 9600 test firmware and Flipper wiring were unchanged.
+  This isolates the failure to LabMate's **re-entry baud reset** rather
+  than a persistent external UART electrical fault or proven RX
+  queue overflow.
+- **Do not mark new-fix SR1 retest PASS yet**: the operator has
+  validated the workaround on the *old* FAP, not installed the revised
+  build.
 
 **Development fix committed and CI PASS, but device retest pending:**
 the UART menu now invokes `labmate_uart_reenter` to preserve selected
