@@ -44,9 +44,16 @@ Status: **WORK IN PROGRESS / NOT STABLE / NOT PUBLISHED**.
   100 Hz/95% HIGH 9.50 ms, LOW 500 us, PERIOD 10 ms, DUTY 95.0%.
   User also reported STATS/MIN/MAX, HOLD/LIVE and STOP/relaunch PASS;
   no defects reported. Functional loopback only; **not calibration**.
-- [ ] Test 7C+: LOW/HIGH Frequency, PB3 Event Counter, clean PC1 Button,
-  Threshold Alerts, CSV Logger/History cancel/delete, Profiles
-  SAVE/LOAD/DELETE and PWM-RUN blocks on the modified FAP.
+- [x] Test 7C: **6/6 PASS (user-reported)** on the installed Stable
+  Candidate FAP, 2026-10-12. Frequency LOW PC1 ~10 Hz correct, MIN/MAX
+  and HOLD/LIVE work; Frequency HIGH PB3 ~1 kHz correct; 10 Hz stimulus
+  increments the PB3 Event Counter, START/STOP/RESET work, and the
+  Counter -> Frequency HIGH ownership transition has no BUSY/ERR.
+  No independent frequency calibration claimed.
+- [ ] Test 7D+: clean PC1 Button, Threshold Alerts, three CSV Logger
+  sources, History open/cancel/delete and older-log compatibility,
+  Profiles SAVE/LOAD/DELETE/PWM-RUN blocks on the modified FAP.
+  Test 7A+7B+7C cumulative: **15/15 PASS (user reports; 7B screenshot-reviewed)**.
 - [ ] Check resource-hand-off and repeated navigation/STOP/START; check
   storage error behavior when practicable on disposable test data.
 - [ ] Review full 11-tool menu, 13-page About and 128x64 clipping.
