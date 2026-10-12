@@ -1,6 +1,6 @@
 # LabMate v1.8 UART ↔ ESP32 Interoperability Test
 
-**Status: ESP32-S2 Arduino CLI 3.3.12 compile and USB firmware upload PASS (operator-reported, 2026-10-13). Flipper ↔ ESP32 external UART E1–E6 communication tests PENDING.**
+**Status: ESP32-S2 Arduino CLI compile and USB upload PASS; first external UART test E1 ESP32 → Flipper PASS (user-reported 2026-10-13). E2–E6 and stress/resource checks remain PENDING.**
 The user identified an **ESP32-S2-WROVER Flipper Dev Board**. The
 official Flipper Wi-Fi Developer Board schematics were checked:
 https://cdn.flipperzero.one/Flipper_Zero_WI-FI_Module_V1_Schematic.PDF
@@ -18,12 +18,12 @@ runs Marauder and explicitly agrees to replace its firmware temporarily
 for UART testing, with an independent reinstall plan afterward.
 The operator flashed the Arduino test sketch, replacing Marauder on
 the ESP32-S2 board for this test. The assistant did not access the
-physical device. No independent sketch-runtime or Flipper ↔ ESP32
-communication tests have been reported. The operator can reinstall
+physical device. The operator has now observed the test firmware's periodic
+`ESP32_READY` on Flipper RX (E1 PASS). Return traffic is not yet confirmed. The operator can reinstall
 Marauder after completing tests.
 
 Prepared and operator-reported compiled and uploaded successfully
-(not yet runtime- or cross-device communication-tested):
+(external ESP32 → Flipper RX E1 subsequently passed on device):
 [`tests/esp32_s2_wrover_uart_peer/esp32_s2_wrover_uart_peer.ino`](../tests/esp32_s2_wrover_uart_peer/esp32_s2_wrover_uart_peer.ino).
 Uses ESP32-S2 **UART1** remapped to RX GPIO44 / TX GPIO43 and separate
 native USB CDC for debug prints, default 115200/8N1, periodic
@@ -100,13 +100,16 @@ after identifying the ESP32 board, to avoid driving reserved pins.
 
 ## E1–E6 external peer PASS/FAIL matrix
 
-- [ ] **E1, ESP32 → Flipper:** With both UARTs at the sketch's default
+- [x] **E1, ESP32 → Flipper:** With both UARTs at the sketch's default
       **115200 8N1**, ESP32 sends `ESP32_READY` about every 3 s;
       LabMate RX view displays it legibly.
-- [ ] **E2, Flipper → ESP32:** LabMate TX editor sends `AT\r\n`
-      explicitly; ESP32 USB Serial Monitor logs receipt of `AT`.
-- [ ] **E3, Response:** ESP32 returns `ESP32_OK\r\n`; Flipper UART RX
-      shows the correct response (not only local echo).
+- [ ] **E2, Flipper → ESP32:** LabMate TX editor explicitly sends
+      `AT\r\n`. If Flipper then receives the *conditional*
+      `ESP32_OK`, this also confirms the ESP32 received `AT`;
+      separate USB Serial Monitor logs are optional, not necessary.
+- [ ] **E3, Response:** ESP32 returns `ESP32_OK\r\n` only after
+      it receives `AT`; Flipper UART RX shows the correct response
+      (not merely another `ESP32_READY`).
 - [ ] **E4, 9600:** With both UARTs stopped/reconfigured to **9600**,
       repeat E1–E3; avoid interpreting setup/boot noise as PASS.
 - [ ] **E5, Lifecycle:** Repeat short exchanges, STOP and START UART,
@@ -159,10 +162,46 @@ the board until the operator performs the explicit USB firmware upload.
 - Final terminal output: `Hard resetting with a watchdog...`,
   `New upload port: COM12 (serial)`, and
   **`ESP32-S2 UART UPLOAD PASS`**.
-- This confirms successful flash write/verify, **not** runtime UART or
-  inter-device RX/TX; E1–E6 remain unchecked.
+- Flash write/verification succeeded; **subsequent** operator-reported
+  E1 ESP32 → Flipper reception PASS. E2–E6 are pending.
 - The flash replaced the owner's Marauder firmware with prior consent.
   No restoration has been attempted or claimed.
+
+### E1 external RX — PASS (operator report, 2026-10-13)
+
+The operator reported **E1 PASS** after installing and seating the
+ESP32-S2-WROVER test board and observing the ESP32-generated
+`ESP32_READY` in LabMate's UART RX display at default 115200 8N1.
+This is the first confirmed *external peer → Flipper* data path, not
+just the previously passing pin 13→14 loopback.
+
+**Not yet verified:** Flipper TX → ESP32, conditional `ESP32_OK`
+response, other peer baud rates, buffer overflow, source BUSY conflicts,
+and independent timing calibration. No code/firmware changes or fresh
+Flipper installation were required by this report.
+
+### Next test — E2 + E3 explicit request/response at 115200
+
+1. Keep the ESP32-S2 devboard in place and powered from its dedicated
+   Flipper header, **without adding an ESP32 USB cable** or changing
+   live connections. LabMate UART remains RUN at 115200.
+2. Press DOWN for TX; verify the editable payload is exactly `AT`.
+   Press OK once to send `AT\r\n` to the ESP32 peer.
+3. Press BACK once (returns to RX screen; **does not** exit UART while
+   TX editor is displayed). Check for `ESP32_OK` in the two-row RX
+   display. The sketch also broadcasts `ESP32_READY` every 3 seconds,
+   so the reply may scroll; repeat single sends if needed.
+4. Record E2 **PASS** when E3's conditional response `ESP32_OK`
+   proves the ESP32 received `AT`; record E3 **PASS** when Flipper
+   visibly receives `ESP32_OK`. If only `ESP32_READY` is seen,
+   E1 still passes but E2/E3 are **not** confirmed.
+5. If the result is unclear or fails, report `RUN/BUSY/ERR/DROP`,
+   RX byte count and observed text; don't prematurely mark E2/E3 PASS.
+
+The ESP32 USB Serial Monitor is **optional** and should not be
+connected while the board is attached/powered via Flipper unless
+its power isolation is independently established. E2/E3 require no
+extra cables, firmware replacement or Arduino IDE.
 
 ### Next immediate test — E1 only, no external GPIO jumper
 
