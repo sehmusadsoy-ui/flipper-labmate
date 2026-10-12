@@ -9,11 +9,12 @@ from pathlib import Path
 import re
 
 ROOT = Path(__file__).resolve().parents[1]
-UI = (ROOT / "labmate_ui_screens.c").read_text(encoding="utf-8")
-NAV = (ROOT / "labmate_navigation.c").read_text(encoding="utf-8")
-APP = (ROOT / "labmate.c").read_text(encoding="utf-8")
-PRIMITIVES = (ROOT / "labmate_ui_primitives.c").read_text(encoding="utf-8")
-PRIMITIVES_H = (ROOT / "labmate_ui_primitives.h").read_text(encoding="utf-8")
+SRC = ROOT / "src"
+UI = (SRC / "labmate_ui_screens.c").read_text(encoding="utf-8")
+NAV = (SRC / "labmate_navigation.c").read_text(encoding="utf-8")
+APP = (SRC / "labmate.c").read_text(encoding="utf-8")
+PRIMITIVES = (SRC / "labmate_ui_primitives.c").read_text(encoding="utf-8")
+PRIMITIVES_H = (SRC / "labmate_ui_primitives.h").read_text(encoding="utf-8")
 WIDTH = 128
 GLYPH = 6
 
