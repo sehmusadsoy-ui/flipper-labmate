@@ -27,8 +27,11 @@ void draw_uart(Canvas* canvas, LabMateApp* app) {
     char status[24];
     snprintf(status, sizeof(status), "TX13 RX14 %lu", (unsigned long)labmate_uart_baud(uart));
     canvas_draw_str(canvas, 2, 23, status);
-    snprintf(status, sizeof(status), "RX:%lu DROP:%lu",
-             (unsigned long)uart->rx_total, (unsigned long)uart->dropped);
+    /* Bounded 128px UI: prevent large counters from drawing off screen. */
+    snprintf(status, sizeof(status), "R:%lu D:%lu E:%lu",
+             (unsigned long)(uart->rx_total > 999999U ? 999999U : uart->rx_total),
+             (unsigned long)(uart->dropped > 999U ? 999U : uart->dropped),
+             (unsigned long)(uart->rx_errors > 999U ? 999U : uart->rx_errors));
     canvas_draw_str(canvas, 2, 32, status);
     if(uart->rx_total == 0U) {
         canvas_draw_str(canvas, 4, 43, uart->active ? "WAITING RX..." : "OK START / LR BAUD");
