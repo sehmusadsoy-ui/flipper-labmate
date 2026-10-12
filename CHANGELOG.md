@@ -3,10 +3,15 @@
 ## [1.7] - 2026-10-12 (Stable published)
 
 **[v1.7 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7)**
-is publicly released (not a prerelease). The `v1.7` tag and FAP are
-immutable: source `d0e1bc6a95b257841533f0aa8745e3a79bbc8dcd`,
-FAP SHA256 `5A7CB0EAE601EEAC8856790211C4D2831A9198C31853631E1DAF0308CE724335`.
-Old v1.6.1 Stable and v1.7 RC1 tags/assets were preserved.
+is publicly released (not a prerelease). The original `v1.7` tag
+still points to `d0e1bc6a95b257841533f0aa8745e3a79bbc8dcd`. On 2026-10-12 the published FAP
+and checksum were replaced **in place**, keeping the same version, to
+correct the OUTPUT/ABOUT visible label to **PWM Studio**.
+The updated FAP comes from tested source `0aeb0ca7ceba092c8adb6e44add0a2212cae1a74`,
+GitHub CI 38290044094 (2/2 PASS) and user-reported on-device
+label/regression test 4/4 PASS. **Current FAP SHA256: `A0B305E5FD8D71C85C51480EE06A8B7E5EBD5BEE0E82935B0ED3B7E74E7EBCEA`.**
+Original FAP SHA256 `5A7CB0EAE601EEAC8856790211C4D2831A9198C31853631E1DAF0308CE724335` is superseded.
+v1.6.1 Stable and v1.7 RC1 tags/assets were preserved.
 
 The refactored Stable Candidate FAP completed operator-reported
 on-device regression Test 7A–7F **36/36 PASS** (7B timing screenshots
@@ -23,10 +28,10 @@ Separate post-reinstall Flipper menu/About, PWM STOP, retained S1 and
 old History CSV open checks all passed (operator-reported **4/4 PASS**,
 2026-10-12).
 
-**In-place documentation maintenance (no new version/tag/FAP):**
-updated current-Stable pointers and installer instructions;
-Microsoft Excel import explicitly remains **NOT TESTED** until access
-is available. LibreOffice Calc import succeeded.
+**In-place maintenance (same v1.7 tag and release, corrected FAP):**
+updated current-Stable pointers, PWM Studio menu/About labels,
+release assets/checksum and installer documentation. Microsoft Excel
+import remains **NOT TESTED**; LibreOffice Calc import succeeded.
 
 ### New tools and signal generation
 - PWM Studio adds adjustable TIM1/PA7 PWM duty (5..95%, step 5%) and
