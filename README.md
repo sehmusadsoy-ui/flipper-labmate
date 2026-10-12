@@ -30,6 +30,15 @@ reported device checks; the exact final v1.7 FAP passed a separate
 > mains or other high-voltage signals directly to Flipper Zero GPIO.
 > Use only verified, compatible digital signals and safe equipment.
 
+## v1.8 development (not a Stable release)
+
+The [v1.8 development branch](https://github.com/sehmusadsoy-ui/flipper-labmate/tree/dev/v1.8-coordinator-refactor)
+is splitting the old ~1,200-line coordinator into independent capture,
+per-screen input, passive GUI and deferred SD modules. Its FAP shows
+**v1.8dev** and is **not an official release**. UART and I²C tools
+are planned, not yet implemented.
+[Progress and physical device regression checklist](docs/V1_8_DEV_NOTES.md).
+
 ## Repository layout
 
 The top level is intentionally short; development resources live in grouped folders.
