@@ -1,8 +1,8 @@
-name: LabMate v1.7 Development CI
+name: LabMate v1.7 RC1 Candidate CI
 
 on:
   push:
-    branches: [v1.7-dev]
+    branches: [v1.7-rc1]
     paths:
       - "*.c"
       - "*.h"
@@ -30,18 +30,17 @@ permissions:
   contents: read
 
 concurrency:
-  # Separate current ownership-policy CI from a prior stale UI runner.
-  # Keep cancelling outdated intermediate-source builds on this branch.
-  group: labmate-v1.7-dev-threshold-ci
+  # Candidate builds never cancel dev or stable jobs.
+  group: labmate-v1.7-rc1-ci
   cancel-in-progress: true
 
 jobs:
   build:
-    name: Compile modular LabMate v1.7 FAP (development only)
+    name: Compile LabMate v1.7 RC1 candidate FAP (unpublished)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Check out v1.7-dev
+      - name: Check out v1.7-rc1
         uses: actions/checkout@v4
 
       - name: Guard passive UI and hardware boundaries
@@ -151,7 +150,7 @@ jobs:
           echo "Momentum SDK API: $BUILT_API_VERSION"
           ls -lh build-artifacts
 
-      - name: Upload dev FAP artifact (no release)
+      - name: Upload RC1 candidate FAP artifact (no release)
         uses: actions/upload-artifact@v4
         with:
           name: labmate
