@@ -11,12 +11,11 @@ void labmate_event_counter_start(LabMateApp* app) {
     /* Do not touch PB3/TIM2 if Frequency or Pulse owns a capture engine. */
     if(!labmate_capture_can_start(app, LabMateCaptureCounter)) return;
 
-    /* Reset the physical timer and its software baseline before enabling. */
+    /* Each RUN starts a fresh hardware capture but resumes the same software
+     * count/time until UP RESET or a new Counter tool entry. */
     labmate_frequency_tim2_configure();
     app->counter_last_hw = 0U;
-    app->counter_total = 0U;
     app->counter_start_tick = furi_get_tick();
-    app->counter_elapsed_seconds = 0U;
     app->counter_active = true;
     app->capture_pin_index = app->gpio_index;
     app->capture_owner = LabMateCaptureCounter;
@@ -31,8 +30,11 @@ void labmate_event_counter_poll(LabMateApp* app) {
     app->counter_last_hw = current;
     const uint32_t tick_frequency = furi_kernel_get_tick_frequency();
     if(tick_frequency > 0U) {
+        const uint32_t active_ticks = (uint32_t)(furi_get_tick() - app->counter_start_tick);
+        const uint64_t total_ticks =
+            labmate_counter_add_ticks(app->counter_elapsed_ticks, active_ticks);
         app->counter_elapsed_seconds =
-            (uint32_t)((furi_get_tick() - app->counter_start_tick) / tick_frequency);
+            labmate_counter_elapsed_seconds(total_ticks, tick_frequency);
     }
 }
 
@@ -44,6 +46,13 @@ void labmate_event_counter_stop(LabMateApp* app) {
     labmate_frequency_tim2_disable();
     if(app->capture_owner == LabMateCaptureCounter) {
         labmate_event_counter_poll(app);
+        app->counter_elapsed_ticks = labmate_counter_add_ticks(
+            app->counter_elapsed_ticks, (uint32_t)(furi_get_tick() - app->counter_start_tick));
+        const uint32_t hz = furi_kernel_get_tick_frequency();
+        if(hz != 0U) {
+            app->counter_elapsed_seconds =
+                labmate_counter_elapsed_seconds(app->counter_elapsed_ticks, hz);
+        }
     }
     labmate_frequency_tim2_shutdown();
     app->counter_active = false;
@@ -60,5 +69,6 @@ void labmate_event_counter_reset(LabMateApp* app) {
     app->counter_total = 0U;
     app->counter_last_hw = 0U;
     app->counter_start_tick = 0U;
+    app->counter_elapsed_ticks = 0U;
     app->counter_elapsed_seconds = 0U;
 }
