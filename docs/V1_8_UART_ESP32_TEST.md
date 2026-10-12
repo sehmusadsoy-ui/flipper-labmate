@@ -1,6 +1,6 @@
 # LabMate v1.8 UART ↔ ESP32 Interoperability Test
 
-**Status: ESP32-S2 UART E1–E6 = 6/6 operator-reported PASS (2026-10-13), including bidirectional 115200 and 9600 baud. SR1 diagnosed: old FAP returns to 115200, manually restoring 9600 gives clean UART (operator PASS); code fix CI PASS, new FAP device retest PENDING. BUSY/resource conflict and controlled overflow remain PENDING; PR #7 stays draft.**
+**Status: ESP32-S2 UART E1–E6 = 6/6 operator-reported PASS (2026-10-13), including bidirectional 115200 and 9600 baud. SR1 diagnosed: old FAP reset baud to 115200; setting 9600 restored clean RX (diagnosis PASS). Fixed FAP SHA256-verified and installed on Flipper COM7 (operator-reported PASS); corrected behavior still needs physical SR1 retest. BUSY/resource conflict and controlled overflow remain PENDING; PR #7 stays draft.**
 The user identified an **ESP32-S2-WROVER Flipper Dev Board**. The
 official Flipper Wi-Fi Developer Board schematics were checked:
 https://cdn.flipperzero.one/Flipper_Zero_WI-FI_Module_V1_Schematic.PDF
@@ -283,6 +283,31 @@ turns nonprintable characters into `.`. This is consistent with
 all reported symptoms; confirm by observing UART baud after re-entry
 and retesting 9600.
 
+### SR1 patched FAP installation — PASS (operator report, 2026-10-13, 01:56 local)
+
+The operator pasted the Windows install transcript for the CI-built
+LabMate FAP from commit `ae396a588225f700d93a0940db7d4d9141dedfb8`:
+
+- Flipper USB COM7 enumerated with VID_0483 / PID_5740.
+- `SHA256 VERIFIED: 7BFDCB21C344B76BC3DBEBFCA7C979870B7BBFBA28A34C9FE7C63E6EC5E76A20`.
+- `runfap.py` copied `labmate.fap` to `/ext/apps/Tools/labmate.fap`
+  (transfer 100%, 8/8 chunks), closed the current app and requested launch.
+- `SUCCESS: runfap.py exited 0 and requested app launch.`
+- `LABMATE SR1 FIX INSTALL PASS`.
+
+This is **installation PASS only**; corrected UART retention and
+two-minute receive stability have **not yet been validated on the
+new FAP**. Devboard firmware stays at 9600; no ESP32 flashing needed.
+
+**Next test SR1-R1:** Unplug Flipper USB as appropriate, STOP UART
+and power equipment off before reconnecting the original ESP32-S2
+Devboard to the Flipper GPIO header. Enter COMM → UART. Select 9600
+while STOP → RUN; wait ~2 minutes at low-rate `ESP32_READY` traffic,
+check R rises and D:0 E:0, STOP → BACK → reopen UART. It should still
+show STOP and 9600 (never default 115200). Start RUN again and verify
+legible `ESP32_READY` and D:0 E:0. If error, record displayed baud,
+R/D/E/status, and whether only the re-entry triggers it.
+
 ### SR1 controlled diagnosis — PASS (operator report, 2026-10-13)
 
 - Reopened UART screen on the **old** installed LabMate FAP:
@@ -308,9 +333,9 @@ successfully on [CI run 38318186745](https://github.com/sehmusadsoy-ui/flipper-l
 Momentum SDK API 87.1, native checks, Linux candidate build, and
 Windows installer mock **2/2 jobs PASS**. Candidate `labmate.fap`
 SHA256: `7bfdcb21c344b76bc3dbebfca7c979870b7bbfba28a34c9fe7c63e6ec5e76a20`.
-This is a **new development candidate**; the old user-installed FAP
-does not yet contain the fix, and on-device SR1 retest has not
-been reported. No merge or release performed.
+**The operator has now installed this new candidate on Flipper**, but
+has not yet reported the SR1 post-install behavior. No merge or release
+performed.
 
 **Immediate workaround on old FAP:** after re-entering UART,
 verify displayed baud, STOP, select **9600**, then RUN.
