@@ -12,10 +12,20 @@
 
 /* Profile storage only runs in app thread; this renderer is read-only. */
 void draw_profiles(Canvas* canvas, LabMateApp* app) {
-    const char* state = "READY";
+    /* Always identify the selected operation, even when a status badge
+     * (PWM ON, SAVED, etc.) temporarily replaces the top-right label. */
+    const char* action = app->profile_action == 0U ? "LOAD" :
+                         app->profile_action == 1U ? "SAVE" : "DELETE";
+    const bool blocked = app->generator_running ||
+                         app->capture_owner != LabMateCaptureNone ||
+                         app->logger_recording;
+    const char* state = action;
     if(app->profile_busy) state = "WAIT";
     else if(app->profile_io == LabMateProfileIoCorrupt) state = "CRC";
     else if(app->profile_io == LabMateProfileIoError) state = "SD ERR";
+    else if(app->generator_running) state = "PWM ON";
+    else if(app->capture_owner != LabMateCaptureNone || app->logger_recording)
+        state = "BUSY";
     else if(app->profile_notice == 1U) state = "SAVED";
     else if(app->profile_notice == 2U) state = "LOADED";
     else if(app->profile_notice == 3U) state = "EMPTY";
@@ -23,14 +33,36 @@ void draw_profiles(Canvas* canvas, LabMateApp* app) {
     else if(app->profile_notice == 5U) state = "ERR";
     else if(app->profile_notice == 6U) state = "DELETED";
     else if(app->profile_notice == 7U) state = "PRESET";
+    else if(app->profile_notice == 8U) state = "BUSY";
 
     ui_draw_header(canvas, "PROFILES");
     ui_badge(canvas, 77, 1, 49, state, false);
     canvas_set_font(canvas, FontSecondary);
 
-    /* Highlight full-width slot rows, preserving the original three
-     * storage slots and their saved pin/PWM information.
-     */
+    if(!app->profile_busy && app->profile_confirm) {
+        /* A dedicated confirmation screen prevents a highlighted slot from
+         * being mistaken for a harmless action selector. */
+        const uint8_t slot_id = app->profile_selected + 1U;
+        const bool deleting = app->profile_action == 2U;
+        const bool overwrite = app->profiles.slots[app->profile_selected].present;
+        char question[24];
+        if(deleting) {
+            snprintf(question, sizeof(question), "DELETE S%u?", (unsigned)slot_id);
+        } else if(overwrite) {
+            snprintf(question, sizeof(question), "OVERWRITE S%u?", (unsigned)slot_id);
+        } else {
+            snprintf(question, sizeof(question), "SAVE TO S%u?", (unsigned)slot_id);
+        }
+        canvas_draw_str(canvas, 5, 29, question);
+        canvas_draw_str(canvas, 5, 43, deleting ? "CANNOT UNDO" :
+                        (overwrite ? "REPLACES SAVED DATA" : "NEW PROFILE"));
+        ui_footer_pair(canvas, "OK",
+                       app->profile_action == 2U ? "DELETE" : "SAVE",
+                       "BACK", "NO");
+        return;
+    }
+
+    /* One readable row per legacy CRC-protected slot. */
     for(uint8_t i = 0U; i < LABMATE_PROFILE_SLOT_COUNT; ++i) {
         const uint8_t y = (uint8_t)(24U + 12U * i);
         const bool selected = app->profile_selected == i;
@@ -64,13 +96,10 @@ void draw_profiles(Canvas* canvas, LabMateApp* app) {
     if(app->profile_busy) {
         canvas_draw_line(canvas, 0, 52, 127, 52);
         canvas_draw_str(canvas, 7, 62, "SD BUSY - PLEASE WAIT");
-    } else if(app->profile_confirm) {
-        ui_footer_pair(canvas, "OK",
-                       app->profile_action == 2U ? "DELETE" : "SAVE",
-                       "BACK", "NO");
     } else {
-        ui_footer_pair(canvas, "LR", "ACTION", "OK",
-                       app->profile_action == 0U ? "LOAD" : "SELECT");
+        /* Even under PWM ON, LR always names the operation and OK says
+         * BLOCK. No hidden route to SAVE or DELETE under live PWM. */
+        ui_footer_pair(canvas, "LR", action, "OK", blocked ? "BLOCK" : "SELECT");
     }
 }
 
