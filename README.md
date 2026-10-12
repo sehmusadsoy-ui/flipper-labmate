@@ -7,21 +7,55 @@
 ![Platform](https://img.shields.io/badge/platform-Flipper%20Zero-orange)
 ![Firmware](https://img.shields.io/badge/firmware-Momentum-blueviolet)
 
-**LabMate v1.6 Stable is published.** The app combines a GPIO Monitor,
-Frequency Meter, Pulse Analyzer, Signal Generator, CSV Data Logger,
-Log History and three saved Profiles.
+**Latest published Stable: [LabMate v1.6.1](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1).**
+Its release files are unchanged. The previously published
+[LabMate v1.7 RC1](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7-rc1)
+is a **pre-release**, not Stable.
 
-**[Download v1.6 Stable FAP](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/download/v1.6/labmate.fap)** ·
-[SHA256 checksum](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/download/v1.6/SHA256SUMS.txt) ·
-[Release notes](RELEASE_NOTES_v1.6.md) ·
-[Official GitHub Release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6) ·
-[Previous v1.5 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.5) ·
+**v1.7 Stable final candidate is under verification; v1.7 Stable has NOT
+been published.** It has completed 36/36 user-reported on-device
+regression checks on the pre-final display-label build. The final `v1.7`
+display-label build still requires exact FAP checksum verification, a
+short on-device smoke test and separate release approval.
+
+[Stable candidate status](docs/V1_7_STABLE_CANDIDATE.md) ·
+[Draft v1.7 release notes](docs/V1_7_STABLE_RELEASE_NOTES_DRAFT.md) ·
+[Deferred hardware tests](docs/DEFERRED_HARDWARE_TESTS.md) ·
 [Changelog](CHANGELOG.md)
 
 > [!IMPORTANT]
 > **3.3 V GPIO ONLY.** Never connect unknown voltage, 5 V, automotive,
 > mains or other high-voltage signals directly to Flipper Zero GPIO.
 > Use only verified, compatible digital signals and safe equipment.
+
+## What's new in the v1.7 candidate (NOT YET STABLE)
+
+- **PWM Studio (PA7/TIM1):** 5–95% duty in 5% steps; 15 presets
+  plus STOP-only custom 1–50,000 Hz; PWM can continue across menu
+  navigation, but application exit stops it.
+- **Event Counter (PB3/TIM2):** actual rising-edge count, RUN/STOP/RESET
+  and elapsed time (not a frequency-derived estimate).
+- **Button Analyzer (PC1):** digital press/release, configurable
+  5/10/20/50 ms debounce, bounce/settling/hold readouts. **Real
+  mechanical contact bounce has not yet been tested.**
+- **Threshold Alerts:** visual latch and acknowledgement for Frequency,
+  Pulse Duty, Event Count and Button Settling.
+- **Records:** read-only CSV History with explicit selected-file DELETE
+  confirmation; enhanced Profiles confirmation/cancel protection.
+- **Code quality:** measurement aggregation, CSV sampling, and Threshold
+  validation separated from the application coordinator, alongside
+  existing driver/UI/storage modules.
+- **Installation:** `scripts/install-v17-from-github.ps1` selects a
+  published RC1 or future Stable release, verifies release provenance
+  and SHA256, then replaces only `/ext/apps/Tools/labmate.fap` over USB.
+  Future `-Channel Stable` refuses to proceed until v1.7 Stable exists.
+  [Installer guide](docs/V1_7_INSTALL_GUIDE.md).
+
+On-device tests cover the Flipper's own 3.3 V digital loopback, not
+independent calibrated measurements. External oscilloscope, real
+mechanical switch and destructive microSD fault testing are deferred.
+Keep important CSV/profile backups. Existing v1.6/v1.6.1 downloads
+remain available.
 
 ## What changed in v1.6
 
