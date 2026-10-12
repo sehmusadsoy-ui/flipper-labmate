@@ -387,6 +387,30 @@ separate lifecycle setting-preservation regression.
       powered-down rewiring; reopen PWM, Counter/Frequency, Profiles S1
       and Log History, confirm saved data unchanged.
 
+## ERR-display mismatch smoke test — inconclusive (operator report, 2026-10-13)
+
+The operator tried the proposed intentional 115200 vs ESP32-S2
+9600 baud mismatch check and reported **"E sabit kalıyor ERR de"**
+(i.e. the E counter stayed constant while the ERR badge persisted).
+Neither the starting E count nor R count was supplied.
+
+This **does not prove a new error event** or establish ERR test PASS.
+Review of the current source shows UART UI displays `ERR` whenever
+`rx_errors` is nonzero; STOP/RUN does not clear `rx_errors`, and
+`labmate_uart_reenter` resets per-session counters. Thus the badge
+may be latched from an earlier error. The hardware may also fail to
+report new frame events under some mismatch patterns. No new UART
+bug or resource failure is concluded from this observation alone.
+
+**Next isolation procedure:** UART STOP → BACK → reopen UART to
+reset per-session stats. With the ESP32 peer still at 9600, inspect
+the fresh `E:0` baseline while STOP; select 115200 while STOP,
+then RUN for only 5–10 seconds. Report **before and after R/E,
+the status badge, and RX text**. STOP; set 9600 while STOP and
+check the expected `ESP32_READY` legibility again. Never classify
+a deliberate mismatched-baud ERR as overflow/DROP. BUSY and
+controlled overflow remain untested.
+
 ## Separate remaining stress/conflict gates
 
 - [ ] Demonstrate a legitimate serial-owner conflict: UART refuses
