@@ -9,10 +9,10 @@ PWM/Pulse, LOW/HIGH Frequency, Event Counter, clean-digital Button,
 Threshold, all Logger modes, History cancel/delete, Profiles guards,
 menu and About, app exit and a short ~5-minute navigation session.
 
-The isolated `v1.7-stable-final` branch prepares the final on-screen
-`v1.7` version label; only a fresh CI build and physical smoke can
-validate the newly labeled FAP. **No v1.7 Stable tag or release exists
-yet; v1.6.1 remains published Stable.**
+The isolated `v1.7-stable-final` branch contains the final on-screen
+`v1.7` version label. CI 38234204272 completed 2/2 PASS and the
+exact final-label FAP passed user-reported Test 7G 4/4 device checks.
+**No v1.7 Stable tag or release exists yet; v1.6.1 remains published Stable.**
 
 ### New tools and signal generation
 - PWM Studio adds adjustable TIM1/PA7 PWM duty (5..95%, step 5%) and
