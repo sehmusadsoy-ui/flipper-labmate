@@ -249,3 +249,72 @@ jobs:
           & ./scripts/test-v17-installer-mock.ps1
           if ($LASTEXITCODE -ne 0) { throw 'v1.7 installer mock regressions failed' }
 
+  publish_v17_stable:
+    name: Publish approved v1.7 Stable from verified artifact
+    if: github.event_name == 'push' && github.ref_name == 'v1.7-stable-final'
+    needs: [build, installer_safety]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: v1.7
+      EXPECTED_FAP: 5a7cb0eae601eeac8856790211c4d2831a9198c31853631e1daf0308ce724335
+    steps:
+      - name: Checkout final source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Obtain FAP from this exact successful CI run
+        uses: actions/download-artifact@v4
+        with:
+          name: labmate
+          path: release-asset
+      - name: Validate checksum, tag absence and immutable previous releases
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "v1.7-stable-final"
+          test -s RELEASE_NOTES_v1.7.md
+          test -s release-asset/labmate.fap
+          test -s release-asset/SHA256SUMS.txt
+          test "$(wc -l < release-asset/SHA256SUMS.txt)" -eq 1
+          (cd release-asset && sha256sum -c SHA256SUMS.txt)
+          test "$(sha256sum release-asset/labmate.fap | cut -d' ' -f1)" = "$EXPECTED_FAP"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v1.6.1" --jq '.object.sha')" = "bc63271afe572c393c1febd0f0ef7039404bc937"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v1.7-rc1" --jq '.object.sha')" = "d55eec032e5f341f39aa7c98915ec2062995e66b"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/v1.6.1" --jq '.prerelease')" = false
+          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/v1.7-rc1" --jq '.prerelease')" = true
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" >/dev/null 2>&1; then
+            echo "::error::v1.7 tag already exists; will not move or overwrite"; exit 1
+          fi
+          if gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" >/dev/null 2>&1; then
+            echo "::error::v1.7 release already exists; will not edit"; exit 1
+          fi
+      - name: Create draft with FAP and SHA256SUMS
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" release-asset/labmate.fap release-asset/SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "LabMate v1.7 Stable" --notes-file RELEASE_NOTES_v1.7.md --draft
+          meta="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG")"
+          test "$(jq -r '.draft' <<< "$meta")" = true
+          test "$(jq -r '.target_commitish' <<< "$meta")" = "$GITHUB_SHA"
+          test "$(jq -r '[.assets[].name] | sort | join(",")' <<< "$meta")" = "SHA256SUMS.txt,labmate.fap"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq '.object.sha')" = "$GITHUB_SHA"
+          mkdir -p verify-release
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "labmate.fap" --pattern "SHA256SUMS.txt" --dir verify-release
+          (cd verify-release && sha256sum -c SHA256SUMS.txt)
+          test "$(sha256sum verify-release/labmate.fap | cut -d' ' -f1)" = "$EXPECTED_FAP"
+      - name: Publish Stable and confirm non-prerelease state
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest
+          meta="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG")"
+          test "$(jq -r '.draft' <<< "$meta")" = false
+          test "$(jq -r '.prerelease' <<< "$meta")" = false
+          test "$(jq -r '.target_commitish' <<< "$meta")" = "$GITHUB_SHA"
+          test "$(jq -r '[.assets[].name] | sort | join(",")' <<< "$meta")" = "SHA256SUMS.txt,labmate.fap"
+          echo "PUBLISHED: $(jq -r '.html_url' <<< "$meta")"
+
