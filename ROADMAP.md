@@ -1,7 +1,7 @@
 # LabMate Master Roadmap — v1.0 to v2.0
 
 **Status:** Updated 2026-10-12 after the verified publication of v1.7 Stable. v1.8 and v1.9 remain mandatory planned milestones before v2.0.  
-**Current published Stable:** [v1.7 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7), source `d0e1bc6a95b257841533f0aa8745e3a79bbc8dcd`; verified FAP SHA256 `5A7CB0EAE601EEAC8856790211C4D2831A9198C31853631E1DAF0308CE724335`.  
+**Current published Stable:** [v1.7 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7), original tag `d0e1bc6a95b257841533f0aa8745e3a79bbc8dcd`; updated, on-device-tested PWM Studio label FAP from source `0aeb0ca7ceba092c8adb6e44add0a2212cae1a74`, SHA256 `A0B305E5FD8D71C85C51480EE06A8B7E5EBD5BEE0E82935B0ED3B7E74E7EBCEA`. No new version or tag was created.  
 **Previous Stable fallback:** [v1.6.1 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1), [v1.6 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6), and older unchanged releases.  
 **Previous pre-release:** [v1.7 RC1](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7-rc1) remains available at unchanged source `d55eec03`.
 **Validation:** v1.7 refactored Stable Candidate passed 36/36 user-reported device regressions (7B screenshots); exact final `v1.7` FAP passed Test 7G 4/4 device smoke; Test 7H PowerShell `-Channel RC1 -VerifyOnly` passed; approved Stable release CI passed. Published `-Channel Stable -VerifyOnly` and actual `-Channel Stable -Port COM7` USB installation both passed on Windows 2026-10-12; a separate post-reinstall on-screen/data smoke passed 4/4 user-reported Flipper checks (v1.7 label, PWM STOP, Profile S1, historical CSV). No new version was created. **Next milestone: v1.8 Communication Tools**, followed by **v1.9 Logic Scope and Signal Compare**, then **v2.0 Ultimate**.
@@ -97,6 +97,11 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
   independent calibrated PWM voltage/frequency/duty/OFF measurement,
   destructive SD failure cases and exhaustive extremes. These stay on the
   living [hardware test backlog](docs/DEFERRED_HARDWARE_TESTS.md).
+- **In-place UI label maintenance, 2026-10-12:** changed displayed
+  OUTPUT tool and About guide from Signal Generator to PWM Studio;
+  device-tested 4/4 PASS, CI 2/2 PASS, published FAP and SHA256 replaced
+  in the existing v1.7 release. The original v1.7 tag stays unchanged;
+  asset provenance and the superseded hash are in the release notes.
 - **Stable delivered:** measurement/logger/alert code modularization,
   release-verified GitHub-to-USB installer, 36/36 user-reported candidate
   regressions plus 4/4 exact final FAP smoke checks and real Windows
