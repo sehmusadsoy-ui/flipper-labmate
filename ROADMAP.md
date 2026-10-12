@@ -1,9 +1,10 @@
 # LabMate Master Roadmap — v1.0 to v2.0
 
-**Status:** Updated 2026-10-11 after publication of v1.6.1 Stable and start of `v1.7-dev`.  
+**Status:** Updated 2026-10-12 after publication of v1.7 RC1; Stable candidate refactoring and installation QA underway.  
 **Current published Stable baseline:** [v1.6.1 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1), built from `bc63271afe572c393c1febd0f0ef7039404bc937` (FAP and SHA256).  
 **Previous Stable fallback:** [v1.6 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6), plus all historical release tags.  
-**Next development milestone:** v1.7 — PWM Studio and Counter. New code lives only on `v1.7-dev`, based on the device-tested v1.6.1 version-label-fix source `84f3741d`. Published Stable tags are immutable.
+**Current pre-release:** [v1.7 RC1](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7-rc1) pinned to hardware-tested source `d55eec03`.
+**In progress:** `v1.7-stable-candidate` (new modularization, verified RC1/future Stable USB installer and final regression). v1.7 Stable does **not** exist yet; released RC1 and previous Stable tags/assets are immutable.
 
 ## Vision
 
@@ -78,12 +79,24 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
 - **Version label maintenance:** A later `v1.6.1-dev` build corrected the device display/manifest version without replacing the published Stable artifact. That locally installed build is the source baseline for `v1.7-dev`.
 - **Deferred to v1.7:** extraction of remaining physical capture drivers and stronger centralized GPIO/TIM/EXTI ownership, alongside the official v1.7 functional scope.
 
-### v1.7 — PWM Studio and Counter
+### v1.7 — PWM Studio and Counter (RC1 published 2026-10-12)
 
-- Adjustable PWM duty cycle, custom frequency selection, and safe persistent generator control.
-- Genuine event/pulse counting appropriate to the available GPIO and hardware timers.
-- Push-button bounce/response testing and configurable threshold alerts.
-- Validate output frequency, duty cycle, and switching behavior on device.
+- **Delivered in RC1:** adjustable PWM duty (5–95%), STOP-only CUSTOM
+  1–50,000 Hz, persistent in-app generator RUN and STOP on full exit.
+- **Delivered:** genuine PB3/TIM2 edge Event Counter, PC1 Button Analyzer,
+  and four visual Threshold Alert sources.
+- **Validated:** user-reported 3.3 V Flipper loopback checks for representative
+  frequencies/duty, Pulse timing, Counter, Threshold, Logger/History and
+  Profiles. Specific Profiles issue fixed and 16/16 targeted device checks PASS.
+  Final release FAP SHA256 matches the tested Profiles-fix artifact.
+- **Still NOT TESTED:** real mechanical button bounce/settle,
+  independent calibrated PWM voltage/frequency/duty/OFF measurement,
+  destructive SD failure cases and exhaustive extremes. These stay on the
+  living [hardware test backlog](docs/DEFERRED_HARDWARE_TESTS.md).
+- **Stable candidate:** modularized measurement, logger snapshot and threshold
+  adapter files; verified one-command GitHub-to-USB PowerShell installer;
+  candidate CI 2/2 PASS. New candidate FAP still needs fresh Flipper
+  regression before Stable publication. No new Stable tag/release exists.
 
 ### v1.8 — Communication Tools
 
@@ -124,8 +137,8 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
 | v1.3 | Foundational digital instruments | Stable published |
 | v1.4 | Frequency and pulse MIN/MAX, signal-loss behavior, UI stability | Stable published |
 | **v1.5** | **Data Logger, CSV recording and Log History** | **Stable published 2026-10-09** |
-| v1.6 | Code/UI refactor | In progress on `v1.6-dev` (development only) |
-| v1.7 | PWM Studio and Counter | Planned |
+| v1.6 | Code/UI refactor | Stable published; v1.6.1 is the current Stable baseline |
+| v1.7 | PWM Studio and Counter | RC1 published; isolated Stable candidate under QA |
 | v1.8 | UART, I²C, possible 1-Wire tools | Planned |
 | v1.9 | Logic Scope and Signal Compare | Planned |
 | v2.0 | LabMate Ultimate / Signal Doctor | Planned |
