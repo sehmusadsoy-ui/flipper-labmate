@@ -1,5 +1,6 @@
 #include <furi.h>
 #include <storage/storage.h>
+#include <string.h>
 #include <gui/gui.h>
 #include "labmate_deferred.h"
 #include "labmate_logger_snapshot.h"
