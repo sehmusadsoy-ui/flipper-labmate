@@ -4,7 +4,7 @@
 **Current published Stable:** [v1.7 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7), original tag `d0e1bc6a95b257841533f0aa8745e3a79bbc8dcd`; updated, on-device-tested PWM Studio label FAP from source `0aeb0ca7ceba092c8adb6e44add0a2212cae1a74`, SHA256 `A0B305E5FD8D71C85C51480EE06A8B7E5EBD5BEE0E82935B0ED3B7E74E7EBCEA`. No new version or tag was created.  
 **Previous Stable fallback:** [v1.6.1 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1), [v1.6 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6), and older unchanged releases.  
 **Previous pre-release:** [v1.7 RC1](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7-rc1) remains available at unchanged source `d55eec03`.
-**Validation:** v1.7 refactored Stable Candidate passed 36/36 user-reported device regressions (7B screenshots); exact final `v1.7` FAP passed Test 7G 4/4 device smoke; Test 7H PowerShell `-Channel RC1 -VerifyOnly` passed; approved Stable release CI passed. Published `-Channel Stable -VerifyOnly` and actual `-Channel Stable -Port COM7` USB installation both passed on Windows 2026-10-12; a separate post-reinstall on-screen/data smoke passed 4/4 user-reported Flipper checks (v1.7 label, PWM STOP, Profile S1, historical CSV). No new version was created. **Current development: v1.8 Communication Tools**, coordinator refactor completed, next Counter STOP/RESUME and UART; next **v1.9 Logic Scope and Signal Compare**, then **v2.0 Ultimate**.
+**Validation:** v1.7 refactored Stable Candidate passed 36/36 user-reported device regressions (7B screenshots); exact final `v1.7` FAP passed Test 7G 4/4 device smoke; Test 7H PowerShell `-Channel RC1 -VerifyOnly` passed; approved Stable release CI passed. Published `-Channel Stable -VerifyOnly` and actual `-Channel Stable -Port COM7` USB installation both passed on Windows 2026-10-12; a separate post-reinstall on-screen/data smoke passed 4/4 user-reported Flipper checks (v1.7 label, PWM STOP, Profile S1, historical CSV). No new version was created. **Current development: v1.8 Communication Tools**, coordinator refactor and Counter STOP/RESUME merged, UART candidate SDK-compiled but awaiting hardware RX/TX tests; next **v1.9 Logic Scope and Signal Compare**, then **v2.0 Ultimate**.
 
 ## Vision
 
@@ -117,7 +117,10 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
   deferred storage and per-screen input modules. R1–R10 operator-reported
   Flipper device regression and main CI both passed.
   [Refactor test record](docs/V1_8_DEV_NOTES.md).
-- **Next new instrument:** UART Terminal, then I²C Explorer.
+- **Current candidate:** UART Terminal USART 13/14, bounded RX and explicit TX editor;
+  SDK 87.1 CI PASS, real-device communication still unverified.
+  [UART device-test plan](docs/V1_8_UART_PLAN.md).
+- **Next new instrument after UART device PASS:** I²C Explorer.
 - 3.3 V-compatible **UART Terminal** for development and diagnostics.
 - **I²C Explorer** for suitable, owned test peripherals on a safe bus.
 - If feasible, basic **1-Wire sensor reading** (e.g., a supported temperature sensor).
@@ -157,7 +160,7 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
 | **v1.5** | **Data Logger, CSV recording and Log History** | **Stable published 2026-10-09** |
 | v1.6 | Code/UI refactor | Stable published; v1.6.1 remains a previous Stable fallback |
 | **v1.7** | **PWM Studio and Counter** | **Stable published 2026-10-12; current Stable** |
-| v1.8 | Coordinator cleanup → Counter resume → UART → I²C → optional 1-Wire | Refactor device PASS, PR #5 merged; communication tools pending |
+| v1.8 | Coordinator cleanup → Counter resume → UART → I²C → optional 1-Wire | PR #5/#6 merged, UART candidate compiled, device UART pending |
 | v1.9 | Logic Scope and Signal Compare | Planned |
 | v2.0 | LabMate Ultimate / Signal Doctor | Planned |
 
