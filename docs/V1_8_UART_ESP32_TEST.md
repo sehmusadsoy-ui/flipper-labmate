@@ -1,6 +1,6 @@
 # LabMate v1.8 UART ↔ ESP32 Interoperability Test
 
-**Status: ESP32-S2 build/upload PASS; external UART E1/E2/E3/E5/E6 = 5/6 operator-reported PASS (2026-10-13). E4 9600 baud PENDING; separate BUSY, overflow and sustained-load checks PENDING.**
+**Status: ESP32-S2 115200/9600 build and upload PASS (operator-reported, 2026-10-13); external UART E1/E2/E3/E5/E6 = 5/6 PASS. E4 9600 baud Flipper↔ESP32 device test PENDING; BUSY, overflow and sustained-load checks PENDING.**
 The user identified an **ESP32-S2-WROVER Flipper Dev Board**. The
 official Flipper Wi-Fi Developer Board schematics were checked:
 https://cdn.flipperzero.one/Flipper_Zero_WI-FI_Module_V1_Schematic.PDF
@@ -186,7 +186,7 @@ original 115200 ESP32 peer causes an expected baud mismatch.
 Do not power the ESP32 independently via USB while it is seated
 on Flipper without validated isolation.
 
-## E4 9600-baud sketch build — PASS (operator report, 2026-10-13)
+## E4 9600-baud sketch build AND upload — PASS (operator reports, 2026-10-13)
 
 The operator ran `arduino-cli compile` targeting
 `esp32:esp32:esp32s2:CDCOnBoot=cdc,UploadMode=cdc` using the
@@ -198,25 +198,37 @@ The terminal showed:
 - `Global variables use 49000 bytes (14%) of dynamic memory.`
 - `ESP32-S2 9600 BUILD PASS`.
 
-This is **9600 sketch compile PASS only**, not upload or hardware E4
-PASS. The previously flashed ESP32 peer remains at 115200 until
-reflashed; keep Flipper FAP unchanged.
+**9600 firmware upload now user-reported PASS**. After recompiling and
+checking the ESP32 USB port, the operator's PowerShell output concluded:
 
-**Next flash gate:** detach ESP32 Wi-Fi Devboard from Flipper,
-connect via its own USB-C data cable, verify the unique target's
-Espressif `VID_303A` identity and COM port (prior bootloader
-identification COM12/PID_0002; do not assume port remains unchanged).
-Use a fresh build directory, confirm `currentBaud = 9600;`, compile
-again, and upload with that board's identified port. Stop if the
-board cannot be unambiguously identified or esptool fails; do not
-repeat flashes blindly.
+```
+Hard resetting with a watchdog...
+New upload port: COM12 (serial)
+ESP32-S2 9600 UPLOAD PASS
+```
 
-**After successful 9600 firmware upload:** disconnect USB, connect
-the official devboard to Flipper correctly with everything powered
-off, and set LabMate UART baud to **9600 while STOP**. Select RUN:
-expect periodic `ESP32_READY`; send `AT` and verify the conditional
-`ESP32_OK` response. Check drop/error counters. Only the operator's
-actual post-flash result can mark E4 PASS.
+This confirms a successful reported upload of the dedicated 9600 test
+sketch to ESP32-S2 COM12; the pasted final lines do not independently
+show every preceding esptool flash block. **E4 hardware UART test has
+not yet been performed/reported**, so E4 remains UNCHECKED. The
+Flipper-side LabMate FAP and its previous v1.7 Stable release have
+not been changed.
+
+**Flash gate completed (operator report):** dedicated 9600 sketch was
+built and uploaded via the USB COM12 link. No more firmware upload
+is needed for the immediate E4 functional test.
+
+**Next operator E4 test (pending):** with Flipper UART STOP and any
+external USB power unplugged, detach USB-C from ESP32 and reconnect
+the official devboard to the Flipper header in the correct orientation,
+with no extra jumper or power wire. Start LabMate COMM → UART; while
+STOP, use LEFT/RIGHT to set **9600** (NOT the default 115200), then
+OK to RUN. Observe periodic `ESP32_READY` after several seconds,
+then DOWN → TX editor `AT` → OK SEND → BACK to RX; expect conditional
+`ESP32_OK`. Verify no BUSY/ERR/DROP and that RX counters increase.
+Mark E4 PASS only after the operator reports both messages at 9600.
+If the response does not appear, report exactly what the Flipper shows
+and keep E4 pending/FAIL as appropriate.
 
 ## E1–E6 external peer PASS/FAIL matrix
 
