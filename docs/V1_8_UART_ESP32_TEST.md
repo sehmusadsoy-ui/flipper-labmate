@@ -186,6 +186,38 @@ original 115200 ESP32 peer causes an expected baud mismatch.
 Do not power the ESP32 independently via USB while it is seated
 on Flipper without validated isolation.
 
+## E4 9600-baud sketch build — PASS (operator report, 2026-10-13)
+
+The operator ran `arduino-cli compile` targeting
+`esp32:esp32:esp32s2:CDCOnBoot=cdc,UploadMode=cdc` using the
+dedicated 9600-baud sketch at
+[`tests/esp32_s2_wrover_uart_peer_9600/esp32_s2_wrover_uart_peer_9600.ino`](../tests/esp32_s2_wrover_uart_peer_9600/esp32_s2_wrover_uart_peer_9600.ino).
+The terminal showed:
+
+- `Sketch uses 304748 bytes (23%) of program storage space.`
+- `Global variables use 49000 bytes (14%) of dynamic memory.`
+- `ESP32-S2 9600 BUILD PASS`.
+
+This is **9600 sketch compile PASS only**, not upload or hardware E4
+PASS. The previously flashed ESP32 peer remains at 115200 until
+reflashed; keep Flipper FAP unchanged.
+
+**Next flash gate:** detach ESP32 Wi-Fi Devboard from Flipper,
+connect via its own USB-C data cable, verify the unique target's
+Espressif `VID_303A` identity and COM port (prior bootloader
+identification COM12/PID_0002; do not assume port remains unchanged).
+Use a fresh build directory, confirm `currentBaud = 9600;`, compile
+again, and upload with that board's identified port. Stop if the
+board cannot be unambiguously identified or esptool fails; do not
+repeat flashes blindly.
+
+**After successful 9600 firmware upload:** disconnect USB, connect
+the official devboard to Flipper correctly with everything powered
+off, and set LabMate UART baud to **9600 while STOP**. Select RUN:
+expect periodic `ESP32_READY`; send `AT` and verify the conditional
+`ESP32_OK` response. Check drop/error counters. Only the operator's
+actual post-flash result can mark E4 PASS.
+
 ## E1–E6 external peer PASS/FAIL matrix
 
 - [x] **E1, ESP32 → Flipper:** With both UARTs at the sketch's default
