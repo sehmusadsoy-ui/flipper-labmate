@@ -1,6 +1,6 @@
 # LabMate v1.8 UART ↔ ESP32 Interoperability Test
 
-**Status: ESP32-S2 Arduino CLI 3.3.12 compile PASS (user-reported, 2026-10-13). External ESP32 flash and communication tests PENDING; no external UART PASS reported.**
+**Status: ESP32-S2 Arduino CLI 3.3.12 compile and USB firmware upload PASS (operator-reported, 2026-10-13). Flipper ↔ ESP32 external UART E1–E6 communication tests PENDING.**
 The user identified an **ESP32-S2-WROVER Flipper Dev Board**. The
 official Flipper Wi-Fi Developer Board schematics were checked:
 https://cdn.flipperzero.one/Flipper_Zero_WI-FI_Module_V1_Schematic.PDF
@@ -12,16 +12,18 @@ Ground is shared through the board connector. No additional UART jumper
 or voltage supply wire is needed when the original board is correctly
 plugged into Flipper. Do not assume this pinout for aftermarket boards.
 
-**Firmware preservation gate (consent given, upload not performed):**
+**Firmware preservation gate (consent given, upload completed):**
 The operator reports their ESP32-S2-WROVER Wi-Fi Devboard currently
 runs Marauder and explicitly agrees to replace its firmware temporarily
 for UART testing, with an independent reinstall plan afterward.
-Flashing an Arduino test sketch **replaces the firmware**. No flash,
-backup, firmware restoration, or on-device test has yet been performed
-by the assistant. The operator must use the board's native USB-C
-connection and choose the proper ESP32-S2 target/port.
+The operator flashed the Arduino test sketch, replacing Marauder on
+the ESP32-S2 board for this test. The assistant did not access the
+physical device. No independent sketch-runtime or Flipper ↔ ESP32
+communication tests have been reported. The operator can reinstall
+Marauder after completing tests.
 
-Prepared and user-reported compiled successfully (not uploaded or device-tested):
+Prepared and operator-reported compiled and uploaded successfully
+(not yet runtime- or cross-device communication-tested):
 [`tests/esp32_s2_wrover_uart_peer/esp32_s2_wrover_uart_peer.ino`](../tests/esp32_s2_wrover_uart_peer/esp32_s2_wrover_uart_peer.ino).
 Uses ESP32-S2 **UART1** remapped to RX GPIO44 / TX GPIO43 and separate
 native USB CDC for debug prints, default 115200/8N1, periodic
@@ -98,13 +100,14 @@ after identifying the ESP32 board, to avoid driving reserved pins.
 
 ## E1–E6 external peer PASS/FAIL matrix
 
-- [ ] **E1, ESP32 → Flipper:** With both UARTs at 9600 8N1, ESP32
-      sends `ESP32_READY`; LabMate RX view displays it legibly.
+- [ ] **E1, ESP32 → Flipper:** With both UARTs at the sketch's default
+      **115200 8N1**, ESP32 sends `ESP32_READY` about every 3 s;
+      LabMate RX view displays it legibly.
 - [ ] **E2, Flipper → ESP32:** LabMate TX editor sends `AT\r\n`
       explicitly; ESP32 USB Serial Monitor logs receipt of `AT`.
 - [ ] **E3, Response:** ESP32 returns `ESP32_OK\r\n`; Flipper UART RX
       shows the correct response (not only local echo).
-- [ ] **E4, 115200:** With both UARTs stopped/reconfigured to 115200,
+- [ ] **E4, 9600:** With both UARTs stopped/reconfigured to **9600**,
       repeat E1–E3; avoid interpreting setup/boot noise as PASS.
 - [ ] **E5, Lifecycle:** Repeat short exchanges, STOP and START UART,
       then BACK and re-enter. No freezes, unexpected repeated TX, or
@@ -145,6 +148,38 @@ No ESP32-S2 firmware upload, ESP32 board/COM-port identification or
 external communication has been reported yet. Marauder remains on
 the board until the operator performs the explicit USB firmware upload.
 
+## ESP32-S2 USB firmware upload checkpoint — PASS (operator report, 2026-10-13)
+
+- User-provided PowerShell/esptool **v5.3.1** upload transcript identifies
+  **ESP32-S2** on the previously validated native USB **COM12** port.
+- Fresh Arduino CLI compile succeeded: 304,748 sketch bytes (23% of
+  available program storage) and 49,000 global bytes (14% of RAM).
+- esptool wrote bootloader, partitions, `boot_app0`, and the test sketch.
+  Every flash section reported **`Hash of data verified`**.
+- Final terminal output: `Hard resetting with a watchdog...`,
+  `New upload port: COM12 (serial)`, and
+  **`ESP32-S2 UART UPLOAD PASS`**.
+- This confirms successful flash write/verify, **not** runtime UART or
+  inter-device RX/TX; E1–E6 remain unchecked.
+- The flash replaced the owner's Marauder firmware with prior consent.
+  No restoration has been attempted or claimed.
+
+### Next immediate test — E1 only, no external GPIO jumper
+
+1. Stop Flipper UART/PWM. Disconnect the original Flipper pin 13 ↔ 14
+   self-loopback jumper and USB leads. Power equipment down before
+   inserting the dedicated official Wi-Fi Devboard.
+2. Seat the devboard in the **correct orientation**, aligning its
+   dedicated Flipper header pins. Do not connect extra 5 V, 3.3 V,
+   or TX/RX jumpers; the official board includes the signal connections.
+3. Start LabMate COMM → UART Terminal, default STOP at **115200 baud**;
+   press OK to enter RUN. Wait 5–10 seconds.
+4. Expect `ESP32_READY` in the RX text display about every 3 seconds.
+   Check the RX count and status indicator.
+5. Record **E1 PASS** only on observed `ESP32_READY`. Otherwise report
+   **E1 FAIL** with exact state, e.g. `BUSY`, `RX=0`, garbled text,
+   `DROP` or `ERR`. Stop before E2–E6 if E1 fails.
+
 ## Windows port identity checkpoint — user reported (2026-10-13)
 
 - Arduino CLI `board list` returned `COM12 serial Serial Port (USB) Unknown`.
@@ -156,8 +191,8 @@ the board until the operator performs the explicit USB firmware upload.
 - Flipper was previously on `COM7`, and the operator must never use
   COM7 as the ESP32 upload destination. Before writing, recheck that
   COM12 is still connected and has the same expected VID/PID.
-- **No firmware upload has been reported yet.** The latest user
-  checkpoint is still compiler PASS only.
+- **Subsequent user report confirmed USB firmware upload PASS**; see
+  the timestamped upload checkpoint above.
 
 Recommended controlled upload command: recompile the corrected sketch
 with `arduino-cli compile --fqbn
