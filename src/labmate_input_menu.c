@@ -154,6 +154,7 @@ void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
 }
 
 void labmate_input_about(LabMateApp* app, InputEvent event, LabMateDeferredWork* work) {
+    UNUSED(work);
 
                 /* Pure UI paging. Never touches capture/GPIO or stored profiles. */
                 if(event.key == InputKeyRight || event.key == InputKeyDown) {
