@@ -1,7 +1,7 @@
 # LabMate v1.7 RC1 — Release Notes (DRAFT, NOT PUBLISHED)
 
 > **Preparation only.** This document is not a release, tag or announcement.
-> An isolated `v1.7-rc1` **candidate FAP has been built in CI**, but not yet installed or device-tested. No GitHub Release or tag exists.
+> Base RC1 and a narrow Profiles-fix FAP were CI-built, USB-installed and user-tested. The integrated final RC1 artifact remains to be verified. No GitHub Release or tag exists.
 > The latest publicly published stable release is **v1.6.1**, unchanged.
 
 ## Highlights since v1.6.1
@@ -52,7 +52,10 @@
   presets, and logger source. The current profile schema **does not save**
   custom PWM frequency, duty, or Threshold Alerts settings. Saving
   CUSTOM is refused; loading a preset resets duty to 50%. A profile
-  LOAD does not automatically start PWM.
+  LOAD does not automatically start PWM. A later RC1 candidate fix adds
+  permanent LOAD/SAVE/DELETE action labels, slot-specific confirmation
+  prompts and blocks all profile mutations while PWM/capture/logger is
+  active, including immediately before final SAVE/DELETE commit.
 
 ### Stability and fixed defects
 
@@ -105,6 +108,39 @@ Later `v1.7-dev` commits through
 were documentation-only. **These results belong to a development FAP,
 not to a newly built RC1-labeled artifact.**
 
+## RC1 physical verification (user-reported, 2026-10-12)
+
+The original RC1-labeled FAP (CI run `38186623651`; source
+`55edee5890c2d62ea229f9271c97c6260b067b5a`; verified FAP SHA256
+`DB2BB859819075E0120FEF2E65131CB18127FB91B881F7C8520B4CA22277064F`)
+was installed and tested. Boot/version/PWM STOP, PWM 100 Hz 95%/5%,
+Pulse PC1 timing/statistics, Frequency LOW PC1 and HIGH PB3, Button clean
+input, Counter and source handoff, Frequency Threshold at 50/200 Hz,
+Logger HIGH PB3 CSV/History open/delete cancellation/confirmed deletion,
+and profile data/load and exit STOP all passed. The original RC1's
+Profiles PWM-RUN action UX did **not** meet the user expectation (one
+FAIL): a blocked LOAD could be followed by selecting and confirming
+SAVE/DELETE while PWM was still running.
+
+A focused fix was implemented separately on `v1.7-profiles-ux-fix`:
+source `f6bebbe996d22cbafe49097abde336911e5dc8c3`,
+[CI run 38188798973](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38188798973)
+2/2 PASS, FAP SHA256
+`ED2E91A02AB0F720D6B48EAC13D505D37570FB3A4A1F8E8A76D59E1B79FE14AA`.
+Its user-confirmed Tests 6A (5/5), 6B (5/5), and 6C (6/6) all PASS:
+cancel/save/load of S1; PWM RUN blocks all three actions; slot-specific
+overwrite/delete confirmations; temporary S2 create/delete; S1
+persistence across relaunch. Profiles storage encoding is unchanged.
+
+The user had deleted all three profiles while evaluating the ambiguous
+original UI; the fix tests started with empty slots and recreated S1.
+Do not imply that the original user profile settings were recovered.
+
+**Pending:** verify the final integrated `v1.7-rc1` FAP checksum, a short
+on-device handoff check, candidate screenshot/release-note review and
+explicit approval before publishing an RC pre-release. Old base/fix FAP
+checksums are not valid for a newly compiled integrated artifact.
+
 ## Explicitly deferred and unverified
 
 - **NOT TESTED: real mechanical momentary switch contact bounce,
@@ -143,7 +179,7 @@ not to a newly built RC1-labeled artifact.**
 
 ## RC1 status
 
-**DRAFT / RC1 CANDIDATE BUILD PASS; DEVICE SMOKE AND PUBLICATION PENDING.**
+**DRAFT / BASE RC1 AND PROFILES FIX DEVICE CHECKS PASS (with documented base UX failure); FINAL INTEGRATED CANDIDATE/PUBLICATION PENDING.**
 
 - Branch: `v1.7-rc1` (no public Release or tag).
 - First RC1-labeled source commit:
@@ -157,6 +193,7 @@ not to a newly built RC1-labeled artifact.**
 - RC1 source differs from the last dev FAP only in the candidate LCD
   label, widened menu badge, matching static layout guards and the
   candidate-branch CI workflow. **No instrument algorithm changes.**
-- The candidate artifact still requires fresh physical confirmation.
-  Do not mark this RC1 build physically PASS based solely on prior
-  development FAP tests.
+- Original RC1 and focused Profiles fix have fresh, separate user-reported
+  physical evidence (see RC1 physical verification above). The final
+  integrated candidate still requires checksum and short device handoff.
+  Do not reuse the SHA256 of either earlier binary for the final artifact.
