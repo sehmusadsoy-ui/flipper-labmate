@@ -150,8 +150,9 @@ for literal in (
     'blocked ? "BLOCK" : "SELECT"',
 ):
     assert literal in UI, f"Profiles safety screen missing {literal}"
-assert APP.count('app->profile_notice = app->generator_running ? 4U : 8U;') == 2, \\
+assert APP.count('app->profile_notice = app->generator_running ? 4U : 8U;') == 2, (
     "Both profile actions and final SAVE/DELETE confirmation must check PWM/capture/logger"
+)
 assert APP.count('app->capture_owner != LabMateCaptureNone ||') >= 2
 assert APP.count('app->logger_recording) {') >= 2
 
