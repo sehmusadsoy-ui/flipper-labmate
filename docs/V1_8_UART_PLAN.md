@@ -1,9 +1,9 @@
 # LabMate v1.8 — UART Terminal development plan
 
-**Status:** UART RX/TX **development candidate implemented**, with a
-Momentum SDK API 87.1 compile and portable unit checks. **NOT device-tested**.
-The 12th instrument `UART Terminal` is accessible in the new fifth
-`COMM` menu group. No Flipper test result has yet been reported. This branch was created
+**Status:** UART RX/TX **development candidate implemented** and SDK 87.1
+CI PASS. **First real Flipper loopback checkpoint U1–U4: 4/4 PASS**
+(operator-reported, 2026-10-13). Baud variants, full regression, external
+3.3 V peer interoperability, BUSY/overflow behavior remain PENDING. This branch was created
 from the already merged, CI-passing Counter STOP/RESUME baseline
 (`main`, PR #6). No Stable release, installer or tag is changed.
 
@@ -99,7 +99,28 @@ signal levels, unknown voltage sources, motor controllers or mains.
   `labmate_uart_ui.c`, `labmate_input_uart.c`. Main coordinator
   remains under 200 lines, legacy tool IDs and saved profile format intact.
 
-## First real Flipper test suite (pending)
+## First real Flipper test suite (in progress)
+
+### Checkpoint A — U1–U4: 4/4 PASS (operator report, 2026-10-13)
+
+The operator completed the first on-device checks using the exact
+development candidate from [CI run 38305108729](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38305108729),
+code commit `e5708831573d16140e0c71387d78ef4875b7b0bf`,
+FAP SHA256
+`466115746C4420903D21CE3CABA6A0532C799F1117CAC3406D9FF90F015A56BE`.
+
+- U1 **PASS:** COMM menu → UART Terminal accessible.
+- U2 **PASS:** initial STOP state and default 115200 baud.
+- U3 **PASS:** OK RUN followed by DOWN enters TX editor.
+- U4 **PASS:** SEND `AT` then BACK into RX view displays `AT`
+  on Flipper TX 13 → RX 14 local loopback.
+
+These PASS reports establish functional local loopback in the requested
+scenario, but do not by themselves independently verify all 11 older
+tools, repeated sends/byte counts, exact baud timing, electrical signal
+quality or interoperability with external MCU hardware. U5–U8 and
+external two-way checks are still mandatory before merging PR #7.
+
 
 **Preparation:** Stop PWM and fully exit LabMate before rewiring.
 Remove other UART/expansion attachments. The simplest first exercise is
@@ -107,10 +128,10 @@ a short, directly wired **Flipper pin 13 TX → Flipper pin 14 RX**
 self-loopback with a verified 3.3 V jumper, no external power supply.
 Never connect 5 V/RS-232/unknown voltages to GPIO.
 
-- [ ] U1: `v1.8dev` shows COMM → UART Terminal; old 11 tools still reachable
-- [ ] U2: UART opens STOP, default 115200, pin label `TX13 RX14`
-- [ ] U3: OK RUN works and no BUSY/ERR, DOWN enters TX editor
-- [ ] U4: TX editor initial `AT`; press OK SEND; RX view shows
+- [x] U1: `v1.8dev` shows COMM → UART Terminal; old 11 tools still reachable
+- [x] U2: UART opens STOP, default 115200, pin label `TX13 RX14`
+- [x] U3: OK RUN works and no BUSY/ERR, DOWN enters TX editor
+- [x] U4: TX editor initial `AT`; press OK SEND; RX view shows
       `AT` loopback; repeated sends increase byte count without crash
 - [ ] U5: STOP, select 9600 with LEFT/RIGHT, RUN, send `AT` and
       confirm correct RX; verify second 38400 baud setting too
