@@ -56,9 +56,21 @@ Status: **WORK IN PROGRESS / NOT STABLE / NOT PUBLISHED**.
   reading works; DELETE confirmation can be cancelled without deleting,
   and confirmed DELETE removes only a disposable selected CSV.
   No independently inspected CSV file was provided in this phase.
-- [ ] Test 7E+: clean PC1 Button, Threshold Alerts, Profiles
-  SAVE/LOAD/DELETE and PWM-RUN guards on this modified FAP.
-  Test 7A+7B+7C+7D cumulative: **22/22 PASS (user-reported; 7B screenshot-reviewed)**.
+- [x] Test 7E: **8/8 PASS (user-reported)** on the installed
+  Stable Candidate FAP, 2026-10-12. Clean PA7->PC1 digital signal
+  exercises Button Analyzer press/release count, contact state and
+  details/debounce settings (NOT mechanical bounce verification);
+  Pulse Duty visual Threshold ARM/ALRT/ACK/OFF responds at the 50%
+  limit; existing Profile S1 LOAD does not activate PWM; a disposable
+  empty-slot profile saves, survives restart, DELETE cancellation
+  preserves it and confirmed DELETE removes only that temporary slot;
+  PWM RUN blocks LOAD/SAVE/DELETE with S1 preserved. User reported
+  all eight checks working, without screenshots for this phase.
+  Cumulative Test 7A+7B+7C+7D+7E: **30/30 PASS**
+  (user-reported; 7B measurements screenshot-reviewed).
+- [ ] Test 7F: full 11-tool grouped menu, 13 About pages, screen
+  clipping, repeated menu / capture handoffs, short connected
+  navigation stability and clean app exit.
 - [ ] Check resource-hand-off and repeated navigation/STOP/START; check
   storage error behavior when practicable on disposable test data.
 - [ ] Review full 11-tool menu, 13-page About and 128x64 clipping.
