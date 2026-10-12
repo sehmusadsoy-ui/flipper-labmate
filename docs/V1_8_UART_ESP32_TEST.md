@@ -1,6 +1,6 @@
 # LabMate v1.8 UART ↔ ESP32 Interoperability Test
 
-**Status: ESP32-S2 UART E1–E6 = 6/6 operator-reported PASS (2026-10-13), including bidirectional 115200 and 9600 baud. Independent BUSY/resource ownership, overflow/error reporting, and sustained-RX tests remain PENDING; PR #7 is draft.**
+**Status: ESP32-S2 UART E1–E6 = 6/6 operator-reported PASS (2026-10-13), including bidirectional 115200 and 9600 baud. SR1 UART STOP/BACK/re-entry FAIL diagnosed as lost baud selection (fix pending CI/device validation); BUSY/resource ownership and controlled overflow remain PENDING; PR #7 is draft.**
 The user identified an **ESP32-S2-WROVER Flipper Dev Board**. The
 official Flipper Wi-Fi Developer Board schematics were checked:
 https://cdn.flipperzero.one/Flipper_Zero_WI-FI_Module_V1_Schematic.PDF
@@ -263,6 +263,41 @@ This checks stable ordinary RX service, **not** the overflow branch.
 It must not be recorded as proof that DROP/ERR warnings work. A
 controlled stress/overflow test, and a legitimate existing serial-owner
 BUSY conflict, remain PENDING.
+
+## SR1 regression — FAIL after UART BACK/re-entry (operator report, 2026-10-13)
+
+**SR1 result: FAIL.** The operator reported a continuously
+increasing RX count (approximately **R:440** at one observation),
+**D:0**, but after step 4 (STOP → BACK → re-enter UART), the text
+changed into dots (`..............`) and **E incremented
+together with RX**. This is not an RX-buffer overflow report;
+the observed ERR likely reflects UART framing/noise errors.
+
+**Root cause found in source:** UART input menu handler called
+`labmate_uart_reset(&app->uart)` on *every* UART screen entry.
+That reset sets `baud_index = 2`, silently reverting the UART to
+**115200**. The ESP32-S2 peer is now running the dedicated **9600**
+baud sketch, so an operator who re-enters and presses RUN without
+resetting baud encounters a 9600↔115200 mismatch. ASCII renderer
+turns nonprintable characters into `.`. This is consistent with
+all reported symptoms; confirm by observing UART baud after re-entry
+and retesting 9600.
+
+**Development fix prepared (not yet device-installed or verified):**
+the UART menu now invokes `labmate_uart_reenter` to preserve selected
+`baud_index`, while clearing per-session text/counters and ensuring
+hardware stays STOP. A source guard was added to prevent reverting
+to reset-on-every-entry. A fresh Momentum SDK CI and Flipper
+device retest are mandatory before marking this fix PASS.
+
+**Immediate workaround on old FAP:** after re-entering UART,
+verify displayed baud, STOP, select **9600**, then RUN.
+If desired, clear the visible terminal via UP.
+Record new R/D/E observations. No ESP32 reflash is required.
+
+The earlier E1–E6 tests **remain operator-reported PASS**, since
+those tested proper matching baud rates; this new SR1 issue is a
+separate lifecycle setting-preservation regression.
 
 ## E1–E6 external peer PASS/FAIL matrix
 

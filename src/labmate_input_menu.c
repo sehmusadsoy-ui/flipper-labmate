@@ -129,7 +129,7 @@ void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
 
                     case LabMateToolUart:
                         app->screen = LabMateScreenUart;
-                        labmate_uart_reset(&app->uart);
+                        labmate_uart_reenter(&app->uart);
                         break;
 
                     case LabMateToolAbout:

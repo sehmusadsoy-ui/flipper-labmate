@@ -104,6 +104,18 @@ void labmate_uart_stop(LabMateUart* uart) {
     uart->active = false;
 }
 
+/* Re-entering the UART screen must not silently reset the selected baud.
+ * Reset session RX text/stats, but preserve the peer's matching baud.
+ * BACK has already stopped UART; stop again defensively if needed.
+ */
+void labmate_uart_reenter(LabMateUart* uart) {
+    const uint8_t saved_baud_index = uart->baud_index;
+    labmate_uart_stop(uart);
+    labmate_uart_reset(uart);
+    uart->baud_index =
+        saved_baud_index < LABMATE_UART_BAUD_COUNT ? saved_baud_index : 2U;
+}
+
 void labmate_uart_poll(LabMateUart* uart) {
     if(!uart->active || !uart->stream) return;
     uint8_t batch[64];

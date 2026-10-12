@@ -28,7 +28,19 @@ assert "work->uart_tx_requested = true;" in keys
 assert "labmate_uart_send(" in deferred
 assert "labmate_uart_stop(&app->uart);" in app
 assert "labmate_uart_poll(&app->uart);" in app
-assert "labmate_uart_reset(&app->uart);" in menu
+# New app starts at default 115200; returning to UART preserves user-selected baud.
+assert "labmate_uart_reset(&app->uart);" in app
+assert "labmate_uart_reenter(&app->uart);" in menu
+assert "labmate_uart_reset(&app->uart);" not in menu
+assert "void labmate_uart_reenter(LabMateUart* uart)" in uart
+reenter = uart.split("void labmate_uart_reenter(LabMateUart* uart) {", 1)[1].split(
+    "\\n}", 1
+)[0]
+assert "saved_baud_index = uart->baud_index;" in reenter
+assert "labmate_uart_stop(uart);" in reenter
+assert "labmate_uart_reset(uart);" in reenter
+assert "uart->baud_index =" in reenter
+assert reenter.index("saved_baud_index =") < reenter.index("labmate_uart_reset(uart);") < reenter.index("uart->baud_index =")
 assert "LabMateScreenUart:" in dispatch
 assert "LabMateToolUart" in nav
 assert "LabMateGroupComm" in read("labmate_navigation.h")

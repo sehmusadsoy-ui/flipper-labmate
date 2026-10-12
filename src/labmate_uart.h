@@ -34,6 +34,8 @@ typedef struct {
 } LabMateUart;
 
 void labmate_uart_reset(LabMateUart* uart);
+/* Preserve baud across menu re-entry; clears per-session counters/text and stays STOP. */
+void labmate_uart_reenter(LabMateUart* uart);
 bool labmate_uart_start(LabMateUart* uart);
 void labmate_uart_stop(LabMateUart* uart);
 void labmate_uart_poll(LabMateUart* uart);
