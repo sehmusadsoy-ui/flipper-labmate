@@ -2,8 +2,9 @@
 
 **State: PREPARATION / NOT PUBLISHED.**
 Stable v1.6.1 release, tag and branch must remain unchanged.
-The v1.7 development source has passed build tests and specific
-on-device checks, and a separately built RC1 candidate now passes CI but has not yet been device-tested.
+RC1-labeled base FAP was physically tested. A narrowly scoped Profiles UX fix
+was separately CI-built and tested on-device (16/16 PASS). The final integrated
+RC1 candidate still needs an exact-artifact checksum/device handoff before publication.
 
 ## RC1 candidate build checkpoint (not published)
 
@@ -15,8 +16,11 @@ on-device checks, and a separately built RC1 candidate now passes CI but has not
   (Momentum SDK FAP, layout/static tests, Windows mock installer).
 - [x] CI generated artifact labmate (id 11719294967) containing
   labmate.fap and SHA256SUMS.txt; NOT a published release.
-- [ ] Verify downloaded FAP SHA256 against SHA256SUMS.txt.
-- [ ] Fresh physical smoke test of exact RC1 artifact before signoff.
+- [x] Base RC1 FAP SHA256 verified: `DB2BB859819075E0120FEF2E65131CB18127FB91B881F7C8520B4CA22277064F`.
+- [x] Profiles-fix FAP installer SHA256 verified: `ED2E91A02AB0F720D6B48EAC13D505D37570FB3A4A1F8E8A76D59E1B79FE14AA`.
+- [x] Base RC1 artifact user-tested: 27 PASS, 1 Profile LOAD/SAVE/DELETE UX FAIL (fixed afterward).
+- [x] Separate Profiles-fix artifact user-tested 16/16 PASS (Tests 6A/6B/6C).
+- [ ] Final integrated RC1 branch FAP: verify exact SHA256 and final short smoke test.
 - [ ] User approval required before any GitHub release/tag or stable change.
 
 ## 1. Provenance / source freeze
@@ -43,9 +47,9 @@ on-device checks, and a separately built RC1 candidate now passes CI but has not
   trouble during v1.6 packaging.
 - [x] Ensure RC1-specific CI runs from the candidate branch/commit
   and uploads an artifact; do not repurpose the older dev artifact as RC1.
-- [ ] Verify both source commit provenance and
-  **`labmate.fap` SHA256 against `SHA256SUMS.txt`** when downloaded.
-  An Actions artifact ZIP digest is **not** the FAP SHA256.
+- [x] Verify previous base RC1 and Profiles-fix FAPs against generated SHA256SUMS.txt
+  (user-installed exact base/fix artifacts). The Actions ZIP digest is not FAP SHA256.
+- [ ] Verify SHA256 of final **integrated RC1** artifact before device signoff.
 
 ## 2. Development physical evidence (user-reported)
 
@@ -64,12 +68,11 @@ on-device checks, and a separately built RC1 candidate now passes CI but has not
   Profiles).
 - [x] User subsequently reported the single-CSV DELETE addition
   working on their Flipper as an overall PASS.
-- [ ] **Not separately confirmed:** HISTORY DELETE confirmation
-  cancellation preserves a disposable file, unrelated CSV remains
-  readable, profile remains intact, repeated SD error paths. Test
-  with a *throwaway* CSV only; do not delete valuable logs.
+- [x] Base RC1: HISTORY DELETE cancellation preserved disposable CSV; confirmed
+  DELETE removed only disposable CSV; another existing CSV still opened.
+- [ ] Repeated SD/card failure recovery remains unverified.
 
-## 3. Fresh RC1 FAP smoke test — pending
+## 3. Fresh RC1 FAP smoke test — base completed, integrated handoff pending
 
 The following must use the *new RC1-labeled build*, not the earlier
 `v1.7d` development FAP. Use only safe built-in Flipper 3.3 V PWM,
@@ -77,27 +80,45 @@ STOP before moving any jumper, and no external voltage source.
 
 - [ ] Confirm menu/About show **v1.7rc1**, all groups and 11 icons
   render without clipping, and PWM initially shows STOP.
-- [ ] With **PA7 -> PC1**, verify PWM at 100 Hz / 95% and 5% gives
+- [x] With **PA7 -> PC1**, verify PWM at 100 Hz / 95% and 5% gives
   HIGH/LOW/PERIOD/DUTY plus STATS; check STOP/reentry.
-- [ ] On PC1, enter Frequency LOW and Button Analyzer with a suitable
+- [x] On PC1, enter Frequency LOW and Button Analyzer with a suitable
   clean 1 Hz stimulus; confirm no capture ERR or frozen screen.
   Real mechanical bounce is explicitly deferred.
-- [ ] After PWM STOP, move jumper to **PA7 -> PB3**; verify 10 Hz
+- [x] After PWM STOP, move jumper to **PA7 -> PB3**; verify 10 Hz
   Event Counter RUN/STOP/RESET, Frequency HIGH and capture handoff.
-- [ ] Exercise at least one Threshold Alerts ARM/TRIPPED/ACK/OFF
+- [x] Exercise at least one Threshold Alerts ARM/TRIPPED/ACK/OFF
   state with the applicable safe source; verify UI isn't clipped.
-- [ ] Make a brief *disposable* Data Logger CSV, STOP/close the
+- [x] Make a brief *disposable* Data Logger CSV, STOP/close the
   recording, open it in History, cancel deletion with BACK, confirm
   file still exists, then explicitly DELETE that disposable file.
   Verify list rescan and that another known CSV remains readable.
   No deletion without identifying the disposable file first.
-- [ ] Open Profiles: saved S1 remains readable; LOAD does not START
-  PWM. Do not overwrite/delete S1/S2 for an RC smoke test.
-- [ ] Fully exit LabMate while PWM RUN, relaunch and confirm STOP;
+- [x] Post-fix Profiles: saved S1 remains readable, LOAD never STARTs PWM,
+  PWM RUN blocks LOAD/SAVE/DELETE; Test 6C confirmed cancel and temporary S2 deletion.
+  User had previously deleted all profiles during confusing pre-fix UX; S1
+  was recreated for these tests.
+- [x] Base RC1: fully exit LabMate while PWM RUN, relaunch and confirm STOP;
   stop PWM explicitly when tests are finished.
 - [ ] Record any visual defects, unexpected storage errors, FAP source
   SHA and verified checksum. Update the evidence log only after
   user reports exact results.
+
+## 3A. Profiles fix validation (user-reported, 2026-10-12)
+
+- [x] Source branch: `v1.7-profiles-ux-fix`, derived directly from base RC1
+  `dcd7d32572304f0db7f3ebecbd8fe36771faa708`.
+- [x] Exact fix FAP source `f6bebbe996d22cbafe49097abde336911e5dc8c3`.
+- [x] [CI 38188798973](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38188798973)
+  2/2 PASS. Artifact `labmate` ID `11720740569`; installed to
+  `/ext/apps/Tools/labmate.fap` over COM7, SHA256 verified (above).
+- [x] Test 6A: 5/5 PASS (empty slots, SAVE confirmation, BACK cancellation,
+  S1 save, LOAD without PWM auto-start).
+- [x] Test 6B: 5/5 PASS (PWM RUN blocks LOAD, SAVE and DELETE; S1 preserved).
+- [x] Test 6C: 6/6 PASS (OVERWRITE and DELETE slot-specific warnings,
+  cancellations, disposable S2 create/delete, S1 persistence after relaunch).
+- [ ] After merging fix into candidate branch: exact integrated-build checksum,
+  short on-device launch/STOP confirmation and final release-note review.
 
 ## 4. Disclosures / non-blocking equipment gaps
 
@@ -127,4 +148,4 @@ STOP before moving any jumper, and no external voltage source.
 - [ ] On future stable promotion, request a separate explicit decision
   and verification; do not infer it from RC1 test success.
 
-**Next action:** download and SHA256-verify the isolated RC1 FAP from run 38186623651, install it on Flipper and complete the on-device smoke test. Release/tag creation still requires user approval.
+**Next action:** integrate the validated Profiles fix into `v1.7-rc1`, run fresh candidate CI, verify final artifact SHA256, perform a short device handoff check, then request explicit pre-release publication approval. No tag/release or Stable modification without user approval.
