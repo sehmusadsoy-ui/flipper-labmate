@@ -87,6 +87,27 @@ calibration or a fresh CI build.
 R10); neither overall refactor validation nor a v1.8 release is yet PASS.
 Do not merge the draft PR until device regression is complete.
 
+## Physical regression checkpoint B: R3–R5 3/3 PASS (user-reported, 2026-10-12)
+
+The operator reported these three results for the installed v1.8dev
+candidate referenced above, without requesting a new build:
+
+- **R3 Pulse Analyzer (PC1): PASS** — the 100 Hz / 50% PWM loopback
+  and HOLD/LIVE scenario were requested; the operator reported PASS.
+  No independent calibration was provided. Optional 5%/95% sweeps
+  were not separately documented in this result.
+- **R4 Frequency Meter (PC1 LOW / PB3 HIGH): PASS** — the operator
+  reported PASS for the requested two-mode frequency scenario.
+- **R5 Event Counter (PB3): PASS** — the operator reported PASS for
+  RUN/STOP/RESET in the requested 100 Hz counting scenario.
+
+**Cumulative first two checkpoints:** A1–A4 4/4 PASS plus
+R3–R5 3/3 PASS = **7/7 user-reported checks**.
+Do not represent this as a complete 10-scenario device regression.
+**Remaining:** R6 Button, R7 Alerts, R8 Logger/History, R9 Profiles,
+R10 full tool navigation/exit, plus individual all-11-tool access in R1.
+Draft PR #5 remains unmerged until those device tests pass.
+
 ## Operator-required regression before merging/using as baseline
 
 The v1.8dev FAP must be installed to a physical Flipper by a tester.
@@ -97,11 +118,12 @@ GPIO wiring while switching tools; no unknown voltages, 5 V or mains.
 - [x] R2: PWM Studio starts STOP, 100 Hz/50% RUN and STOP; leaving
       Studio via BACK keeps intentional in-app RUN; exiting LabMate
       stops output (**PASS** A2/A3, user-reported)
-- [ ] R3: Pulse PC1 100 Hz/50% with compatible PA7 loopback; HOLD/LIVE;
-      5%/95% duty cases if available
-- [ ] R4: Frequency Meter PC1 low mode and PB3 high mode after selection;
-      Timer/capture STOP on BACK
-- [ ] R5: Event Counter PB3 RUN/STOP/RESET, no cross-tool resource leakage
+- [x] R3: Pulse PC1 100 Hz/50% with compatible PA7 loopback; HOLD/LIVE
+      **PASS** (operator-reported). Optional 5%/95% sweep not separately evidenced
+- [x] R4: Frequency Meter PC1 LOW mode and PB3 HIGH mode after selection
+      **PASS** (operator-reported); no independent frequency calibration
+- [x] R5: Event Counter PB3 RUN/STOP/RESET **PASS** (operator-reported);
+      no independent long-duration resource-leak/soak test
 - [ ] R6: Button Analyzer enters STOP, details/debounce screen without
       unexpected IRQ; no real-contact bounce claims without hardware
 - [ ] R7: Threshold Alerts source, limit, ARM/ACK without crashes
