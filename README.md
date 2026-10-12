@@ -135,8 +135,9 @@ if ($LASTEXITCODE -ne 0) { throw "Stable USB installation failed" }
 The installer is release/checksum-verified and replaces one FAP,
 not the device firmware. `-VerifyOnly` never installs. The
 **Stable-channel live-USB installation PASS** on operator-provided Windows
-logs (2026-10-12). Post-reinstall on-screen v1.7/PWM STOP/S1/CSV inspection
-remains an independent, unconfirmed follow-up. Historical
+logs (2026-10-12). Subsequent user-reported post-reinstall Flipper
+checks passed 4/4: version `v1.7`, PWM STOP, Profile S1 and CSV History
+persistence. Historical
 `scripts/install-from-github.ps1` is pinned to v1.6 for rollback
 and should not be used as the v1.7 installer.
 
