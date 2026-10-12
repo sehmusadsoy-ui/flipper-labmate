@@ -38,7 +38,7 @@ void draw_uart(Canvas* canvas, LabMateApp* app) {
     } else {
         const uint8_t first = uart->terminal.cursor_row < 2U ? 0U : 1U;
         for(uint8_t i = 0U; i < 2U; ++i) {
-            canvas_draw_str(canvas, 3, (uint8_t)(43U + 9U * i),
+            canvas_draw_str(canvas, 3, (uint8_t)(40U + 9U * i),
                             uart->terminal.rows[first + i]);
         }
     }
