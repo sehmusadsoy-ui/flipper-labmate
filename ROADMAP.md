@@ -4,7 +4,7 @@
 **Current published Stable:** [v1.7 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7), source `d0e1bc6a95b257841533f0aa8745e3a79bbc8dcd`; verified FAP SHA256 `5A7CB0EAE601EEAC8856790211C4D2831A9198C31853631E1DAF0308CE724335`.  
 **Previous Stable fallback:** [v1.6.1 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1), [v1.6 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6), and older unchanged releases.  
 **Previous pre-release:** [v1.7 RC1](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7-rc1) remains available at unchanged source `d55eec03`.
-**Validation:** v1.7 refactored Stable Candidate passed 36/36 user-reported device regressions (7B screenshots); exact final `v1.7` FAP passed Test 7G 4/4 device smoke; Test 7H PowerShell `-Channel RC1 -VerifyOnly` passed; approved Stable release CI passed. **Next milestone: v1.8 Communication Tools**, followed by **v1.9 Logic Scope and Signal Compare**, then **v2.0 Ultimate**.
+**Validation:** v1.7 refactored Stable Candidate passed 36/36 user-reported device regressions (7B screenshots); exact final `v1.7` FAP passed Test 7G 4/4 device smoke; Test 7H PowerShell `-Channel RC1 -VerifyOnly` passed; approved Stable release CI passed. Full `-Channel Stable` physical USB installation remains to be operator-confirmed, without new versioning. **Next milestone: v1.8 Communication Tools**, followed by **v1.9 Logic Scope and Signal Compare**, then **v2.0 Ultimate**.
 
 ## Vision
 
@@ -58,6 +58,10 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
 - **Delivered:** Read-only Log History browser for up to 32 recent numbered CSV sessions.
 - **Validated:** A recorded CSV imported successfully in LibreOffice Calc; **Microsoft Excel was not independently tested**.
 - **Delivered:** Rate-limited records, with no microSD file writes from GPIO interrupt handlers or on each high-frequency signal edge.
+- **Deferred:** Microsoft Excel CSV open/analysis was not verified because Excel
+  is not available in the current operator environment. LibreOffice Calc import
+  succeeded; see [deferred compatibility checks](docs/DEFERRED_HARDWARE_TESTS.md).
+  No paid Excel purchase is required for the current Stable maintenance.
 - **Published:** [LabMate v1.5 Stable release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.5), with FAP, release notes and SHA-256. Physical-device tests were performed on the preceding development build; the final CI-produced FAP was installed afterward.
 - **Known untested scenario:** Real microSD failure/recovery (e.g. read/write failures, full/corrupt/unmounted media or long blocked I/O) was **not** hardware-validated; see [v1.5 release notes](RELEASE_NOTES_v1.5.md). This is a documented limitation, not an outstanding condition requiring further v1.5 tests.
 
