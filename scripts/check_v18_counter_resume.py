@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Guard v1.8 STOP/RESUME without regressing reset/capture ownership."""
 from pathlib import Path
-import re
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
@@ -37,5 +36,8 @@ assert "uint64_t counter_elapsed_ticks;" in header
 assert "labmate_counter_add_ticks(" in math
 assert "labmate_counter_elapsed_seconds(" in math
 assert "LL_TIM_" not in math and "furi_hal_" not in math and "storage_" not in math
-assert not re.search(r"labmate_counter_elapsed_seconds\\s*\\(.*0U.*\\)", start)
+poll = source.split("void labmate_event_counter_poll(", 1)[1].split(
+    "void labmate_event_counter_stop(", 1)[0]
+assert "labmate_counter_add_ticks(app->counter_elapsed_ticks, active_ticks)" in poll
+assert "labmate_counter_elapsed_seconds(total_ticks, tick_frequency)" in poll
 print("v1.8 Counter STOP/RESUME static guard PASS")
