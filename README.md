@@ -49,8 +49,8 @@ reported device checks; the exact final v1.7 FAP passed a separate
 - **Installation:** `scripts/install-v17-from-github.ps1` selects
   published Stable or RC1, checks release/tag provenance and FAP SHA256,
   then updates only `/ext/apps/Tools/labmate.fap` over USB. On-device
-  Stable-channel installation is pending an independent real Windows USB
-  follow-up; Windows CI mocks and RC1 verify-only passed.
+  Stable-channel VerifyOnly and actual COM7 USB installation both passed
+  on Windows 2026-10-12, in addition to Windows CI mock tests.
   [Installer guide](docs/V1_7_INSTALL_GUIDE.md).
 
 On-device tests cover the Flipper's own 3.3 V digital loopback, not
@@ -134,8 +134,9 @@ if ($LASTEXITCODE -ne 0) { throw "Stable USB installation failed" }
 
 The installer is release/checksum-verified and replaces one FAP,
 not the device firmware. `-VerifyOnly` never installs. The
-**Stable-channel live-USB installation test remains pending** until
-confirmed by a device operator. Historical
+**Stable-channel live-USB installation PASS** on operator-provided Windows
+logs (2026-10-12). Post-reinstall on-screen v1.7/PWM STOP/S1/CSV inspection
+remains an independent, unconfirmed follow-up. Historical
 `scripts/install-from-github.ps1` is pinned to v1.6 for rollback
 and should not be used as the v1.7 installer.
 
