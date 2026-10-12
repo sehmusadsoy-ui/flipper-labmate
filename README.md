@@ -7,9 +7,10 @@
 ![Platform](https://img.shields.io/badge/platform-Flipper%20Zero-orange)
 ![Firmware](https://img.shields.io/badge/firmware-Momentum-blueviolet)
 
-**Current Stable: [LabMate v1.7](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7)** (published 2026-10-12). Source tag
-`d0e1bc6a95b257841533f0aa8745e3a79bbc8dcd`, official FAP SHA256
-`5A7CB0EAE601EEAC8856790211C4D2831A9198C31853631E1DAF0308CE724335`.
+**Current Stable: [LabMate v1.7](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7)** (published 2026-10-12, PWM Studio naming correction applied in place).
+**Current downloadable FAP SHA256:** `A0B305E5FD8D71C85C51480EE06A8B7E5EBD5BEE0E82935B0ED3B7E74E7EBCEA`.
+**Device-tested FAP source:** `0aeb0ca7ceba092c8adb6e44add0a2212cae1a74` (CI 38290044094, 2/2 PASS, on-device naming test 4/4 PASS).
+The original `v1.7` tag stays pinned to `d0e1bc6a95b257841533f0aa8745e3a79bbc8dcd`; the newer FAP is an explicitly recorded post-tag UI-name correction, not a new version.
 
 **[Download v1.7 labmate.fap](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/download/v1.7/labmate.fap)** ·
 [SHA256SUMS.txt](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/download/v1.7/SHA256SUMS.txt) ·
@@ -88,7 +89,7 @@ test coverage, limitations and detailed outcomes.
 | **GPIO Monitor** | Digital HIGH/LOW, edge activity, LIVE/HOLD | Selectable GPIO; active PWM pin is reserved |
 | **Frequency Meter** | Frequency with LIVE, MIN/MAX and HOLD | LOW **PC1** / HIGH **PB3** |
 | **Pulse Analyzer** | HIGH/LOW time, period, duty, STATS and HOLD | **PC0, PC1, PB2, PA4** |
-| **PWM Studio / Signal Generator** | 5–95% duty, 15 presets (1 Hz–50 kHz), STOP-only CUSTOM 1–50 kHz | **PA7 output** |
+| **PWM Studio** | 5–95% duty, 15 presets (1 Hz–50 kHz), STOP-only CUSTOM 1–50 kHz | **PA7 output** |
 | **Data Logger** | One record per second into numbered microSD CSV files | LOW PC1 / HIGH PB3 / PULSE PC1 |
 | **Log History** | Read-only browsing of up to 32 recent CSV logs | microSD |
 | **Profiles** | SAVE / LOAD / DELETE in 3 slots, with CRC-checked redundant storage | microSD |
