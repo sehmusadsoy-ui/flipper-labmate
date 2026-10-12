@@ -24,9 +24,10 @@ try {
     if(-not (Get-Command gh -ErrorAction SilentlyContinue)) {
         throw 'GitHub CLI missing: install gh and authenticate with gh auth login.'
     }
-    & gh auth status --hostname github.com 2>&1 | Out-Null
-    if($LASTEXITCODE -ne 0) { throw 'Run gh auth login and retry.' }
-
+    # 'gh auth status' writes normal status output to stderr. With
+    # Windows PowerShell 5.1 and ErrorActionPreference=Stop that can
+    # spuriously abort even with exit code zero. The API calls below
+    # validate the actual GitHub operation and its exit status instead.
     $refJson = & gh api "repos/$repo/git/ref/tags/$tag"
     if($LASTEXITCODE -ne 0) { throw "Official $tag tag not found." }
     $ref = ($refJson -join "`n") | ConvertFrom-Json
