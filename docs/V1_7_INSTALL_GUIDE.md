@@ -59,15 +59,18 @@ successful `-Channel Stable -VerifyOnly` output and actual
 source tag, exact official SHA256 and fixed FAP destination. USB tool
 reported `Launching app` and `SUCCESS: v1.7 installed`. **Stable release
 installer/USB path: PASS.** A separate post-install visual check of
-`v1.7`, PWM STOP, S1 and preserved CSV files is still to be reported.
+`v1.7`, PWM STOP, S1 and preserved CSV files was then completed with
+**4/4 PASS, user-reported, 2026-10-12**.
 The verification did not modify the published release.
 
 ## 3. Device regression after install
 
-**Pending explicit post-install check:** inspect menu/About version
-`v1.7`, initial PWM STOP, Profile S1 retention and previously saved
-History CSV files. A successful USB installer exit alone does not prove
-these post-install screens and stored records were inspected. A
+**Post-install visual and data inspection completed:** user confirmed
+**4/4 PASS (2026-10-12)**: menu/About displayed `v1.7`, initial PWM
+was STOP, Profile S1 was preserved, and older History CSV files opened.
+This verification was performed separately from the successful USB
+installer exit. No screenshots or exported CSV were supplied for this
+specific post-install check. A
 freshly installed FAP should overwrite the same single Tools app
 entry; no duplicate LabMate app is expected. Stop PWM before
 changing any jumper wiring; use known 3.3 V-compatible signals only.
