@@ -64,9 +64,17 @@ firmware. The final release asset will replace only
   7F 11 tools, 13 About pages, 5-minute navigation, resource
   cleanup and persistence 6/6. Only 7B timings were screenshot-reviewed;
   the other checks are user reports.
-- **Final stable-label source commit:** PENDING FINAL CI
-- **Final Stable FAP SHA256:** PENDING FINAL CI
-- **Final Stable-labeled device smoke:** PENDING REAL DEVICE
+- **Final stable-label FAP source commit:** `1f7a47b2b44e48a4792e1ddce81e3a82f7f3137b`.
+  Final build [CI 38234204272](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38234204272)
+  **2/2 PASS**, Momentum SDK 87.1, plus Windows mock installer.
+- **Final stable-label FAP SHA256:** `5A7CB0EAE601EEAC8856790211C4D2831A9198C31853631E1DAF0308CE724335`
+  from final CI logs; `SHA256SUMS.txt` created and checked in CI.
+  After documentation or installer-only commits, any new final FAP
+  must have its hash checked against this tested binary.
+- **Final `v1.7`-labeled device smoke:** Test 7G **4/4 PASS**,
+  user-reported 2026-10-12. Menu/About version, startup/STOP,
+  Profiles S1/CSV persistence, and 100 Hz/50% PWM to PC1 Pulse
+  signal verified. This smoke is separate from 36/36 candidate tests.
 - **v1.7 Stable publication:** PENDING SEPARATE EXPLICIT APPROVAL.
   Do not publish or copy candidate RC1 checksum as final Stable.
 
