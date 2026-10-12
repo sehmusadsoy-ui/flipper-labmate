@@ -83,9 +83,9 @@ calibration or a fresh CI build.
   records remain visible after install. Full profile write guards, Logger
   capture, CSV open/delete confirmations remain to test in R8/R9.
 
-**Remaining:** complete R3 through R10 (and all 11 tool entry checks in
-R10); neither overall refactor validation nor a v1.8 release is yet PASS.
-Do not merge the draft PR until device regression is complete.
+**At the time of checkpoint A**, R3–R10 were pending. The later
+checkpoints B–D below complete the full device regression; v1.8 release
+itself remains pending.
 
 ## Physical regression checkpoint B: R3–R5 3/3 PASS (user-reported, 2026-10-12)
 
@@ -104,9 +104,8 @@ candidate referenced above, without requesting a new build:
 **Cumulative first two checkpoints:** A1–A4 4/4 PASS plus
 R3–R5 3/3 PASS = **7/7 user-reported checks**.
 Do not represent this as a complete 10-scenario device regression.
-**Remaining:** R6 Button, R7 Alerts, R8 Logger/History, R9 Profiles,
-R10 full tool navigation/exit, plus individual all-11-tool access in R1.
-Draft PR #5 remains unmerged until those device tests pass.
+**At the time of checkpoint B**, R6–R10 were pending. Checkpoints C and D
+below subsequently report PASS; merge remains subject to CI verification.
 
 ## Physical regression checkpoint C: R6–R8 3/3 PASS (user-reported, 2026-10-12)
 
@@ -123,12 +122,33 @@ previously installed v1.8dev refactor candidate:
   History access checks passed as reported. No SD-fault injection,
   independent CSV parser validation or destructive History test claimed.
 
-**Cumulative:** A1–A4 (4/4), R3–R5 (3/3) and R6–R8 (3/3) =
-**10/10 reported individual checks** across the first three test groups.
-The remaining mandatory scenarios are **R9 full Profiles LOAD/SAVE/DELETE
-and write-guard verification**, plus **R10 About, all 11 tool launches,
-repeated navigation and clean exit**. The complete R1–R10 suite is
-**not finished**. Draft PR #5 is still unmerged.
+**At checkpoint C**, 10/10 individual checks had passed; R9/R10 were
+pending. See checkpoint D for the final 12/12 outcome.
+
+## Physical regression checkpoint D: R9–R10 2/2 PASS (user-reported, 2026-10-12)
+
+The operator returned **R9 Profiles PASS** and **R10 General Stability PASS**
+for the previously installed, hash-verified v1.8dev refactor candidate.
+
+- **R9 Profiles PASS:** following the supplied device checklist, the
+  operator verified S1 preservation plus profile SAVE/LOAD/DELETE
+  confirmation in a spare slot and profile write protection while PWM runs.
+  No destructive SD corruption/full-card tests were performed.
+- **R10 Stability PASS:** following the supplied checklist, the operator
+  checked all 11 tool entries, About paging, repeated navigation, clean
+  application exit/relaunch and retention of prior CSV files.
+
+**Refactor device regression: R1–R10 PASS (user-reported)**, consisting
+of **12/12 individual checkpoint responses**: A1–A4 (4), R3–R5 (3),
+R6–R8 (3), R9–R10 (2). R1's all-tool coverage was concluded with R10.
+This is functional device regression, not independent calibration or
+a guarantee of long-duration/SD-failure resilience.
+
+**Release decision:** close the coordinator refactor with PR #5 only
+after confirming CI and GitHub branch safety. Official v1.7 stable release
+remains unchanged; no v1.8 Stable release is authorized by these checks.
+Optional Counter STOP/RESUME improvement is separately scoped and has
+not been implemented in this tested binary.
 
 ## R5 UX observation — current STOP / RUN resets count (2026-10-12)
 
@@ -154,7 +174,8 @@ The v1.8dev FAP must be installed to a physical Flipper by a tester.
 Use safe internally generated 3.3 V GPIO signals only and remove any
 GPIO wiring while switching tools; no unknown voltages, 5 V or mains.
 
-- [ ] R1: `v1.8dev` label and 4 groups **PASS** (A1); all 11 original tools reachable **PENDING** (R10)
+- [x] R1: `v1.8dev` label, four groups **PASS** (A1); all 11 original
+      tools accessible **PASS** (R10, user-reported)
 - [x] R2: PWM Studio starts STOP, 100 Hz/50% RUN and STOP; leaving
       Studio via BACK keeps intentional in-app RUN; exiting LabMate
       stops output (**PASS** A2/A3, user-reported)
@@ -169,15 +190,16 @@ GPIO wiring while switching tools; no unknown voltages, 5 V or mains.
 - [x] R7: Threshold Alerts source, limit, ARM/ACK **PASS** (user-reported)
 - [x] R8: Data Logger three modes, STOP/close, new and existing CSV History
       access **PASS** (user-reported)
-- [ ] R9: Profiles S1 survives install (**PASS** A4); LOAD/SAVE/DELETE confirmation;
-      active PWM/capture guard blocks profile writes
-- [ ] R10: About pages, menu navigation, repeated tool entry/exit and
-      application exit work without freeze; saved CSVs remain present
+- [x] R9: Profiles S1 preserved, LOAD/SAVE/DELETE confirmations and
+      write guard during active PWM **PASS** (user-reported)
+- [x] R10: About pages, all tool entries, repeated navigation, clean
+      exit/relaunch and existing CSVs **PASS** (user-reported)
 
 Tests requiring mechanical switch, calibrated timing instrumentation,
 Excel or destructive SD errors remain in `docs/DEFERRED_HARDWARE_TESTS.md`.
-No one should claim this refactor has passed a real device regression until
-the tester submits results.
+The tester has submitted PASS for the full functional R1–R10 regression;
+independent oscilloscope calibration and deferred reliability tests remain
+outstanding.
 
 ## Next features once coordinator baseline passes
 
