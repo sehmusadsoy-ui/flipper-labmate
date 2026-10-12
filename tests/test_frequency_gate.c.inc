@@ -78,7 +78,26 @@ static void check_counter_and_cycle_wrap(void) {
                  LabMateHighGatePublish, 320000U);
 }
 
+static void check_low_period_conversion(void) {
+    uint32_t measured = 777U;
+    assert(labmate_low_period_to_millihz(64000000U, CPU_HZ, &measured));
+    assert(measured == 1000U); /* 1 Hz */
+    assert(labmate_low_period_to_millihz(6400000U, CPU_HZ, &measured));
+    assert(measured == 10000U); /* 10 Hz */
+    assert(labmate_low_period_to_millihz(640000U, CPU_HZ, &measured));
+    assert(measured == 100000U); /* 100 Hz */
+    assert(labmate_low_period_to_millihz(64000U, CPU_HZ, &measured));
+    assert(measured == 1000000U); /* 1 kHz */
+    assert(labmate_low_period_to_millihz(3U, 1U, &measured));
+    assert(measured == 333U); /* nearest millihertz */
+    assert(!labmate_low_period_to_millihz(0U, CPU_HZ, &measured));
+    assert(!labmate_low_period_to_millihz(1U, 0U, &measured));
+    assert(!labmate_low_period_to_millihz(1U, CPU_HZ, 0));
+    assert(measured == 333U); /* invalid inputs must not overwrite */
+}
+
 int main(void) {
+    check_low_period_conversion();
     /* An isolated edge can never produce a fake 10 Hz reading. */
     check_result(1U, TENTH_SECOND, LabMateHighGateWait, 0U);
     check_result(0U, CPU_HZ * 3U, LabMateHighGateNoSample, 0U);

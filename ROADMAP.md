@@ -1,9 +1,10 @@
 # LabMate Master Roadmap — v1.0 to v2.0
 
-**Status:** Updated 2026-10-10 after publication of v1.6 Stable.  
-**Current Stable baseline:** [v1.6 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6), published 2026-10-10 (FAP and SHA256).  
-**Previous Stable fallback:** [v1.5 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.5); v1.4 and older tags remain available.  
-**Next development milestone:** v1.7 — PWM Studio and Counter. v1.6 measurement and storage logic is now frozen in the `v1.6` release tag.
+**Status:** Updated 2026-10-12 after the verified publication of v1.7 Stable. v1.8 and v1.9 remain mandatory planned milestones before v2.0.  
+**Current published Stable:** [v1.7 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7), source `d0e1bc6a95b257841533f0aa8745e3a79bbc8dcd`; verified FAP SHA256 `5A7CB0EAE601EEAC8856790211C4D2831A9198C31853631E1DAF0308CE724335`.  
+**Previous Stable fallback:** [v1.6.1 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1), [v1.6 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6), and older unchanged releases.  
+**Previous pre-release:** [v1.7 RC1](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7-rc1) remains available at unchanged source `d55eec03`.
+**Validation:** v1.7 refactored Stable Candidate passed 36/36 user-reported device regressions (7B screenshots); exact final `v1.7` FAP passed Test 7G 4/4 device smoke; Test 7H PowerShell `-Channel RC1 -VerifyOnly` passed; approved Stable release CI passed. Full `-Channel Stable` physical USB installation remains to be operator-confirmed, without new versioning. **Next milestone: v1.8 Communication Tools**, followed by **v1.9 Logic Scope and Signal Compare**, then **v2.0 Ultimate**.
 
 ## Vision
 
@@ -57,6 +58,10 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
 - **Delivered:** Read-only Log History browser for up to 32 recent numbered CSV sessions.
 - **Validated:** A recorded CSV imported successfully in LibreOffice Calc; **Microsoft Excel was not independently tested**.
 - **Delivered:** Rate-limited records, with no microSD file writes from GPIO interrupt handlers or on each high-frequency signal edge.
+- **Deferred:** Microsoft Excel CSV open/analysis was not verified because Excel
+  is not available in the current operator environment. LibreOffice Calc import
+  succeeded; see [deferred compatibility checks](docs/DEFERRED_HARDWARE_TESTS.md).
+  No paid Excel purchase is required for the current Stable maintenance.
 - **Published:** [LabMate v1.5 Stable release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.5), with FAP, release notes and SHA-256. Physical-device tests were performed on the preceding development build; the final CI-produced FAP was installed afterward.
 - **Known untested scenario:** Real microSD failure/recovery (e.g. read/write failures, full/corrupt/unmounted media or long blocked I/O) was **not** hardware-validated; see [v1.5 release notes](RELEASE_NOTES_v1.5.md). This is a documented limitation, not an outstanding condition requiring further v1.5 tests.
 
@@ -70,12 +75,35 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
 - **Validated:** Menus, capture, STATS/HOLD, profiles, Data Logger/History and final Stable FAP startup smoke on a physical Flipper.
 - **Published:** [LabMate v1.6 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6). Independent reference calibration and destructive SD fault-injection remain outside the demonstrated test coverage.
 
-### v1.7 — PWM Studio and Counter
+### v1.6.1 — Maintenance and verified Stable (published 2026-10-10)
 
-- Adjustable PWM duty cycle, custom frequency selection, and safe persistent generator control.
-- Genuine event/pulse counting appropriate to the available GPIO and hardware timers.
-- Push-button bounce/response testing and configurable threshold alerts.
-- Validate output frequency, duty cycle, and switching behavior on device.
+- **Delivered:** Additional capture ownership, GPIO/EXTI release and low/high frequency reliability hardening, plus modular logger and pulse/frequency math extraction.
+- **Validated:** Physical Gate A (8/8) and Gate B (6/6) on RC1 source; final INFO follow-up (3/3) on Stable source. These were not independent metrology calibration.
+- **Published:** [v1.6.1 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1) from `bc63271a`; release assets and checksum remain unchanged.
+- **Version label maintenance:** A later `v1.6.1-dev` build corrected the device display/manifest version without replacing the published Stable artifact. That locally installed build is the source baseline for `v1.7-dev`.
+- **Deferred to v1.7:** extraction of remaining physical capture drivers and stronger centralized GPIO/TIM/EXTI ownership, alongside the official v1.7 functional scope.
+
+### v1.7 — PWM Studio and Counter (Stable published 2026-10-12)
+
+- **Delivered in RC1:** adjustable PWM duty (5–95%), STOP-only CUSTOM
+  1–50,000 Hz, persistent in-app generator RUN and STOP on full exit.
+- **Delivered:** genuine PB3/TIM2 edge Event Counter, PC1 Button Analyzer,
+  and four visual Threshold Alert sources.
+- **Validated:** user-reported 3.3 V Flipper loopback checks for representative
+  frequencies/duty, Pulse timing, Counter, Threshold, Logger/History and
+  Profiles. Specific Profiles issue fixed and 16/16 targeted device checks PASS.
+  Final release FAP SHA256 matches the tested Profiles-fix artifact.
+- **Still NOT TESTED:** real mechanical button bounce/settle,
+  independent calibrated PWM voltage/frequency/duty/OFF measurement,
+  destructive SD failure cases and exhaustive extremes. These stay on the
+  living [hardware test backlog](docs/DEFERRED_HARDWARE_TESTS.md).
+- **Stable delivered:** measurement/logger/alert code modularization,
+  release-verified GitHub-to-USB installer, 36/36 user-reported candidate
+  regressions plus 4/4 exact final FAP smoke checks and real Windows
+  RC1 verify-only installer PASS. Official non-prerelease `v1.7` tag,
+  `labmate.fap` and checksum published; previous releases untouched.
+  Missing physical contact, calibrated scope and destructive SD tests
+  remain explicitly deferred.
 
 ### v1.8 — Communication Tools
 
@@ -116,8 +144,8 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
 | v1.3 | Foundational digital instruments | Stable published |
 | v1.4 | Frequency and pulse MIN/MAX, signal-loss behavior, UI stability | Stable published |
 | **v1.5** | **Data Logger, CSV recording and Log History** | **Stable published 2026-10-09** |
-| v1.6 | Code/UI refactor | In progress on `v1.6-dev` (development only) |
-| v1.7 | PWM Studio and Counter | Planned |
+| v1.6 | Code/UI refactor | Stable published; v1.6.1 remains a previous Stable fallback |
+| **v1.7** | **PWM Studio and Counter** | **Stable published 2026-10-12; current Stable** |
 | v1.8 | UART, I²C, possible 1-Wire tools | Planned |
 | v1.9 | Logic Scope and Signal Compare | Planned |
 | v2.0 | LabMate Ultimate / Signal Doctor | Planned |

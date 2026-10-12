@@ -32,6 +32,8 @@ typedef enum {
     LabMateCaptureFrequencyLow,
     LabMateCaptureFrequencyHigh,
     LabMateCapturePulse,
+    LabMateCaptureCounter, /* PB3 / TIM2 external hardware rising-edge count */
+    LabMateCaptureButton, /* PC1 / EXTI1 active-low dry-contact analyzer */
 } LabMateCaptureOwner;
 
 // Reject invalid capture inputs (Pulse only permits PC0/PC1/PB2/PA4).
@@ -57,3 +59,14 @@ bool labmate_capture_matches(
     bool frequency_low_active,
     bool frequency_high_active,
     bool pulse_active);
+
+/* Release only the matching capture owner after its hardware is detached.
+ * A stale/non-owner stop must not clear another active tool's ownership.
+ */
+LabMateCaptureOwner labmate_capture_owner_after_stop(
+    LabMateCaptureOwner current, LabMateCaptureOwner stopping);
+
+/* Final software teardown may clear the capture owner only when all
+ * capture engines report inactive. TIM1/PA7 generator is independent. */
+bool labmate_capture_all_stopped(
+    bool frequency_low_active, bool frequency_high_active, bool pulse_active);

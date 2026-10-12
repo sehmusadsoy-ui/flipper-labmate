@@ -33,3 +33,10 @@ LabMateHighGateResult labmate_high_gate_evaluate(
     uint32_t elapsed_cycles,
     uint32_t core_clock_hz,
     uint32_t* output_millihz);
+
+/* PC1 period-to-frequency conversion used by the app-thread estimator.
+ * Preserve the existing 64-bit intermediate and nearest-millihertz rounding.
+ * False leaves output untouched; IRQ capture and sample filtering stay in core.
+ */
+int labmate_low_period_to_millihz(
+    uint32_t period_cycles, uint32_t core_clock_hz, uint32_t* output_millihz);

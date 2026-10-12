@@ -43,6 +43,10 @@ bool labmate_capture_pin_allowed(LabMateCaptureOwner requested, uint8_t pin_inde
     case LabMateCapturePulse:
         return pin_index == 0U || pin_index == 1U ||
                pin_index == 3U || pin_index == 5U;
+    case LabMateCaptureCounter:
+        return pin_index == 4U; /* PB3/TIM2 exclusive, same physical input as HIGH */
+    case LabMateCaptureButton:
+        return pin_index == LABMATE_MONITOR_PC1_INDEX; /* PC1 EXTI1 only */
     case LabMateCaptureNone:
     default:
         return false;
@@ -83,4 +87,15 @@ bool labmate_capture_matches(
     default:
         return false;
     }
+}
+
+LabMateCaptureOwner labmate_capture_owner_after_stop(
+    LabMateCaptureOwner current, LabMateCaptureOwner stopping) {
+    if(stopping == LabMateCaptureNone || current != stopping) return current;
+    return LabMateCaptureNone;
+}
+
+bool labmate_capture_all_stopped(
+    bool frequency_low_active, bool frequency_high_active, bool pulse_active) {
+    return !frequency_low_active && !frequency_high_active && !pulse_active;
 }

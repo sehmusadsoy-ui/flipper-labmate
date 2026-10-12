@@ -7,21 +7,57 @@
 ![Platform](https://img.shields.io/badge/platform-Flipper%20Zero-orange)
 ![Firmware](https://img.shields.io/badge/firmware-Momentum-blueviolet)
 
-**LabMate v1.6 Stable is published.** The app combines a GPIO Monitor,
-Frequency Meter, Pulse Analyzer, Signal Generator, CSV Data Logger,
-Log History and three saved Profiles.
+**Current Stable: [LabMate v1.7](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7)** (published 2026-10-12). Source tag
+`d0e1bc6a95b257841533f0aa8745e3a79bbc8dcd`, official FAP SHA256
+`5A7CB0EAE601EEAC8856790211C4D2831A9198C31853631E1DAF0308CE724335`.
 
-**[Download v1.6 Stable FAP](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/download/v1.6/labmate.fap)** ·
-[SHA256 checksum](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/download/v1.6/SHA256SUMS.txt) ·
-[Release notes](RELEASE_NOTES_v1.6.md) ·
-[Official GitHub Release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6) ·
-[Previous v1.5 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.5) ·
-[Changelog](CHANGELOG.md)
+**[Download v1.7 labmate.fap](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/download/v1.7/labmate.fap)** ·
+[SHA256SUMS.txt](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/download/v1.7/SHA256SUMS.txt) ·
+[Stable release notes](RELEASE_NOTES_v1.7.md) ·
+[Installation guide](docs/V1_7_INSTALL_GUIDE.md) ·
+[Roadmap](ROADMAP.md) ·
+[Deferred hardware / compatibility tests](docs/DEFERRED_HARDWARE_TESTS.md)
+
+Previous [v1.6.1 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1)
+and [v1.7 RC1](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7-rc1)
+tags/assets are preserved. The refactored candidate passed 36/36 operator-
+reported device checks; the exact final v1.7 FAP passed a separate
+4/4 on-device smoke test. Functional loopback is not independent calibration.
 
 > [!IMPORTANT]
 > **3.3 V GPIO ONLY.** Never connect unknown voltage, 5 V, automotive,
 > mains or other high-voltage signals directly to Flipper Zero GPIO.
 > Use only verified, compatible digital signals and safe equipment.
+
+## What's new in v1.7 Stable
+
+- **PWM Studio (PA7/TIM1):** 5–95% duty in 5% steps; 15 presets
+  plus STOP-only custom 1–50,000 Hz; PWM can continue across menu
+  navigation, but application exit stops it.
+- **Event Counter (PB3/TIM2):** actual rising-edge count, RUN/STOP/RESET
+  and elapsed time (not a frequency-derived estimate).
+- **Button Analyzer (PC1):** digital press/release, configurable
+  5/10/20/50 ms debounce, bounce/settling/hold readouts. **Real
+  mechanical contact bounce has not yet been tested.**
+- **Threshold Alerts:** visual latch and acknowledgement for Frequency,
+  Pulse Duty, Event Count and Button Settling.
+- **Records:** read-only CSV History with explicit selected-file DELETE
+  confirmation; enhanced Profiles confirmation/cancel protection.
+- **Code quality:** measurement aggregation, CSV sampling, and Threshold
+  validation separated from the application coordinator, alongside
+  existing driver/UI/storage modules.
+- **Installation:** `scripts/install-v17-from-github.ps1` selects
+  published Stable or RC1, checks release/tag provenance and FAP SHA256,
+  then updates only `/ext/apps/Tools/labmate.fap` over USB. On-device
+  Stable-channel installation is pending an independent real Windows USB
+  follow-up; Windows CI mocks and RC1 verify-only passed.
+  [Installer guide](docs/V1_7_INSTALL_GUIDE.md).
+
+On-device tests cover the Flipper's own 3.3 V digital loopback, not
+independent calibrated measurements. External oscilloscope, real
+mechanical switch and destructive microSD fault testing are deferred.
+Keep important CSV/profile backups. Existing v1.6/v1.6.1 downloads
+remain available.
 
 ## What changed in v1.6
 
@@ -52,10 +88,13 @@ test coverage, limitations and detailed outcomes.
 | **GPIO Monitor** | Digital HIGH/LOW, edge activity, LIVE/HOLD | Selectable GPIO; active PWM pin is reserved |
 | **Frequency Meter** | Frequency with LIVE, MIN/MAX and HOLD | LOW **PC1** / HIGH **PB3** |
 | **Pulse Analyzer** | HIGH/LOW time, period, duty, STATS and HOLD | **PC0, PC1, PB2, PA4** |
-| **Signal Generator** | 50% duty hardware PWM with 15 presets (1 Hz–50 kHz) | **PA7 output** |
+| **PWM Studio / Signal Generator** | 5–95% duty, 15 presets (1 Hz–50 kHz), STOP-only CUSTOM 1–50 kHz | **PA7 output** |
 | **Data Logger** | One record per second into numbered microSD CSV files | LOW PC1 / HIGH PB3 / PULSE PC1 |
 | **Log History** | Read-only browsing of up to 32 recent CSV logs | microSD |
 | **Profiles** | SAVE / LOAD / DELETE in 3 slots, with CRC-checked redundant storage | microSD |
+| **Event Counter** | Hardware rising-edge count, elapsed time, RUN/STOP/RESET | **PB3 / TIM2** |
+| **Button Analyzer** | Digital contact, press/release, debounce and metrics | **PC1** |
+| **Threshold Alerts** | Visual alarm latch/acknowledge for four measurements | Measurement sources |
 
 ### Controls
 
@@ -63,34 +102,42 @@ test coverage, limitations and detailed outcomes.
   OK to toggle HOLD/LIVE, UP to reset MIN/MAX.
 - **Pulse Analyzer:** LEFT/RIGHT to switch supported capture pins,
   OK HOLD/LIVE, UP STATS page, DOWN reset STATS while LIVE.
-- **Signal Generator:** LEFT/RIGHT select preset, OK RUN/STOP.
-  BACK may leave the intentionally running PWM active in the
-  app; exiting LabMate turns it off.
+- **PWM Studio:** LEFT/RIGHT select preset, UP/DOWN adjust duty,
+  OK RUN/STOP; hold OK while STOP for CUSTOM frequency editor.
+  BACK may leave intentionally running PWM active in-app;
+  fully exiting LabMate stops it.
 - **Data Logger:** LEFT/RIGHT select logging mode while stopped,
   OK REC/STOP, BACK saves/returns.
-- **Log History:** UP/DOWN select, OK opens read-only details.
+- **Log History:** UP/DOWN select, LEFT/RIGHT switch OPEN/DELETE;
+  selected-file DELETE requires an explicit second OK, BACK cancels.
 - **Profiles:** UP/DOWN slot, LEFT/RIGHT LOAD/SAVE/DELETE,
   OK selects and confirms destructive actions, BACK cancels.
 
-## Install v1.6 Stable
+## Install v1.7 Stable
 
-Download `labmate.fap` from the [v1.6 Stable release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6)
-and place it at `/ext/apps/Tools/labmate.fap` on a Flipper Zero
-running a compatible Momentum Firmware SDK/API. Open
-**Apps → Tools → LabMate**. The application shows `v1.6`.
+Download the published `labmate.fap` and `SHA256SUMS.txt`
+from the [v1.7 Stable release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7),
+verify the FAP hash, and install to `/ext/apps/Tools/labmate.fap`.
+The device should show `v1.7`.
 
-**Optional automated PowerShell/USB install (Windows, GitHub CLI):**
-`scripts/install-from-github.ps1` on `main` downloads the **published
-v1.6 Stable release assets**, validates the pinned v1.6 tag and
-SHA256, then installs over COM7 by default. This updates only the
-external app FAP, not the Momentum firmware. Example:
+**Windows / PowerShell + USB (verified release channel):** download the
+installer from immutable `v1.7` source, review it and run:
 
 ```powershell
-$script = "$env:TEMP\install-labmate-stable.ps1"
-Invoke-WebRequest -UseBasicParsing "https://raw.githubusercontent.com/sehmusadsoy-ui/flipper-labmate/main/scripts/install-from-github.ps1" -OutFile $script
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script -Port COM7
-if ($LASTEXITCODE -ne 0) { throw "LabMate Stable install failed" }
+$script = "$env:TEMP\install-labmate-v17-stable.ps1"
+Invoke-WebRequest -UseBasicParsing "https://raw.githubusercontent.com/sehmusadsoy-ui/flipper-labmate/v1.7/scripts/install-v17-from-github.ps1" -OutFile $script
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script -Channel Stable -VerifyOnly
+if ($LASTEXITCODE -ne 0) { throw "Stable verification failed" }
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script -Channel Stable -Port COM7
+if ($LASTEXITCODE -ne 0) { throw "Stable USB installation failed" }
 ```
+
+The installer is release/checksum-verified and replaces one FAP,
+not the device firmware. `-VerifyOnly` never installs. The
+**Stable-channel live-USB installation test remains pending** until
+confirmed by a device operator. Historical
+`scripts/install-from-github.ps1` is pinned to v1.6 for rollback
+and should not be used as the v1.7 installer.
 
 Requires `gh auth login` once, a matching local Momentum Firmware
 checkout (default: `$HOME\Momentum-Firmware`) and a USB-connected
@@ -108,30 +155,29 @@ software upgrades. Do not remove the microSD card during data access.
   adaptive gate.
 - Pulse Analyzer captures compatible GPIO edge timings, with a
   five-sample median for high-speed MIN/MAX observations.
-- Generator PA7 hardware PWM uses a fixed 50% duty at
-  `1, 2, 5, 10, 20, 50, 100, 200, 500` Hz and
-  `1, 2, 5, 10, 20, 50` kHz.
+- Generator PA7/TIM1 PWM supports 5–95% duty in 5% increments,
+  15 presets and STOP-only CUSTOM frequency from 1–50,000 Hz.
 - Data Logger supports one processed sample per second.
   Log History displays recent sessions read-only.
 
-**Device-tested:** HIGH PB3 at 1/2/10 Hz and 1/5/10/20/50 kHz
-discrete generator presets; PC1 Pulse Analyzer at 100 Hz and 1 kHz
-50% duty; PA7 BUSY/STOP protection; profile operations and persistence;
-CSV Logger and History. The precise released v1.6 build passed a
-physical startup/screen/profile/history/STOP smoke test plus
-[CI regression tests](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38007158577).
+**Device-tested:** the refactored candidate was validated through
+7A–7F (36/36 operator-reported PASS) and the exact final v1.7 binary
+through 7G (4/4 PASS). Published assets match the final tested FAP
+SHA256. Real mechanical switch, calibrated scope and destructive SD
+tests remain deferred. **Microsoft Excel CSV import is NOT TESTED;**
+LibreOffice Calc import succeeded.
 
 **Limitations:** Built-in Flipper signal generation and measurement
-share timing references, so their agreement does **not** constitute
-independent calibration or certified accuracy. Measurements on every
-possible external frequency, pin and duty cycle have not been
-verified. Deliberate full/corrupt/unmounted microSD or abrupt power
-loss fault testing has not been performed. Refer to the
-[release notes](RELEASE_NOTES_v1.6.md) for details.
+share timing references; agreement does **not** constitute
+independent calibration or certified accuracy. External inputs and
+all duty/frequency combinations are not exhaustively verified.
+Deliberate full/corrupt/unmounted microSD and abrupt power loss
+fault tests remain undone. See [v1.7 release notes](RELEASE_NOTES_v1.7.md)
+and [deferred checks](docs/DEFERRED_HARDWARE_TESTS.md).
 
 ## Build from source
 
-The v1.6 app is modular: keep `application.fam`, the app icon and
+The v1.7 app is modular: keep `application.fam`, the app icon and
 **all** root-level `labmate*.c` / `labmate*.h` files together.
 Do not copy only `labmate.c`; it depends on the other modules.
 
@@ -143,15 +189,15 @@ In a matching Momentum Firmware checkout, place the sources at
 ```
 
 For reproducible Linux/Windows CI compilation, see
-[the source workflow](.github/workflows/build-v1.6.yml).
+[the v1.7 source workflow](.github/workflows/build-v1.7.yml).
 The release FAP was compiled against the Momentum **dev** SDK.
 Firmware/API mismatches may require a rebuild.
 
 ## Project links
 
-- [LabMate v1.6 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6) ·
-  [Stable release notes](RELEASE_NOTES_v1.6.md) ·
-  [v1.5 previous Stable](RELEASE_NOTES_v1.5.md)
+- [LabMate v1.7 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7) ·
+  [Stable release notes](RELEASE_NOTES_v1.7.md) ·
+  [Previous v1.6.1 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1)
 - [Master roadmap](ROADMAP.md) ·
   [Changelog](CHANGELOG.md) ·
   [v1.6 device test report](docs/V1_6_FIRST_DEVICE_TEST.md)

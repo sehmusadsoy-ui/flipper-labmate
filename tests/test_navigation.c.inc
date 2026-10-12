@@ -1,4 +1,4 @@
-/* Portable navigation tests: exhaustive access to all 8 tools.
+/* Portable navigation tests: exhaustive access to all 11 tools.
  * Do not include this host test in the firmware FAP build.
  */
 #include "labmate_navigation.h"
@@ -7,12 +7,12 @@
 #include <stdio.h>
 
 int main(void) {
-    const uint8_t expected_sizes[] = {3U, 1U, 3U, 1U};
+    const uint8_t expected_sizes[] = {5U, 2U, 3U, 1U};
     const uint8_t expected_tools[][LABMATE_NAV_MAX_CHILDREN] = {
-        {LabMateToolGpio, LabMateToolFrequency, LabMateToolPulse},
-        {LabMateToolGenerator, LabMateToolInvalid, LabMateToolInvalid},
-        {LabMateToolLogger, LabMateToolHistory, LabMateToolProfiles},
-        {LabMateToolAbout, LabMateToolInvalid, LabMateToolInvalid},
+        {LabMateToolGpio, LabMateToolFrequency, LabMateToolPulse, LabMateToolCounter, LabMateToolButton},
+        {LabMateToolGenerator, LabMateToolAlerts, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
+        {LabMateToolLogger, LabMateToolHistory, LabMateToolProfiles, LabMateToolInvalid, LabMateToolInvalid},
+        {LabMateToolAbout, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
     };
     uint8_t visits[LabMateToolCount] = {0};
     for(uint8_t group = 0U; group < LabMateGroupCount; ++group) {
@@ -44,12 +44,35 @@ int main(void) {
     assert(labmate_nav_first_visible(2U, 5U, 0U) == 0U);
     assert(labmate_nav_group_size(255U) == 0U);
     assert(labmate_nav_tool_at(255U, 0U) == LabMateToolInvalid);
-    assert(labmate_nav_tool_at(0U, 3U) == LabMateToolInvalid);
+    assert(labmate_nav_tool_at(0U, 3U) == LabMateToolCounter);
+    assert(labmate_nav_tool_at(0U, 4U) == LabMateToolButton);
+    assert(labmate_nav_tool_at(0U, 5U) == LabMateToolInvalid);
+    assert(labmate_nav_tool_at(1U, 1U) == LabMateToolAlerts);
     assert(labmate_nav_tool_title(255U)[0] == '\0');
     assert(labmate_nav_group_title(255U)[0] == '\0');
     assert(labmate_nav_wrap(200U, 0U, 1) == 0U);
     assert(labmate_nav_wrap(255U, 3U, 1) == 1U);
     assert(labmate_nav_wrap(255U, 3U, -1) == 2U);
-    puts("LabMate v1.6 navigation mapping/wrap: all 8 tools reachable once");
+    /* Gate A: all menu selections stay visible within a 3-row viewport.
+     * Exercise every reachable row, not only the historical spot checks. */
+    for(uint8_t count = 1U; count <= 10U; ++count) {
+        for(uint8_t selected = 0U; selected < count; ++selected) {
+            const uint8_t start = labmate_nav_first_visible(selected, count, 3U);
+            assert(start < count);
+            assert(start <= selected);
+            assert(selected < (uint8_t)(start + 3U));
+            assert((uint8_t)(start + 3U) <=
+                   (count > 3U ? count : 3U));
+        }
+    }
+    /* Every grouped menu entry must fit its own viewport. */
+    for(uint8_t group = 0U; group < LabMateGroupCount; ++group) {
+        const uint8_t count = labmate_nav_group_size(group);
+        for(uint8_t selected = 0U; selected < count; ++selected) {
+            const uint8_t start = labmate_nav_first_visible(selected, count, 3U);
+            assert(start <= selected && selected < (uint8_t)(start + 3U));
+        }
+    }
+    puts("LabMate v1.6 navigation mapping/wrap: all 11 tools reachable once");
     return 0;
 }

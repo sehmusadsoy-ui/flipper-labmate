@@ -1,0 +1,325 @@
+name: LabMate v1.7 Candidate CI
+
+on:
+  push:
+    branches: [v1.7-rc1, v1.7-profiles-ux-fix, v1.7-stable-candidate, v1.7-stable-final]
+    paths:
+      - "*.c"
+      - "*.h"
+      - "scripts/check_v16_boundaries.py"
+      - "scripts/check_v17_ui_layout.py"
+      - "tests/test_resource_policy.c.inc"
+      - "tests/test_navigation.c.inc"
+      - "tests/test_profiles.c.inc"
+      - "tests/test_frequency_gate.c.inc"
+      - "tests/test_logger_codec.c.inc"
+      - "tests/test_pulse_math.c.inc"
+      - "tests/test_pwm_settings.c.inc"
+      - "tests/test_counter_math.c.inc"
+      - "tests/test_button_logic.c.inc"
+      - "tests/test_threshold.c.inc"
+      - "scripts/install-labmate.ps1"
+      - "scripts/install-v17-from-github.ps1"
+      - "scripts/test-v17-installer-mock.ps1"
+      - "scripts/install-from-github.ps1"
+      - "application.fam"
+      - "labmate_generator.c"
+      - "labmate_generator.h"
+      - ".github/workflows/build-v1.7.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Candidate builds never cancel dev or stable jobs.
+  group: labmate-v1.7-${{ github.ref_name }}-ci
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Compile LabMate v1.7 candidate FAP (unpublished)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out tested v1.7 candidate branch
+        uses: actions/checkout@v4
+
+      - name: Guard passive UI and hardware boundaries
+        run: python3 scripts/check_v16_boundaries.py
+
+      - name: Guard 128x64 v1.7 UI layout bounds
+        run: python3 scripts/check_v17_ui_layout.py
+
+      - name: Test portable GPIO / PA7 ownership policy
+        run: |
+          set -euo pipefail
+          # .c.inc stays outside the FAP wildcard source list.
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. -x c \
+            labmate_resource_policy.c tests/test_resource_policy.c.inc \
+            -o /tmp/labmate-resource-policy-tests
+          /tmp/labmate-resource-policy-tests
+
+      - name: Test grouped menu mapping on host
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. -x c \
+            labmate_navigation.c tests/test_navigation.c.inc \
+            -o /tmp/labmate-navigation-tests
+          /tmp/labmate-navigation-tests
+
+      - name: Test profile codec (portable C)
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. -x c \
+            labmate_profiles.c tests/test_profiles.c.inc \
+            -o /tmp/labmate-profile-tests
+          /tmp/labmate-profile-tests
+
+      - name: Test portable logger CSV and filename codec
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. -x c \
+            labmate_logger_codec.c tests/test_logger_codec.c.inc \
+            -o /tmp/labmate-logger-codec-tests
+          /tmp/labmate-logger-codec-tests
+
+      - name: Test PB3 adaptive frequency gate (portable C)
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. -x c \
+            labmate_frequency_gate.c tests/test_frequency_gate.c.inc \
+            -o /tmp/labmate-frequency-gate-tests
+          /tmp/labmate-frequency-gate-tests
+
+      - name: Test pure Pulse period/duty and median math
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. -x c \
+            labmate_pulse_math.c tests/test_pulse_math.c.inc \
+            -o /tmp/labmate-pulse-math-tests
+          /tmp/labmate-pulse-math-tests
+
+      - name: Test PWM Studio frequency and duty bounds (portable C)
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. -x c \
+            labmate_pwm_settings.c tests/test_pwm_settings.c.inc \
+            -o /tmp/labmate-pwm-settings-tests
+          /tmp/labmate-pwm-settings-tests
+
+      - name: Test real counter wrap, saturation and decimal display
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. -x c \
+            labmate_counter_math.c tests/test_counter_math.c.inc \
+            -o /tmp/labmate-counter-math-tests
+          /tmp/labmate-counter-math-tests
+
+      - name: Test Button Analyzer bounce, settling and tick-wrap logic
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. -x c \
+            labmate_button_logic.c tests/test_button_logic.c.inc \
+            -o /tmp/labmate-button-logic-tests
+          /tmp/labmate-button-logic-tests
+
+      - name: Test Threshold Alerts arm, latch, invalid data and bounded limits
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -I. -x c \
+            labmate_threshold.c tests/test_threshold.c.inc \
+            -o /tmp/labmate-threshold-tests
+          /tmp/labmate-threshold-tests
+
+      - name: Compile with Momentum SDK
+        id: compile
+        uses: flipperdevices/flipperzero-ufbt-action@v0.1
+        with:
+          sdk-channel: dev
+          sdk-index-url: https://up.momentum-fw.dev/firmware/directory.json
+
+      - name: Verify output and checksum
+        env:
+          BUILT_API_VERSION: ${{ steps.compile.outputs.api-version }}
+        run: |
+          set -euo pipefail
+          FAP="$(find . -type f -name 'labmate.fap' -not -path './.git/*' -print -quit)"
+          test -n "$FAP" && test -s "$FAP"
+          mkdir -p build-artifacts
+          cp "$FAP" build-artifacts/labmate.fap
+          (cd build-artifacts && sha256sum labmate.fap > SHA256SUMS.txt && sha256sum -c SHA256SUMS.txt)
+          # Expose the exact FAP checksum independently of the Actions ZIP hash.
+          echo "Final candidate FAP SHA256:"
+          cat build-artifacts/SHA256SUMS.txt
+          printf '%s\n' '### LabMate v1.7 Candidate FAP SHA256' >> "$GITHUB_STEP_SUMMARY"
+          printf '\x60\x60\x60\n' >> "$GITHUB_STEP_SUMMARY"
+          cat build-artifacts/SHA256SUMS.txt >> "$GITHUB_STEP_SUMMARY"
+          printf '\x60\x60\x60\n' >> "$GITHUB_STEP_SUMMARY"
+          echo "Momentum SDK API: $BUILT_API_VERSION"
+          ls -lh build-artifacts
+
+      - name: Upload candidate FAP artifact (no release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: labmate
+          path: build-artifacts/
+          if-no-files-found: error
+
+  installer_safety:
+    name: Check Windows installer with mock transport (no USB)
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Prepare mock FAP and Momentum scripts
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $root = Join-Path $env:RUNNER_TEMP 'LabMate Fixture'
+          $fw = Join-Path $root 'Mock Momentum'
+          $tool = Join-Path $fw 'scripts\toolchain'
+          New-Item -ItemType Directory -Path $tool -Force | Out-Null
+          $fap = Join-Path $root 'labmate.fap'
+          [IO.File]::WriteAllBytes($fap, [byte[]](1,2,3,4,5))
+          $hash = (Get-FileHash $fap -Algorithm SHA256).Hash
+          [IO.File]::WriteAllText((Join-Path $root 'SHA256SUMS.txt'),
+            "$($hash.ToLowerInvariant())  labmate.fap`n")
+          [IO.File]::WriteAllText((Join-Path $tool 'fbtenv.cmd'),
+            "@echo off`r`nexit /b 0`r`n")
+          $stub = @'
+          import os, sys
+          with open(os.environ["LABMATE_MOCK_LOG"], "w") as f:
+              f.write("\n".join(sys.argv[1:]))
+          sys.exit(int(os.environ.get("LABMATE_MOCK_EXIT", "0")))
+          '@
+          [IO.File]::WriteAllText((Join-Path $fw 'scripts\runfap.py'), $stub)
+          "LABMATE_FIXTURE_ROOT=$root" >> $env:GITHUB_ENV
+          "LABMATE_MOCK_FW=$fw" >> $env:GITHUB_ENV
+          "LABMATE_MOCK_LOG=$(Join-Path $root 'command.txt')" >> $env:GITHUB_ENV
+
+      - name: Verify checksums, fixed destination and exit propagation
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $fap = Join-Path $env:LABMATE_FIXTURE_ROOT 'labmate.fap'
+          $hash = (Get-FileHash $fap -Algorithm SHA256).Hash
+          & ./scripts/install-labmate.ps1 -FapPath $fap -VerifyOnly
+          if ($LASTEXITCODE -ne 0) { throw 'Valid checksum was rejected.' }
+          & ./scripts/install-labmate.ps1 -FapPath $fap -ExpectedSha256 ('0' * 64) -VerifyOnly
+          if ($LASTEXITCODE -eq 0) { throw 'Checksum mismatch was accepted.' }
+          & ./scripts/install-labmate.ps1 -FapPath $fap -ExpectedSha256 'wrong' -VerifyOnly
+          if ($LASTEXITCODE -eq 0) { throw 'Malformed SHA256 was accepted.' }
+
+          # Fake runfap.py records args, never talks to a Flipper.
+          & ./scripts/install-labmate.ps1 -FapPath $fap -ExpectedSha256 $hash -FirmwareRoot $env:LABMATE_MOCK_FW -Port COM7
+          if ($LASTEXITCODE -ne 0) { throw 'Mock runfap call failed.' }
+          $received = @(Get-Content -LiteralPath $env:LABMATE_MOCK_LOG)
+          $expected = @('-p','COM7','-s',$fap,'-t','/ext/apps/Tools/labmate.fap')
+          if (($received -join '|') -cne ($expected -join '|')) {
+              throw "Wrong destination or argument order: $($received -join ', ')"
+          }
+
+          $env:LABMATE_MOCK_EXIT = '23'
+          & ./scripts/install-labmate.ps1 -FapPath $fap -ExpectedSha256 $hash -FirmwareRoot $env:LABMATE_MOCK_FW
+          if ($LASTEXITCODE -eq 0) { throw 'Nonzero transport exit was treated as success.' }
+          Remove-Item Env:\LABMATE_MOCK_EXIT
+          # The final nonzero exit was intentional. The pwsh step must not
+          # inherit it after every expected-failure assertion has passed.
+          $global:LASTEXITCODE = 0
+          $stableScript = Get-Content -Raw ./scripts/install-from-github.ps1
+          $devScript = Get-Content -Raw ./scripts/install-v161-dev.ps1
+          if($stableScript -notmatch [regex]::Escape('gh release download $tag') -or
+             $stableScript -notmatch [regex]::Escape("$tag = 'v1.6'") -or
+             $devScript -notmatch [regex]::Escape(' -b v1.6.1-dev ') -or
+             $devScript -match [regex]::Escape(' -b v1.6-rc1 ') -or
+             $devScript -match [regex]::Escape(' -b v1.6-stable-candidate ')) {
+            throw 'v1.6.1 dev and v1.6 Stable installer targets must remain isolated.'
+          }
+          Write-Host 'Mock USB tests and installer isolation passed; no Flipper connected.'
+
+      - name: Verify v1.7 release-to-USB path with mocked GitHub and transport
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & ./scripts/test-v17-installer-mock.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'v1.7 installer mock regressions failed' }
+
+  publish_v17_stable:
+    name: Finalize verified v1.7 draft as Stable
+    if: github.event_name == 'push' && github.ref_name == 'v1.7-stable-final'
+    needs: [build, installer_safety]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: v1.7
+      DRAFT_ID: "410833587"
+      TESTED_SOURCE_SHA: d0e1bc6a95b257841533f0aa8745e3a79bbc8dcd
+      EXPECTED_FAP: 5a7cb0eae601eeac8856790211c4d2831a9198c31853631e1daf0308ce724335
+    steps:
+      - name: Checkout exact release source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Obtain checksum-checked final FAP
+        uses: actions/download-artifact@v4
+        with:
+          name: labmate
+          path: release-asset
+      - name: Check existing draft, assets, hash and prior releases
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "v1.7-stable-final"
+          test -s release-asset/labmate.fap
+          test -s release-asset/SHA256SUMS.txt
+          test "$(wc -l < release-asset/SHA256SUMS.txt)" -eq 1
+          (cd release-asset && sha256sum -c SHA256SUMS.txt)
+          test "$(sha256sum release-asset/labmate.fap | cut -d' ' -f1)" = "$EXPECTED_FAP"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v1.6.1" --jq '.object.sha')" = "bc63271afe572c393c1febd0f0ef7039404bc937"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v1.7-rc1" --jq '.object.sha')" = "d55eec032e5f341f39aa7c98915ec2062995e66b"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/v1.6.1" --jq '.prerelease')" = false
+          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/v1.7-rc1" --jq '.prerelease')" = true
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" >/dev/null 2>&1; then
+            echo "::error::v1.7 tag already exists. Refuse to move."; exit 1
+          fi
+          draft="$(gh api "repos/$GITHUB_REPOSITORY/releases/$DRAFT_ID")"
+          test "$(jq -r '.tag_name' <<< "$draft")" = "$TAG"
+          test "$(jq -r '.draft' <<< "$draft")" = true
+          test "$(jq -r '.prerelease' <<< "$draft")" = false
+          test "$(jq -r '.target_commitish' <<< "$draft")" = "$TESTED_SOURCE_SHA"
+          test "$(jq -r '[.assets[].name] | sort | join(",")' <<< "$draft")" = "SHA256SUMS.txt,labmate.fap"
+          test "$(jq -r '.assets[] | select(.name=="labmate.fap") | .state' <<< "$draft")" = uploaded
+          test "$(jq -r '.assets[] | select(.name=="SHA256SUMS.txt") | .state' <<< "$draft")" = uploaded
+          test "$(jq -r '.assets[] | select(.name=="labmate.fap") | .digest' <<< "$draft")" = "sha256:$EXPECTED_FAP"
+          sum_hash="$(sha256sum release-asset/SHA256SUMS.txt | cut -d' ' -f1)"
+          test "$(jq -r '.assets[] | select(.name=="SHA256SUMS.txt") | .digest' <<< "$draft")" = "sha256:$sum_hash"
+          test "$(jq -r '.assets[] | select(.name=="labmate.fap") | .size' <<< "$draft")" = "$(stat -c %s release-asset/labmate.fap)"
+          test "$(jq -r '.assets[] | select(.name=="SHA256SUMS.txt") | .size' <<< "$draft")" = "$(stat -c %s release-asset/SHA256SUMS.txt)"
+          echo "Draft and remote GitHub asset SHA256 digests verified against tested FAP."
+
+      - name: Publish previously created verified draft
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/$DRAFT_ID" -F draft=false -F prerelease=false -f make_latest=true --silent
+          meta="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG")"
+          test "$(jq -r '.tag_name' <<< "$meta")" = "$TAG"
+          test "$(jq -r '.draft' <<< "$meta")" = false
+          test "$(jq -r '.prerelease' <<< "$meta")" = false
+          test "$(jq -r '.target_commitish' <<< "$meta")" = "$TESTED_SOURCE_SHA"
+          test "$(jq -r '[.assets[].name] | sort | join(",")' <<< "$meta")" = "SHA256SUMS.txt,labmate.fap"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq '.object.sha')" = "$TESTED_SOURCE_SHA"
+          mkdir -p verify-release
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "labmate.fap" --pattern "SHA256SUMS.txt" --dir verify-release
+          (cd verify-release && sha256sum -c SHA256SUMS.txt)
+          test "$(sha256sum verify-release/labmate.fap | cut -d' ' -f1)" = "$EXPECTED_FAP"
+          echo "PUBLISHED AND VERIFIED: $(jq -r '.html_url' <<< "$meta")"
+

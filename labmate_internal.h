@@ -1,7 +1,7 @@
 #pragma once
 
 /* Internal LabMate application state, shared by the app loop and state-aware
- * renderers. NOT an external ABI. Stable candidate is isolated until final FAP device validation.
+ * renderers. NOT an external ABI. v1.6.1 development branch remains separate from Stable.
  * IRQ-owned fields and storage handles retain the v1.5 layout and semantics.
  */
 #include <furi.h>
@@ -10,19 +10,22 @@
 #include "labmate_resource_policy.h"
 #include "labmate_navigation.h"
 #include "labmate_profile_storage.h"
+#include "labmate_pulse_math.h"
+#include "labmate_button_logic.h"
+#include "labmate_threshold.h"
 
-#define LABMATE_VERSION_TEXT "v1.6"
+#define LABMATE_VERSION_TEXT "v1.7"
 /* Shared menu/pin counts: UI and input handling must agree. */
 #define MENU_COUNT LabMateToolCount
 #define GPIO_COUNT LABMATE_MONITOR_PIN_COUNT
 /* Shared immutable GPIO labels, used by both migrated and legacy renderers. */
 extern const char* const labmate_gpio_names[GPIO_COUNT];
-/* One source of truth for TIM1/PA7 preset frequencies, also displayed in UI. */
+/* TIM1/PA7 presets live in labmate_generator.c and are shared with UI. */
 extern const uint32_t labmate_generator_frequencies[];
 /* Keep only the latest 32 log IDs in RAM; read CSV contents incrementally. */
 #define LOGGER_HISTORY_LIMIT 32U
 /* High-speed pulse extrema use median-of-five sampled readings. */
-#define PULSE_STATS_FILTER_SAMPLES 5U
+#define PULSE_STATS_FILTER_SAMPLES LABMATE_PULSE_MEDIAN_SAMPLES
 
 typedef enum {
     LabMateScreenMenu,
@@ -35,6 +38,9 @@ typedef enum {
     LabMateScreenHistoryDetail,
     LabMateScreenAbout,
     LabMateScreenProfiles,
+    LabMateScreenCounter, /* append: preserve existing screen numbers */
+    LabMateScreenButton, /* append: preserve original 0..10 */
+    LabMateScreenAlerts, /* configuration: no extra GPIO ownership */
 } LabMateScreen;
 
 typedef enum {
@@ -58,6 +64,7 @@ typedef struct {
     uint8_t selected; /* active row within root or current tool group */
     bool menu_in_group;
     uint8_t menu_group; /* LabMateMenuGroup, valid when menu_in_group */
+    uint8_t about_page; /* 0 overview, 1 repository, 2..12 tool quick guides */
     uint8_t gpio_index;
     uint8_t preferred_frequency_pin;
     uint8_t preferred_pulse_pin;
@@ -110,6 +117,26 @@ typedef struct {
     uint8_t frequency_sample_index;
     uint8_t frequency_sample_count;
 
+    /* Event Counter: true PB3/TIM2 rising-edge counts, not rate estimates. */
+    bool counter_active;
+    uint32_t counter_last_hw;
+    uint64_t counter_total;
+    uint32_t counter_start_tick;
+    uint32_t counter_elapsed_seconds;
+
+    /* Button Analyzer: ISR raw edges + app-thread debounced snapshot.
+     * PC1 EXTI1 with internal pull-up, LOW = pressed contact.
+     */
+    bool button_active;
+    bool button_details_view; /* alternate compact 128x64 metrics page */
+    uint8_t button_quiet_index; /* 0..3: 5/10/20/50 ms */
+    uint8_t button_quiet_ms;
+    volatile LabMateButtonState button_irq;
+    LabMateButtonStats button_stats;
+    uint32_t button_bounce_us;
+    uint32_t button_settle_ms;
+    uint32_t button_hold_ms;
+
     /* Pulse analyzer: edge timestamps captured in GPIO IRQ. */
     bool pulse_irq_active;
     volatile bool pulse_irq_level;
@@ -159,11 +186,24 @@ typedef struct {
     uint32_t pulse_min_duty_permille;
     uint32_t pulse_max_duty_permille;
 
-    /* Signal generator */
+    /* PWM Studio / TIM1 PA7. Runtime values persist across menu navigation.
+     * v1.6 profile records retain preset index only (0..14).
+     * Custom editing is STOP-only; no draft reaches TIM1.
+     */
     bool generator_running;
     bool generator_state;
-    uint8_t generator_freq_index;
+    uint8_t generator_freq_index; /* 0..14 presets, 15 = CUSTOM */
+    uint8_t generator_duty_percent; /* 5..95; default 50 */
+    uint32_t generator_custom_hz; /* committed custom frequency */
+    uint32_t generator_custom_draft_hz;
+    uint8_t generator_custom_step_index; /* 1/10/100/1000 Hz */
+    uint8_t generator_edit_original_index;
+    bool generator_editing;
+    bool generator_skip_entry_ok; /* ignore menu OK release on first entry */
     uint32_t generator_last_toggle;
+
+    /* Threshold Alerts: one active visual alert, app-thread only. */
+    LabMateThreshold threshold;
 
     /* v1.5: SD logging uses app-thread snapshots, never GPIO IRQ writes. */
     LabMateLoggerSource logger_source;
@@ -179,7 +219,8 @@ typedef struct {
     Storage* logger_storage;
     File* logger_file;
 
-    /* Read-only history browser. The list is bounded; CSV parsing is streamed. */
+    /* Bounded history browser. CSV reads are streamed; deletion is an
+     * explicit second-confirmed, app-thread-only operation on one log ID. */
     uint16_t history_ids[LOGGER_HISTORY_LIMIT];
     uint8_t history_count;
     uint8_t history_selected;
@@ -187,6 +228,9 @@ typedef struct {
     bool history_busy;
     bool history_error;
     bool history_loading;
+    bool history_delete_mode; /* LEFT/RIGHT toggles VIEW or DELETE */
+    bool history_delete_confirm; /* BACK cancels, OK confirms exact file */
+    uint8_t history_delete_notice; /* 0=none, 1=deleted, 2=delete failed */
     Storage* history_storage;
     File* history_file;
     uint32_t history_rows;

@@ -31,7 +31,7 @@ static void check_sequence(bool generator_running) {
 static void check_capture_ownership(void) {
     for(uint8_t pin = 0U; pin <= LABMATE_MONITOR_PIN_COUNT; ++pin) {
         for(int requested = LabMateCaptureNone;
-            requested <= LabMateCapturePulse;
+            requested <= LabMateCaptureButton;
             ++requested) {
             const LabMateCaptureOwner type = (LabMateCaptureOwner)requested;
             const bool permitted = labmate_capture_pin_allowed(type, pin);
@@ -39,14 +39,16 @@ static void check_capture_ownership(void) {
                 (type == LabMateCaptureFrequencyLow && pin == 1U) ||
                 (type == LabMateCaptureFrequencyHigh && pin == 4U) ||
                 (type == LabMateCapturePulse &&
-                 (pin == 0U || pin == 1U || pin == 3U || pin == 5U));
+                 (pin == 0U || pin == 1U || pin == 3U || pin == 5U)) ||
+                (type == LabMateCaptureCounter && pin == 4U) ||
+                (type == LabMateCaptureButton && pin == 1U);
             assert(permitted == expected);
             assert(labmate_capture_can_acquire(
                        LabMateCaptureNone, type, pin, false, false, false) == expected);
 
             /* No preemption, even when the old IRQ/TIM flags are stale. */
             for(int owner = LabMateCaptureFrequencyLow;
-                owner <= LabMateCapturePulse;
+                owner <= LabMateCaptureButton;
                 ++owner) {
                 assert(!labmate_capture_can_acquire(
                     (LabMateCaptureOwner)owner, type, pin, false, false, false));
@@ -93,7 +95,128 @@ static void check_capture_snapshots(void) {
         false, false, true));
 }
 
+/* Step 6: transition/cleanup contract without touching hardware drivers.
+ * A tool may acquire only after the previous owner and every active
+ * capture flag have been released; PA7 remains reserved during PWM.
+ */
+static void check_resource_transitions(void) {
+    const LabMateCaptureOwner kinds[] = {
+        LabMateCaptureFrequencyLow, LabMateCaptureFrequencyHigh,
+        LabMateCapturePulse, LabMateCaptureCounter, LabMateCaptureButton,
+    };
+    const uint8_t pins[] = {1U, 4U, 3U, 4U, 1U};
+    for(unsigned previous = 0U; previous < 5U; ++previous) {
+        for(unsigned next = 0U; next < 5U; ++next) {
+            assert(!labmate_capture_can_acquire(
+                kinds[previous], kinds[next], pins[next],
+                false, false, false));
+            /* Clearing only the owner while leaving any peripheral
+             * active must not enable the next capture. */
+            for(unsigned mask = 1U; mask < 8U; ++mask) {
+                assert(!labmate_capture_can_acquire(
+                    LabMateCaptureNone, kinds[next], pins[next],
+                    (mask & 1U) != 0U,
+                    (mask & 2U) != 0U,
+                    (mask & 4U) != 0U));
+            }
+            assert(labmate_capture_can_acquire(
+                LabMateCaptureNone, kinds[next], pins[next],
+                false, false, false));
+        }
+    }
+    /* System button EXTI3 (PC3/PB3) and EXTI6 (PA6) must stay
+     * excluded from Pulse IRQ acquisition. */
+    const uint8_t forbidden[] = {2U, 4U, 6U, 7U};
+    for(unsigned i = 0U; i < sizeof(forbidden) / sizeof(forbidden[0]); ++i) {
+        assert(!labmate_capture_pin_allowed(LabMateCapturePulse, forbidden[i]));
+    }
+    assert(!labmate_monitor_pin_allowed(7U, true));
+    assert(labmate_monitor_entry_pin(7U, true) == LABMATE_MONITOR_PC1_INDEX);
+    assert(labmate_monitor_pin_allowed(7U, false));
+}
+
+static void check_release_policy(void) {
+    for(int owner = LabMateCaptureNone; owner <= LabMateCaptureButton; ++owner) {
+        for(int stopping = LabMateCaptureNone; stopping <= LabMateCaptureButton; ++stopping) {
+            const LabMateCaptureOwner expected =
+                (owner == stopping && stopping != LabMateCaptureNone)
+                    ? LabMateCaptureNone : (LabMateCaptureOwner)owner;
+            assert(labmate_capture_owner_after_stop(
+                (LabMateCaptureOwner)owner,
+                (LabMateCaptureOwner)stopping) == expected);
+        }
+    }
+}
+
+/* Step 6.3: exhaustive software lifecycle permutations. These tests do
+ * not simulate actual HAL/IRQ teardown, only the resource policy contract. */
+static void check_release_reacquire_matrix(void) {
+    const LabMateCaptureOwner owners[] = {
+        LabMateCaptureFrequencyLow, LabMateCaptureFrequencyHigh,
+        LabMateCapturePulse, LabMateCaptureCounter, LabMateCaptureButton,
+    };
+    const uint8_t pins[] = {1U, 4U, 3U, 4U, 1U};
+    for(unsigned i = 0U; i < 5U; ++i) {
+        for(unsigned j = 0U; j < 5U; ++j) {
+            const LabMateCaptureOwner active = owners[i];
+            const LabMateCaptureOwner next = owners[j];
+            /* A STOP request by a different capture cannot release owner. */
+            if(i != j) {
+                const LabMateCaptureOwner unchanged =
+                    labmate_capture_owner_after_stop(active, next);
+                assert(unchanged == active);
+                assert(!labmate_capture_can_acquire(
+                    unchanged, next, pins[j], false, false, false));
+            }
+            /* A matching STOP is not enough until stale active flags clear. */
+            const LabMateCaptureOwner released =
+                labmate_capture_owner_after_stop(active, active);
+            assert(released == LabMateCaptureNone);
+            for(unsigned mask = 1U; mask <= 7U; ++mask) {
+                assert(!labmate_capture_can_acquire(
+                    released, next, pins[j], (mask & 1U) != 0U,
+                    (mask & 2U) != 0U, (mask & 4U) != 0U));
+            }
+            assert(labmate_capture_can_acquire(
+                released, next, pins[j], false, false, false));
+        }
+    }
+    /* Wrong pin requests can never acquire an otherwise free capture. */
+    assert(!labmate_capture_can_acquire(
+        LabMateCaptureNone, LabMateCaptureFrequencyLow, 4U,
+        false, false, false));
+    assert(!labmate_capture_can_acquire(
+        LabMateCaptureNone, LabMateCaptureFrequencyHigh, 1U,
+        false, false, false));
+    assert(!labmate_capture_can_acquire(
+        LabMateCaptureNone, LabMateCapturePulse, 7U,
+        false, false, false));
+    assert(!labmate_capture_can_acquire(
+        LabMateCaptureNone, LabMateCaptureCounter, 1U,
+        false, false, false));
+    assert(labmate_capture_pin_allowed(LabMateCaptureCounter, 4U));
+    assert(labmate_capture_pin_allowed(LabMateCaptureButton, 1U));
+    assert(!labmate_capture_pin_allowed(LabMateCaptureButton, 4U));
+    assert(!labmate_capture_pin_allowed(LabMateCaptureButton, 7U));
+    assert(!labmate_capture_matches(
+        LabMateCaptureCounter, LabMateCaptureCounter, 4U, 4U,
+        false, false, false)); /* Counting has its own active state. */
+}
+
+static void check_all_stopped_guard(void) {
+    for(unsigned flags = 0U; flags < 8U; ++flags) {
+        const bool low = (flags & 1U) != 0U;
+        const bool high = (flags & 2U) != 0U;
+        const bool pulse = (flags & 4U) != 0U;
+        assert(labmate_capture_all_stopped(low, high, pulse) == (flags == 0U));
+    }
+}
+
 int main(void) {
+    check_all_stopped_guard();
+    check_release_reacquire_matrix();
+    check_release_policy();
+    check_resource_transitions();
     /* All eight pins remain available when the generator is off. */
     for(uint8_t pin = 0U; pin < LABMATE_MONITOR_PIN_COUNT; ++pin) {
         assert(labmate_monitor_pin_allowed(pin, false));
