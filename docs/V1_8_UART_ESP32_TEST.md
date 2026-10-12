@@ -1,6 +1,6 @@
 # LabMate v1.8 UART ↔ ESP32 Interoperability Test
 
-**Status: ESP32-S2 Arduino CLI compile/upload PASS; external UART E1–E3 **3/3 PASS** (operator-reported, 2026-10-13). E4 9600-baud, E5 lifecycle, E6 legacy regression, BUSY/overflow and sustained-load tests remain PENDING.**
+**Status: ESP32-S2 build/upload PASS; external UART E1/E2/E3/E5/E6 = 5/6 operator-reported PASS (2026-10-13). E4 9600 baud PENDING; separate BUSY, overflow and sustained-load checks PENDING.**
 The user identified an **ESP32-S2-WROVER Flipper Dev Board**. The
 official Flipper Wi-Fi Developer Board schematics were checked:
 https://cdn.flipperzero.one/Flipper_Zero_WI-FI_Module_V1_Schematic.PDF
@@ -117,7 +117,7 @@ independent timing/electrical calibration or stress validation.
 The original LabMate FAP and ESP32 peer firmware remain unchanged
 for E1–E3. **No external UART result is inferred for E4–E6.**
 
-### Next gate without reflashing: E5 and E6 first
+### Completed test instructions for E5 and E6 (historical)
 
 - E5: Keep both sides at **115200**, send `AT` several times and
   observe `ESP32_OK` each time, toggle LabMate STOP/RUN three
@@ -138,6 +138,54 @@ for E1–E3. **No external UART result is inferred for E4–E6.**
   configuration command without verifying the board's
   power-isolation behavior.
 
+## External UART E5/E6 checkpoint — both PASS (operator report, 2026-10-13)
+
+- **E5 PASS:** Operator reports repeated 115200-baud `AT` ↔
+  `ESP32_OK` exchanges, UART STOP/RUN cycles and exit/re-entry all
+  succeeded, without reported freeze or unexpected resource conflict.
+- **E6 PASS:** Operator reports PWM Studio, Counter, Frequency Meter,
+  Profiles S1 and Log History remained usable after stopping UART
+  and safely removing the ESP32-S2 Wi-Fi Devboard. Previous records
+  were preserved.
+- These are **operator-reported** observations; not independently
+  instrumented. Functional external UART E1/E2/E3/E5/E6 total **5/6
+  PASS**. E4, BUSY conflict, overflow and sustained-traffic checks
+  have not been marked PASS.
+
+## E4 preparation — dedicated 9600 baud peer sketch (not flashed)
+
+Separate 9600-boot variant prepared at
+[`tests/esp32_s2_wrover_uart_peer_9600/esp32_s2_wrover_uart_peer_9600.ino`](../tests/esp32_s2_wrover_uart_peer_9600/esp32_s2_wrover_uart_peer_9600.ino).
+It is based on the operator-proven 115200 sketch; only
+`currentBaud` initialization and the USB startup log's default
+baud label were changed to **9600**. The 115200 sketch remains
+unchanged for reproducibility.
+
+1. Confirm LabMate UART **STOP**, other GPIO generators stopped.
+   Power off/disconnect safely; remove Devboard from Flipper.
+2. Connect the *detached* ESP32-S2 board to Windows by its own
+   USB-C data cable. Verify the USB VID `303A` and actual serial
+   COM number. It may not still be `COM12`.
+3. Arduino CLI (core `esp32:esp32@3.3.12`) compile the 9600
+   variant with FQBN
+   `esp32:esp32:esp32s2:CDCOnBoot=cdc,UploadMode=cdc`.
+   **Only** upload to verified ESP32 port after successful compile
+   and operator confirmation. This overwrites the previously
+   flashed 115200 peer test sketch, not the Flipper FAP.
+4. Unplug ESP32 USB, and with devices unpowered correctly seat
+   the board in Flipper. Start LabMate UART in STOP,
+   select **9600**, then RUN.
+5. **E4 PASS criterion:** both periodic `ESP32_READY` and
+   the conditional `ESP32_OK` after sending `AT\r\n` appear,
+   with no unexpected BUSY, ERR, DROP or lock-up.
+6. Report observations; 9600 peer firmware may later be replaced
+   with original Marauder via the user's own restoration procedure.
+
+**Important:** changing only Flipper to 9600 while running the
+original 115200 ESP32 peer causes an expected baud mismatch.
+Do not power the ESP32 independently via USB while it is seated
+on Flipper without validated isolation.
+
 ## E1–E6 external peer PASS/FAIL matrix
 
 - [x] **E1, ESP32 → Flipper:** With both UARTs at the sketch's default
@@ -152,10 +200,10 @@ for E1–E3. **No external UART result is inferred for E4–E6.**
       (not merely another `ESP32_READY`).
 - [ ] **E4, 9600:** With both UARTs stopped/reconfigured to **9600**,
       repeat E1–E3; avoid interpreting setup/boot noise as PASS.
-- [ ] **E5, Lifecycle:** Repeat short exchanges, STOP and START UART,
+- [x] **E5, Lifecycle:** Repeat short exchanges, STOP and START UART,
       then BACK and re-enter. No freezes, unexpected repeated TX, or
       continuously increasing drop/error counters under modest traffic.
-- [ ] **E6, Regression:** Disconnect only after UART STOP and
+- [x] **E6, Regression:** Disconnect only after UART STOP and
       powered-down rewiring; reopen PWM, Counter/Frequency, Profiles S1
       and Log History, confirm saved data unchanged.
 
@@ -310,7 +358,7 @@ a native USB port may change or disappear across reset.
    output and observed sketch messages. The Flipper-side FAP is
    unchanged from the previously user-tested v1.8dev UART candidate.
 
-## Board-specific test sequence — consent given; preparation/upload still pending
+## Board-specific test sequence — completed initial 115200 tests (historical procedure)
 
 1. Identify firmware currently running (Blackmagic, Marauder, custom).
    Preserve or arrange a recovery path before any Arduino upload.
