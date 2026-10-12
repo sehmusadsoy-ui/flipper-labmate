@@ -14,10 +14,11 @@ automatically to the newly labeled final FAP.
 smoke, explicit publication approval and non-prerelease GitHub release.
 Official source tag: `d0e1bc6a95b257841533f0aa8745e3a79bbc8dcd`;
 official FAP SHA256: `5A7CB0EAE601EEAC8856790211C4D2831A9198C31853631E1DAF0308CE724335`.
-**Remaining maintenance QA (not release blockers):** live
-`-Channel Stable` USB installer test, Microsoft Excel CSV import, and
-deferred physical equipment tests. No new version was created for
-documentation changes.
+**Maintenance status:** `-Channel Stable` checksum verification and live
+USB installation passed on Windows/COM7 (operator-provided console logs,
+2026-10-12). Microsoft Excel CSV import, final post-reinstall screen/data
+inspection and deferred physical equipment tests remain open. No new
+version or release asset change was made.
 
 ## Immutable baseline and isolated development
 
@@ -41,8 +42,8 @@ documentation changes.
 - [x] One-command `scripts/install-v17-from-github.ps1` includes RC1
   and published Stable channels, SHA256 checks, single-FAP destination,
   and rejects metadata/hash/USB errors in Windows mock tests.
-  RC1 verify-only passed on real Windows; Stable-channel USB installation
-  still awaits independent operator confirmation.
+  RC1 verify-only and Stable-channel VerifyOnly/live USB installation
+  passed on real Windows, with matching release SHA256.
 - [x] Freeze and device-check `v1.7` Stable-labeled FAP.
   Final released artifact's exact checksum matches Test 7G's FAP.
 - [x] Candidate CI [38191036835](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38191036835)
@@ -108,9 +109,19 @@ documentation changes.
 - [x] Test 7H: real Windows/gh `-Channel RC1 -VerifyOnly` returned
   RELEASE VERIFIED, exact RC1 SHA256 and exit code 0 with no USB install.
   Additional failure handling had already passed Windows CI mocks.
-- [ ] Follow-up: `-Channel Stable -VerifyOnly` and real USB install
-  for the published Stable release, with operator-reported results.
-  Do not silently assume the live Stable-channel test passed.
+- [x] Maintenance Test 7I (operator console log, 2026-10-12):
+  published `-Channel Stable -VerifyOnly` returned RELEASE VERIFIED
+  `v1.7` at `d0e1bc6a95b257841533f0aa8745e3a79bbc8dcd`,
+  SHA256 VERIFIED `5A7CB0EAE601EEAC8856790211C4D2831A9198C31853631E1DAF0308CE724335`
+  and exit code 0 without installation. The same pinned `v1.7` installer
+  executed `-Channel Stable -Port COM7`, installed to the single path
+  `/ext/apps/Tools/labmate.fap`, issued `Launching app` and returned
+  `SUCCESS: v1.7 installed` / `LABMATE v1.7 STABLE INSTALL PASS`.
+  **PASS: official Stable release/USB installer path**, separate from
+  earlier candidate/flipper device checks. The logs do not independently
+  establish the post-reinstall on-screen state/CSV/Profile retention.
+- [ ] Post-reinstall UI/data smoke on Flipper: confirm `v1.7`, default
+  PWM STOP, original S1 profile and Log History still available.
 - [x] Short resource handoff and repeated START/STOP/navigation
   on tested candidate FAP: user-reported Test 7F PASS. **Not** an
   exhaustive long-duration/fault-injection test; SD failures remain deferred.
@@ -125,8 +136,8 @@ documentation changes.
   published the release with matching FAP and SHA256 assets.
 - [x] GitHub latest v1.7 release, non-prerelease, tag commit, FAP digest,
   historical v1.6.1 Stable and v1.7 RC1 immutability verified.
-  Installer mock/RC1 VerifyOnly verified; real Stable-channel USB
-  follow-up stays open as described above.
+  Installer mock, RC1/Stable VerifyOnly and Stable live USB install
+  verified; post-reinstall on-screen/data smoke remains to be reported.
 
 **IMPORTANT:** RC1 tests do not automatically validate a modified
 stable-candidate FAP. Do not mark unperformed hardware checks PASS. Physical
