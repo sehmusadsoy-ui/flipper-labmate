@@ -48,6 +48,7 @@ int main(void) {
     assert(labmate_nav_tool_at(0U, 4U) == LabMateToolButton);
     assert(labmate_nav_tool_at(0U, 5U) == LabMateToolInvalid);
     assert(labmate_nav_tool_at(1U, 1U) == LabMateToolAlerts);
+    assert(strcmp(labmate_nav_tool_title(LabMateToolGenerator), "PWM Studio") == 0);
     assert(labmate_nav_tool_title(255U)[0] == '\0');
     assert(labmate_nav_group_title(255U)[0] == '\0');
     assert(labmate_nav_wrap(200U, 0U, 1) == 0U);
