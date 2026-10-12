@@ -1,4 +1,4 @@
-# LabMate — Deferred physical verification backlog
+# LabMate — Deferred physical and compatibility verification backlog
 
 **Status: OPEN / NOT TESTED where explicitly marked below.** This is a living
 hardware-validation queue for equipment that is not available yet. Do **not**
@@ -13,6 +13,7 @@ when suitable equipment becomes available.
 | HW-03 | Storage failure handling | Spare noncritical microSD card / controlled test media | Normal CSV/profile save/open/delete and restart PASS | Missing/full/corrupt-media and error/recovery handling without risking saved user data | **NOT TESTED** |
 | HW-04 | External reference and extended GPIO modes | Known safe 3.3 V reference signal source and measurement equipment | Internal loopback tests at selected frequencies | Additional supported Pulse pins, extreme duty-frequency combinations, external input characteristics | **NOT TESTED** |
 | HW-05 | Long-duration use | Charged Flipper, test microSD and repeatable checklist | Short and moderate device sessions were tested | Longer PWM/Logger sessions, navigation/resource handoffs, repeated restart with CSV/profile integrity checks | **NOT YET EXHAUSTIVELY TESTED** |
+| QA-01 | **Microsoft Excel CSV compatibility and analysis** | Access to Microsoft Excel on a compatible computer (can be later; no paid license is required now) | LabMate CSV generation, old/new History and **LibreOffice Calc CSV import PASS** | Open a real LabMate CSV in Microsoft Excel; verify 9 columns/headers, delimiters, decimal numbers, units and non-empty / invalid-data rows; check basic filtering or chart analysis | **NOT TESTED — deferred until Excel is available** |
 
 ## Evidence entry template
 
@@ -29,6 +30,12 @@ The missing scope/physical-contact equipment must be disclosed in
 v1.7 Stable release notes. A Stable release may claim **functionally
 tested on internal 3.3 V loopback**, but must **not** claim independent
 instrument-grade calibration or verified mechanical-contact metrics.
+
+**Excel availability note:** Excel software is not available in the current
+operator environment and may require a paid license. Do not purchase it
+solely for release QA; defer this test until legal access is available.
+LibreOffice Calc import is evidence of general CSV readability, not proof
+of Microsoft Excel compatibility.
 
 These deferred checks are not silently treated as PASS. A newly discovered
 functional/safety failure remains a release blocker until corrected and
