@@ -1,7 +1,7 @@
 # LabMate v1.7 RC1 — Release Notes (DRAFT, NOT PUBLISHED)
 
 > **Preparation only.** This document is not a release, tag or announcement.
-> No `v1.7-rc1` FAP has been separately packaged or tested yet.
+> An isolated `v1.7-rc1` **candidate FAP has been built in CI**, but not yet installed or device-tested. No GitHub Release or tag exists.
 > The latest publicly published stable release is **v1.6.1**, unchanged.
 
 ## Highlights since v1.6.1
@@ -132,17 +132,31 @@ not to a newly built RC1-labeled artifact.**
   file formats are preserved. Back up valuable CSVs/profiles before
   maintenance. The installer updates the external FAP, not the MCU
   firmware.
-- As of this draft, the development LCD label is **`v1.7d`**
-  and the manifest `fap_version` is **`1.7`**. Before calling any
-  separately packaged build RC1, give it a distinct LCD label
-  (proposed: **`v1.7rc1`**) while keeping an SDK-compatible manifest
-  version, run CI on that exact RC1 source commit, verify the actual
-  FAP's SHA256, and perform a short on-device RC1 smoke test.
+- The isolated candidate branch **`v1.7-rc1`** displays
+  **`v1.7rc1`** in the LCD menu/About; SDK-compatible FAP manifest
+  version remains **`1.7`**. The candidate FAP was compiled on the
+  exact source commit below with a generated `SHA256SUMS.txt`.
+  Independently verify the downloaded FAP against that checksum before
+  installing and perform a short on-device RC1 smoke test.
 - **Do not publish a release, create a release tag, update `main`, or
   modify published v1.6.1 Stable without the user's explicit approval.**
 
 ## RC1 status
 
-**DRAFT / PACKAGING AND RC1 DEVICE SMOKE PENDING.**
-Do not reuse the successful development CI run as proof that a new,
-RC1-labeled binary has passed.
+**DRAFT / RC1 CANDIDATE BUILD PASS; DEVICE SMOKE AND PUBLICATION PENDING.**
+
+- Branch: `v1.7-rc1` (no public Release or tag).
+- First RC1-labeled source commit:
+  `55edee5890c2d62ea229f9271c97c6260b067b5a`.
+- [RC1-specific CI run 38186623651](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38186623651): **2/2 PASS** — Momentum FAP, host/layout/security
+  checks, SHA256 file creation and check, Windows mocked installer.
+- GitHub Actions artifact `labmate` (id `11719294967`) contains
+  `labmate.fap` and `SHA256SUMS.txt`. The artifact ZIP digest is
+  not the FAP digest; validate the downloaded FAP with `sha256sum -c`
+  or the checksum-checking installer.
+- RC1 source differs from the last dev FAP only in the candidate LCD
+  label, widened menu badge, matching static layout guards and the
+  candidate-branch CI workflow. **No instrument algorithm changes.**
+- The candidate artifact still requires fresh physical confirmation.
+  Do not mark this RC1 build physically PASS based solely on prior
+  development FAP tests.
