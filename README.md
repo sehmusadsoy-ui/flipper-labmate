@@ -12,11 +12,12 @@ Its release files are unchanged. The previously published
 [LabMate v1.7 RC1](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7-rc1)
 is a **pre-release**, not Stable.
 
-**v1.7 Stable final candidate is under verification; v1.7 Stable has NOT
-been published.** It has completed 36/36 user-reported on-device
-regression checks on the pre-final display-label build. The final `v1.7`
-display-label build still requires exact FAP checksum verification, a
-short on-device smoke test and separate release approval.
+**v1.7 Stable final candidate is ready for final publication review;
+v1.7 Stable has NOT been published.** The refactored candidate passed
+36/36 user-reported on-device regression checks (7B screenshots); the
+final `v1.7`-labeled FAP has passed CI 2/2 and a separate 4/4 user-
+reported device smoke. Explicit release approval and last release
+provenance/installer checks are still required.
 
 [Stable candidate status](docs/V1_7_STABLE_CANDIDATE.md) ·
 [Draft v1.7 release notes](docs/V1_7_STABLE_RELEASE_NOTES_DRAFT.md) ·
