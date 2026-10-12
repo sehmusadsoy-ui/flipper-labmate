@@ -2,7 +2,7 @@ name: LabMate v1.7 Candidate CI
 
 on:
   push:
-    branches: [v1.7-rc1, v1.7-profiles-ux-fix, v1.7-stable-candidate, v1.7-stable-final]
+    branches: [main, v1.7-rc1, v1.7-profiles-ux-fix, v1.7-stable-candidate, v1.7-stable-final]
     paths:
       - "*.c"
       - "*.h"
