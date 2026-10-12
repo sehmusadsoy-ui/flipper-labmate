@@ -19,7 +19,9 @@ the last release CI reproduced the same SHA256 and published verified
 assets. Real-Windows `-Channel RC1 -VerifyOnly` passed, and the
 published Stable-channel `-VerifyOnly` plus actual COM7 USB installation
 passed on 2026-10-12 with matching SHA256 and single-FAP destination.
-A separate post-reinstall UI/profile/CSV check remains pending.
+Separate post-reinstall Flipper menu/About, PWM STOP, retained S1 and
+old History CSV open checks all passed (operator-reported **4/4 PASS**,
+2026-10-12).
 
 **In-place documentation maintenance (no new version/tag/FAP):**
 updated current-Stable pointers and installer instructions;
