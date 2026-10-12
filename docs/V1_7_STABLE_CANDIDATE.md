@@ -50,10 +50,15 @@ Status: **WORK IN PROGRESS / NOT STABLE / NOT PUBLISHED**.
   increments the PB3 Event Counter, START/STOP/RESET work, and the
   Counter -> Frequency HIGH ownership transition has no BUSY/ERR.
   No independent frequency calibration claimed.
-- [ ] Test 7D+: clean PC1 Button, Threshold Alerts, three CSV Logger
-  sources, History open/cancel/delete and older-log compatibility,
-  Profiles SAVE/LOAD/DELETE/PWM-RUN blocks on the modified FAP.
-  Test 7A+7B+7C cumulative: **15/15 PASS (user reports; 7B screenshot-reviewed)**.
+- [x] Test 7D: **7/7 PASS (user-reported)** on the installed candidate
+  FAP, 2026-10-12. User confirmed that FREQ/PC1 LOW, PULSE/PC1,
+  FREQ/PB3 HIGH CSV recordings work; recent and previous History CSV
+  reading works; DELETE confirmation can be cancelled without deleting,
+  and confirmed DELETE removes only a disposable selected CSV.
+  No independently inspected CSV file was provided in this phase.
+- [ ] Test 7E+: clean PC1 Button, Threshold Alerts, Profiles
+  SAVE/LOAD/DELETE and PWM-RUN guards on this modified FAP.
+  Test 7A+7B+7C+7D cumulative: **22/22 PASS (user-reported; 7B screenshot-reviewed)**.
 - [ ] Check resource-hand-off and repeated navigation/STOP/START; check
   storage error behavior when practicable on disposable test data.
 - [ ] Review full 11-tool menu, 13-page About and 128x64 clipping.
