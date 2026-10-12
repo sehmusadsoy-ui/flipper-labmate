@@ -14,7 +14,9 @@ UI = (SRC / "labmate_ui_screens.c").read_text(encoding="utf-8")
 NAV = (SRC / "labmate_navigation.c").read_text(encoding="utf-8")
 APP = "\n".join((SRC / filename).read_text(encoding="utf-8") for filename in (
     "labmate.c", "labmate_input.c", "labmate_capture_session.c",
-    "labmate_deferred.c", "labmate_view.c"))
+    "labmate_deferred.c", "labmate_view.c", "labmate_input_menu.c",
+    "labmate_input_profiles.c", "labmate_input_history.c",
+    "labmate_input_measure.c", "labmate_input_output.c"))
 PRIMITIVES = (SRC / "labmate_ui_primitives.c").read_text(encoding="utf-8")
 PRIMITIVES_H = (SRC / "labmate_ui_primitives.h").read_text(encoding="utf-8")
 WIDTH = 128
