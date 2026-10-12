@@ -3,7 +3,21 @@
 **State: PREPARATION / NOT PUBLISHED.**
 Stable v1.6.1 release, tag and branch must remain unchanged.
 The v1.7 development source has passed build tests and specific
-on-device checks, but there is not yet a separately verified RC1 binary.
+on-device checks, and a separately built RC1 candidate now passes CI but has not yet been device-tested.
+
+## RC1 candidate build checkpoint (not published)
+
+- [x] Candidate branch: v1.7-rc1 (no GitHub Release or tag).
+- [x] LCD label: v1.7rc1; FAP manifest version: 1.7.
+- [x] Exact RC1 FAP source commit:
+  55edee5890c2d62ea229f9271c97c6260b067b5a.
+- [x] RC1-specific CI run 38186623651: 2/2 jobs PASS
+  (Momentum SDK FAP, layout/static tests, Windows mock installer).
+- [x] CI generated artifact labmate (id 11719294967) containing
+  labmate.fap and SHA256SUMS.txt; NOT a published release.
+- [ ] Verify downloaded FAP SHA256 against SHA256SUMS.txt.
+- [ ] Fresh physical smoke test of exact RC1 artifact before signoff.
+- [ ] User approval required before any GitHub release/tag or stable change.
 
 ## 1. Provenance / source freeze
 
@@ -21,13 +35,13 @@ on-device checks, but there is not yet a separately verified RC1 binary.
   device display text: `LABMATE_VERSION_TEXT "v1.7d"`.
 - [x] Write draft RC1 notes with limitations:
   `docs/V1_7_RC1_RELEASE_NOTES_DRAFT.md`.
-- [ ] Freeze the exact final candidate source snapshot. Future source
+- [x] Freeze the exact final candidate source snapshot. Future source
   changes invalidate the previously verified FAP and require new CI.
-- [ ] Prepare an isolated `v1.7-rc1` candidate branch and give its
+- [x] Prepare an isolated `v1.7-rc1` candidate branch and give its
   *LCD UI* a distinct `v1.7rc1` label. Keep manifest metadata
   SDK-compatible as `1.7`; suffix-bearing manifest versions caused
   trouble during v1.6 packaging.
-- [ ] Ensure RC1-specific CI runs from the candidate branch/commit
+- [x] Ensure RC1-specific CI runs from the candidate branch/commit
   and uploads an artifact; do not repurpose the older dev artifact as RC1.
 - [ ] Verify both source commit provenance and
   **`labmate.fap` SHA256 against `SHA256SUMS.txt`** when downloaded.
@@ -113,5 +127,4 @@ STOP before moving any jumper, and no external voltage source.
 - [ ] On future stable promotion, request a separate explicit decision
   and verification; do not infer it from RC1 test success.
 
-**Next action:** package an isolated RC1-labeled FAP after the user
-has reviewed this preparation checkpoint, then run the smoke test.
+**Next action:** download and SHA256-verify the isolated RC1 FAP from run 38186623651, install it on Flipper and complete the on-device smoke test. Release/tag creation still requires user approval.
