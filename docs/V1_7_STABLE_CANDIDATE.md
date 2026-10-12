@@ -1,6 +1,6 @@
 # LabMate v1.7 Stable candidate — work and gates
 
-Status: **WORK IN PROGRESS / NOT STABLE / NOT PUBLISHED**.
+Status: **HISTORICAL TEST RECORD — v1.7 Stable PUBLISHED 2026-10-12**. This is retained as evidence, not the current development plan.
 
 **Final label candidate branch:** `v1.7-stable-final`, forked from
 `v1.7-stable-candidate` after tests 7A–7F (36/36 PASS).
@@ -10,10 +10,14 @@ The functional regression results belong to the earlier,
 exact SHA256-matched `v1.7rc1` **stable-candidate FAP**, not
 automatically to the newly labeled final FAP.
 
-**Mandatory remaining gate:** verify final CI/manifest and SHA256,
-USB-install the final `v1.7`-labeled candidate, run a short startup,
-About/menu, PWM STOP and S1/CSV smoke check, then request **separate
-explicit Stable publication authorization**.
+**Release gates completed:** final CI, SHA256, 4/4 on-device final-FAP
+smoke, explicit publication approval and non-prerelease GitHub release.
+Official source tag: `d0e1bc6a95b257841533f0aa8745e3a79bbc8dcd`;
+official FAP SHA256: `5A7CB0EAE601EEAC8856790211C4D2831A9198C31853631E1DAF0308CE724335`.
+**Remaining maintenance QA (not release blockers):** live
+`-Channel Stable` USB installer test, Microsoft Excel CSV import, and
+deferred physical equipment tests. No new version was created for
+documentation changes.
 
 ## Immutable baseline and isolated development
 
@@ -21,8 +25,9 @@ explicit Stable publication authorization**.
   `d55eec032e5f341f39aa7c98915ec2062995e66b`.
 - Baseline FAP SHA256:
   `ED2E91A02AB0F720D6B48EAC13D505D37570FB3A4A1F8E8A76D59E1B79FE14AA`.
-- Branch: `v1.7-stable-candidate`. Do not edit published RC1 tag/assets,
-  `main`, published v1.6.1 Stable assets or installer.
+- Validation branch: `v1.7-stable-candidate`. Published RC1 and v1.6.1
+  tags/assets must not change. Default `main` can be synchronized
+  with Stable documentation/source without mutating old release tags.
 - Device-tested RC1 Profiles fix 6A+6B+6C: **16/16 PASS**,
   before any Stable-candidate source modifications.
 
@@ -32,14 +37,14 @@ explicit Stable publication authorization**.
   CSV row snapshots into `labmate_logger_snapshot.c/.h` and Threshold
   validity gating into `labmate_alerts_bridge.c/.h`. Capture IRQ/PA7 pin
   ownership remains in the existing source modules. Source boundary,
-  portable logic and Momentum SDK CI checks PASS (physical regression pending).
-- [x] One-command `scripts/install-v17-from-github.ps1` includes pinned RC1
-  and future Stable release channels, SHA256 checks, single-FAP destination,
+  portable logic and Momentum SDK CI checks PASS (candidate regressions subsequently passed).
+- [x] One-command `scripts/install-v17-from-github.ps1` includes RC1
+  and published Stable channels, SHA256 checks, single-FAP destination,
   and rejects metadata/hash/USB errors in Windows mock tests.
-  **Not yet physically verified** with the future Stable release. Stable
-  remains unavailable until the separate `v1.7` release exists.
-- [ ] Freeze remaining changes; use an on-device build with Stable
-  version label `v1.7` only after code/installer QA.
+  RC1 verify-only passed on real Windows; Stable-channel USB installation
+  still awaits independent operator confirmation.
+- [x] Freeze and device-check `v1.7` Stable-labeled FAP.
+  Final released artifact's exact checksum matches Test 7G's FAP.
 - [x] Candidate CI [38191036835](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38191036835)
   **2/2 PASS** on source `bdb1de1058961b9d5285944c3d41e16c19183478`:
   SDK FAP compile, architecture and host tests, Windows mock installer.
@@ -100,23 +105,28 @@ explicit Stable publication authorization**.
   preserved S1 and historical CSV files, and 100 Hz/50% PWM->Pulse
   measurement with STOP after exit. This is a **4/4 on-device smoke** on
   the new label build, not a repeat of the earlier 36/36 regression.
-- [ ] Verify the final release installer using the published RC1
-  `-Channel RC1 -VerifyOnly` on actual Windows/GitHub CLI, including
-  failure handling. Do not claim this completed from CI mocks alone.
+- [x] Test 7H: real Windows/gh `-Channel RC1 -VerifyOnly` returned
+  RELEASE VERIFIED, exact RC1 SHA256 and exit code 0 with no USB install.
+  Additional failure handling had already passed Windows CI mocks.
+- [ ] Follow-up: `-Channel Stable -VerifyOnly` and real USB install
+  for the published Stable release, with operator-reported results.
+  Do not silently assume the live Stable-channel test passed.
 - [x] Short resource handoff and repeated START/STOP/navigation
   on tested candidate FAP: user-reported Test 7F PASS. **Not** an
   exhaustive long-duration/fault-injection test; SD failures remain deferred.
 - [x] All 11 tools, 13 About pages and 128x64 clipping reviewed on the
   prior candidate FAP: user-reported Test 7F PASS.
-  Final `v1.7` display label needs a fresh short device check.
-- [x] Prepared README/ROADMAP/CHANGELOG and an explicitly
-  **not-published** Stable release-notes draft. Deferred mechanical
-  contact, calibrated PWM and fault-injection gaps disclosed; final
-  release commit/checksum fields remain PENDING until final CI.
-- [ ] Obtain separate explicit approval for **v1.7 Stable**, then pin
-  final source commit, create and verify final release + SHA256 assets.
-- [ ] Verify stable release non-prerelease, correct tag/FAP/checksum,
-  one-command Stable installer and no changes to previous published releases.
+  Final `v1.7` display label passed Test 7G on device.
+- [x] Prepared README/ROADMAP/CHANGELOG and official
+  `RELEASE_NOTES_v1.7.md`, including deferred mechanical contact,
+  calibrated PWM and fault-injection gaps. Later documentation
+  maintenance records Microsoft Excel CSV import as NOT TESTED.
+- [x] Explicit v1.7 Stable publication approval obtained; tagged and
+  published the release with matching FAP and SHA256 assets.
+- [x] GitHub latest v1.7 release, non-prerelease, tag commit, FAP digest,
+  historical v1.6.1 Stable and v1.7 RC1 immutability verified.
+  Installer mock/RC1 VerifyOnly verified; real Stable-channel USB
+  follow-up stays open as described above.
 
 **IMPORTANT:** RC1 tests do not automatically validate a modified
 stable-candidate FAP. Do not mark unperformed hardware checks PASS. Physical
