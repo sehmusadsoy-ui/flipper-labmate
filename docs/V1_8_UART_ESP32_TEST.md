@@ -126,6 +126,22 @@ after identifying the ESP32 board, to avoid driving reserved pins.
 **No merge / no v1.8 Stable** until external peer and required
 stress/resource checks are reported PASS or explicitly reconciled.
 
+## Windows Arduino CLI compile checkpoint — user-reported FAIL; fix pending
+
+On 2026-10-13, the operator installed `esp32:esp32` 3.3.12 and attempted
+`arduino-cli compile` for ESP32-S2. The compiler returned exit status 1;
+the user shared only the tail of the failure, ending at a caret marker.
+A subsequent green `Write-Host` line was executed separately and **did
+not** establish build success. No ESP32 firmware upload occurred.
+
+One likely source-level issue is the sketch's `LINE_MAX` identifier
+colliding with a POSIX/preprocessor macro from toolchain headers.
+Renamed it to `UART_LINE_CAP` in code commit
+`cdf6ce92aab155167b1f4300a54890d55f5434c6`. This is a hypothesis,
+**not a confirmed diagnosis** without the first compiler `error:` line.
+The revised sketch still needs to be downloaded and compiled with
+the user's installed ESP32 core; no Arduino build PASS claimed.
+
 ## Operator preparation in Arduino IDE (not yet executed)
 
 1. Stop LabMate UART/PWM and **remove the Devboard from Flipper**.
