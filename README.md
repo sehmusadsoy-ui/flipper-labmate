@@ -32,12 +32,14 @@ reported device checks; the exact final v1.7 FAP passed a separate
 
 ## v1.8 development (not a Stable release)
 
-The [v1.8 development branch](https://github.com/sehmusadsoy-ui/flipper-labmate/tree/dev/v1.8-coordinator-refactor)
-is splitting the old ~1,200-line coordinator into independent capture,
-per-screen input, passive GUI and deferred SD modules. Its FAP shows
-**v1.8dev** and is **not an official release**. UART and I²C tools
-are planned, not yet implemented.
-[Progress and physical device regression checklist](docs/V1_8_DEV_NOTES.md).
+The old ~1,200-line coordinator refactor has **passed R1–R10 device
+regression** (user-reported) and was merged to `main` in
+[PR #5](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/5).
+The app now has focused capture, input, GUI and deferred-SD modules.
+The repository head is **v1.8dev**, not a published Stable release.
+A separate Counter STOP/RESUME enhancement is being developed; UART,
+I²C and optional 1-Wire remain upcoming.
+[Refactor details and device-test record](docs/V1_8_DEV_NOTES.md).
 
 ## Repository layout
 

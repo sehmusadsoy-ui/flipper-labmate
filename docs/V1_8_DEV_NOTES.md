@@ -1,6 +1,6 @@
 # LabMate v1.8 development — Coordinator refactor first
 
-**Status:** work in development, NOT a published v1.8 Stable or RC.
+**Status:** coordinator refactor completed and merged in PR #5 (2026-10-12); v1.8 itself remains in development, NOT a published Stable or RC.
 Base: clean organized `main` after PR #4; official v1.7 release/tag/assets stay unchanged.
 Development branch: `dev/v1.8-coordinator-refactor`.
 Screen/manifest identification: `v1.8dev` / `1.8` (test builds only).
@@ -144,11 +144,14 @@ R6–R8 (3), R9–R10 (2). R1's all-tool coverage was concluded with R10.
 This is functional device regression, not independent calibration or
 a guarantee of long-duration/SD-failure resilience.
 
-**Release decision:** close the coordinator refactor with PR #5 only
-after confirming CI and GitHub branch safety. Official v1.7 stable release
-remains unchanged; no v1.8 Stable release is authorized by these checks.
-Optional Counter STOP/RESUME improvement is separately scoped and has
-not been implemented in this tested binary.
+**Merge verification:** PR #5 squash-merged to `main` as
+`737bf6470dbf3d722d2fe8c5b4b6ee78a10b9821`.
+Post-merge [CI 38298760383](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38298760383)
+passed 2/2; no release job ran. Official v1.7 Stable SHA256 remained
+`A0B305E5FD8D71C85C51480EE06A8B7E5EBD5BEE0E82935B0ED3B7E74E7EBCEA`.
+No v1.8 Stable release is authorized by these checks.
+The Counter STOP/RESUME improvement is separate from this tested binary
+and must be validated again on-device before another merge.
 
 ## R5 UX observation — current STOP / RUN resets count (2026-10-12)
 
