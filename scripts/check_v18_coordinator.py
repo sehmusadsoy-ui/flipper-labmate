@@ -60,7 +60,7 @@ assert 'labmate_generator_begin_custom_edit(app)' in read("labmate_input_output.
 assert 'labmate_generator_stop(app);' in read("labmate_input_output.c")
 
 # All STOP paths go through a single capture teardown; PA7 PWM lives elsewhere.
-assert len(re.findall(r"(?m)^void labmate_capture_stop_all\\(", session)) == 1
+assert len(re.findall(r"(?m)^void labmate_capture_stop_all\(", session)) == 1
 assert "labmate_event_counter_stop(app);" in session
 assert "labmate_button_capture_stop(app);" in session
 assert "labmate_capture_all_stopped(" in session
@@ -81,8 +81,8 @@ for forbidden in ("storage_file_", "storage_common_", "labmate_generator_start("
 # commits outside the UI lock. Guard the important ordering invariant.
 assert "labmate_input_dispatch(app, status, event, &work);" in main
 assert "labmate_deferred_prepare(app, &work);" in main
-assert re.search(r"furi_mutex_release\\(app->mutex\\);\\s*"
-                 r"labmate_deferred_execute\\(app, &work, viewport\\);", main)
+assert re.search(r"furi_mutex_release\(app->mutex\);\s*"
+                 r"labmate_deferred_execute\(app, &work, viewport\);", main)
 assert "storage_file_write(app->logger_file, work->pending_log_row, bytes)" in deferred
 assert "storage_file_sync(app->logger_file)" in deferred
 assert "labmate_profile_sd_save(" in deferred
