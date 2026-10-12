@@ -145,6 +145,29 @@ No ESP32-S2 firmware upload, ESP32 board/COM-port identification or
 external communication has been reported yet. Marauder remains on
 the board until the operator performs the explicit USB firmware upload.
 
+## Windows port identity checkpoint — user reported (2026-10-13)
+
+- Arduino CLI `board list` returned `COM12 serial Serial Port (USB) Unknown`.
+- Windows `Get-PnpDevice -PresentOnly -Class Ports` showed a USB serial
+  device on `COM12` with Espressif USB vendor ID `VID_303A`, product
+  ID `PID_0002`. This is consistent with the ESP32-S2's native USB
+  interface. The generic `Unknown` board label is not a compile
+  failure; FQBN was specified explicitly.
+- Flipper was previously on `COM7`, and the operator must never use
+  COM7 as the ESP32 upload destination. Before writing, recheck that
+  COM12 is still connected and has the same expected VID/PID.
+- **No firmware upload has been reported yet.** The latest user
+  checkpoint is still compiler PASS only.
+
+Recommended controlled upload command: recompile the corrected sketch
+with `arduino-cli compile --fqbn
+esp32:esp32:esp32s2:CDCOnBoot=cdc,UploadMode=cdc --output-dir
+<unique-build-dir> <sketch-dir>` and then use
+`arduino-cli upload --input-dir <unique-build-dir>
+--fqbn <same-fqbn> -p COM12 <sketch-dir>`, after verifying the active
+device ID. The operator should report the final upload exit status;
+a native USB port may change or disappear across reset.
+
 ## Operator preparation in Arduino IDE (not yet executed)
 
 1. Stop LabMate UART/PWM and **remove the Devboard from Flipper**.
