@@ -1,6 +1,6 @@
-# LabMate v1.7 RC1 / future Stable: checksum-verified, single-FAP USB installer.
-# RC1 can be installed now; Stable will work only after the official non-prerelease
-# v1.7 tag and release exist. Never installs FAP from a moving branch.
+# LabMate v1.7 Stable / RC1: checksum-verified, single-FAP USB installer.
+# Stable is published as a non-prerelease at v1.7; RC1 stays available.
+# Never installs a FAP from a moving branch.
 [CmdletBinding()]
 param(
     [ValidateSet('RC1', 'Stable')]
