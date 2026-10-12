@@ -24,6 +24,7 @@
 
 #include "labmate_input_tools.h"
 void labmate_input_button(LabMateApp* app, InputEvent event, LabMateDeferredWork* work) {
+    UNUSED(work);
 
                 if(event.key == InputKeyOk) {
                     if(app->button_active) {
@@ -49,6 +50,7 @@ void labmate_input_button(LabMateApp* app, InputEvent event, LabMateDeferredWork
 }
 
 void labmate_input_counter(LabMateApp* app, InputEvent event, LabMateDeferredWork* work) {
+    UNUSED(work);
 
                 if(event.key == InputKeyOk) {
                     if(app->counter_active) {
@@ -68,6 +70,7 @@ void labmate_input_counter(LabMateApp* app, InputEvent event, LabMateDeferredWor
 }
 
 void labmate_input_gpio(LabMateApp* app, InputEvent event, LabMateDeferredWork* work) {
+    UNUSED(work);
 
 
                 if(app->screen == LabMateScreenFrequency &&
