@@ -1,0 +1,138 @@
+name: Publish LabMate v1.7 RC1 pre-release (one time)
+
+on:
+  push:
+    branches: [v1.7-rc1]
+    paths:
+      - ".github/workflows/publish-v17-rc1.yml"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: labmate-v17-rc1-publication
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'sehmusadsoy-ui/flipper-labmate' && github.ref == 'refs/heads/v1.7-rc1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: sehmusadsoy-ui/flipper-labmate
+      TAG: v1.7-rc1
+      TESTED_SOURCE_SHA: d55eec032e5f341f39aa7c98915ec2062995e66b
+      TESTED_FAP_SHA256: ED2E91A02AB0F720D6B48EAC13D505D37570FB3A4A1F8E8A76D59E1B79FE14AA
+      TESTED_CI_RUN: "38189449325"
+    steps:
+      - name: Check out publication control commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Verify release source is exact hardware-tested commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "$TESTED_SOURCE_SHA"
+          test "$(git diff --name-only "$TESTED_SOURCE_SHA" HEAD)" = ".github/workflows/publish-v17-rc1.yml"
+          run_json="$(gh run view "$TESTED_CI_RUN" -R "$REPO" --json headSha,status,conclusion)"
+          test "$(jq -r .headSha <<< "$run_json")" = "$TESTED_SOURCE_SHA"
+          test "$(jq -r .status <<< "$run_json")" = "completed"
+          test "$(jq -r .conclusion <<< "$run_json")" = "success"
+          if gh release view "$TAG" -R "$REPO" >/dev/null 2>&1; then
+            echo "::error::Release already exists; will not replace or amend it."
+            exit 1
+          fi
+          if gh api "repos/$REPO/git/ref/tags/$TAG" >/dev/null 2>&1; then
+            echo "::error::Tag already exists; will not move it."
+            exit 1
+          fi
+
+      - name: Download and checksum-verify the exact tested CI FAP
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          gh run download "$TESTED_CI_RUN" -R "$REPO" -n labmate -D dist
+          test -s dist/labmate.fap
+          test -s dist/SHA256SUMS.txt
+          (cd dist && sha256sum -c SHA256SUMS.txt)
+          actual="$(sha256sum dist/labmate.fap | awk '{print toupper($1)}')"
+          test "$actual" = "$TESTED_FAP_SHA256" || {
+            echo "::error::FAP differs from hardware-tested file."
+            exit 1
+          }
+          test "$(grep -c -E '^[A-Fa-f0-9]{64}[[:space:]]+\\*?labmate\\.fap$' dist/SHA256SUMS.txt)" -eq 1
+          echo "Validated exact on-device-tested FAP SHA256: $actual"
+
+      - name: Prepare truthful public release notes
+        shell: bash
+        run: |
+          cat > rc1-release-notes.md <<'EOF'
+          ## LabMate v1.7 RC1 — Pre-release
+
+          Candidate release for **Flipper Zero with compatible Momentum Firmware**.
+          This is **not a Stable release**; published v1.6.1 Stable remains unchanged.
+
+          ### What's new since v1.6.1
+
+          - **PWM Studio (PA7/TIM1):** original 15 presets, adjustable duty **5–95%** in 5% steps, and STOP-only custom frequency **1–50,000 Hz** with 1/10/100/1000 Hz edit steps.
+          - **Event Counter (PB3/TIM2):** actual hardware rising-edge count, elapsed time, RUN/STOP/RESET and saturating 64-bit total.
+          - **Button Analyzer (PC1):** press/release, debounce (5/10/20/50 ms), bounce, settling and hold measurements.
+          - **Threshold Alerts:** visual-only alerts for Frequency, Pulse Duty, Event Count and Button Settling; arm, latch and acknowledge.
+          - Updated menu icons for **11 tools**, expanded **13-page About guide**, and compact 128x64 display layouts.
+          - Improved **Data Logger**, read-only **Log History** browser and single-CSV **DELETE** with explicit irreversible-action confirmation.
+          - Clarified **Profiles** LOAD/SAVE/DELETE selection and slot-specific confirmation screens; while PWM or capture/logger resources are active, profile actions are blocked. Existing profile file encoding and CSV formats remain compatible.
+          - Fixed LOW PC1 Frequency start after profile loading, asymmetric short HIGH/LOW Pulse averaging at 5%/95% duty, and capture ownership handoffs.
+
+          ### Validation
+
+          - Exact tagged FAP source: `d55eec032e5f341f39aa7c98915ec2062995e66b`.
+          - GitHub Actions run [38189449325](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38189449325): Momentum FAP build and Windows mock-installer jobs **2/2 PASS**.
+          - FAP SHA256: `ED2E91A02AB0F720D6B48EAC13D505D37570FB3A4A1F8E8A76D59E1B79FE14AA`. Download `labmate.fap` and `SHA256SUMS.txt` from these release assets and verify them together.
+          - User-reported Flipper loopback smoke tests covered PWM/Pulse, LOW/HIGH Frequency, Button clean signal, Event Counter, Threshold, Logger/History CSV cancel/delete and safe app exit. The earlier Profiles UX issue was fixed and **16/16** targeted on-device Profiles checks passed; the final tagged FAP is byte-for-byte identical to that tested fix.
+
+          ### Important limitations and safety
+
+          - **Not independently calibrated.** Loopback tests used Flipper's own 3.3 V digital output, not a calibrated oscilloscope. Electrical output voltage, waveform and shutdown level were not independently measured.
+          - **Real mechanical switch bounce/settling: NOT TESTED.** Button tests used a clean digital signal.
+          - Not exhaustively tested: all frequency/duty combinations, long-duration runs, damaged/full/missing SD, power interruption and all error paths.
+          - Use **3.3 V-compatible GPIO signals only**; never attach 5 V, mains, automotive or unknown voltages directly.
+          - Profiles persist supported preset/pin/logger selections only: they do **not** save custom PWM frequency, duty or Threshold Alerts. CUSTOM profile SAVE is refused; loading a preset resets duty to 50%; LOAD never starts PWM.
+          - CSV DELETE is irreversible. Back up important logs/profiles and confirm the selected file before deleting.
+          - On full app exit PWM stops; PWM may keep running while navigating *within* the app.
+          - This pre-release does not update device firmware and does not promote or replace **v1.6.1 Stable**.
+
+          [Repository](https://github.com/sehmusadsoy-ui/flipper-labmate) · [RC1 source](https://github.com/sehmusadsoy-ui/flipper-labmate/tree/d55eec032e5f341f39aa7c98915ec2062995e66b)
+          EOF
+
+      - name: Publish tag pinned to the tested commit and pre-release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" \
+            "dist/labmate.fap#labmate.fap" \
+            "dist/SHA256SUMS.txt#SHA256SUMS.txt" \
+            --repo "$REPO" \
+            --target "$TESTED_SOURCE_SHA" \
+            --title "LabMate v1.7 RC1 (Pre-release)" \
+            --notes-file rc1-release-notes.md \
+            --prerelease \
+            --latest=false
+
+      - name: Verify pre-release type, tagged source and attached files
+        shell: bash
+        run: |
+          set -euo pipefail
+          release_json="$(gh release view "$TAG" -R "$REPO" --json tagName,isPrerelease,assets,url)"
+          jq -e --arg tag "$TAG" '
+            .tagName == $tag and .isPrerelease == true and
+            ([.assets[].name] | sort) == (["SHA256SUMS.txt","labmate.fap"] | sort)
+          ' <<< "$release_json"
+          tag_target="$(gh api "repos/$REPO/git/ref/tags/$TAG" --jq .object.sha)"
+          test "$tag_target" = "$TESTED_SOURCE_SHA"
+          jq -r .url <<< "$release_json"
