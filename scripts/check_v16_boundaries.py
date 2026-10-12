@@ -572,7 +572,7 @@ expect('"3.3V GPIO ONLY"' in SCREENS, "Safety indication missing from About scre
 
 # Stable candidate measurement extraction must retain exactly one aggregation
 # implementation, with app core only calling the new typed service API.
-for name in ("measurement_reset", "frequency_stats_reset", "pulse_stats_reset", "measurement_update"):
+for name in ("measurement_reset", "frequency_stats_reset", "pulse_stats_reset", "pulse_stats_window_reset", "measurement_update"):
     expect(
         len(re.findall(rf"(?m)^void\s+{name}\s*\(", MEASUREMENTS)) == 1
         and f"void {name}(LabMateApp* app);" in MEASUREMENTS_H
