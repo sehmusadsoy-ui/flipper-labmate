@@ -128,7 +128,7 @@ static const LabMateHelpPage labmate_help[LabMateToolCount] = {
         "HIGH LOW PERIOD DUTY", "^ STATS  OK HOLD",
     },
     [LabMateToolGenerator] = {
-        "SIGNAL GENERATOR", "PA7 TIM1 PWM / 3.3V",
+        "PWM STUDIO", "PA7 TIM1 PWM / 3.3V",
         "1Hz-50kHz; duty 5-95", "<>Hz ^vDUTY OK RUN",
     },
     [LabMateToolLogger] = {
