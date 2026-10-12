@@ -10,6 +10,8 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 MAIN = (ROOT / "labmate.c").read_text(encoding="utf-8")
+MEASUREMENTS = (ROOT / "labmate_measurements.c").read_text(encoding="utf-8")
+MEASUREMENTS_H = (ROOT / "labmate_measurements.h").read_text(encoding="utf-8")
 GENERATOR = (ROOT / "labmate_generator.c").read_text(encoding="utf-8")
 GENERATOR_H = (ROOT / "labmate_generator.h").read_text(encoding="utf-8")
 TIM2_CAPTURE = (ROOT / "labmate_frequency_tim2.c").read_text(encoding="utf-8")
@@ -107,7 +109,7 @@ for pattern in [
 
 # Preserve the original single implementations and shared lookup tables.
 expect(
-    len(re.findall(r"(?m)^uint64_t\s+pulse_cycles_to_us\s*\(", MAIN)) == 1,
+    len(re.findall(r"(?m)^uint64_t\s+pulse_cycles_to_us\s*\(", MEASUREMENTS)) == 1,
     "The original pulse unit-conversion implementation must remain in core",
 )
 expect(
@@ -441,7 +443,7 @@ for fn in ("configure", "enable", "read", "shutdown"):
            f"TIM2 driver missing exactly one {name} implementation")
     expect(f"{name}(void);" in TIM2_CAPTURE_H,
            f"TIM2 driver header missing {name}")
-    expect(f"{name}(" in (MAIN if fn == "read" else FREQ_CAPTURE),
+    expect(f"{name}(" in (MEASUREMENTS if fn == "read" else FREQ_CAPTURE),
            f"TIM2 driver is not called by expected owner: {name}")
 expect("LL_TIM_" not in MAIN and "furi_hal_bus_" not in MAIN,
        "TIM2 LL and bus handling must stay out of labmate.c")
@@ -511,8 +513,8 @@ expect(
 PULSE_MATH = (ROOT / "labmate_pulse_math.c").read_text(encoding="utf-8")
 PULSE_MATH_H = (ROOT / "labmate_pulse_math.h").read_text(encoding="utf-8")
 expect(
-    "labmate_pulse_period_and_duty(" in MAIN and
-    "labmate_pulse_median5(" in MAIN and
+    "labmate_pulse_period_and_duty(" in MEASUREMENTS and
+    "labmate_pulse_median5(" in MEASUREMENTS and
     "static uint32_t pulse_stats_median5(" not in MAIN and
     "labmate_pulse_period_and_duty(" in PULSE_MATH and
     "labmate_pulse_median5(" in PULSE_MATH and
@@ -567,6 +569,19 @@ expect(
     "Native PA7 tests must not be included as a FAP .c translation unit",
 )
 expect('"3.3V GPIO ONLY"' in SCREENS, "Safety indication missing from About screen")
+
+# Stable candidate measurement extraction must retain exactly one aggregation
+# implementation, with app core only calling the new typed service API.
+for name in ("measurement_reset", "frequency_stats_reset", "pulse_stats_reset", "measurement_update"):
+    expect(
+        len(re.findall(rf"(?m)^void\\s+{name}\\s*\\(", MEASUREMENTS)) == 1
+        and f"void {name}(LabMateApp* app);" in MEASUREMENTS_H
+        and f"{name}(app)" in MAIN
+        and re.search(rf"(?m)^(?:static\\s+)?void\\s+{name}\\s*\\(", MAIN) is None,
+        f"Measurement aggregator {name} must be in labmate_measurements.c only",
+    )
+expect("storage_" not in MEASUREMENTS and "furi_hal_pwm_" not in MEASUREMENTS,
+       "Measurement aggregation must never write SD or own PWM hardware")
 
 # A background TIM1 PWM output owns PA7. The GPIO Monitor must not
 # reconfigure that pin (including on entry with a stale PA7 selection).
@@ -642,11 +657,11 @@ expect(
 # A one-edge 100 ms counter bin must not generate a misleading 10 Hz
 # sample for a 1 Hz source. Hardware polling and sample gates are separate.
 expect(
-    "labmate_high_gate_evaluate(" in MAIN and
-    "frequency_hw_last_poll_count" in MAIN and
-    "frequency_hw_last_poll_cycle" in MAIN and
-    "frequency_hw_gate_started" in MAIN and
-    "LabMateHighGatePublish" in MAIN,
+    "labmate_high_gate_evaluate(" in MEASUREMENTS and
+    "frequency_hw_last_poll_count" in MEASUREMENTS and
+    "frequency_hw_last_poll_cycle" in MEASUREMENTS and
+    "frequency_hw_gate_started" in MEASUREMENTS and
+    "LabMateHighGatePublish" in MEASUREMENTS,
     "PB3 high-frequency meter must use the adaptive sample gate",
 )
 expect(
