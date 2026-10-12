@@ -4,7 +4,7 @@ on:
   push:
     branches: [v1.5-dev]
     paths:
-      - "labmate.c"
+      - "src/labmate.c"
       - "application.fam"
       - ".github/workflows/build-v1.5.yml"
   workflow_dispatch:
