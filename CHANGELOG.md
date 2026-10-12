@@ -1,10 +1,18 @@
 # Changelog
 
-## [1.7 RC1 preparation] - Unreleased
+## [1.7 Stable candidate] - Unreleased (2026-10-12)
 
-This entry is a **draft on `v1.7-dev`**, not a published RC1 or Stable
-tag. Stable v1.6.1 assets remain intact. Candidate LCD label/packaging,
-fresh RC1 CI and device smoke tests are still pending.
+**v1.7 RC1 was published as a pre-release.** The `v1.7-stable-candidate`
+build completed user-reported on-device regression Test 7A–7F,
+**36/36 PASS**; 7B measurements were screenshot-reviewed. This covered
+PWM/Pulse, LOW/HIGH Frequency, Event Counter, clean-digital Button,
+Threshold, all Logger modes, History cancel/delete, Profiles guards,
+menu and About, app exit and a short ~5-minute navigation session.
+
+The isolated `v1.7-stable-final` branch prepares the final on-screen
+`v1.7` version label; only a fresh CI build and physical smoke can
+validate the newly labeled FAP. **No v1.7 Stable tag or release exists
+yet; v1.6.1 remains published Stable.**
 
 ### New tools and signal generation
 - PWM Studio adds adjustable TIM1/PA7 PWM duty (5..95%, step 5%) and
@@ -32,14 +40,22 @@ fresh RC1 CI and device smoke tests are still pending.
   wrong PB3 capture engine.
 - Fixed Pulse Analyzer's asymmetric duty accumulation bug at 95% and
   5% duty, confirmed against clean PA7->PC1 digital loopback.
-- User-reported on-device functional and UI regression results and
-  GitHub Actions `38185793925` (2/2 jobs PASS) support the development
-  source `b5bbd318...`; the RC1-labeled FAP has not yet been built.
+- Published pre-release `v1.7-rc1` source `d55eec03` and
+  checksum-verified artifact were released independently of prior Stable.
+- Stable candidate `bdb1de10` FAP SHA256
+  `94883B517D526EAA0F64E2AEAC89F89D181F85FD4F3ABB9056F3EEC2B68123E0`
+  passed CI 2/2 plus 36/36 targeted user-reported device checks.
+  The final on-screen `v1.7` build remains a separate, pending check.
+- Refactoring extracted measurement updates, CSV sample preparation and
+  Threshold sample-validity gating from `labmate.c` into separate
+  modules without changing the intended acquisition logic.
+- One-command version-aware PowerShell+USB installer with release-tag,
+  SHA256 and fixed-FAP-path guards passed Windows mock tests.
 - **NOT TESTED:** physical mechanical switch bounce and independent
   oscilloscope/voltage/frequency calibration (equipment deferred).
   Full/corrupted SD and other destructive error-path checks also remain
-  unverified. See `docs/V1_7_RC1_RELEASE_NOTES_DRAFT.md` and
-  `docs/V1_7_RC1_CHECKLIST.md`.
+  unverified. See `docs/DEFERRED_HARDWARE_TESTS.md` and
+  `docs/V1_7_STABLE_RELEASE_NOTES_DRAFT.md`.
 
 ## [1.6] - 2026-10-10 (Stable)
 
