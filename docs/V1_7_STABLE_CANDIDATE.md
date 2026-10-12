@@ -30,12 +30,23 @@ Status: **WORK IN PROGRESS / NOT STABLE / NOT PUBLISHED**.
 - [x] Candidate CI [38191036835](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38191036835)
   **2/2 PASS** on source `bdb1de1058961b9d5285944c3d41e16c19183478`:
   SDK FAP compile, architecture and host tests, Windows mock installer.
-  CI artifact `labmate`; this is **not** physically tested yet.
-- [ ] SHA256-verify exact candidate FAP; install over USB and repeat key
-  device smoke/regression: startup, PA7 STOP on exit, 100 Hz 5/95% duty
-  with Pulse, LOW/HIGH Frequency, PB3 Counter, clean PC1 Button,
+  CI artifact `labmate`, subsequently installed and functionally device-tested
+  on a Flipper with the provenance below.
+- [x] Verify exact candidate FAP SHA256
+  `94883B517D526EAA0F64E2AEAC89F89D181F85FD4F3ABB9056F3EEC2B68123E0`
+  and install via COM7 to `/ext/apps/Tools/labmate.fap`. User confirmed
+  install and startup on 2026-10-12. Test 7A: **3/3 PASS**
+  (launch/no hang, `v1.7rc1` and initial PWM STOP, preserved Profile S1).
+- [x] Test 7B: **6/6 PASS** on the exact candidate FAP using PA7→PC1
+  Flipper 3.3 V internal loopback. Screenshot-reviewed Pulse readings:
+  100 Hz/5% HIGH 500 us, LOW 9.50 ms, PERIOD 10 ms, DUTY 5.0%;
+  100 Hz/50% HIGH 5.00 ms, LOW 4.99 ms, PERIOD 9.99 ms, DUTY 50.0%;
+  100 Hz/95% HIGH 9.50 ms, LOW 500 us, PERIOD 10 ms, DUTY 95.0%.
+  User also reported STATS/MIN/MAX, HOLD/LIVE and STOP/relaunch PASS;
+  no defects reported. Functional loopback only; **not calibration**.
+- [ ] Test 7C+: LOW/HIGH Frequency, PB3 Event Counter, clean PC1 Button,
   Threshold Alerts, CSV Logger/History cancel/delete, Profiles
-  SAVE/LOAD/DELETE and PWM-RUN blocks.
+  SAVE/LOAD/DELETE and PWM-RUN blocks on the modified FAP.
 - [ ] Check resource-hand-off and repeated navigation/STOP/START; check
   storage error behavior when practicable on disposable test data.
 - [ ] Review full 11-tool menu, 13-page About and 128x64 clipping.
