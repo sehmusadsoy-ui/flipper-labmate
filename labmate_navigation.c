@@ -8,7 +8,7 @@ static const char* const tool_titles[LabMateToolCount] = {
     "GPIO Monitor",
     "Frequency Meter",
     "Pulse Analyzer",
-    "Signal Generator",
+    "PWM Studio",
     "Data Logger",
     "Log History",
     "About",
