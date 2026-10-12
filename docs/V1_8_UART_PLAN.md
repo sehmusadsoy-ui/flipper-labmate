@@ -1,7 +1,9 @@
 # LabMate v1.8 — UART Terminal development plan
 
-**Status:** UART work started on `dev/v1.8-uart-terminal`. No UART
-instrument is implemented or device-tested yet. This branch was created
+**Status:** UART RX/TX **development candidate implemented**, with a
+Momentum SDK API 87.1 compile and portable unit checks. **NOT device-tested**.
+The 12th instrument `UART Terminal` is accessible in the new fifth
+`COMM` menu group. No Flipper test result has yet been reported. This branch was created
 from the already merged, CI-passing Counter STOP/RESUME baseline
 (`main`, PR #6). No Stable release, installer or tag is changed.
 
@@ -70,3 +72,59 @@ replacement, I²C or 1-Wire (these are separate scoped features).
 
 Caution: Flipper GPIO is 3.3 V only. Never connect UART to 5 V, RS-232
 signal levels, unknown voltage sources, motor controllers or mains.
+
+## Implemented in this candidate (not yet verified on physical Flipper)
+
+- USART 8N1 at `9600`, `38400`, or `115200` baud (select while STOP).
+- Flipper GPIO header **pin 13 TX, pin 14 RX** (USART), as specified in
+  [Flipper expansion protocol hardware pinout](https://developer.flipper.net/flipperzero/doxygen/expansion_protocol.html).
+  Firmware Expansion must not be controlling a connected module. The
+  app checks `expansion_is_connected` and fails with BUSY without
+  disconnecting a currently connected expansion module; otherwise calls
+  `expansion_disable` before UART acquisition and re-enables the
+  service on cleanup.
+- ISR callback enqueues single RX bytes in a bounded 256-byte
+  `FuriStreamBuffer`; the main loop drains at most 256 bytes per tick,
+  renders printable ASCII, converts nonprintables to periods, and shows
+  capped RX/drop/error counters. No storage/GUI/mutex calls inside ISR.
+- UART starts STOP. OK toggles UART RUN/STOP; UP clears the visible
+  buffer; LEFT/RIGHT select baud when STOP; DOWN enters TX editor when
+  RUN; BACK leaves and releases USART.
+- TX editor: up to 12 editable uppercase/digit/punctuation characters;
+  UP/DOWN cycle character, LEFT/RIGHT change position, OK explicitly
+  queues sending text with CRLF, BACK returns to RX.
+  TX executes on app thread after releasing GUI mutex, and waits for
+  completion before any subsequent STOP/deinit request.
+- Separate `labmate_uart.c/.h`, `labmate_uart_text.c/.h`,
+  `labmate_uart_ui.c`, `labmate_input_uart.c`. Main coordinator
+  remains under 200 lines, legacy tool IDs and saved profile format intact.
+
+## First real Flipper test suite (pending)
+
+**Preparation:** Stop PWM and fully exit LabMate before rewiring.
+Remove other UART/expansion attachments. The simplest first exercise is
+a short, directly wired **Flipper pin 13 TX → Flipper pin 14 RX**
+self-loopback with a verified 3.3 V jumper, no external power supply.
+Never connect 5 V/RS-232/unknown voltages to GPIO.
+
+- [ ] U1: `v1.8dev` shows COMM → UART Terminal; old 11 tools still reachable
+- [ ] U2: UART opens STOP, default 115200, pin label `TX13 RX14`
+- [ ] U3: OK RUN works and no BUSY/ERR, DOWN enters TX editor
+- [ ] U4: TX editor initial `AT`; press OK SEND; RX view shows
+      `AT` loopback; repeated sends increase byte count without crash
+- [ ] U5: STOP, select 9600 with LEFT/RIGHT, RUN, send `AT` and
+      confirm correct RX; verify second 38400 baud setting too
+- [ ] U6: STOP/START repeatedly and BACK leave UART without freezing;
+      re-entry starts STOP; no background UART resource retained
+- [ ] U7: PA7 PWM Generator, PB3 Counter/Frequency, Profiles S1 and
+      saved CSV History remain usable after UART screen
+- [ ] U8: Remove loopback only while UART STOP; exit and relaunch app;
+      no freeze or corrupted state
+
+**After self-loopback:** verify external 3.3 V UART peer RX and TX
+at 9600 and 115200, overload/drop counters, error status and BUSY
+when another service owns the serial port. An internal loopback alone
+does **not** prove interoperability with a separate MCU.
+
+Do not publish or merge as a UART-functional release until user-reported
+device tests and, separately, MCU interoperability tests are reviewed.
