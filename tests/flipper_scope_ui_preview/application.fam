@@ -1,0 +1,14 @@
+# DEVELOPMENT ONLY - separate from production LabMate. NO physical GPIO.
+App(
+    appid="labmate_scopeuipreview",
+    name="LabMate Scope UI Demo",
+    apptype=FlipperAppType.EXTERNAL,
+    entry_point="labmate_scope_ui_preview_app",
+    sources=["preview.c"],
+    requires=["gui"],
+    stack_size=4 * 1024,
+    fap_category="Tools",
+    fap_author="sehma",
+    fap_version="1.9",
+    fap_description="SIMULATED digital Scope UX preview. No GPIO or sensor access.",
+)
