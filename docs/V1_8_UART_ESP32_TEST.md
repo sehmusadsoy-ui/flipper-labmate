@@ -1,6 +1,6 @@
 # LabMate v1.8 UART ↔ ESP32 Interoperability Test
 
-**Status: ESP32-S2 UART E1–E6 = 6/6 operator-reported PASS (2026-10-13), including bidirectional 115200 and 9600 baud. SR1-R1 corrected FAP **device PASS** (operator-reported, 2026-10-13): 9600 baud retained across STOP/BACK/re-entry and 2-minute RX stable. Previous SR1 FAIL diagnosed/resolved. Clean-baseline ERR detection E:0→88 and fresh 9600 re-entry recovery (ESP32_READY, E:0 D:0) PASS; ST2 115200 device RX/UI stable (R:20569 then R:41281, D:0 E:0), but the precise AT-triggered load path needs a focused retest after operator confirmed separate A then T. Direct same-screen recovery, physical BUSY conflict and intentional hardware overflow remain PENDING; PR #7 stays draft.**
+**Status: ESP32-S2 UART E1–E6 = 6/6 operator-reported PASS (2026-10-13), including bidirectional 115200 and 9600 baud. SR1-R1 corrected FAP **device PASS** (operator-reported, 2026-10-13): 9600 baud retained across STOP/BACK/re-entry and 2-minute RX stable. Previous SR1 FAIL diagnosed/resolved. Clean-baseline ERR detection E:0→88 and fresh 9600 re-entry recovery (ESP32_READY, E:0 D:0) PASS; ST2 115200 device 2× AT-triggered high-rate RX PASS after operator clarified the on-screen AT stayed intact while TX cursor moved A→T (R:20569 then R:41281; final D:0 E:0; GUI and STOP/BACK PASS). Direct same-screen recovery, physical BUSY conflict and intentional hardware overflow remain PENDING; PR #7 stays draft.**
 The user identified an **ESP32-S2-WROVER Flipper Dev Board**. The
 official Flipper Wi-Fi Developer Board schematics were checked:
 https://cdn.flipperzero.one/Flipper_Zero_WI-FI_Module_V1_Schematic.PDF
@@ -502,7 +502,7 @@ rate-controlled external traffic source would be needed. The currently
 installed ESP32 9600 sketch was neither modified nor reflashed.
 Its periodic `ESP32_READY` packets cannot credibly force overflow.
 
-## ST2 external high-rate traffic fixture — device RX/UI stable; explicit AT-trigger confirmation pending
+## ST2 external high-rate traffic fixture — two sequential AT-triggered loads device PASS; physical DROP unobserved
 
 A separate **115200 8N1** ESP32-S2-WROVER Arduino sketch is staged at
 [`tests/esp32_s2_wrover_uart_stress_115200/esp32_s2_wrover_uart_stress_115200.ino`](../tests/esp32_s2_wrover_uart_stress_115200/esp32_s2_wrover_uart_stress_115200.ino).
@@ -558,48 +558,52 @@ and v1.7 Stable are unchanged. Physical RX-load ST2 was subsequently
 reported PASS; deliberate physical DROP and competing-owner BUSY
 remain unverified.
 
-**ST2 real-device receive/UI stability — PASS; exact burst trigger
-UNCONFIRMED after TX clarification (operator reports, 2026-10-13).**
+**ST2 physical high-rate RX and twice-triggered AT test — PASS
+(operator-reported, 2026-10-13; clarified TX-editor operation).**
 
-Initial report:
+The operator's initial physical device report:
 
 ```text
 LabMate v1.8 ST2 gerçek cihaz sonucu: ESP32_READY=yes; yoğun veri=yes;
 R=41281; D=0; E=0; arayüz ve STOP/BACK=yes
 ```
 
-Follow-up: **R:20569** on the first reading, **R:41281** later;
-the operator explicitly answered **"önce a sonra t"** when asked
-whether A and T were sent separately (rather than one complete
-`AT` line).
+Follow-up readings: **R:20569** after first trigger and
+**R:41281** cumulatively after the second (delta **20,712**).
+When asked what "first A then T" meant, the operator clarified:
 
-- **PASS (observed):** periodic `ESP32_READY` readable at 115200
-  baud, large cumulative RX counter, **D:0 E:0** at final reading,
-  working UI and STOP/BACK following the observed traffic.
-- **NOT YET VERIFIED:** a single `AT\r\n` command triggering
-  `ESP32_OK` / `STRESS_ARMED` and the bounded 20,480-byte stress
-  burst. The current ST2 ESP32 sketch's `handleLine()` only arms
-  load on `strcmp(inputLine, "AT") == 0`; separate `A\r\n` and
-  `T\r\n` do not arm it.
-- **Important UI nuance:** LabMate's TX editor **edits text**
-  letter by letter, but pressing OK **sends the entire displayed
-  text** with CRLF. The user described separate A then T; without
-  an explicit statement of what was displayed at each OK, we
-  cannot reconstruct exact serial commands or the cause of the
-  20K/41K readings. Those readings are session-cumulative, not
-  burst sizes. Do not assert the firmware generated no bursts;
-  this test's actual trigger sequence remains ambiguous.
-- **Next safe focused verification:** with the already installed
-  ST2 peer at 115200 and Flipper UART RUN, note a baseline R.
-  In TX editor confirm the **full displayed string is `AT`**
-  before pressing **OK exactly once**. Return to RX; report
-  whether `ESP32_OK` or `STRESS_ARMED` was legible, later R,
-  D/E and UI. ST2 auto-stops each burst within 2.5 seconds.
-  No reflashing, jumpers, or additional load cycles required
-  until these observations are reviewed.
-- **Physical DROP > 0** and **genuine serial-owner BUSY**
-  remain unverified; host mocked checks do not establish
-  either hardware behavior.
+> "AT YAZIYORDU BENDE ÖNCE A İLE BAŞLATTIM TAMAMLADI TESTİ.
+> SONRA SAĞA KAYDIM T İLE BAŞLATTIM"
+
+**Source-verified interpretation:** The full TX editor string remained
+`AT`. The operator first sent while the editor cursor was on
+**A**, waited for the first test to finish, then moved the cursor
+right onto **T** and sent again. LabMate's
+`labmate_input_uart.c` copies the entire `tx_text` payload and
+appends CRLF on *each* OK regardless of cursor position.
+ESP32 ST2's `handleLine()` arms bounded traffic for each complete
+`AT\r\n` received while idle. Since the first run completed
+before the second OK, the operator's interaction and reported
+two high-rate bursts match the code's designed behavior.
+The cursor location **does not cause an A-only or T-only TX**.
+
+- **PASS:** working 115200 baud `ESP32_READY`, two sequential
+  `AT`-initiated load interactions as clarified, and cumulative
+  RX readings **20569 → 41281**.
+- **PASS:** final counters **D:0, E:0** and working GUI,
+  STOP/BACK after load (as reported). First-cycle D/E
+  were not separately recorded.
+- **Scope:** each separate ST2 request is limited by sketch
+  to **20,480 payload bytes or 2.5 seconds**, whichever first.
+  The session-level R includes READY, ACK, banner and other
+  protocol text; the first 20,569 reading and second incremental
+  20,712 are **not measured per-burst payload sizes**.
+- **Still open:** no reported **physical queue DROP D>0**,
+  **genuine competing UART-owner BUSY**, or an independent test
+  of in-screen direct baud-error recovery. Host mock CI
+  covers BUSY/DROP code paths, but physical acceptance is distinct.
+- No code or device firmware change was needed to resolve the
+  earlier communication misunderstanding.
 
 **Remaining physical acceptance gates:** a genuine competing-service
 BUSY refusal and a controlled, actually-observed D>0 overflow path
