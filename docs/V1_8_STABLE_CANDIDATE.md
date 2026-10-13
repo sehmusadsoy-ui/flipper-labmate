@@ -56,9 +56,12 @@ advancement to v1.9 before actual v1.8 Stable publication.
 - [ ] **C2:** User downloads and SHA256-verifies *labmate.fap*, installs
   by one PowerShell+USB workflow over the **existing**
   `/ext/apps/Tools/labmate.fap` and does NOT create a duplicate.
-- [ ] **C3:** Physical Flipper shows RC1 version, previous instrument
-  navigation and COMM → UART Terminal; there must be **no unimplemented
-  I²C/1-Wire menu placeholder**.
+- [x] **C3 PASS — user-reported on-device Test 18-R1, 6/6**, 2026-10-14:
+  R1 app opens + `v1.8RC1` badge; R2 COMM/UART present; R3 UART screen
+  RUN/STOP responsive; R4 BACK returns to menu; R5 PWM Studio,
+  Event Counter and Records entries present; R6 no I²C or 1-Wire
+  placeholder. **This is actual Flipper UI/control evidence, not
+  independently captured transaction data or full legacy regression.**
 - [ ] **C4:** Device smoke: UART RUN, receive/explicit transmit,
   STOP/BACK and re-entry remain responsive; retest UART 115200
   against the earlier known-good setup when available.
@@ -69,6 +72,20 @@ advancement to v1.9 before actual v1.8 Stable publication.
   and post-build installation checksum / 4-point device smoke PASS,
   only then tag/publish v1.8 Stable and update README to Stable.
   Source/binary provenance and known exclusions are documented.
+
+## Test 18-R1 — physical device acceptance (operator report 2026-10-14)
+
+The operator submitted: `R1=PASS; R2=PASS; R3=PASS; R4=PASS; R5=PASS; R6=PASS`.
+All six first-pass UI/control items are marked **6/6 PASS**, in the
+same RC1 sequence following the verified successful CI build. R3 proves
+UART RUN/STOP screen control, **not** RX/TX with an external peer.
+An earlier PowerShell transcript ended `LABMATE v1.8 RC1 USB INSTALL
+COMMAND PASS` but did not include the transfer transcript; do not
+claim independently verified USB bytes/port or file contents from
+that final line alone. The physical RC1 label is user-reported PASS.
+No fresh external UART traffic, PWM output validation, Counter
+STOP/RESUME, Profile storage or History record recheck has yet been
+reported for this RC1. Stable publication remains blocked by C4/C5/C6.
 
 ## Removing old demonstrations (not required for build)
 
