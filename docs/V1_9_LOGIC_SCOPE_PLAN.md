@@ -1,6 +1,6 @@
 # LabMate v1.9 — Logic Scope + Signal Compare (early R&D)
 
-**Status (2026-10-14): L0 strict C11 host tests, scope HAL-isolation guard, Momentum development FAP SDK build and Windows installer mock all CI PASS. L1 display projection is the next gate; real GPIO capture is still NOT IMPLEMENTED.**
+**Status (2026-10-14): L0 strict C11 host tests + SDK + installer mock CI PASS (run 38473341973). L1 HAL-free 120-column projection with dense-edge/overflow transparency committed; new CI PENDING. No real GPIO capture or Flipper screen integration.**
 This is a preliminary v1.9 **development-only branch**, not a
 v1.9 release, not a device-tested oscilloscope, and not authorization
 to skip an unfinished v1.8 milestone.
@@ -85,7 +85,7 @@ but **no runtime code invokes it**. No user-visible Scope menu exists.
 | L0a | Native strict C11: initial level, trigger modes, filtered edges, stale token, START/STOP | **CI PASS** run 38473341973; exact source 1febeaf6 |
 | L0b | Native strict C11: wrap, clock faults, >half-range span, no overwrite, overflow, token exhaustion | **CI PASS** run 38473341973; exact source 1febeaf6 |
 | L0c | Static guard: no HAL, GPIO, UI/menu, or runtime calls; SDK development FAP builds alongside older features | **CI PASS** run 38473341973; SDK build and Windows mock installer passed |
-| L1 | Pure 128×64 pixel/column projection with honest unresolved-edge density flags | NOT STARTED |
+| L1 | Pure 120-column projection for future 128×64 Canvas; honest dense-edge, crop, overflow/fault and no-trigger states | Code + native tests and static guard committed, **CI PENDING**; no on-device UI |
 | L2 | Real capture driver plan: mutually exclusive PC0/PC1/PB3/PA7, bounded ISR/timebase and STOP/BACK | NOT STARTED — safety gate |
 | L3 | Real Flipper no-signal and known-safe 3.3-V loopback; clean STOP/BACK and regressions | NOT TESTED |
 | L4 | Signal Compare: reference/tolerance pure math and defensible error/missing-signal messaging | NOT STARTED |
@@ -103,6 +103,65 @@ but **no runtime code invokes it**. No user-visible Scope menu exists.
 - Windows installer mock job `115557763256` **SUCCESS** without touching USB.
   v1.7 release finalization job `115557896247` **SKIPPED** as intended.
 - These PASS results cover only the HAL-free model and build. Physical signal capture, hardware timebase, accuracy, peak edge rate and STOP/BACK on Flipper remain untested.
+
+## L1 — bounded 120-column projection for eventual 128×64 view (CI PENDING)
+
+Code: `src/labmate_scope_project.h/.c`; strict host tests:
+`tests/test_scope_project.c.inc`; independent isolation guard:
+`scripts/check_v19_scope_projection.py`. The same ordinary
+Momentum development FAP CI compiles the pure source and tests
+it on a native host. **No new Flipper screen, Canvas calls,
+capture worker or menu have been added.**
+
+A frozen/synchronized L0 trace (up to 128 genuine transitions)
+is projected to **120 horizontal pixel columns**, leaving
+eight display pixels for future margins/status. Each column
+holds its **entering level, leaving level and number of
+transition events**; there are 120 × 3 bytes = **360 bytes**
+of column data, plus metadata. A future renderer may place
+HIGH and LOW lines at readable Y coordinates, but **must
+mark any column with two or more edges as DENSE/ambiguous**:
+a single pixel cannot represent all intermediate pulses.
+It must never render that column as an unambiguous clean
+single-width waveform.
+
+Pixel placement uses
+`floor((edge_offset - window_start) × 119 / window_span)`
+with 64-bit multiplication, including the exact right endpoint.
+When the window is cropped on the left, the most recent
+known level at or before the boundary becomes the entering
+level: the boundary event is **not** fabricated as a new
+transition. Right cropping is flagged. Source offsets remain
+**uncalibrated ticks**, not seconds or frequency.
+
+Honest state handling:
+- ARMED with no trigger → `WaitingTrigger`, **no waveform**.
+- STOPPED without any trigger → `NotTriggered`, **no waveform**.
+- Only a level anchor at t=0, with no time progression →
+  `NoSpan`, **no invented duration/flat line**.
+- Invalid view windows, bad event ordering, nonbinary
+  levels and request beyond last **observed** elapsed tick →
+  explicit invalid status, no waveform.
+- After OVERFLOW, the first omitted edge at offset
+  `elapsed_ticks` makes later levels unknown. **Display
+  requests beyond the last stored, reliable event are
+  rejected**. Valid earlier projection remains clearly marked
+  `Overflow` and `right_cropped`.
+- Already captured data remains viewable with an explicit
+  `Fault` state; a clock error is never relabeled success.
+
+Tests include clean synthetic edge mapping, unchanged
+samples, five transitions inside one pixel, left/right
+crop behavior, exact right endpoint, no-trigger/NoSpan/fault
+scenarios, corrupted ordering/binary input, 128-entry buffer
+overflow, and 64-bit arithmetic near the maximum time span.
+These are **host-only synthetic inputs**, not timing/oscilloscope
+performance measurements.
+
+**Hard boundary:** L1 has no GPIO, timer or
+physical ownership; no user installation should be
+interpreted as a working v1.9 Logic Scope. L2/L3 remain open
+even if this L1 test workflow passes.
 
 ### Current limitations
 
