@@ -64,6 +64,8 @@ static void test_reject_uncertain_environment(void) {
     assert(labmate_onewire_environment_check(&e) == LabMateOneWireGateResourceBusy);
     e = eligible_mock(); e.ibutton_active = true;
     assert(labmate_onewire_environment_check(&e) == LabMateOneWireGateResourceBusy);
+    e = eligible_mock(); e.rfid_active = true;
+    assert(labmate_onewire_environment_check(&e) == LabMateOneWireGateResourceBusy);
     e = eligible_mock(); e.expansion_connected = true;
     assert(labmate_onewire_environment_check(&e) == LabMateOneWireGateResourceBusy);
     e = eligible_mock(); e.other_owner_unknown = true;
