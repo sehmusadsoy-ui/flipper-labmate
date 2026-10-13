@@ -72,7 +72,8 @@ bool labmate_i2c_control_probe_done(
     if(!token || token != c->generation || c->state != LabMateI2cControlScanning ||
        !c->bus_held || !c->probe_inflight || !c->scan.awaiting_result ||
        address7 != c->scan.pending_address ||
-       result > LabMateI2cProbeError) return false;
+       (result != LabMateI2cProbeNoAck && result != LabMateI2cProbeAck &&
+        result != LabMateI2cProbeError)) return false;
 
     c->probe_inflight = false;
     if(result == LabMateI2cProbeError) {
