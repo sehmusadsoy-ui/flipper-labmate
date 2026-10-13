@@ -1,7 +1,7 @@
 # LabMate v1.8 — Single-App Stable Candidate Acceptance
 
 **Decision: 2026-10-14 — operator-authorized scope deferral.**
-**Status: RC1 SOURCE COMMITTED; CI and physical acceptance PENDING.**
+**Status: RC1 exact-source CI PASS; physical acceptance PENDING.**
 This is the *actual* `labmate.fap` built from `src/*.c`, not a UI demo
 or separate tool application. Do not publish Stable while a required
 gate remains open. The existing immutable published v1.7 Stable is
@@ -52,10 +52,7 @@ advancement to v1.9 before actual v1.8 Stable publication.
 
 ## Candidate gates
 
-- [ ] **C1:** GitHub strict host/native regressions and Momentum
-  development SDK build PASS at one exact source SHA. Windows installer
-  mock PASS. Artifact is named **labmate** and contains **labmate.fap**.
-  FAP SHA256 must be taken from the job build log, not the ZIP digest.
+- [x] **C1 PASS — exact source** `d2e3fe8b41599289464db077f1d4a9d26dc442e7` at [run 38482399817](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38482399817), compile job `115587842090` and Windows installer mock job `115587842270` both successful; Stable publishing job intentionally SKIPPED. SDK compiled the real `labmate.fap`, all bundled host regressions and boundary guards passed. Artifact `labmate` ID `11858875740`, source SHA matches run. CI's explicit **FAP file SHA256** `3d33cca37e9c59927e42f101b7cea118677e457eaefae1306aab741999c97d63`; the artifact ZIP digest `5584e52bf3287402ce3c929076f4c2b6340fec0939365103bf320f8a948bba10` is not the FAP hash. No physical USB/Flipper results claimed yet.
 - [ ] **C2:** User downloads and SHA256-verifies *labmate.fap*, installs
   by one PowerShell+USB workflow over the **existing**
   `/ext/apps/Tools/labmate.fap` and does NOT create a duplicate.
