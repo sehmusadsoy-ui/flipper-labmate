@@ -1,4 +1,4 @@
-/* Portable navigation tests: exhaustive access to all 12 tools.
+/* Portable navigation tests: exhaustive access to all 13 tools.
  * Do not include this host test in the firmware FAP build.
  */
 #include "labmate_navigation.h"
@@ -7,13 +7,13 @@
 #include <stdio.h>
 
 int main(void) {
-    const uint8_t expected_sizes[] = {5U, 2U, 3U, 1U, 1U};
+    const uint8_t expected_sizes[] = {5U, 2U, 3U, 1U, 2U};
     const uint8_t expected_tools[][LABMATE_NAV_MAX_CHILDREN] = {
         {LabMateToolGpio, LabMateToolFrequency, LabMateToolPulse, LabMateToolCounter, LabMateToolButton},
         {LabMateToolGenerator, LabMateToolAlerts, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
         {LabMateToolLogger, LabMateToolHistory, LabMateToolProfiles, LabMateToolInvalid, LabMateToolInvalid},
         {LabMateToolAbout, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
-        {LabMateToolUart, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
+        {LabMateToolUart, LabMateToolI2c, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
     };
     uint8_t visits[LabMateToolCount] = {0};
     for(uint8_t group = 0U; group < LabMateGroupCount; ++group) {
@@ -52,6 +52,8 @@ int main(void) {
     assert(labmate_nav_tool_at(LabMateGroupComm, 0U) == LabMateToolUart);
     assert(strcmp(labmate_nav_tool_title(LabMateToolGenerator), "PWM Studio") == 0);
     assert(labmate_nav_tool_title(255U)[0] == '\0');
+    assert(labmate_nav_tool_at(LabMateGroupComm, 1U) == LabMateToolI2c);
+    assert(strcmp(labmate_nav_tool_title(LabMateToolI2c), "I2C Explorer") == 0);
     assert(labmate_nav_group_title(255U)[0] == '\0');
     assert(labmate_nav_wrap(200U, 0U, 1) == 0U);
     assert(labmate_nav_wrap(255U, 3U, 1) == 1U);
