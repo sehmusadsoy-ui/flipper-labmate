@@ -38,6 +38,9 @@ typedef struct {
     bool error_pending;
 } LabMateI2cControl;
 
+/* Construction-time initialization ONLY. This zeros ownership bookkeeping;
+ * NEVER call on a live worker or after a real acquire. It does not unlock,
+ * stop, or release the physical bus. */
 void labmate_i2c_control_reset(LabMateI2cControl* control);
 /* Returns false while an acquire/scan/release from a previous run is live. */
 bool labmate_i2c_control_start(LabMateI2cControl* control, uint32_t* token);
