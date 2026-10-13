@@ -53,10 +53,36 @@ A new **compile/link-only** ABI probe is committed on the I²C Draft branch:
   development SDK, compiles the isolated probe, and verifies the
   resulting separate FAP/manifest without publishing any release.
 
-**Status: CI build PENDING**, no ABI-link PASS until its separate
-workflow result is read. Even if this compiles, G1's **unbounded
-FuriWaitForever acquisition/cancellation hazard remains OPEN** and
-the proof must **not** be installed or treated as a hardware scanner.
+**G1 ABI-link build PASS:** GitHub Actions
+[38451777836](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38451777836)
+completed the inert **separate** Momentum SDK external I²C symbol
+link step and checksum proof **SUCCESS**. Artifact
+`labmate-i2c-sdk-abi-probe` (ID `11840776165`) records exact
+build-source SHA `14fb8be53d14f63310c8f7c1e1c064e3cf817d8e`.
+This confirms the public external I²C handle/acquire/release/ready
+symbols resolve with that SDK. It **does not** acquire a real bus,
+exercise a connected device, or establish that the HAL acquisition is
+cancelable. G1's **unbounded FuriWaitForever ownership hazard remains
+OPEN** and the proof FAP must **not** be installed as a scanner.
+
+## G1 acquisition architecture checkpoint — still blocked
+
+Momentum's existing GPIO scanner also invokes `furi_hal_i2c_acquire`
+directly. Source review found the external mutex
+`furi_hal_i2c_bus_external_mutex` is an implementation variable
+**not exported in the F7 API symbol list**. Thus there is currently no
+verified public, timed `try_acquire` operation to use for guaranteed
+responsive STOP/BACK. Checking `current_handle` is racy and **not**
+sufficient, invoking bus callbacks directly would bypass ownership
+invariants, and killing an indefinitely blocked worker could leak
+mutex/ISR/pin resources. **None are accepted solutions.**
+
+**Next design work:** keep all bus I/O disabled; develop an isolated
+worker/UI state model with cancellation semantics that never lies
+about successful hardware ownership, while investigating whether an
+SDK-supported timed acquire or a documented single-owner restriction
+is feasible. If no safe strategy exists, disclose the limitation and
+keep hardware Explorer gated instead of adding a freezing scan button.
 
 ## Hardware/resource rules
 
