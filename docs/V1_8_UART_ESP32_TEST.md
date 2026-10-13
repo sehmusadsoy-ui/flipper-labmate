@@ -502,7 +502,7 @@ rate-controlled external traffic source would be needed. The currently
 installed ESP32 9600 sketch was neither modified nor reflashed.
 Its periodic `ESP32_READY` packets cannot credibly force overflow.
 
-## ST2 external high-rate traffic fixture — source prepared, NOT compiled or flashed
+## ST2 external high-rate traffic fixture — Arduino build PASS; upload and hardware pending
 
 A separate **115200 8N1** ESP32-S2-WROVER Arduino sketch is staged at
 [`tests/esp32_s2_wrover_uart_stress_115200/esp32_s2_wrover_uart_stress_115200.ino`](../tests/esp32_s2_wrover_uart_stress_115200/esp32_s2_wrover_uart_stress_115200.ino).
@@ -519,8 +519,8 @@ A separate **115200 8N1** ESP32-S2-WROVER Arduino sketch is staged at
   the ESP32's own USB-C data connector.
 - User must compile/upload this **separate** sketch before a physical
   ST2 test. Do not change or overwrite the earlier 9600 peer source.
-  The operator has NOT yet compiled or flashed ST2 and no device
-  result can be recorded at this stage.
+  The operator **compiled ST2 successfully** but has not yet uploaded
+  or tested it physically; device ST2 and DROP remain pending.
 - Physical ST2 goal: Flipper UART STOP → choose 115200 → RUN;
   receive `ESP32_READY`, send `AT`, return to RX promptly, and check
   RX growth, UI responsiveness, D/E/status before and after load,
@@ -530,9 +530,34 @@ A separate **115200 8N1** ESP32-S2-WROVER Arduino sketch is staged at
   If D=0 during ST2, report `normal high-rate RX PASS` when appropriate,
   **not** physical overflow/DROP PASS.
 
-No ST2 PASS, upload or build can be inferred from the host-only CI
-run 38326055111; its tests cover the Flipper C code, not Arduino
-compilation.
+**ST2 Arduino CLI BUILD PASS (operator-reported, 2026-10-13).** The
+operator compiled the dedicated 115200 sketch from commit
+`b2ed96032018f0ea34bd9d908b7167b0d8dfb9e6`, using the
+ESP32-S2 target and Arduino CLI, with terminal output:
+
+```text
+Sketch uses 304496 bytes (23%) of program storage space. Maximum is 1310720 bytes.
+Global variables use 49000 bytes (14%) of dynamic memory, leaving 278680 bytes for local variables. Maximum is 327680 bytes.
+ESP32-S2 ST2 115200 BUILD PASS
+```
+
+**Only compile PASS is confirmed**. No ST2 upload, physical
+high-rate traffic result, or DROP pass. The currently installed
+ESP32 firmware is still the previously reported 9600 test peer
+until the operator explicitly flashes ST2. The Flipper's current
+LabMate FAP and v1.7 Stable are unchanged.
+
+**Next controlled flash gate:** power down Flipper with UART STOP,
+detach the ESP32-S2 Devboard, connect the board's USB-C standalone,
+verify unique Espressif VID_303A/PID_0002 target identity and current
+COM port, and freshly compile the pinned ST2 sketch into a unique
+build directory. Upload only to that verified port; check
+`ESP32-S2 ST2 115200 UPLOAD PASS` before any hardware ST2 testing.
+Do not connect standalone USB power to an attached Flipper Devboard.
+
+Host-only [CI run 38326055111](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38326055111)
+tested the *Flipper* UART firmware with HAL shims, not this Arduino sketch.
+
 
 ## Separate remaining stress/conflict gates
 
