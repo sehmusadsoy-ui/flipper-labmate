@@ -8,8 +8,9 @@ high-rate receive **PASS**, and standalone *real-HAL controlled USART-owner*
 BUSY Probe **2/2 PASS** are **operator-reported**. SDK/host CI PASS.
 The peer ST2 ended `R:41281 D:0 E:0`; **physical queue DROP (`D>0`)
 has not been demonstrated**, despite host mock tests showing 64/64 expected
-drops. The same-screen baud recovery and independent timing/calibration
-have not been established; BUSY Probe does not stand in for a simultaneous
+drops. SBR1 same-screen baud recovery is now **operator-reported functional PASS**
+on the updated, SHA256-verified FAP (raw numeric R/D/E not supplied);
+independent timing/calibration is unverified. BUSY Probe does not stand in for a simultaneous
 unrelated third-party firmware service. PR #7 remains **Draft**, unmerged;
 official v1.7 Stable untouched. Detailed evidence:
 [UART ESP32 + BUSY hardware log](V1_8_UART_ESP32_TEST.md).
@@ -78,8 +79,10 @@ Opening a static terminal-looking screen is not feature completion.
       and **fresh-session** 9600 recovery operator-reported PASS.
 - [ ] Physical UART RX queue `D>0` overflow not shown. Host HAL
       tests confirm 320 bytes → 256 queued + 64 dropped, not physical.
-- [ ] Same-screen STOP → change baud → RUN recovery unconfirmed;
-      the current `ERR` badge reflects latched per-session errors.
+- [x] SBR1 corrected same-screen STOP → change baud → RUN recovery
+      **operator-reported functional PASS** on source `12977d2d`
+      (FAP SHA256 `f3ce6438280524692908212c0b3c8b4c9a830b7afc467b503aab667d2e7f12d2`).
+      No raw E/R/D snapshots provided; no numeric error count claimed.
 - [ ] Independent instrumented baud accuracy, longer endurance,
       unrelated simultaneous serial-owner contention, and exhaustive
       screen/calibration test coverage remain unverified.
@@ -217,7 +220,7 @@ review. Physical `D>0` is pending/risk to reconcile before merging
 PR #7; optional extra instrumentation must be justified against
 the already PASS 115200 ST2, not forced only to trigger DROP.
 
-## SBR1 baud-switch ERR reset — code/test added, device PENDING
+## SBR1 baud-switch ERR reset — CI and operator-reported device PASS
 
 - **Source fix:** commit `db5392119f84f48ca7391ce8dbab11895d82437c` in
   `src/labmate_uart.c`. Changing 9600/38400/115200 while **STOP**
@@ -239,16 +242,17 @@ the already PASS 115200 ST2, not forced only to trigger DROP.
   `ea9ab7490194998db0472746fa70ebde9bea01cc2ea2678d34e50b3607422175`
   is **NOT** the standalone FAP hash; deployment must independently
   match the packaged `SHA256SUMS.txt` to the extracted `labmate.fap`.
-  New corrected LabMate FAP **has not yet been installed or physically
-  tested**.
-  The previous on-device UART, ST2 and controlled BUSY PASS records
-  remain valid for their exact tested binaries; they must not be
-  relabelled proof of this new fix.
-- **Next device check after CI PASS:** user on physical ESP32-S2 ST2
-  115200 peer (detached before any safe reconnection) observes
-  wrong-baud ERR (if reproducible), switches while STOP back to
-  115200, verifies E0 D0, correct `ESP32_READY`, and a responsive
-  STOP/BACK. No ESP32 reflash or unbounded stress needed. An
-  untriggered mismatch error is INCONCLUSIVE, not PASS.
+  **Subsequently installed with SHA256 verification and launched 9/9
+  transfer chunks** on Flipper COM7. The operator then reported all
+  requested SBR1 functional device steps PASS. Previous UART/ST2/BUSY
+  tests remain tied to their own original binaries; they are not
+  re-attributed to this FAP.
+- **Physical user report (2026-10-13):** after this precise procedure,
+  the operator answered **"hepsi passs"** ("all passed"). Accordingly
+  same-screen baud correction, returned `ESP32_READY`, and STOP/BACK
+  are functional **PASS (operator-reported)**. The user did not supply
+  the requested numeric 9600 E count or raw R/D/E snapshots; preserve
+  those as unavailable rather than inventing totals. See the
+  [dated SBR1 device checkpoint](V1_8_UART_ESP32_TEST.md).
 - Physical DROP `D>0` remains **NOT TESTED** regardless of
   SBR1 outcome. PR #7 stays Draft; v1.7 Stable unchanged.
