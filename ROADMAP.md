@@ -1,10 +1,10 @@
 # LabMate Master Roadmap — v1.0 to v2.0
 
-**Status:** Updated 2026-10-12: v1.7 Stable remains published; **v1.8 coordinator refactor merged (PR #5)** after R1–R10 user-reported device PASS; communication tools remain under development. v1.9 remains mandatory before v2.0.  
+**Status:** Updated 2026-10-13: v1.7 Stable remains published. v1.8 coordinator refactor (PR #5), Counter STOP/RESUME (PR #6), and the UART minimum milestone (PR #7) are merged into development `main`; **I²C Explorer is next**. UART physical DROP/independent timing are documented limitations; no v1.8 release yet. v1.9 remains mandatory before v2.0.  
 **Current published Stable:** [v1.7 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7), original tag `d0e1bc6a95b257841533f0aa8745e3a79bbc8dcd`; updated, on-device-tested PWM Studio label FAP from source `0aeb0ca7ceba092c8adb6e44add0a2212cae1a74`, SHA256 `A0B305E5FD8D71C85C51480EE06A8B7E5EBD5BEE0E82935B0ED3B7E74E7EBCEA`. No new version or tag was created.  
 **Previous Stable fallback:** [v1.6.1 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1), [v1.6 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6), and older unchanged releases.  
 **Previous pre-release:** [v1.7 RC1](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7-rc1) remains available at unchanged source `d55eec03`.
-**Validation:** v1.7 refactored Stable Candidate passed 36/36 user-reported device regressions (7B screenshots); exact final `v1.7` FAP passed Test 7G 4/4 device smoke; Test 7H PowerShell `-Channel RC1 -VerifyOnly` passed; approved Stable release CI passed. Published `-Channel Stable -VerifyOnly` and actual `-Channel Stable -Port COM7` USB installation both passed on Windows 2026-10-12; a separate post-reinstall on-screen/data smoke passed 4/4 user-reported Flipper checks (v1.7 label, PWM STOP, Profile S1, historical CSV). No new version was created. **Current development: v1.8 Communication Tools**, coordinator refactor and Counter STOP/RESUME merged, UART candidate SDK-compiled but awaiting hardware RX/TX tests; next **v1.9 Logic Scope and Signal Compare**, then **v2.0 Ultimate**.
+**Validation:** v1.7 refactored Stable Candidate passed 36/36 user-reported device regressions (7B screenshots); exact final `v1.7` FAP passed Test 7G 4/4 device smoke; Test 7H PowerShell `-Channel RC1 -VerifyOnly` passed; approved Stable release CI passed. Published `-Channel Stable -VerifyOnly` and actual `-Channel Stable -Port COM7` USB installation both passed on Windows 2026-10-12; a separate post-reinstall on-screen/data smoke passed 4/4 user-reported Flipper checks (v1.7 label, PWM STOP, Profile S1, historical CSV). No new version was created. **Current development: v1.8 Communication Tools**, coordinator refactor, Counter STOP/RESUME and first UART milestone all integrated into `main`; I²C Explorer is next. No v1.8 release has been published; next **v1.9 Logic Scope and Signal Compare**, then **v2.0 Ultimate**.
 
 ## Vision
 
@@ -117,14 +117,15 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
   deferred storage and per-screen input modules. R1–R10 operator-reported
   Flipper device regression and main CI both passed.
   [Refactor test record](docs/V1_8_DEV_NOTES.md).
-- **Current candidate (PR #7 Draft, not released):** UART Terminal USART
+- **Merged development milestone (PR #7, not released):** UART Terminal USART
   13/14, bounded RX and explicit TX editor. SDK/host CI PASS; operator
   reports U1–U8 8/8, ESP32 external E1–E6 6/6, baud-retention SR1-R1,
   high-rate ST2 and controlled real-HAL UART BUSY Probe 2/2 PASS.
   Physical UART RX buffer overflow `D>0`, same-screen baud recovery,
   independent calibration and external-service contention remain
   unverified. [UART test plan](docs/V1_8_UART_PLAN.md) ·
-  [device evidence](docs/V1_8_UART_ESP32_TEST.md).
+  [device evidence](docs/V1_8_UART_ESP32_TEST.md) ·
+  [integration risk acceptance](docs/V1_8_UART_ACCEPTANCE.md).
 - **Next new instrument after UART device PASS:** I²C Explorer.
 - 3.3 V-compatible **UART Terminal** for development and diagnostics.
 - **I²C Explorer** for suitable, owned test peripherals on a safe bus.
@@ -165,7 +166,7 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
 | **v1.5** | **Data Logger, CSV recording and Log History** | **Stable published 2026-10-09** |
 | v1.6 | Code/UI refactor | Stable published; v1.6.1 remains a previous Stable fallback |
 | **v1.7** | **PWM Studio and Counter** | **Stable published 2026-10-12; current Stable** |
-| v1.8 | Coordinator cleanup → Counter resume → UART → I²C → optional 1-Wire | PR #5/#6 merged; UART physical peer and controlled BUSY PASS, DROP and other acceptance risks open; PR #7 Draft; I²C not implemented |
+| v1.8 | Coordinator cleanup → Counter resume → UART → I²C → optional 1-Wire | PR #5/#6/#7 merged into development `main`; UART scope accepted with disclosed DROP/calibration limits; I²C not yet implemented; no v1.8 Stable |
 | v1.9 | Logic Scope and Signal Compare | Planned |
 | v2.0 | LabMate Ultimate / Signal Doctor | Planned |
 
