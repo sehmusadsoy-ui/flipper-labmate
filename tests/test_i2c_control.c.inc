@@ -127,6 +127,7 @@ static void test_probe_error_and_restart(void) {
     assert(labmate_i2c_control_acquire_done(&c, token, true));
     assert(labmate_i2c_control_next_probe(&c, &a));
     assert(!labmate_i2c_control_probe_done(&c, token, a, (LabMateI2cProbeResult)99));
+    assert(!labmate_i2c_control_probe_done(&c, token, a, (LabMateI2cProbeResult)-1));
     assert(c.probe_inflight);
     assert(labmate_i2c_control_probe_done(&c, token, a, LabMateI2cProbeError));
     assert(c.state == LabMateI2cControlAwaitRelease && c.bus_held);
