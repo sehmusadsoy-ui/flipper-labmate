@@ -25,6 +25,8 @@ on:
       - "scripts/check_v18_uart.py"
       - "scripts/check_v18_onewire_codec.py"
       - "tests/test_onewire_ds18b20.c.inc"
+      - "tests/test_onewire_session.c.inc"
+      - "scripts/check_v18_onewire_session.py"
       - "tests/test_button_logic.c.inc"
       - "tests/test_threshold.c.inc"
       - "scripts/install-labmate.ps1"
@@ -166,6 +168,17 @@ jobs:
 
       - name: Guard DS18B20 decoder isolation from power, GPIO and UI
         run: python3 scripts/check_v18_onewire_codec.py
+
+      - name: Test W2 simulated atomic lease and STOP resource ownership (HOST ONLY)
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc -x c \
+            src/labmate_onewire_session.c tests/test_onewire_session.c.inc \
+            -o /tmp/labmate-onewire-session-tests
+          /tmp/labmate-onewire-session-tests
+
+      - name: Guard W2 one-wire mock lease is not wired to physical GPIO
+        run: python3 scripts/check_v18_onewire_session.py
 
       - name: Test Button Analyzer bounce, settling and tick-wrap logic
         run: |
