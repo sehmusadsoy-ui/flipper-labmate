@@ -19,6 +19,7 @@ typedef enum {
     LabMateToolButton, /* PC1 contact bounce/settle analyzer */
     LabMateToolAlerts, /* v1.7: configurable visual threshold alerts */
     LabMateToolUart, /* v1.8: append, never renumber existing tools */
+    LabMateToolI2c, /* v1.8: real LabMate UI; bus START is hardware-gated */
     LabMateToolCount,
     LabMateToolInvalid = 255
 } LabMateTool;
