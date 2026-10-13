@@ -387,6 +387,35 @@ separate lifecycle setting-preservation regression.
       powered-down rewiring; reopen PWM, Counter/Frequency, Profiles S1
       and Log History, confirm saved data unchanged.
 
+## ERR mismatch test (clean baseline) — ERROR COUNTER PASS, recovery unconfirmed (operator report, 2026-10-13)
+
+**User reported exact values** for the repeated deliberate baud-mismatch
+check: starting `E:0`, ending `E:88`, `R:189`, and
+**"9600'e dönüş=no"** (normal communication did not recover after
+returning to 9600, per user report). Status at return, RX text,
+`D:`, post-re-entry fresh `E:`, and exact STOP/RUN details were
+not supplied.
+
+This confirms **live UART receive error/event counting** during the
+intentional mismatch from ESP32-S2 **9600** to Flipper **115200**:
+`E` increased by 88, with 189 received bytes counted. `E`
+counts error callback events and `R` counts received bytes; they
+are not expected to match one-to-one. A prior `ERR` badge can
+remain displayed after STOP/RUN because `rx_errors` persists
+during the UART screen session. **Do not claim 9600 recovery PASS,
+or RX overflow/DROP PASS.**
+
+**Next bounded isolation (no rewiring/flashing):** ensure Flipper
+UART is STOP and set to **9600**, BACK out to the LabMate menu,
+re-enter UART (baud should stay 9600; `E:0` at fresh entry),
+then RUN for 10 seconds. Report whether clear `ESP32_READY`
+returns, and fresh `R/D/E` counters/status. The re-enter code
+resets only session stats and preserves baud. If the text remains
+garbled and `E` rises again in the fresh 9600 session, stop the
+test and investigate UART lifecycle / hardware state before any
+new deliberate mismatch trials. Do **not** infer a hardware defect
+from the current single failed recovery report.
+
 ## ERR-display mismatch smoke test — inconclusive (operator report, 2026-10-13)
 
 The operator tried the proposed intentional 115200 vs ESP32-S2
