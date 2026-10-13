@@ -35,6 +35,7 @@ typedef struct {
     bool gpio_monitor_active;
     bool pwm_running;
     bool ibutton_active;
+    bool rfid_active; /* RFID HAL can configure PB14 as iButton bus too. */
     bool expansion_connected;
     bool other_owner_unknown;
     bool auto_power_requested;
