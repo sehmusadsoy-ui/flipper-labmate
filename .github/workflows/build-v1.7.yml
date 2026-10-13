@@ -29,6 +29,7 @@ on:
       - "scripts/check_v18_i2c.py"
       - "scripts/check_v18_i2c_control.py"
       - "scripts/check_v18_i2c_present.py"
+      - "scripts/check_v18_i2c_production_ui.py"
       - "tests/test_button_logic.c.inc"
       - "tests/test_threshold.c.inc"
       - "scripts/install-labmate.ps1"
@@ -194,6 +195,9 @@ jobs:
 
       - name: Guard pure I2C UI presentation isolation
         run: python3 scripts/check_v18_i2c_present.py
+
+      - name: Guard v1.8 I2C now routes through actual LabMate without bus operations
+        run: python3 scripts/check_v18_i2c_production_ui.py
 
       - name: Test Button Analyzer bounce, settling and tick-wrap logic
         run: |
