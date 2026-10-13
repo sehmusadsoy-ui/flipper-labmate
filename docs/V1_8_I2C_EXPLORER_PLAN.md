@@ -218,7 +218,7 @@ state **AWAIT_ACQUIRE** and preventing safe app shutdown. Thus it
 specifies and tests what safe success, late cancellation and release
 would look like once a bounded HAL acquire strategy exists.
 
-## G2d — isolated 128x64 I2C UX preview (NO BUS; compile CI pending)
+## G2d — isolated 128x64 I2C UX preview (NO BUS; compile CI PASS)
 
 The G1 bus acquisition blocker still prevents enabling a real scanner.
 To exercise actual Flipper Canvas, readability and controls **without
@@ -251,10 +251,34 @@ and must not be installed as a purported I²C Explorer.
   separate FAP against Momentum SDK and records its checksum,
   **without creating a release**.
 
-**Current evidence:** source and isolated CI workflow **committed**,
-but dedicated UI-preview SDK compile CI has **not** yet been
-independently verified. No local physical preview test has happened.
-Do not label G2d CI/device as PASS before the respective results.
+**G2d isolated preview SDK compile CI VERIFIED PASS:** GitHub Actions
+[38463902718](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38463902718)
+all steps **success**, source SHA
+`9045f0c19b776237b81296cf28d22a15173bae02`
+confirmed against GitHub artifact `labmate-i2c-ui-preview`
+(ID `11847447274`). Inert preview guard PASS; Momentum SDK
+`ufbt` build PASS; FAP created at
+`tests/flipper_i2c_ui_preview/dist/labmate_i2cuipreview.fap`;
+artifact contains `labmate_i2cuipreview.fap` and `SHA256SUMS.txt`.
+The **standalone FAP file**, not the GitHub ZIP, has exact SHA256
+`318fc65dc9eb4702199028e85bddbb3cca5eb18d34f19c00d33b129d6d887672`
+as verified in job logs. The ZIP artifact digest is distinct:
+`b7e6a86687c27bb87e4704c9bd99b3851f1169300c343f7f710fd96a57acd1be`.
+Previous preview CI runs
+[38463754551](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38463754551)
+and [38463688802](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38463688802)
+also reported success in the operator's `gh run list` output;
+the most recent run above has been independently inspected in detail.
+
+**Real Flipper preview UI/physical interaction remains PENDING.**
+These logs prove only source isolation and compilation: they do NOT
+prove 128×64 legibility, button responsiveness, native Flipper
+run-time behaviour or real I²C function. The next operator step
+is to download the exact isolated artifact and verify its FAP checksum
+before any test installation. It must NOT overwrite
+`/ext/apps/Tools/labmate.fap`; the separate preview FAP should
+use `/ext/apps/Tools/labmate_i2cuipreview.fap`.
+No ESP32, power accessory, I²C probe, signal wires or reflash is needed.
 
 This is a safe UI development milestone **only**. Even a full
 UI-preview hardware PASS would not resolve the separate G1
