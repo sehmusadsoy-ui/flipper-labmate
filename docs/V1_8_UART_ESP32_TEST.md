@@ -1,6 +1,6 @@
 # LabMate v1.8 UART ↔ ESP32 Interoperability Test
 
-**Status: ESP32-S2 UART E1–E6 = 6/6 operator-reported PASS (2026-10-13), including bidirectional 115200 and 9600 baud. SR1-R1 corrected FAP **device PASS** (operator-reported, 2026-10-13): 9600 baud retained across STOP/BACK/re-entry and 2-minute RX stable. Previous SR1 FAIL diagnosed/resolved. Clean-baseline ERR detection E:0→88 and fresh 9600 re-entry recovery (ESP32_READY, E:0 D:0) PASS; ST2 115200 device 2× AT-triggered high-rate RX PASS after operator clarified the on-screen AT stayed intact while TX cursor moved A→T (R:20569 then R:41281; final D:0 E:0; GUI and STOP/BACK PASS). Direct same-screen recovery, physical BUSY conflict and intentional hardware overflow remain PENDING; PR #7 stays draft.**
+**Current status (2026-10-13):** external ESP32-S2 UART E1–E6 6/6 PASS; SR1-R1 corrected baud retention PASS; clean ERR and fresh-session recovery PASS; ST2 115200 twice-triggered high-rate RX PASS (R:20569 then 41281, final D:0 E:0). **Controlled physical BUSY Probe: 2/2 PASS** (operator-reported, separate diagnostic FAP using real Flipper HAL). Pending: physical queue overflow/DROP (D>0), same-screen baud recovery and independent instrumented timing. Third-party external-service contention not demonstrated. **PR #7 Draft; v1.7 Stable unchanged.**
 The user identified an **ESP32-S2-WROVER Flipper Dev Board**. The
 official Flipper Wi-Fi Developer Board schematics were checked:
 https://cdn.flipperzero.one/Flipper_Zero_WI-FI_Module_V1_Schematic.PDF
@@ -616,7 +616,7 @@ Host-only [CI run 38326055111](https://github.com/sehmusadsoy-ui/flipper-labmate
 tested the *Flipper* UART firmware with HAL shims, not this Arduino sketch.
 
 
-## BUSY physical USART owner probe — separate FAP Momentum CI PASS; on-device result pending
+## BUSY physical USART owner probe — Momentum CI and physical Flipper 2/2 PASS
 
 Development-only application under
 `tests/flipper_uart_busy_probe/`: unique app ID
@@ -641,8 +641,7 @@ or interference with an attached expansion service. This checks
 **genuine Flipper HAL serial-control contention caused deliberately
 within the diagnostic**. It is **not** proof of conflict against
 a separate unrelated firmware service while simultaneously running
-LabMate. On-device result remains PENDING until the operator
-installs the separate FAP and reports its display.
+LabMate. On-device 2/2 PASS was later operator-reported; see the current checkpoint below.
 
 **Standalone probe CI PASS** (2026-10-13):
 [run 38328444425](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38328444425)
@@ -654,27 +653,40 @@ SHA256:** `0b7bd243dcd752006dbfbf485c462af041b82008a1308e59baff5f9649a97970`
 (the CI ZIP's `sha256:86a615...` is **not** the FAP hash).
 Artifact `labmate-busy-probe`, run 38328444425.
 
-**No Flipper installation or probe observation yet.** The dedicated
-app must be installed under
-`/ext/apps/Tools/labmate_busydiag.fap`, **never** over the existing
-`/ext/apps/Tools/labmate.fap`. The ESP32 Wi-Fi Devboard should be
-detached from the Flipper while this test runs. The diagnostic
-only reserves/releases the genuine USART control handle and invokes
-the production LabMate start/stop routines, and is expected to
-display `BUSY REFUSAL: PASS` + `RESTART/STOP: PASS`.
-A success would demonstrate real hardware serial-handle contention
-within a separate test application, not independently confirm
-a background external service taking that handle.
+**2026-10-13 physical installation and test (operator report):**
+The user ran a checksum-gated PowerShell deployment and supplied
+`runfap.py` output showing transfer 100% (1/1 chunk), launch from
+`/ext/apps/Tools/labmate_busydiag.fap`, process exit 0, and
+`LABMATE BUSY PROBE INSTALL PASS`. This distinct file was not the
+existing `/ext/apps/Tools/labmate.fap`.
+
+After pressing OK on the Flipper's diagnostic screen, the operator
+replied **"PASS PASS"** to the direct request for the two result lines:
+
+- **BUSY REFUSAL: PASS:** production `labmate_uart_start()` refuses
+  a real USART control handle reserved inside the diagnostic.
+- **RESTART/STOP: PASS:** after release of the reserved handle, the
+  production UART starts and stops successfully.
+
+**Scope:** real device observation reported by the operator (no photo
+or independent timing instrument). The reservation is controlled inside
+the standalone test app, not a separate concurrently running third-party
+firmware service. No physical RX queue overflow or D>0 is implied.
+This test did not require an ESP32 firmware update, new jumper, or change
+to the production LabMate FAP.
 
 ## Separate remaining stress/conflict gates
 
-- [ ] Demonstrate a legitimate serial-owner conflict: UART refuses
-      acquisition with BUSY **without seizing** another service's
-      handle; restore original service after releasing UART.
-- [ ] Verify RX overflow/drop and error badges under a controlled
-      test without crashing, blocking UI or corrupting storage.
-- [ ] Assess sustained RX traffic/baud timing with suitable equipment;
-      no unsupported calibration claims.
+- [x] Controlled **real-HAL** BUSY refusal and UART restart/stop,
+      **2/2 device PASS** (operator-reported). Does not test external
+      third-party serial owner running concurrently with LabMate.
+- [ ] Physical RX queue overflow/DROP `D>0`: not triggered by ST2,
+      which ended D:0 E:0. Host HAL queue test (320 bytes, queue 256,
+      64 drops) PASS, but cannot stand in for physical DROP. Reconcile
+      acceptance risk explicitly before PR review.
+- [ ] Independent calibrated sustained baud/endurance measurements.
+- [ ] Same-screen baud-error recovery distinct from verified
+      fresh-session recovery.
 
 **No merge / no v1.8 Stable** until external peer and required
 stress/resource checks are reported PASS or explicitly reconciled.
