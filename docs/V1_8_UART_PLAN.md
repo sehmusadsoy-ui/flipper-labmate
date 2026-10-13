@@ -1,7 +1,8 @@
 # LabMate v1.8 — UART Terminal development plan
 
-**Current acceptance checkpoint (2026-10-13):** UART Terminal remains an
-unpublished v1.8 development candidate. The original Flipper self-loopback
+**Current acceptance checkpoint (2026-10-13):** UART Terminal minimum
+communication milestone was merged into development `main` as PR #7.
+It remains **unpublished as a v1.8 Stable release**. The original Flipper self-loopback
 U1–U8 **8/8 PASS**, external ESP32-S2 E1–E6 **6/6 PASS** at 9600/115200,
 SR1-R1 baud retention **PASS**, fresh-session ERR recovery **PASS**, ST2
 high-rate receive **PASS**, and standalone *real-HAL controlled USART-owner*
@@ -11,8 +12,9 @@ has not been demonstrated**, despite host mock tests showing 64/64 expected
 drops. SBR1 same-screen baud recovery is now **operator-reported functional PASS**
 on the updated, SHA256-verified FAP (raw numeric R/D/E not supplied);
 independent timing/calibration is unverified. BUSY Probe does not stand in for a simultaneous
-unrelated third-party firmware service. PR #7 remains **Draft**, unmerged;
-official v1.7 Stable untouched. Detailed evidence:
+unrelated third-party firmware service. PR #7 is **merged to development main**;
+official v1.7 Stable untouched. Risk acceptance is documented in
+[UART integration acceptance](V1_8_UART_ACCEPTANCE.md). Detailed evidence:
 [UART ESP32 + BUSY hardware log](V1_8_UART_ESP32_TEST.md).
 
 ## Goal
@@ -255,4 +257,6 @@ the already PASS 115200 ST2, not forced only to trigger DROP.
   those as unavailable rather than inventing totals. See the
   [dated SBR1 device checkpoint](V1_8_UART_ESP32_TEST.md).
 - Physical DROP `D>0` remains **NOT TESTED** regardless of
-  SBR1 outcome. PR #7 stays Draft; v1.7 Stable unchanged.
+  SBR1 outcome. PR #7 is integrated in development `main` under
+  [documented acceptance boundaries](V1_8_UART_ACCEPTANCE.md);
+  v1.7 Stable unchanged.
