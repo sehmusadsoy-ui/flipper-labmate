@@ -14,6 +14,17 @@ An explicit, **read-only device-address explorer** for a user-owned, known-safe 
 - **Important:** the above is upstream reference source, **not proof of exact Momentum SDK API 87.1 ABI**. Check the actual Momentum development headers/external symbol export and compile a dedicated isolated candidate before producing scanner hardware calls.
 - In upstream `furi_hal_i2c_acquire`, the bus uses a mutex with **FuriWaitForever**. The `is_device_ready` timeout applies to transaction waiting **after** acquisition; it is **not** an ownership-lock timeout. Never promise an immediate BUSY refusal or implement the scanner on the GUI thread with this blocking acquire until a verified bounded ownership strategy exists.
 
+## Momentum firmware source verification — G1 partial, physical/SDK build not yet tested
+
+**Confirmed in public [Next-Flip/Momentum-Firmware `dev`](https://github.com/Next-Flip/Momentum-Firmware)** on 2026-10-13 (source review only):
+
+- [Momentum F7 I²C config header](https://github.com/Next-Flip/Momentum-Firmware/blob/dev/targets/f7/furi_hal/furi_hal_i2c_config.h) explicitly declares external `furi_hal_i2c_handle_external`, **I2C3**, **PC0 SCL**, **PC1 SDA**, nominal **100 kHz**, and floating pins on release.
+- [Momentum I²C HAL header](https://github.com/Next-Flip/Momentum-Firmware/blob/dev/targets/furi_hal_include/furi_hal_i2c.h) declares `acquire`, `release`, and `is_device_ready`. [Momentum F7 API export list](https://github.com/Next-Flip/Momentum-Firmware/blob/dev/targets/f7/api_symbols.csv) marks these **+ exported for external apps** and exports `furi_hal_i2c_handle_external`.
+- [Momentum built-in GPIO I²C scanner](https://github.com/Next-Flip/Momentum-Firmware/blob/dev/applications/main/gpio/gpio_i2c_scanner_control.c) loops seven-bit device addresses, calls `is_device_ready(&furi_hal_i2c_handle_external, i << 1, ...)`, and pairs acquire/release. This corroborates address encoding **`address_7bit << 1`** in this firmware family. **The firmware already offers a basic I²C scanner**; LabMate Explorer needs value beyond a copy of that page (e.g., integrated, bounded results, safe lifecycle, later read-only inspection).
+- [Momentum I²C external bus code](https://github.com/Next-Flip/Momentum-Firmware/blob/dev/targets/f7/furi_hal/furi_hal_i2c_config.c) confirms the external bus mutex uses `FuriWaitForever`. The official `furi_hal_i2c_acquire()` contract does **not** offer a caller-supplied timeout. This remains the **critical ownership/cancellation blocker** for a responsive integrated UI.
+
+**Status:** source-level pin + signature + external symbol export checks **PASS**; compatibility against the *exact downloaded development SDK snapshot* and a bounded/cancelable resource-acquisition design are **PENDING**. No scan is implemented, no FAP compiled, and no device test passed.
+
 ## Hardware/resource rules
 
 1. **Only known-safe 3.3 V open-drain I²C**. No 5 V pull-ups or unknown voltage on PC0/PC1. Common ground when using a supported independently powered 3.3 V peripheral. The first tests must not energize unverified accessories.
