@@ -2,7 +2,7 @@ name: LabMate Source CI (v1.7 baseline / v1.8 dev)
 
 on:
   push:
-    branches: [main, dev/v1.8-coordinator-refactor, dev/v1.8-counter-resume, dev/v1.8-uart-terminal, v1.7-rc1, v1.7-profiles-ux-fix, v1.7-stable-candidate, v1.7-stable-final]
+    branches: [main, dev/v1.8-coordinator-refactor, dev/v1.8-counter-resume, dev/v1.8-uart-terminal, dev/v1.8-i2c-explorer, v1.7-rc1, v1.7-profiles-ux-fix, v1.7-stable-candidate, v1.7-stable-final]
     paths:
       - "src/*.c"
       - "src/*.h"
@@ -21,8 +21,10 @@ on:
       - "tests/test_counter_math.c.inc"
       - "tests/test_uart_text.c.inc"
       - "tests/test_uart_hal_host.c"
+      - "tests/test_i2c_scan.c.inc"
       - "tests/uart_host_stubs/**"
       - "scripts/check_v18_uart.py"
+      - "scripts/check_v18_i2c.py"
       - "tests/test_button_logic.c.inc"
       - "tests/test_threshold.c.inc"
       - "scripts/install-labmate.ps1"
@@ -153,6 +155,17 @@ jobs:
 
       - name: Guard v1.8 UART serial ownership, menus, and ISR separation
         run: python3 scripts/check_v18_uart.py
+
+      - name: Test I2C bounded, HAL-free scan state (not a physical scan)
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc -x c \
+            src/labmate_i2c_scan.c tests/test_i2c_scan.c.inc \
+            -o /tmp/labmate-i2c-scan-tests
+          /tmp/labmate-i2c-scan-tests
+
+      - name: Guard v1.8 I2C pure scanner isolation
+        run: python3 scripts/check_v18_i2c.py
 
       - name: Test Button Analyzer bounce, settling and tick-wrap logic
         run: |
