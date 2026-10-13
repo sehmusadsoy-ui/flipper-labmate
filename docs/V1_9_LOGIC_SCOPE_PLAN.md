@@ -1,6 +1,6 @@
 # LabMate v1.9 — Logic Scope + Signal Compare (early R&D)
 
-**Status (2026-10-14): L0 and L1 strict C11 host/model + SDK CI PASS. L1d isolated 9-scene simulated Flipper UX FAP and separate Momentum SDK workflow committed; its CI and real-device UI results are PENDING. Real GPIO capture is NOT IMPLEMENTED.**
+**Status (2026-10-14): L0/L1 strict C11 host + SDK CI PASS. L1d isolated 9-scene simulated Scope UX FAP Momentum SDK CI PASS (run 38474933837); physical Flipper UI S1–S6 PENDING. Actual GPIO capture is NOT IMPLEMENTED.**
 This is a preliminary v1.9 **development-only branch**, not a
 v1.9 release, not a device-tested oscilloscope, and not authorization
 to skip an unfinished v1.8 milestone.
@@ -86,7 +86,7 @@ but **no runtime code invokes it**. No user-visible Scope menu exists.
 | L0b | Native strict C11: wrap, clock faults, >half-range span, no overwrite, overflow, token exhaustion | **CI PASS** run 38473341973; exact source 1febeaf6 |
 | L0c | Static guard: no HAL, GPIO, UI/menu, or runtime calls; SDK development FAP builds alongside older features | **CI PASS** run 38473341973; SDK build and Windows mock installer passed |
 | L1 | Pure 120-column projection for future 128×64 Canvas; honest dense-edge, crop, overflow/fault and no-trigger states | **CI PASS** run 38474279372 (exact source e492bb7c); no on-device UI |
-| L1d | Separate 9-scene SIMULATED 128×64 Scope GUI demo, visible NO GPIO label and independent artifact | Code + dedicated workflow committed; **CI PENDING**, real Flipper GUI **NOT TESTED** |
+| L1d | Separate 9-scene SIMULATED 128×64 Scope GUI demo, visible NO GPIO label and independent artifact | **SDK CI PASS** (run 38474933837, exact source c9af2d88); real Flipper GUI S1–S6 **NOT TESTED** |
 | L2 | Real capture driver plan: mutually exclusive PC0/PC1/PB3/PA7, bounded ISR/timebase and STOP/BACK | NOT STARTED — safety gate |
 | L3 | Real Flipper no-signal and known-safe 3.3-V loopback; clean STOP/BACK and regressions | NOT TESTED |
 | L4 | Signal Compare: reference/tolerance pure math and defensible error/missing-signal messaging | NOT STARTED |
@@ -171,7 +171,7 @@ even if this L1 test workflow passes.
 - Windows installer **mock** job `115561001983` **SUCCESS**, v1.7 Stable finalization `115561177750` **SKIPPED** as designed. Earlier [run 38474114577](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38474114577) also had passing build and installer jobs; prior `38474068619` was cancelled by later source updates.
 - CI PASS is only a **pure software/SDK build** result; it does not show a live Flipper Canvas preview, actual GPIO events, timing calibration, or oscilloscope throughput.
 
-## L1d — independent on-Flipper Scope UX DEMO (NO GPIO; CI PENDING)
+## L1d — independent on-Flipper Scope UX DEMO (NO GPIO; SDK CI PASS)
 
 **Different FAP from production:** `tests/flipper_scope_ui_preview/application.fam`
 declares appid `labmate_scopeuipreview`, app name
@@ -213,8 +213,9 @@ hygiene, and no production menu injection. Isolated workflow:
 compiles against Momentum development SDK and publishes
 artifact `labmate-scope-ui-preview` containing
 `labmate_scopeuipreview.fap` and `SHA256SUMS.txt`.
-**CI is PENDING; no actual FAP SHA256 has yet been verified.**
-Do not download/install an assumed artifact or invent its hash.
+**Dedicated Momentum SDK CI independently verified PASS:** [run 38474933837](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38474933837), exact **tested source** `c9af2d88aa61e394902e86d6dbfb7ae7cf828bdc`, job `115563179236` success. The job log explicitly confirms nine-scene permanent-label/no-GPIO static guard PASS; SDK LINK/FAP/APPCHK PASS; and `labmate_scopeuipreview.fap: OK` SHA256 verification. The **FAP file SHA256** recorded in the exact job log is `931f03c28a3aac4ab570664daaadf3392f84206dcce34436d1c588b21e5540d4`. Artifact: `labmate-scope-ui-preview`, ID `11853442609` (GitHub artifact ZIP digest `acaf87a7ba50af1082d8dc54ecc8103edc9830de702a57ff21cf4bede39dacc1` is a different file and must not be confused with the FAP hash).
+
+**Physical Flipper UI test remains PENDING:** the artifact has not been operator-downloaded, checksum-verified independently, installed, launched or confirmed on-screen. An independent USB installation must use `/ext/apps/Tools/labmate_scopeuipreview.fap`, never overwrite `/ext/apps/Tools/labmate.fap`. No simulated GUI PASS is claimed from compilation.
 
 ### L1d proposed physical UI acceptance (manual, no wires)
 
