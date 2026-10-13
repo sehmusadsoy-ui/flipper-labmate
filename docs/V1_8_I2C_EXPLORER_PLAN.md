@@ -84,6 +84,50 @@ SDK-supported timed acquire or a documented single-owner restriction
 is feasible. If no safe strategy exists, disclose the limitation and
 keep hardware Explorer gated instead of adding a freezing scan button.
 
+## G2b — lifecycle/STOP model (HAL-free, CI PENDING)
+
+The isolated worker/UI **lifecycle state model** is now committed in
+`src/labmate_i2c_control.h/.c`. It composes the already-tested pure
+scanner without acquiring an I²C bus, creating threads, opening a GUI,
+calling firmware services, or touching physical pins.
+
+- Explicit states: **IDLE → AWAIT_ACQUIRE → SCANNING →
+  AWAIT_RELEASE → FINISHED/CANCELLED/FAILED**.
+- A STOP request during **AWAIT_ACQUIRE** leaves the operation **pending**.
+  It neither reports "BUS FREE" nor permits a new scan, because the
+  real SDK's `furi_hal_i2c_acquire()` can still be blocked indefinitely.
+  If acquisition *subsequently returns success*, the modeled worker
+  must enter **AWAIT_RELEASE without probing** and call the physical
+  release path. Only a confirmed release event clears ownership.
+- STOP during an in-flight probe waits for that probe's completion,
+  forbids further address probes, and retains partial results.
+  Errors likewise lead through confirmed release rather than
+  claiming immediate success or freeing memory under a worker.
+- Explicit generation tokens reject stale out-of-order events after
+  restart. New START is rejected while acquire, probe or release remains
+  pending. Result mapping distinguishes acknowledgment/no-ack/error.
+- `tests/test_i2c_control.c.inc` covers late acquire after STOP,
+  acquire refusal, full 112-address completion, in-flight cancellation,
+  cancellation between probes, explicit error/release, restart,
+  incorrect generation/address and invalid result values.
+- `scripts/check_v18_i2c_control.py` guards the pure model and checks
+  that **LabMate UI, inputs and coordinator have not hooked it up yet**.
+  The v1.8 dev CI workflow was extended with a native strict C11 test
+  and static guard. **New GitHub CI result not independently verified
+  yet: do not mark the G2b tests PASS before run/job inspection.**
+
+**Crucial safety boundary:** This is a **single-threaded event protocol
+model**, not an actual worker or mutex wrapper. Production work would
+need to marshal worker events into the app-owned state thread; calling
+these functions from unsynchronized threads is not safe. The model's
+construction-time reset function is not a physical release and MUST
+NOT be called on a live worker. An actual indefinitely blocked HAL
+acquire would *never deliver an acquire completion*, leaving the
+state **AWAIT_ACQUIRE** and preventing safe app shutdown. Thus it
+**does not solve G1** or justify enabling a hardware scan. It only
+specifies and tests what safe success, late cancellation and release
+would look like once a bounded HAL acquire strategy exists.
+
 ## Hardware/resource rules
 
 1. **Only known-safe 3.3 V open-drain I²C**. No 5 V pull-ups or unknown voltage on PC0/PC1. Common ground when using a supported independently powered 3.3 V peripheral. The first tests must not energize unverified accessories.
