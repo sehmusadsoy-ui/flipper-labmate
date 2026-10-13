@@ -38,6 +38,26 @@ Files in the **I²C development branch only**:
 
 **State semantics:** `IDLE` has never scanned, `RUNNING` requests exactly one address before accepting its matching result, `COMPLETE` with zero hits means no device detected only once a *real* worker has traversed all addresses, `CANCELLED` and `ERROR` retain partial results but reject further reports. A full result list displays 16 stored addresses with `total_found` and `truncated`; it never pretends the first 16 are the whole bus. This is **pure simulated state testing**, not a device discovery result.
 
+## G1 follow-up — isolated Momentum SDK external-symbol ABI build
+
+A new **compile/link-only** ABI probe is committed on the I²C Draft branch:
+
+- `tests/flipper_i2c_api_probe/application.fam` builds a separate
+  `labmate_i2capiprobe.fap`, not the production `labmate.fap`.
+- `tests/flipper_i2c_api_probe/api_probe.c` takes typed addresses of the
+  external I²C bus handle, `furi_hal_i2c_acquire`, `furi_hal_i2c_release`
+  and `furi_hal_i2c_is_device_ready` for SDK import/link validation.
+  Its app entry **does not call any HAL I²C function**, acquire a bus,
+  touch a pin, or scan an address.
+- `.github/workflows/v18-i2c-api-probe.yml` downloads the Momentum
+  development SDK, compiles the isolated probe, and verifies the
+  resulting separate FAP/manifest without publishing any release.
+
+**Status: CI build PENDING**, no ABI-link PASS until its separate
+workflow result is read. Even if this compiles, G1's **unbounded
+FuriWaitForever acquisition/cancellation hazard remains OPEN** and
+the proof must **not** be installed or treated as a hardware scanner.
+
 ## Hardware/resource rules
 
 1. **Only known-safe 3.3 V open-drain I²C**. No 5 V pull-ups or unknown voltage on PC0/PC1. Common ground when using a supported independently powered 3.3 V peripheral. The first tests must not energize unverified accessories.
