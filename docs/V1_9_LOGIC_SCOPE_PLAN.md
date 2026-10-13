@@ -1,6 +1,6 @@
 # LabMate v1.9 — Logic Scope + Signal Compare (early R&D)
 
-**Status (2026-10-14): L0 and L1 strict C11 host tests, static isolation guards, Momentum SDK FAP build and Windows installer mock CI PASS. A separate simulated Flipper Scope UI preview is the next untested gate; real GPIO capture remains unimplemented.**
+**Status (2026-10-14): L0 and L1 strict C11 host/model + SDK CI PASS. L1d isolated 9-scene simulated Flipper UX FAP and separate Momentum SDK workflow committed; its CI and real-device UI results are PENDING. Real GPIO capture is NOT IMPLEMENTED.**
 This is a preliminary v1.9 **development-only branch**, not a
 v1.9 release, not a device-tested oscilloscope, and not authorization
 to skip an unfinished v1.8 milestone.
@@ -86,6 +86,7 @@ but **no runtime code invokes it**. No user-visible Scope menu exists.
 | L0b | Native strict C11: wrap, clock faults, >half-range span, no overwrite, overflow, token exhaustion | **CI PASS** run 38473341973; exact source 1febeaf6 |
 | L0c | Static guard: no HAL, GPIO, UI/menu, or runtime calls; SDK development FAP builds alongside older features | **CI PASS** run 38473341973; SDK build and Windows mock installer passed |
 | L1 | Pure 120-column projection for future 128×64 Canvas; honest dense-edge, crop, overflow/fault and no-trigger states | **CI PASS** run 38474279372 (exact source e492bb7c); no on-device UI |
+| L1d | Separate 9-scene SIMULATED 128×64 Scope GUI demo, visible NO GPIO label and independent artifact | Code + dedicated workflow committed; **CI PENDING**, real Flipper GUI **NOT TESTED** |
 | L2 | Real capture driver plan: mutually exclusive PC0/PC1/PB3/PA7, bounded ISR/timebase and STOP/BACK | NOT STARTED — safety gate |
 | L3 | Real Flipper no-signal and known-safe 3.3-V loopback; clean STOP/BACK and regressions | NOT TESTED |
 | L4 | Signal Compare: reference/tolerance pure math and defensible error/missing-signal messaging | NOT STARTED |
@@ -169,6 +170,75 @@ even if this L1 test workflow passes.
 - Compiled `labmate.fap` development artifact validated by CI with file SHA256 `f3ce6438280524692908212c0b3c8b4c9a830b7afc467b503aab667d2e7f12d2`. GitHub artifact `labmate`, ID `11852019547`; its ZIP hash is not the FAP hash. No user installation of this branch was performed.
 - Windows installer **mock** job `115561001983` **SUCCESS**, v1.7 Stable finalization `115561177750` **SKIPPED** as designed. Earlier [run 38474114577](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38474114577) also had passing build and installer jobs; prior `38474068619` was cancelled by later source updates.
 - CI PASS is only a **pure software/SDK build** result; it does not show a live Flipper Canvas preview, actual GPIO events, timing calibration, or oscilloscope throughput.
+
+## L1d — independent on-Flipper Scope UX DEMO (NO GPIO; CI PENDING)
+
+**Different FAP from production:** `tests/flipper_scope_ui_preview/application.fam`
+declares appid `labmate_scopeuipreview`, app name
+`LabMate Scope UI Demo`, FAP `labmate_scopeuipreview.fap`.
+Do **not** replace normal `/ext/apps/Tools/labmate.fap`.
+A prospective test installation must use the distinct
+`/ext/apps/Tools/labmate_scopeuipreview.fap` path.
+No model is wired into LabMate's production menu.
+
+**Preview source:** `tests/flipper_scope_ui_preview/preview.c`
+composes the same production HAL-free
+`labmate_scope_trace.c` and `labmate_scope_project.c`
+models into nine **synthetic** scenes. Every screen contains
+a permanent `SIMULATED - NO GPIO` banner, a scene index,
+labels, and BACK-to-exit controls. LEFT/RIGHT traverse scenes.
+An input queue and software mutex isolate the Canvas draw
+snapshot from event handling. No hardware capture, GPIO,
+I²C, UART, iButton, RFID, OTG, timing hardware or
+device peripheral is used.
+
+| Scene | Mock demonstration | Honest interpretation |
+| --- | --- | --- |
+| 1 CLEAN | Initial LOW plus known rising/falling transitions | Software trace, not live voltage |
+| 2 DENSE | Five transitions compressed into one pixel | Full vertical density column, NOT a clean pulse |
+| 3 RISING | Rising edge trigger, then known transitions | Only post-trigger data |
+| 4 WAIT | Armed, missing trigger | No invented waveform |
+| 5 NO TRIG | STOP before any qualifying trigger | Not-triggered status |
+| 6 OVERFLOW | All 128 events + omitted 129th | Overflow, only first 128 retained |
+| 7 FAULT | Duplicate timestamp with different level | Clock-fault status, retained earlier data |
+| 8 CROPPED | View starts at a nonzero time offset | Left-crop status in model; no false edge at boundary |
+| 9 NO SPAN | Only the initial level anchor | No invented flat waveform duration |
+
+Static guard:
+`scripts/check_v19_scope_ui_preview.py`. It verifies
+separate FAP identity, permanent label before conditional
+drawing, no HAL pin calls, the nine scenes, mutex + queue
+hygiene, and no production menu injection. Isolated workflow:
+`.github/workflows/v19-scope-ui-preview.yml`, which
+compiles against Momentum development SDK and publishes
+artifact `labmate-scope-ui-preview` containing
+`labmate_scopeuipreview.fap` and `SHA256SUMS.txt`.
+**CI is PENDING; no actual FAP SHA256 has yet been verified.**
+Do not download/install an assumed artifact or invent its hash.
+
+### L1d proposed physical UI acceptance (manual, no wires)
+
+- **S1**: Flipper displays SCOPE UX DEMO and the permanent
+  SIMULATED - NO GPIO label in all nine scenes.
+- **S2**: LEFT/RIGHT cycles through all 9 scenes; no
+  crashes, clipping or unresponsive buttons.
+- **S3**: CLEAN / RISING render recognizable two-level
+  HIGH/LOW traces.
+- **S4**: DENSE visibly marks ambiguous compressed edges
+  (thick vertical column), never a clean single pulse.
+- **S5**: WAIT / NO TRIG / NO SPAN show no fabricated line;
+  OVERFLOW and CLOCK FAULT clearly label unreliable runs.
+- **S6**: BACK exits cleanly and production LabMate still
+  uses its original separate FAP path.
+
+**The proposed S1–S6 tests are all PENDING**.
+The preview has zero connected input pins and requires no
+ESP32 sketch change, wires, sensors, external supply or
+different Flipper firmware. A future 6/6 UI PASS would
+still **not** establish a real Scope L2/L3 physical
+capture, validated trigger timing, analog measurement or
+performance. Scope core and preview remain Draft until
+safety and release gates are met.
 
 ### Current limitations
 
