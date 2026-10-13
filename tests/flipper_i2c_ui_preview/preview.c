@@ -22,6 +22,7 @@ typedef struct {
     LabMateI2cView snapshot;
     uint8_t scene;
     uint8_t page;
+    FuriMutex* lock; /* Guards snapshot/scene across GUI and input threads. */
 } LabMateI2cDemo;
 
 static void demo_build(LabMateI2cDemo* demo) {
@@ -71,7 +72,12 @@ static void demo_build(LabMateI2cDemo* demo) {
 
 static void demo_draw(Canvas* canvas, void* context) {
     const LabMateI2cDemo* demo = context;
-    const LabMateI2cView* v = &demo->snapshot;
+    /* Snapshot under short GUI-state lock; never draw with it held. */
+    furi_mutex_acquire(demo->lock, FuriWaitForever);
+    const LabMateI2cView copy = demo->snapshot;
+    const uint8_t scene = demo->scene;
+    furi_mutex_release(demo->lock);
+    const LabMateI2cView* v = &copy;
     char text[35];
 
     canvas_clear(canvas);
@@ -79,7 +85,7 @@ static void demo_draw(Canvas* canvas, void* context) {
     canvas_draw_str(canvas, 2, 10, "I2C UX DEMO");
     canvas_set_font(canvas, FontSecondary);
 
-    snprintf(text, sizeof(text), "%u/%u", (unsigned)(demo->scene + 1U),
+    snprintf(text, sizeof(text), "%u/%u", (unsigned)(scene + 1U),
              (unsigned)PREVIEW_SCENES);
     canvas_draw_str(canvas, 101, 10, text);
     canvas_draw_line(canvas, 0, 12, 127, 12);
@@ -112,6 +118,7 @@ static void demo_input(InputEvent* event, void* context) {
 int32_t labmate_i2c_ui_preview_app(void* args) {
     UNUSED(args);
     LabMateI2cDemo demo = {.scene = 0U, .page = 0U};
+    demo.lock = furi_mutex_alloc(FuriMutexTypeNormal);
     demo_build(&demo);
 
     FuriMessageQueue* queue = furi_message_queue_alloc(8U, sizeof(InputEvent));
@@ -129,14 +136,17 @@ int32_t labmate_i2c_ui_preview_app(void* args) {
         if(event.key == InputKeyBack) {
             running = false;
         } else if(event.key == InputKeyLeft || event.key == InputKeyRight) {
+            furi_mutex_acquire(demo.lock, FuriWaitForever);
             if(event.key == InputKeyLeft) {
                 demo.scene = demo.scene ? (uint8_t)(demo.scene - 1U) : PREVIEW_SCENES - 1U;
             } else {
                 demo.scene = (uint8_t)((demo.scene + 1U) % PREVIEW_SCENES);
             }
             demo_build(&demo);
+            furi_mutex_release(demo.lock);
             view_port_update(viewport);
         } else if(event.key == InputKeyUp || event.key == InputKeyDown) {
+            furi_mutex_acquire(demo.lock, FuriWaitForever);
             uint8_t count = demo.snapshot.page_count;
             if(count == 0U) count = 1U;
             if(event.key == InputKeyDown) {
@@ -145,6 +155,7 @@ int32_t labmate_i2c_ui_preview_app(void* args) {
                 demo.page = demo.page ? (uint8_t)(demo.page - 1U) : (uint8_t)(count - 1U);
             }
             labmate_i2c_present(&demo.control, demo.page, &demo.snapshot);
+            furi_mutex_release(demo.lock);
             view_port_update(viewport);
         }
     }
@@ -154,5 +165,6 @@ int32_t labmate_i2c_ui_preview_app(void* args) {
     furi_record_close(RECORD_GUI);
     view_port_free(viewport);
     furi_message_queue_free(queue);
+    furi_mutex_free(demo.lock);
     return 0;
 }
