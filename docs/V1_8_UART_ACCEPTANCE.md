@@ -29,3 +29,9 @@
 - **Never mutate published v1.7 Stable** tag/release or previous Stable artifacts. Do not release v1.8 from this PR.
 - Continue v1.8 with a **separate I²C Explorer feature branch** and distinct hardware/SDK pin and resource gate before writing or energizing GPIO.
 - Keep detailed trace at [UART ESP32 physical test log](V1_8_UART_ESP32_TEST.md) and [UART acceptance/test plan](V1_8_UART_PLAN.md). Future UART enhancements and true instrumented validation should have their own test evidence.
+
+## Actual integration result (2026-10-13)
+
+- [PR #7](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/7) was marked ready and merged into development `main` with merge commit `6dbea4c9c6909c111b6f6b7600c548347dc13b14` after the gates above were reviewed.
+- The physical queue DROP condition `D>0` remains **unverified**, not upgraded to PASS by merge. SBR1 and external UART functional results remain user-reported.
+- Development then moved to an isolated **I²C Explorer** Draft PR #8, with no v1.8 Stable/RC publication or change to the existing v1.7 Stable release.
