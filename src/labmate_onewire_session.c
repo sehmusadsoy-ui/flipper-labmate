@@ -13,7 +13,8 @@ LabMateOneWireGate labmate_onewire_environment_check(const LabMateOneWireEnviron
     if(e->pin != LabMateOneWirePinIbButtonPb14)
         return LabMateOneWireGateUnsupportedPin;
     if(e->capture_active || e->gpio_monitor_active || e->pwm_running ||
-       e->ibutton_active || e->expansion_connected || e->other_owner_unknown)
+       e->ibutton_active || e->rfid_active || e->expansion_connected ||
+       e->other_owner_unknown)
         return LabMateOneWireGateResourceBusy;
     return LabMateOneWireGateModelEligible;
 }
