@@ -466,6 +466,32 @@ check the expected `ESP32_READY` legibility again. Never classify
 a deliberate mismatched-baud ERR as overflow/DROP. BUSY and
 controlled overflow remain untested.
 
+## UART ownership and overflow host-contract regression fixture — proposed, CI pending
+
+The development branch now has a new **host-only** test at
+`tests/test_uart_hal_host.c` with stub HAL headers under
+`tests/uart_host_stubs/`. It compiles the actual
+`src/labmate_uart.c` and `src/labmate_uart_text.c`, not a rewritten
+pseudo-code copy. The fixture models:
+
+- A connected Expansion module declining UART start with BUSY without
+  disabling or releasing another service's serial resource.
+- A pre-owned USART handle causing BUSY without stealing it,
+  preserving balanced Expansion disable/enable and resource cleanup.
+- RX Data callback pushing **320 bytes** into LabMate's actual
+  **256-byte** stream queue without polling: expected **64 dropped
+  bytes**, no spurious ERR. A later poll counts exactly 256 bytes.
+- Hardware Frame/Noise error callback count separate from byte drops.
+- Explicit TX, idempotent STOP, baud preservation on re-entry,
+  reset of session counters, and BAUD unsupported clean exit.
+
+This fixture must pass GCC host CI and native Momentum FAP build.
+**A host mock cannot establish physical BUSY or actual overflow
+conditions.** The on-device BUSY and DROP overload acceptance items
+below remain UNCHECKED; a separate genuine UART owner and a safe,
+rate-controlled external traffic source will be required. The currently
+installed ESP32 9600 sketch has not been modified or reflashed.
+
 ## Separate remaining stress/conflict gates
 
 - [ ] Demonstrate a legitimate serial-owner conflict: UART refuses

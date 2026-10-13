@@ -20,6 +20,8 @@ on:
       - "tests/test_pwm_settings.c.inc"
       - "tests/test_counter_math.c.inc"
       - "tests/test_uart_text.c.inc"
+      - "tests/test_uart_hal_host.c"
+      - "tests/uart_host_stubs/**"
       - "scripts/check_v18_uart.py"
       - "tests/test_button_logic.c.inc"
       - "tests/test_threshold.c.inc"
@@ -137,6 +139,17 @@ jobs:
             src/labmate_uart_text.c tests/test_uart_text.c.inc \
             -o /tmp/labmate-uart-text-tests
           /tmp/labmate-uart-text-tests
+
+      - name: Exercise actual UART HAL owner and RX overflow paths using host shims
+        run: |
+          set -euo pipefail
+          # Real LabMate UART C code; only firmware HAL/Expansion functions are mocked.
+          # A host PASS is NOT a physical Flipper serial-owner or overflow PASS.
+          cc -std=c11 -Wall -Wextra -Werror -pedantic \
+            -Itests/uart_host_stubs -Isrc \
+            src/labmate_uart.c src/labmate_uart_text.c tests/test_uart_hal_host.c \
+            -o /tmp/labmate-uart-hal-host-tests
+          /tmp/labmate-uart-hal-host-tests
 
       - name: Guard v1.8 UART serial ownership, menus, and ISR separation
         run: python3 scripts/check_v18_uart.py
