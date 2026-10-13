@@ -86,6 +86,65 @@ resources, but any actual GPIO driver remains **W2 BLOCKED until a
 reviewed resource-policy and STOP/BACK lifecycle are available**.
 This is a source review only, not an on-device contention test.
 
+## W2b — fail-closed lease and STOP lifecycle model (HOST CI PENDING)
+
+Added `src/labmate_onewire_session.h/.c`, independent
+`tests/test_onewire_session.c.inc`, guard
+`scripts/check_v18_onewire_session.py`, and two strict C11 CI steps.
+**These are pure models only**: no `onewire_host_*` calls, no GPIO,
+no bus transaction, no actual external lease, no GUI or firmware
+record. In particular, `LabMateOneWireArbiterAtomicLeaseSupported`
+is **hypothetical mock input**, NOT an API Momentum currently offers.
+Never set it to true from an assumption, app-local boolean, a
+read-only PB14 pin inspection or a non-atomic "is it busy?" check.
+
+**Deny-by-default prerequisites to enter modeled AwaitLease:**
+
+- A future proven **atomic external PB14 owner/lease service**;
+  unsupported and unknown external arbiter states are rejected.
+- User-verified **3.3 V-compatible** electrical conditions.
+  Unknown/unsafe voltage, automatic OTG activation and parasite
+  power request are rejected.
+- Only candidate PB14 pin (Momentum iButton port) is modeled;
+  PC0/PC1 and other pins rejected to protect current instrument
+  owners. **PB14 is not assumed safe just because the example
+  selects it.**
+- No active capture, GPIO Monitor, PWM Studio, iButton operation,
+  expansion, or unknown other owner. Local flags only report local
+  state; they cannot establish a global lock. The assumed
+  externally supplied atomic lease is mandatory.
+
+**Async states and STOP guarantees within the model:**
+
+`IDLE → AWAIT_LEASE → READY → AWAIT_OPERATION → READY →
+AWAIT_RELEASE → COMPLETED`. A STOP while awaiting a lease
+**remains pending**; a late positive grant must proceed to
+`AWAIT_RELEASE`, without starting sensor operations. A STOP
+during an in-flight operation waits for its recorded completion
+before release, and no new operation may begin. An error also
+requires confirmed release before `FAILED`; STOP after
+release resolves as `CANCELLED`. Generation tokens reject
+stale releases/grants; restart and app exit are forbidden while
+the model still awaits a lease, operation or release. Token
+wraparound is rejected. `session_init` is **initialization-only**
+and cannot be used to clear a live/blocked worker.
+
+`labmate_onewire_session_can_exit` expresses **logical model
+quiescence only** and is not proof that a real worker joined,
+a pin changed to analog mode, any peripheral stopped, external
+power is off, or another application released PB14.
+This model is **not thread-safe** by itself; a future coordinator
+must serialize events and synchronize UI snapshots.
+
+The isolated tests exercise all reject reasons, modeled late
+lease after STOP, in-flight STOP, error/release, normal
+finish/restart, stale tokens and token exhaustion. **GitHub CI
+has not yet been independently verified for this new W2b code.**
+Even if PASS, W2 real GPIO/resource ownership will remain
+**BLOCKED** until an actually supported atomic owner protocol
+can be found and validated; no physical W3/W4 device test can
+be inferred from host simulation.
+
 ## W1 pure decoder: current implementation
 
 - `src/labmate_onewire_ds18b20.h/.c` decodes a **9-byte DS18B20
@@ -160,7 +219,7 @@ certify that user hardware has a DS18B20 or suitable voltage.
 | --- | --- | --- |
 | W0 | Momentum source/example audit; isolate from I²C PR #8 and v1.7 Stable | Source review done |
 | W1 | HAL-free CRC/temp codec with strict native host tests and SDK compile | **CI PASS** (38466126162, source 7aac37c8); no physical readings |
-| W2 | Verify exact development SDK host exports and choose a validated GPIO ownership/lifecycle design | **Source + inert ABI-link CI PASS** (38466409736, source 84e65dbe); GPIO ownership/STOP-BACK still OPEN |
+| W2 | Verify exact development SDK host exports and choose a validated GPIO ownership/lifecycle design | **ABI proof PASS**; W2b pure lease STOP model committed, CI PENDING; **real atomic GPIO owner BLOCKED** |
 | W3 | Read-only one-sensor demo (no automatic external power, no persistent GPIO owner), STOP/BACK/regression host + SDK tests | Pending |
 | W4 | Operator verifies a **known safe, compatible** sensor and electrical conditions, then physical no-device + one-device runs | NOT TESTED |
 | W5 | Acceptance and explicit review before optional integration; separate Stable decision | Pending |
@@ -177,4 +236,4 @@ another app's GPIO, manipulate its mutex, or terminate a thread
 holding hardware resources. Firmware USB installation and stored
 Profiles/CSV history must remain untouched in these W0/W1 tests.
 
-**Decision:** W1 host/SDK gate is verified PASS and the W2 ABI-link subgate is PASS. Next research concerns exclusive GPIO/iButton ownership, lifecycle, 3.3 V and no automatic external power. The full W2 hardware resource gate and W4 real-device measurements remain NOT TESTED. No real Flipper temperature reading can be called PASS yet.
+**Decision:** W1 host/SDK and inert W2 ABI-link subgates are PASS. W2b mock event and resource-denial tests are committed but CI PENDING. The true hardware atomic GPIO arbiter is still unavailable/unverified, so W2 hardware integration is BLOCKED and W4 real-device measurements remain NOT TESTED. No real Flipper temperature reading can be called PASS yet.
