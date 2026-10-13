@@ -1,0 +1,60 @@
+name: LabMate v1.8 I2C UX Preview (NO BUS)
+
+on:
+  push:
+    branches: [dev/v1.8-i2c-explorer]
+    paths:
+      - "tests/flipper_i2c_ui_preview/**"
+      - "src/labmate_i2c_scan.*"
+      - "src/labmate_i2c_control.*"
+      - "src/labmate_i2c_present.*"
+      - "scripts/check_v18_i2c_ui_preview.py"
+      - ".github/workflows/v18-i2c-ui-preview.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: labmate-v18-i2c-ui-preview-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  compile-preview:
+    name: Build isolated simulated I2C preview (not LabMate, no hardware)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enforce SIMULATED label and forbid bus/GPIO code
+        run: python3 scripts/check_v18_i2c_ui_preview.py
+
+      - name: Install uFBT
+        run: python3 -m pip install --upgrade ufbt
+
+      - name: Install Momentum development SDK
+        working-directory: tests/flipper_i2c_ui_preview
+        run: ufbt update --channel=dev --index-url=https://up.momentum-fw.dev/firmware/directory.json
+
+      - name: Build preview-only FAP
+        working-directory: tests/flipper_i2c_ui_preview
+        run: ufbt
+
+      - name: Verify exact preview FAP and hash
+        run: |
+          set -euo pipefail
+          FAP=tests/flipper_i2c_ui_preview/dist/labmate_i2cuipreview.fap
+          test -s "$FAP"
+          mkdir -p i2c-preview-artifacts
+          cp "$FAP" i2c-preview-artifacts/
+          (cd i2c-preview-artifacts && sha256sum labmate_i2cuipreview.fap > SHA256SUMS.txt && sha256sum -c SHA256SUMS.txt)
+          echo "This artifact is an I2C UX SIMULATION. It is not labmate.fap."
+          cat i2c-preview-artifacts/SHA256SUMS.txt
+
+      - name: Upload isolated demo FAP (no release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: labmate-i2c-ui-preview
+          path: i2c-preview-artifacts/
+          if-no-files-found: error
