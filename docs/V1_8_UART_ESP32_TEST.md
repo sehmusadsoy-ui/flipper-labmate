@@ -502,7 +502,7 @@ rate-controlled external traffic source would be needed. The currently
 installed ESP32 9600 sketch was neither modified nor reflashed.
 Its periodic `ESP32_READY` packets cannot credibly force overflow.
 
-## ST2 external high-rate traffic fixture — Arduino build PASS; upload and hardware pending
+## ST2 external high-rate traffic fixture — Arduino build and upload PASS; hardware pending
 
 A separate **115200 8N1** ESP32-S2-WROVER Arduino sketch is staged at
 [`tests/esp32_s2_wrover_uart_stress_115200/esp32_s2_wrover_uart_stress_115200.ino`](../tests/esp32_s2_wrover_uart_stress_115200/esp32_s2_wrover_uart_stress_115200.ino).
@@ -519,8 +519,8 @@ A separate **115200 8N1** ESP32-S2-WROVER Arduino sketch is staged at
   the ESP32's own USB-C data connector.
 - User must compile/upload this **separate** sketch before a physical
   ST2 test. Do not change or overwrite the earlier 9600 peer source.
-  The operator **compiled ST2 successfully** but has not yet uploaded
-  or tested it physically; device ST2 and DROP remain pending.
+  The operator **compiled and uploaded ST2 successfully** (terminal
+  confirmation below), but physical ST2 and DROP remain pending.
 - Physical ST2 goal: Flipper UART STOP → choose 115200 → RUN;
   receive `ESP32_READY`, send `AT`, return to RX promptly, and check
   RX growth, UI responsiveness, D/E/status before and after load,
@@ -541,19 +541,36 @@ Global variables use 49000 bytes (14%) of dynamic memory, leaving 278680 bytes f
 ESP32-S2 ST2 115200 BUILD PASS
 ```
 
-**Only compile PASS is confirmed**. No ST2 upload, physical
-high-rate traffic result, or DROP pass. The currently installed
-ESP32 firmware is still the previously reported 9600 test peer
-until the operator explicitly flashes ST2. The Flipper's current
-LabMate FAP and v1.7 Stable are unchanged.
+**Arduino CLI ST2 compile and upload PASS (operator-reported, 2026-10-13).**
+After verifying the standalone USB device, the operator reported:
 
-**Next controlled flash gate:** power down Flipper with UART STOP,
-detach the ESP32-S2 Devboard, connect the board's USB-C standalone,
-verify unique Espressif VID_303A/PID_0002 target identity and current
-COM port, and freshly compile the pinned ST2 sketch into a unique
-build directory. Upload only to that verified port; check
-`ESP32-S2 ST2 115200 UPLOAD PASS` before any hardware ST2 testing.
-Do not connect standalone USB power to an attached Flipper Devboard.
+```text
+New upload port: COM12 (serial)
+ESP32-S2 ST2 115200 UPLOAD PASS
+```
+
+These are the final lines of the reported upload; individual flash
+segment verification messages were not included in this excerpt.
+The latest ESP32-S2 firmware is therefore the **115200 ST2 fixture**,
+replacing the previous 9600 peer; the Flipper's current LabMate FAP
+and v1.7 Stable are unchanged. **No physical ST2 data reception or
+DROP/BUSY device PASS has been reported yet.**
+
+**ST2 flash gate completed (operator report). Next physical ST2 test:**
+Disconnect the standalone ESP32-S2 USB-C cable, stop LabMate UART,
+turn off power before seating the original Devboard onto Flipper's
+GPIO connector correctly; no extra jumpers, power leads or attached
+USB-C. Open COMM → UART Terminal. Select **115200 baud while STOP**
+(previous 9600 selection may be retained), then OK → RUN. Expect
+periodic `ESP32_READY`. Note baseline R/D/E. DOWN → TX editor:
+explicitly send `AT` via OK; immediately BACK to RX. The ESP32
+replies `ESP32_OK`, `STRESS_ARMED`, then 1.2 seconds later emits
+bounded ASCII burst. Observe R growth, D/E/status, legibility and
+responsiveness over 5–10 seconds. Check STOP, BACK and re-entry after
+capturing counters. If D stays 0, this is **not** a failed physical
+DROP test — the application may drain RX faster than the source fills
+its 256-byte queue. Report exact device observation; leave BUSY and
+unobserved DROP paths pending.
 
 Host-only [CI run 38326055111](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38326055111)
 tested the *Flipper* UART firmware with HAL shims, not this Arduino sketch.
