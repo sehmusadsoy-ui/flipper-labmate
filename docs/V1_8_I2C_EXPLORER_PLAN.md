@@ -1,6 +1,6 @@
 # LabMate v1.8 — I²C Explorer: Compatibility and Safety Gate
 
-**Status (2026-10-13): HAL-free scan/lifecycle/presentation models G2/G2b/G2c CI PASS. G2d isolated SIMULATED Flipper UI preview SDK CI PASS and operator-reported physical UI D1–D5 5/5 PASS. No production I²C Explorer screen or HAL-backed scanner exists, and no real I²C bus/device scan PASS exists. G1 bounded bus ownership remains BLOCKED.**  
+**Status (2026-10-14): UART remains merged and device-tested. I²C model CI and historical simulation-only GUI checks PASS. A genuine I²C Explorer menu/blocked-state screen is now wired into development `labmate.fap` (new source CI PENDING), but HAL scanning is deliberately disabled; no real I²C bus/device scan exists. G1 bounded bus ownership remains BLOCKED, and v1.8 Stable is INCOMPLETE.**  
 **Development isolation:** `dev/v1.8-i2c-explorer` branched from `main` after [UART PR #7](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/7) merged. The published v1.7 Stable release is excluded from this work.
 
 ## 2026-10-14 — back to actual LabMate production development (CI PENDING)
