@@ -1,0 +1,14 @@
+# Development-only Momentum 1-Wire API-link proof.
+# The generated FAP is inert; DO NOT install it as a thermometer.
+App(
+    appid="labmate_onewireapiprobe",
+    name="LabMate OneWire API Probe",
+    apptype=FlipperAppType.EXTERNAL,
+    entry_point="labmate_onewire_api_probe_app",
+    sources=["api_probe.c"],
+    stack_size=1024,
+    fap_category="Tools",
+    fap_author="sehma",
+    fap_version="1.8",
+    fap_description="Inert compile/link test of Momentum 1-Wire host exports.",
+)
