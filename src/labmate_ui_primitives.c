@@ -176,6 +176,14 @@ static void ui_icon_uart(Canvas* c, uint8_t x, uint8_t y) {
     canvas_draw_line(c, x + 8, y + 8, x + 11, y + 8);
 }
 
+static void ui_icon_i2c(Canvas* c, uint8_t x, uint8_t y) {
+    /* Two clock/data rails and discrete addressed-device nodes. */
+    canvas_draw_line(c, x + 1, y + 3, x + 11, y + 3);
+    canvas_draw_line(c, x + 1, y + 9, x + 11, y + 9);
+    canvas_draw_box(c, x + 3, y + 1, 2, 5);
+    canvas_draw_box(c, x + 8, y + 7, 2, 5);
+}
+
 void ui_draw_menu_icon(Canvas* canvas, uint8_t item, uint8_t x, uint8_t y) {
     switch(item) {
     case LabMateToolGpio: ui_icon_gpio(canvas, x, y); break;
@@ -190,6 +198,7 @@ void ui_draw_menu_icon(Canvas* canvas, uint8_t item, uint8_t x, uint8_t y) {
     case LabMateToolButton: ui_icon_button(canvas, x, y); break;
     case LabMateToolAlerts: ui_icon_alerts(canvas, x, y); break;
     case LabMateToolUart: ui_icon_uart(canvas, x, y); break;
+    case LabMateToolI2c: ui_icon_i2c(canvas, x, y); break;
     default: break;
     }
 }
