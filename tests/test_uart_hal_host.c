@@ -253,6 +253,40 @@ int main(void) {
     assert(mock_init_baud == 9600U);
     labmate_uart_stop(&uart);
 
+    /* Same-screen mismatch recovery: STOP + baud change must clear
+     * stale errors, old text and RX stats without modifying TX text.
+     * An attempt to change baud while RUN must leave state untouched. */
+    assert(labmate_uart_start(&uart));
+    emit_data(message, sizeof(message) - 1U, FuriHalSerialRxEventData);
+    labmate_uart_poll(&uart);
+    emit_data(burst, sizeof(burst), FuriHalSerialRxEventData);
+    emit_data(NULL, 0U, FuriHalSerialRxEventFrameError);
+    assert(uart.rx_total == sizeof(message) - 1U);
+    assert(uart.dropped == 64U && uart.rx_errors == 1U);
+    assert(strcmp(uart.terminal.rows[0], "ESP32_READY") == 0);
+    labmate_uart_next_baud(&uart, 1);
+    assert(labmate_uart_baud(&uart) == 9600U);
+    assert(uart.rx_errors == 1U && uart.dropped == 64U);
+    labmate_uart_stop(&uart);
+    labmate_uart_next_baud(&uart, 0);
+    assert(labmate_uart_baud(&uart) == 9600U);
+    assert(uart.rx_errors == 1U && uart.dropped == 64U);
+    labmate_uart_next_baud(&uart, 1);
+    assert(labmate_uart_baud(&uart) == 38400U);
+    assert(uart.rx_total == 0U && uart.dropped == 0U && uart.rx_errors == 0U);
+    assert(uart.terminal.cursor_row == 0U && uart.terminal.cursor_col == 0U);
+    assert(uart.terminal.rows[0][0] == '\0');
+    assert(strcmp(uart.tx_text, "AT") == 0);
+    assert(!uart.blocked && !uart.invalid_baud);
+    assert(labmate_uart_start(&uart));
+    assert(mock_init_baud == 38400U);
+    emit_data(message, sizeof(message) - 1U, FuriHalSerialRxEventData);
+    labmate_uart_poll(&uart);
+    assert(uart.rx_total == sizeof(message) - 1U);
+    assert(uart.dropped == 0U && uart.rx_errors == 0U);
+    assert(strcmp(uart.terminal.rows[0], "ESP32_READY") == 0);
+    labmate_uart_stop(&uart);
+
     /* Unsupported rate is a separate BAUD status, with clean release. */
     mock_baud_supported = false;
     assert(!labmate_uart_start(&uart));
