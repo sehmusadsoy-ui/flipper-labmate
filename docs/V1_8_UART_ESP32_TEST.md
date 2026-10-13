@@ -1,6 +1,6 @@
 # LabMate v1.8 UART ↔ ESP32 Interoperability Test
 
-**Status: ESP32-S2 UART E1–E6 = 6/6 operator-reported PASS (2026-10-13), including bidirectional 115200 and 9600 baud. SR1-R1 corrected FAP **device PASS** (operator-reported, 2026-10-13): 9600 baud retained across STOP/BACK/re-entry and 2-minute RX stable. Previous SR1 FAIL diagnosed/resolved. Clean-baseline ERR detection E:0→88 and fresh 9600 re-entry recovery (ESP32_READY, E:0 D:0) PASS; direct same-screen recovery, BUSY conflict and controlled overflow remain PENDING; PR #7 stays draft.**
+**Status: ESP32-S2 UART E1–E6 = 6/6 operator-reported PASS (2026-10-13), including bidirectional 115200 and 9600 baud. SR1-R1 corrected FAP **device PASS** (operator-reported, 2026-10-13): 9600 baud retained across STOP/BACK/re-entry and 2-minute RX stable. Previous SR1 FAIL diagnosed/resolved. Clean-baseline ERR detection E:0→88 and fresh 9600 re-entry recovery (ESP32_READY, E:0 D:0) PASS; ST2 115200 sustained real-device RX PASS (R:41281, D:0, E:0; responsive STOP/BACK). Direct same-screen recovery, physical BUSY conflict and intentional hardware overflow remain PENDING; PR #7 stays draft.**
 The user identified an **ESP32-S2-WROVER Flipper Dev Board**. The
 official Flipper Wi-Fi Developer Board schematics were checked:
 https://cdn.flipperzero.one/Flipper_Zero_WI-FI_Module_V1_Schematic.PDF
@@ -502,7 +502,7 @@ rate-controlled external traffic source would be needed. The currently
 installed ESP32 9600 sketch was neither modified nor reflashed.
 Its periodic `ESP32_READY` packets cannot credibly force overflow.
 
-## ST2 external high-rate traffic fixture — Arduino build and upload PASS; hardware pending
+## ST2 external high-rate traffic fixture — device high-rate RX PASS; physical DROP remains untriggered
 
 A separate **115200 8N1** ESP32-S2-WROVER Arduino sketch is staged at
 [`tests/esp32_s2_wrover_uart_stress_115200/esp32_s2_wrover_uart_stress_115200.ino`](../tests/esp32_s2_wrover_uart_stress_115200/esp32_s2_wrover_uart_stress_115200.ino).
@@ -519,8 +519,9 @@ A separate **115200 8N1** ESP32-S2-WROVER Arduino sketch is staged at
   the ESP32's own USB-C data connector.
 - User must compile/upload this **separate** sketch before a physical
   ST2 test. Do not change or overwrite the earlier 9600 peer source.
-  The operator **compiled and uploaded ST2 successfully** (terminal
-  confirmation below), but physical ST2 and DROP remain pending.
+  The operator **compiled and uploaded ST2 successfully**, and the
+  subsequent physical high-rate RX/device-lifecycle test **PASS**
+  (operator report below). Physical DROP remains untriggered.
 - Physical ST2 goal: Flipper UART STOP → choose 115200 → RUN;
   receive `ESP32_READY`, send `AT`, return to RX promptly, and check
   RX growth, UI responsiveness, D/E/status before and after load,
@@ -553,24 +554,46 @@ These are the final lines of the reported upload; individual flash
 segment verification messages were not included in this excerpt.
 The latest ESP32-S2 firmware is therefore the **115200 ST2 fixture**,
 replacing the previous 9600 peer; the Flipper's current LabMate FAP
-and v1.7 Stable are unchanged. **No physical ST2 data reception or
-DROP/BUSY device PASS has been reported yet.**
+and v1.7 Stable are unchanged. Physical RX-load ST2 was subsequently
+reported PASS; deliberate physical DROP and competing-owner BUSY
+remain unverified.
 
-**ST2 flash gate completed (operator report). Next physical ST2 test:**
-Disconnect the standalone ESP32-S2 USB-C cable, stop LabMate UART,
-turn off power before seating the original Devboard onto Flipper's
-GPIO connector correctly; no extra jumpers, power leads or attached
-USB-C. Open COMM → UART Terminal. Select **115200 baud while STOP**
-(previous 9600 selection may be retained), then OK → RUN. Expect
-periodic `ESP32_READY`. Note baseline R/D/E. DOWN → TX editor:
-explicitly send `AT` via OK; immediately BACK to RX. The ESP32
-replies `ESP32_OK`, `STRESS_ARMED`, then 1.2 seconds later emits
-bounded ASCII burst. Observe R growth, D/E/status, legibility and
-responsiveness over 5–10 seconds. Check STOP, BACK and re-entry after
-capturing counters. If D stays 0, this is **not** a failed physical
-DROP test — the application may drain RX faster than the source fills
-its 256-byte queue. Report exact device observation; leave BUSY and
-unobserved DROP paths pending.
+**ST2 physical high-rate RX test — PASS (operator-reported, 2026-10-13).**
+
+Exact operator message:
+
+```text
+LabMate v1.8 ST2 gerçek cihaz sonucu: ESP32_READY=yes; yoğun veri=yes;
+R=41281; D=0; E=0; arayüz ve STOP/BACK=yes
+```
+
+- **PASS:** matched **115200 baud** ESP32-S2 ST2 peer and Flipper
+  displayed periodic `ESP32_READY`.
+- **PASS:** `AT`-triggered high-rate RX traffic was visually observed.
+  LabMate reported **R:41281**, **D:0**, **E:0**.
+- **PASS:** Flipper GUI remained responsive; STOP and BACK remained
+  functional after load, as reported by the operator.
+- **Interpretation:** no dropped RX bytes and no UART error events
+  were observed in the reported session. **D:0 is not evidence that
+  physical overflow/DROP behavior was exercised**; the 256-byte app
+  stream may have been serviced quickly enough.
+- **Accounting caveat:** the reported cumulative **R:41281** is
+  greater than the sketch's **20,480 byte per-AT stress cap**.
+  R is a *session cumulative receive counter*, which also includes
+  protocol messages and could contain multiple individually
+  requested bursts. The user did not report the exact AT count or
+  starting R; do **not** infer a single 41,281-byte stress burst,
+  exact delivery percentage, or guaranteed zero loss across the
+  entire physical link.
+- The previously installed LabMate FAP remains the same;
+  no v1.8 release/merge made.
+
+**Remaining physical acceptance gates:** a genuine competing-service
+BUSY refusal and a controlled, actually-observed D>0 overflow path
+are not yet demonstrated. Host HAL tests for both paths are CI PASS.
+Consider whether a dedicated hardware stress rig is warranted;
+do not repeatedly flash or overload the user's working peer just
+to force D>0.
 
 Host-only [CI run 38326055111](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38326055111)
 tested the *Flipper* UART firmware with HAL shims, not this Arduino sketch.
