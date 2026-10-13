@@ -107,5 +107,5 @@ for forbidden in ("storage_file_write(", "storage_file_open(", "storage_file_clo
         f"SD operation leaked into mutex-protected input handling: {forbidden}"
     )
 
-print("LabMate v1.8 coordinator PASS: 15 screen routes, 13 tools, ownership, 
+print("LabMate v1.8 coordinator PASS: 15 screen routes, 13 tools, ownership, "
       "PWM safeguards, deferred I/O, bounded coordinator")
