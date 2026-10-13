@@ -1,6 +1,6 @@
 # LabMate v1.8 — Optional 1-Wire DS18B20 Feasibility
 
-**2026-10-13 | W1 host codec + Momentum SDK CI PASS; W2 inert SDK ABI-link CI PASS, but hardware GPIO ownership still OPEN. No sensor measured.**
+**2026-10-13 | W1 decoder + SDK CI PASS, W2 inert ABI-link CI PASS, W2b HAL-free lease/STOP host CI PASS. Actual firmware-wide GPIO ownership remains BLOCKED; no sensor measured.**
 Branch: `dev/v1.8-onewire-feasibility` based on development `main` (which already
 includes the accepted UART work). **No physical 1-Wire sensor has been
 connected, no real sensor reading has been performed, and no 1-Wire UI
@@ -86,7 +86,7 @@ resources, but any actual GPIO driver remains **W2 BLOCKED until a
 reviewed resource-policy and STOP/BACK lifecycle are available**.
 This is a source review only, not an on-device contention test.
 
-## W2b — fail-closed lease and STOP lifecycle model (HOST CI PENDING)
+## W2b — fail-closed lease and STOP lifecycle model (HOST CI PASS)
 
 Added `src/labmate_onewire_session.h/.c`, independent
 `tests/test_onewire_session.c.inc`, guard
@@ -138,12 +138,19 @@ must serialize events and synchronize UI snapshots.
 
 The isolated tests exercise all reject reasons, modeled late
 lease after STOP, in-flight STOP, error/release, normal
-finish/restart, stale tokens and token exhaustion. **GitHub CI
-has not yet been independently verified for this new W2b code.**
-Even if PASS, W2 real GPIO/resource ownership will remain
-**BLOCKED** until an actually supported atomic owner protocol
-can be found and validated; no physical W3/W4 device test can
-be inferred from host simulation.
+finish/restart, stale tokens and token exhaustion.
+
+**W2b verified GitHub CI PASS:** [run 38467638118](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38467638118),
+exact tested source SHA `606788115f6bfc00ac4ec4c3a170f9c6e8d5f4f1`.
+The job logs explicitly reported:
+
+- `1-Wire W2 HOST lease model: deny unknown, no auto power, late lease STOP, confirm release, stale events PASS`
+- `1-Wire W2 mock model isolated and fail-closed: PASS (HOST ONLY)`
+- The earlier W1 native CRC and conversion safety tests, Momentum SDK development FAP compilation and Windows installer mock also PASS.
+- Development `labmate.fap` file SHA256 from job output: `f3ce6438280524692908212c0b3c8b4c9a830b7afc467b503aab667d2e7f12d2` (artifact `labmate`, ID `11849545949`, not a Stable release). The GitHub ZIP digest is a different file's digest.
+- v1.7 publishing step SKIPPED by design. Earlier branch runs `38467507230`, `38467361244`, `38467314329` were cancelled/superseded by new pushes, not failed W2b native tests.
+
+Despite this PASS, W2 real GPIO/resource ownership **remains BLOCKED** until an actual supported atomic owner protocol can be found and validated; no physical W3/W4 sensor test or runtime STOP timing may be inferred from simulation.
 
 ## W1 pure decoder: current implementation
 
@@ -219,7 +226,7 @@ certify that user hardware has a DS18B20 or suitable voltage.
 | --- | --- | --- |
 | W0 | Momentum source/example audit; isolate from I²C PR #8 and v1.7 Stable | Source review done |
 | W1 | HAL-free CRC/temp codec with strict native host tests and SDK compile | **CI PASS** (38466126162, source 7aac37c8); no physical readings |
-| W2 | Verify exact development SDK host exports and choose a validated GPIO ownership/lifecycle design | **ABI proof PASS**; W2b pure lease STOP model committed, CI PENDING; **real atomic GPIO owner BLOCKED** |
+| W2 | Verify exact development SDK host exports and choose a validated GPIO ownership/lifecycle design | **ABI proof PASS**; **W2b pure lease/STOP host CI PASS** (38467638118); **real atomic GPIO owner BLOCKED** |
 | W3 | Read-only one-sensor demo (no automatic external power, no persistent GPIO owner), STOP/BACK/regression host + SDK tests | Pending |
 | W4 | Operator verifies a **known safe, compatible** sensor and electrical conditions, then physical no-device + one-device runs | NOT TESTED |
 | W5 | Acceptance and explicit review before optional integration; separate Stable decision | Pending |
@@ -236,4 +243,4 @@ another app's GPIO, manipulate its mutex, or terminate a thread
 holding hardware resources. Firmware USB installation and stored
 Profiles/CSV history must remain untouched in these W0/W1 tests.
 
-**Decision:** W1 host/SDK and inert W2 ABI-link subgates are PASS. W2b mock event and resource-denial tests are committed but CI PENDING. The true hardware atomic GPIO arbiter is still unavailable/unverified, so W2 hardware integration is BLOCKED and W4 real-device measurements remain NOT TESTED. No real Flipper temperature reading can be called PASS yet.
+**Decision:** W1 host/SDK, inert W2 ABI-link, and W2b HAL-free mock event/resource-denial host CI are all PASS. The real hardware atomic GPIO arbiter is still unavailable/unverified; W2 hardware integration is BLOCKED and W4 real-device measurements remain NOT TESTED. No real Flipper temperature reading can be called PASS yet.
