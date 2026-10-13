@@ -84,7 +84,7 @@ SDK-supported timed acquire or a documented single-owner restriction
 is feasible. If no safe strategy exists, disclose the limitation and
 keep hardware Explorer gated instead of adding a freezing scan button.
 
-## G2b — lifecycle/STOP model (HAL-free, CI PENDING)
+## G2b — lifecycle/STOP model (HAL-free, CI PASS)
 
 The isolated worker/UI **lifecycle state model** is now committed in
 `src/labmate_i2c_control.h/.c`. It composes the already-tested pure
@@ -113,8 +113,26 @@ calling firmware services, or touching physical pins.
 - `scripts/check_v18_i2c_control.py` guards the pure model and checks
   that **LabMate UI, inputs and coordinator have not hooked it up yet**.
   The v1.8 dev CI workflow was extended with a native strict C11 test
-  and static guard. **New GitHub CI result not independently verified
-  yet: do not mark the G2b tests PASS before run/job inspection.**
+  and static guard. **GitHub CI PASS:** [run
+  38459459959](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38459459959)
+  completed both development FAP build and Windows installer mock with
+  `success`; v1.7 release job appropriately `skipped`. Within the build,
+  native G2b lifecycle tests, pure source guard, prior I²C model,
+  legacy UART regressions and Momentum SDK compilation were all
+  `success`. Artifact provenance source SHA is
+  `a806b138ae47fd882cd8ae1394602c952f83ab6e`.
+  Only this plan document changed on the branch after that tested source.
+  **No physical I²C bus or HAL resource acquisition was exercised.**
+
+**Why earlier runs displayed X:** [38459243163](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38459243163)
+failed an overly literal **static-guard assertion** that looked for the
+`LabMateI2cControlAwaitAcquire` token in the STOP function. The actual
+native G2b lifecycle test already passed in that run; the guard was
+corrected to inspect the STOP-pending semantics. Subsequent
+workflows 38459271725 and 38459401288 were cancelled while newer
+commits arrived; the latest complete 38459459959 is clean PASS.
+Do not label the cancelled runs as hardware/software feature failures.
+No attempt to mutate the v1.7 Stable release occurred.
 
 **Crucial safety boundary:** This is a **single-threaded event protocol
 model**, not an actual worker or mutex wrapper. Production work would
