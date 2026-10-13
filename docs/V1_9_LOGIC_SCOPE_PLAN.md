@@ -1,6 +1,6 @@
 # LabMate v1.9 — Logic Scope + Signal Compare (early R&D)
 
-**Status (2026-10-14): L0 strict C11 host tests + SDK + installer mock CI PASS (run 38473341973). L1 HAL-free 120-column projection with dense-edge/overflow transparency committed; new CI PENDING. No real GPIO capture or Flipper screen integration.**
+**Status (2026-10-14): L0 and L1 strict C11 host tests, static isolation guards, Momentum SDK FAP build and Windows installer mock CI PASS. A separate simulated Flipper Scope UI preview is the next untested gate; real GPIO capture remains unimplemented.**
 This is a preliminary v1.9 **development-only branch**, not a
 v1.9 release, not a device-tested oscilloscope, and not authorization
 to skip an unfinished v1.8 milestone.
@@ -85,7 +85,7 @@ but **no runtime code invokes it**. No user-visible Scope menu exists.
 | L0a | Native strict C11: initial level, trigger modes, filtered edges, stale token, START/STOP | **CI PASS** run 38473341973; exact source 1febeaf6 |
 | L0b | Native strict C11: wrap, clock faults, >half-range span, no overwrite, overflow, token exhaustion | **CI PASS** run 38473341973; exact source 1febeaf6 |
 | L0c | Static guard: no HAL, GPIO, UI/menu, or runtime calls; SDK development FAP builds alongside older features | **CI PASS** run 38473341973; SDK build and Windows mock installer passed |
-| L1 | Pure 120-column projection for future 128×64 Canvas; honest dense-edge, crop, overflow/fault and no-trigger states | Code + native tests and static guard committed, **CI PENDING**; no on-device UI |
+| L1 | Pure 120-column projection for future 128×64 Canvas; honest dense-edge, crop, overflow/fault and no-trigger states | **CI PASS** run 38474279372 (exact source e492bb7c); no on-device UI |
 | L2 | Real capture driver plan: mutually exclusive PC0/PC1/PB3/PA7, bounded ISR/timebase and STOP/BACK | NOT STARTED — safety gate |
 | L3 | Real Flipper no-signal and known-safe 3.3-V loopback; clean STOP/BACK and regressions | NOT TESTED |
 | L4 | Signal Compare: reference/tolerance pure math and defensible error/missing-signal messaging | NOT STARTED |
@@ -104,7 +104,7 @@ but **no runtime code invokes it**. No user-visible Scope menu exists.
   v1.7 release finalization job `115557896247` **SKIPPED** as intended.
 - These PASS results cover only the HAL-free model and build. Physical signal capture, hardware timebase, accuracy, peak edge rate and STOP/BACK on Flipper remain untested.
 
-## L1 — bounded 120-column projection for eventual 128×64 view (CI PENDING)
+## L1 — bounded 120-column projection for eventual 128×64 view (CI PASS)
 
 Code: `src/labmate_scope_project.h/.c`; strict host tests:
 `tests/test_scope_project.c.inc`; independent isolation guard:
@@ -162,6 +162,13 @@ performance measurements.
 physical ownership; no user installation should be
 interpreted as a working v1.9 Logic Scope. L2/L3 remain open
 even if this L1 test workflow passes.
+
+### L1 exact GitHub CI acceptance evidence
+
+- Latest tested [run 38474279372](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38474279372), workflow source SHA `e492bb7cc6309d53335ee5a4d8b1ca9cc37e2f92`, development compile job `115561001829` **SUCCESS**. Log explicitly states `v1.9 scope L1 HOST: 120 columns, dense edges, cropped windows, honest overflow/fault PASS` and `v1.9 Scope L1 projection static guard: pure 120-column model, no live UI or GPIO PASS`. The earlier L0 trace tests ran PASS again.
+- Compiled `labmate.fap` development artifact validated by CI with file SHA256 `f3ce6438280524692908212c0b3c8b4c9a830b7afc467b503aab667d2e7f12d2`. GitHub artifact `labmate`, ID `11852019547`; its ZIP hash is not the FAP hash. No user installation of this branch was performed.
+- Windows installer **mock** job `115561001983` **SUCCESS**, v1.7 Stable finalization `115561177750` **SKIPPED** as designed. Earlier [run 38474114577](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38474114577) also had passing build and installer jobs; prior `38474068619` was cancelled by later source updates.
+- CI PASS is only a **pure software/SDK build** result; it does not show a live Flipper Canvas preview, actual GPIO events, timing calibration, or oscilloscope throughput.
 
 ### Current limitations
 
