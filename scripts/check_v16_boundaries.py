@@ -90,6 +90,7 @@ SCREENS_EXPECTED = [
     "draw_history_detail",
     "draw_about",
     "draw_profiles",
+    "draw_i2c",
 ]
 
 for name in SCREENS_EXPECTED:
