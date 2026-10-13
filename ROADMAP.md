@@ -117,9 +117,14 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
   deferred storage and per-screen input modules. R1–R10 operator-reported
   Flipper device regression and main CI both passed.
   [Refactor test record](docs/V1_8_DEV_NOTES.md).
-- **Current candidate:** UART Terminal USART 13/14, bounded RX and explicit TX editor;
-  SDK 87.1 CI PASS, real-device communication still unverified.
-  [UART device-test plan](docs/V1_8_UART_PLAN.md).
+- **Current candidate (PR #7 Draft, not released):** UART Terminal USART
+  13/14, bounded RX and explicit TX editor. SDK/host CI PASS; operator
+  reports U1–U8 8/8, ESP32 external E1–E6 6/6, baud-retention SR1-R1,
+  high-rate ST2 and controlled real-HAL UART BUSY Probe 2/2 PASS.
+  Physical UART RX buffer overflow `D>0`, same-screen baud recovery,
+  independent calibration and external-service contention remain
+  unverified. [UART test plan](docs/V1_8_UART_PLAN.md) ·
+  [device evidence](docs/V1_8_UART_ESP32_TEST.md).
 - **Next new instrument after UART device PASS:** I²C Explorer.
 - 3.3 V-compatible **UART Terminal** for development and diagnostics.
 - **I²C Explorer** for suitable, owned test peripherals on a safe bus.
@@ -160,7 +165,7 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
 | **v1.5** | **Data Logger, CSV recording and Log History** | **Stable published 2026-10-09** |
 | v1.6 | Code/UI refactor | Stable published; v1.6.1 remains a previous Stable fallback |
 | **v1.7** | **PWM Studio and Counter** | **Stable published 2026-10-12; current Stable** |
-| v1.8 | Coordinator cleanup → Counter resume → UART → I²C → optional 1-Wire | PR #5/#6 merged, UART candidate compiled, device UART pending |
+| v1.8 | Coordinator cleanup → Counter resume → UART → I²C → optional 1-Wire | PR #5/#6 merged; UART physical peer and controlled BUSY PASS, DROP and other acceptance risks open; PR #7 Draft; I²C not implemented |
 | v1.9 | Logic Scope and Signal Compare | Planned |
 | v2.0 | LabMate Ultimate / Signal Doctor | Planned |
 
