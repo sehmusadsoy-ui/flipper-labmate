@@ -13,6 +13,7 @@
 #include "labmate_pulse_math.h"
 #include "labmate_button_logic.h"
 #include "labmate_threshold.h"
+#include "labmate_uart.h"
 
 #define LABMATE_VERSION_TEXT "v1.8dev"
 /* Shared menu/pin counts: UI and input handling must agree. */
@@ -41,6 +42,7 @@ typedef enum {
     LabMateScreenCounter, /* append: preserve existing screen numbers */
     LabMateScreenButton, /* append: preserve original 0..10 */
     LabMateScreenAlerts, /* configuration: no extra GPIO ownership */
+    LabMateScreenUart, /* v1.8 UART: append, preserve stable screen IDs */
 } LabMateScreen;
 
 typedef enum {
@@ -243,6 +245,8 @@ typedef struct {
     uint8_t history_mode;
     char history_first_row[80];
     uint8_t history_first_row_len;
+
+    LabMateUart uart; /* USART external GPIO 13/14, no TIM1/TIM2 ownership */
 
     LabMateProfileStore profiles;
     uint8_t profile_active_copy; /* 0=a, 1=b, 255=none */

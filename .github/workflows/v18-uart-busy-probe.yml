@@ -1,0 +1,52 @@
+name: LabMate v1.8 UART BUSY Probe (development-only)
+
+on:
+  push:
+    branches: [dev/v1.8-uart-terminal]
+    paths:
+      - "src/labmate_uart.c"
+      - "src/labmate_uart.h"
+      - "src/labmate_uart_text.c"
+      - "src/labmate_uart_text.h"
+      - "tests/flipper_uart_busy_probe/**"
+      - ".github/workflows/v18-uart-busy-probe.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-probe:
+    name: Compile separate BUSY probe FAP (Momentum SDK)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uFBT
+        run: python3 -m pip install --upgrade ufbt
+
+      - name: Install matching Momentum SDK
+        working-directory: tests/flipper_uart_busy_probe
+        run: ufbt update --channel=dev --index-url=https://up.momentum-fw.dev/firmware/directory.json
+
+      - name: Compile isolated diagnostic (never modify LabMate FAP)
+        working-directory: tests/flipper_uart_busy_probe
+        run: ufbt
+
+      - name: Verify distinctive FAP output and record digest
+        run: |
+          set -euo pipefail
+          test -s tests/flipper_uart_busy_probe/dist/labmate_busydiag.fap
+          mkdir -p busy-probe-artifacts
+          cp tests/flipper_uart_busy_probe/dist/labmate_busydiag.fap busy-probe-artifacts/
+          (cd busy-probe-artifacts && sha256sum labmate_busydiag.fap > SHA256SUMS.txt && sha256sum -c SHA256SUMS.txt)
+          echo 'Standalone BUSY Probe artifact (not LabMate) SHA256:'
+          cat busy-probe-artifacts/SHA256SUMS.txt
+
+      - name: Upload separate diagnostic FAP
+        uses: actions/upload-artifact@v4
+        with:
+          name: labmate-busy-probe
+          path: busy-probe-artifacts/
+          if-no-files-found: error

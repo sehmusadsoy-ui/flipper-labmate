@@ -37,9 +37,20 @@ regression** (user-reported) and was merged to `main` in
 [PR #5](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/5).
 The app now has focused capture, input, GUI and deferred-SD modules.
 The repository head is **v1.8dev**, not a published Stable release.
-A separate Counter STOP/RESUME enhancement is being developed; UART,
-I²C and optional 1-Wire remain upcoming.
-[Refactor details and device-test record](docs/V1_8_DEV_NOTES.md).
+Counter STOP/RESUME also passed C1–C8 real-device regressions and
+merged in [PR #6](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/6).
+**UART Terminal now has an unpublished SDK-compiled development candidate**
+on branch `dev/v1.8-uart-terminal`: COMM menu, USART pins 13/14, bounded
+RX display, 9600/38400/115200 baud and an explicit 12-character TX editor.
+**Operator-reported device checkpoints PASS:** local U1–U8,
+external ESP32-S2 UART E1–E6 at 9600/115200, corrected SR1-R1,
+bounded ST2 high-rate receive and controlled USART BUSY Probe 2/2.
+Physical RX overflow `D>0`, independent baud calibration and a
+simultaneous unrelated serial-owner conflict are **not** claimed.
+UART PR #7 remains Draft; I²C and optional 1-Wire are not implemented.
+[Refactor test record](docs/V1_8_DEV_NOTES.md) ·
+[UART acceptance plan](docs/V1_8_UART_PLAN.md) ·
+[real-device test log](docs/V1_8_UART_ESP32_TEST.md).
 
 ## Repository layout
 

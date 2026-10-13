@@ -7,6 +7,7 @@
 #include "labmate_logger_storage.h"
 #include "labmate_history.h"
 #include "labmate_profile_storage.h"
+#include "labmate_uart.h"
 
 #define LOGGER_SYNC_EVERY_ROWS 10U
 
@@ -26,6 +27,20 @@ void labmate_deferred_prepare(LabMateApp* app, LabMateDeferredWork* work) {
 /* Execute SD I/O outside UI mutex and any interrupt/render callbacks. */
 void labmate_deferred_execute(LabMateApp* app, LabMateDeferredWork* work,
                               ViewPort* viewport) {
+        /* Explicit TX is small, synchronous and outside the draw mutex.
+         * Its result/total are published only after re-acquiring the mutex. */
+        if(work->uart_tx_requested) {
+            const bool sent = labmate_uart_send(
+                &app->uart, work->uart_tx_payload, work->uart_tx_len);
+            furi_mutex_acquire(app->mutex, FuriWaitForever);
+            app->uart.tx_sent = sent;
+            if(sent) {
+                if(UINT32_MAX - app->uart.tx_total < work->uart_tx_len)
+                    app->uart.tx_total = UINT32_MAX;
+                else app->uart.tx_total += work->uart_tx_len;
+            }
+            furi_mutex_release(app->mutex);
+        }
         if(work->logger_start_requested || work->logger_stop_requested) {
             /* Display OPENING/SAVING without holding the drawing mutex
              * while storage blocks. The main loop may still wait for SD. */

@@ -18,6 +18,7 @@ typedef enum {
     LabMateToolCounter, /* New in v1.7: append, never renumber profiles */
     LabMateToolButton, /* PC1 contact bounce/settle analyzer */
     LabMateToolAlerts, /* v1.7: configurable visual threshold alerts */
+    LabMateToolUart, /* v1.8: append, never renumber existing tools */
     LabMateToolCount,
     LabMateToolInvalid = 255
 } LabMateTool;
@@ -27,6 +28,7 @@ typedef enum {
     LabMateGroupOutput,
     LabMateGroupRecords,
     LabMateGroupInfo,
+    LabMateGroupComm, /* add after original four groups */
     LabMateGroupCount
 } LabMateMenuGroup;
 

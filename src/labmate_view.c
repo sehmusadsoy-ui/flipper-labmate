@@ -44,6 +44,10 @@ void labmate_view_render_callback(
         draw_logger(canvas, app);
         break;
 
+    case LabMateScreenUart:
+        draw_uart(canvas, app);
+        break;
+
     case LabMateScreenHistory:
         draw_history(canvas, app);
         break;

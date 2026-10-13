@@ -17,3 +17,4 @@ void labmate_input_counter(LabMateApp* app, InputEvent event, LabMateDeferredWor
 void labmate_input_logger(LabMateApp* app, InputEvent event, LabMateDeferredWork* work);
 void labmate_input_gpio(LabMateApp* app, InputEvent event, LabMateDeferredWork* work);
 void labmate_input_generator(LabMateApp* app, InputEvent event, LabMateDeferredWork* work);
+void labmate_input_uart(LabMateApp* app, InputEvent event, LabMateDeferredWork* work);
