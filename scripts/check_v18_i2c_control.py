@@ -55,9 +55,19 @@ for required in (
 ):
     assert required in test, required
 
-# The pure functions are NOT integrated into event routing or GPIO.
+# Production LabMate now initializes the model while presenting an honest
+# hardware-BLOCKED state. No START, scan, ready or HAL bus calls are allowed.
 app_sources = "".join((root / "src" / file).read_text() for file in (
     "labmate.c", "labmate_input.c", "labmate_view.c", "labmate_input_menu.c"
 ))
-assert "labmate_i2c_control_" not in app_sources
-print("I2C lifecycle: pure state-only, no HAL/UI integration or fake cancel/release PASS")
+assert app_sources.count("labmate_i2c_control_reset(") == 2
+for forbidden in (
+    "labmate_i2c_control_start(",
+    "labmate_i2c_control_next_probe(",
+    "labmate_i2c_control_probe_done(",
+    "labmate_i2c_control_acquire_done(",
+    "furi_hal_i2c_acquire(",
+    "furi_hal_i2c_is_device_ready(",
+):
+    assert forbidden not in app_sources, forbidden
+print("I2C lifecycle: production UI exists, real HAL acquire and fake scan disabled PASS")
