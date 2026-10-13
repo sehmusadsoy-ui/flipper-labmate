@@ -616,6 +616,40 @@ Host-only [CI run 38326055111](https://github.com/sehmusadsoy-ui/flipper-labmate
 tested the *Flipper* UART firmware with HAL shims, not this Arduino sketch.
 
 
+## BUSY physical USART owner probe — separate FAP source staged, CI pending
+
+Development-only application under
+`tests/flipper_uart_busy_probe/`: unique app ID
+`labmate_busydiag`, **not** `labmate`. Uses the **actual**
+`src/labmate_uart.c` code (included at compile time, not mocked).
+It performs on Flipper a short, user-triggered, no-TX UART owner test:
+
+1. With ESP32 Devboard **detached**, check `expansion_is_connected`;
+   if connected, SKIP without interfering.
+2. Reserve Flipper's real `FuriHalSerialIdUsart` control handle;
+   if unavailable, SKIP without stealing it.
+3. While the test code owns that handle, call the **real**
+   `labmate_uart_start`; expect refused start, `blocked=true`,
+   zero active ownership and no leaked LabMate stream or record.
+4. Release reserved handle, then call LabMate UART start and stop
+   again to verify the serial resource is recovered cleanly.
+5. Display `BUSY REFUSAL: PASS` and `RESTART/STOP: PASS`
+   (or a precise FAIL/SKIP state). BACK exits the one-off app.
+
+No GPIO jumpers, traffic generators, firmware flashing, SD writes,
+or interference with an attached expansion service. This checks
+**genuine Flipper HAL serial-control contention caused deliberately
+within the diagnostic**. It is **not** proof of conflict against
+a separate unrelated firmware service while simultaneously running
+LabMate. On-device result remains PENDING until the operator
+installs the separate FAP and reports its display.
+
+The standalone diagnostic must first pass Momentum SDK CI from
+`.github/workflows/v18-uart-busy-probe.yml`; installing this FAP
+must use an independent path
+`/ext/apps/Tools/labmate_busydiag.fap`, leaving the ordinary
+`/ext/apps/Tools/labmate.fap` untouched.
+
 ## Separate remaining stress/conflict gates
 
 - [ ] Demonstrate a legitimate serial-owner conflict: UART refuses

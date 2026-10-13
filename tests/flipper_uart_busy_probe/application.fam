@@ -1,0 +1,14 @@
+# One-time development hardware diagnostic. Does NOT replace LabMate.
+App(
+    appid="labmate_busydiag",
+    name="LabMate BUSY Probe",
+    apptype=FlipperAppType.EXTERNAL,
+    entry_point="labmate_busy_probe_app",
+    sources=["busy_probe.c"],
+    requires=["gui"],
+    stack_size=4 * 1024,
+    fap_category="Tools",
+    fap_author="sehma",
+    fap_version="1.8",
+    fap_description="Standalone test of real UART owner conflict and cleanup.",
+)
