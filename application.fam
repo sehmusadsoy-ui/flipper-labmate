@@ -10,7 +10,7 @@ App(
     stack_size=4 * 1024,
     order=20,
     fap_category="Tools",
-    fap_author="sehma",
+    fap_author="SauronLAB / Sehmus",
     fap_icon="labmate_10px.png",
     fap_version="1.8",
     fap_description="Portable GPIO and digital signal diagnostic tool for Flipper Zero.",
