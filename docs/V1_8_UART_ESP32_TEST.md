@@ -466,7 +466,7 @@ check the expected `ESP32_READY` legibility again. Never classify
 a deliberate mismatched-baud ERR as overflow/DROP. BUSY and
 controlled overflow remain untested.
 
-## UART ownership and overflow host-contract regression fixture — proposed, CI pending
+## UART ownership and overflow host-contract regression fixture — CI PASS (2026-10-13)
 
 The development branch now has a new **host-only** test at
 `tests/test_uart_hal_host.c` with stub HAL headers under
@@ -485,12 +485,22 @@ pseudo-code copy. The fixture models:
 - Explicit TX, idempotent STOP, baud preservation on re-entry,
   reset of session counters, and BAUD unsupported clean exit.
 
-This fixture must pass GCC host CI and native Momentum FAP build.
+**GitHub CI PASS:** [run 38326055111](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38326055111)
+for code commit `07e9464a4c502b21e3fb7dadb92f7c10d21ca5c5`.
+The native host test printed:
+`UART host HAL: ownership BUSY, RX queue DROP, ERR, STOP, re-entry PASS`.
+The Momentum SDK FAP build and Windows installer mock also passed
+(**2/2 executed jobs**, Stable publisher skipped).
+Final FAP SHA256 **unchanged** from the already-installed SR1 fix:
+`7bfdcb21c344b76bc3dbebfca7c979870b7bbfba28a34c9fe7c63e6ec5e76a20`.
+No need to reinstall Flipper; changes only touched tests, CI and docs.
+
 **A host mock cannot establish physical BUSY or actual overflow
 conditions.** The on-device BUSY and DROP overload acceptance items
-below remain UNCHECKED; a separate genuine UART owner and a safe,
-rate-controlled external traffic source will be required. The currently
-installed ESP32 9600 sketch has not been modified or reflashed.
+below remain UNCHECKED. A separate genuine UART owner and a safe,
+rate-controlled external traffic source would be needed. The currently
+installed ESP32 9600 sketch was neither modified nor reflashed.
+Its periodic `ESP32_READY` packets cannot credibly force overflow.
 
 ## Separate remaining stress/conflict gates
 
