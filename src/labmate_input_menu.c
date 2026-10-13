@@ -132,6 +132,13 @@ void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                         labmate_uart_reenter(&app->uart);
                         break;
 
+                    case LabMateToolI2c:
+                        /* Production screen exists, but scans remain disabled
+                         * until external I2C bus lock has a bounded acquire. */
+                        labmate_i2c_control_reset(&app->i2c);
+                        app->screen = LabMateScreenI2c;
+                        break;
+
                     case LabMateToolAbout:
                         app->screen = LabMateScreenAbout;
                         app->about_page = 0U;
