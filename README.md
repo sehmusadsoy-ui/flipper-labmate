@@ -42,10 +42,15 @@ merged in [PR #6](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/6).
 **UART Terminal now has an unpublished SDK-compiled development candidate**
 on branch `dev/v1.8-uart-terminal`: COMM menu, USART pins 13/14, bounded
 RX display, 9600/38400/115200 baud and an explicit 12-character TX editor.
-**Device UART RX/TX tests remain PENDING.** I²C and optional 1-Wire are
-not yet implemented.
+**Operator-reported device checkpoints PASS:** local U1–U8,
+external ESP32-S2 UART E1–E6 at 9600/115200, corrected SR1-R1,
+bounded ST2 high-rate receive and controlled USART BUSY Probe 2/2.
+Physical RX overflow `D>0`, independent baud calibration and a
+simultaneous unrelated serial-owner conflict are **not** claimed.
+UART PR #7 remains Draft; I²C and optional 1-Wire are not implemented.
 [Refactor test record](docs/V1_8_DEV_NOTES.md) ·
-[UART test and compatibility plan](docs/V1_8_UART_PLAN.md).
+[UART acceptance plan](docs/V1_8_UART_PLAN.md) ·
+[real-device test log](docs/V1_8_UART_ESP32_TEST.md).
 
 ## Repository layout
 
