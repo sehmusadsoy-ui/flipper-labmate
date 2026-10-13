@@ -3,6 +3,47 @@
 **Status (2026-10-13): HAL-free scan/lifecycle/presentation models G2/G2b/G2c CI PASS. G2d isolated SIMULATED Flipper UI preview SDK CI PASS and operator-reported physical UI D1–D5 5/5 PASS. No production I²C Explorer screen or HAL-backed scanner exists, and no real I²C bus/device scan PASS exists. G1 bounded bus ownership remains BLOCKED.**  
 **Development isolation:** `dev/v1.8-i2c-explorer` branched from `main` after [UART PR #7](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/7) merged. The published v1.7 Stable release is excluded from this work.
 
+## 2026-10-14 — back to actual LabMate production development (CI PENDING)
+
+**Operator gate:** finish each version as Stable before starting the
+next one. No more standalone demonstration downloads as a substitute
+for production integration. [Sequential Stable gate](../ROADMAP.md)
+(on `main`). Development of v1.9 has been paused.
+
+**Actual `labmate.fap` wiring now in this PR #8 branch:**
+
+- `src/labmate_navigation.h/.c`: I2C Explorer appended as the
+  second COMM instrument, preserving all previous tool IDs.
+- `src/labmate_internal.h`: appended I2C screen state and
+  `LabMateI2cControl` owned by the running LabMate instance.
+- `src/labmate.c`: initialize I2C state to **IDLE/NOT SCANNED**.
+- `src/labmate_input_menu.c`, `src/labmate_input.c`:
+  open real I2C screen from COMM and let BACK leave.
+  **OK deliberately does not scan**, acquire a bus, power
+  a peripheral, or synthesize an ACK.
+- `src/labmate_view.c`, `src/labmate_ui_screens.c/.h` and
+  `src/labmate_ui_primitives.c`: display a dedicated
+  production I2C Explorer screen/icon with **HW SCAN DISABLED,
+  BUS LOCK NOT BOUNDED, PC0 SCL / PC1 SDA, NOT SCANNED**.
+  The screen calls the existing pure I2C presentation model,
+  but never changes the scan state or displays fake hits.
+- Navigation/128×64/owner regression tests adjusted for 13
+  instruments and 15 screen routes; new safety guard
+  `scripts/check_v18_i2c_production_ui.py` forbids
+  unbounded HAL calls or fake scan transitions from UI paths.
+  The normal unpublished Momentum development FAP build
+  and Windows installer mock will exercise the changes.
+
+**Scope honesty:** This is **real production application source
+integration**, not another standalone simulated FAP. But the
+functional I2C Explorer is **NOT COMPLETE**: bus scanning is
+deliberately disabled until an independently validated
+bounded/cancellable resource strategy exists. **Do not merge
+the PR, claim hardware PASS, or publish v1.8 Stable because of
+this UI step alone.** A real safe I2C hardware driver/STOP
+lifecycle, electrical acceptance and release gates remain open.
+The v1.7 Stable release is untouched.
+
 ## Goal and initial testable scope
 
 An explicit, **read-only device-address explorer** for a user-owned, known-safe **3.3 V I²C peripheral**. Do not advertise generic device identification or arbitrary write/register access. The first milestone is **bounded manual scan → results → STOP/BACK → resource cleanup**, not a simulated list of detected devices.
