@@ -29,6 +29,19 @@ for required in (
 ):
     assert required in preview, required
 
+# GUI callback reads a short snapshot under its mutex; it must never
+# draw while holding mutable state or leave a live mutex at app shutdown.
+for required in (
+    "FuriMutex* lock;",
+    "furi_mutex_acquire(demo->lock, FuriWaitForever);",
+    "const LabMateI2cView copy = demo->snapshot;",
+    "furi_mutex_release(demo->lock);",
+    "furi_mutex_acquire(demo.lock, FuriWaitForever);",
+    "furi_mutex_release(demo.lock);",
+    "furi_mutex_free(demo.lock);",
+):
+    assert required in preview, required
+
 assert 'appid="labmate_i2cuipreview"' in manifest
 assert 'sources=["preview.c"]' in manifest
 assert 'sources=["src/*.c"]' in production
