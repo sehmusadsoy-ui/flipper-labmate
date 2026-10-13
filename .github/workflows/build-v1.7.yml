@@ -27,6 +27,7 @@ on:
       - "tests/test_onewire_ds18b20.c.inc"
       - "tests/test_onewire_session.c.inc"
       - "scripts/check_v18_onewire_session.py"
+      - "scripts/check_v18_onewire_no_hardware.py"
       - "tests/test_button_logic.c.inc"
       - "tests/test_threshold.c.inc"
       - "scripts/install-labmate.ps1"
@@ -179,6 +180,9 @@ jobs:
 
       - name: Guard W2 one-wire mock lease is not wired to physical GPIO
         run: python3 scripts/check_v18_onewire_session.py
+
+      - name: Guard W2 real GPIO/PB14 integration remains disabled until ownership verified
+        run: python3 scripts/check_v18_onewire_no_hardware.py
 
       - name: Test Button Analyzer bounce, settling and tick-wrap logic
         run: |
