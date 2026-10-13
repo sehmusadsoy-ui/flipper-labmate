@@ -37,7 +37,8 @@ stop = source.split("bool labmate_i2c_control_request_stop(", 1)[1].split(
     "bool labmate_i2c_control_acquire_done(", 1
 )[0]
 assert "c->stop_requested = true;" in stop
-assert "LabMateI2cControlAwaitAcquire" in stop
+assert "AwaitAcquire remains pending" in stop
+assert "c->state = LabMateI2cControlCancelled;" not in stop
 assert "c->bus_held = false;" not in stop
 
 release = source.split("bool labmate_i2c_control_release_done(", 1)[1]
