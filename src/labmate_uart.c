@@ -131,11 +131,22 @@ void labmate_uart_poll(LabMateUart* uart) {
 }
 
 void labmate_uart_next_baud(LabMateUart* uart, int8_t dir) {
-    if(uart->active) return; /* Never live-reprogram an active RX ISR. */
+    if(uart->active || dir == 0) return; /* Never live-reprogram an active RX ISR. */
     if(dir > 0) uart->baud_index = (uart->baud_index + 1U) % LABMATE_UART_BAUD_COUNT;
-    else if(dir < 0)
+    else
         uart->baud_index = (uart->baud_index + LABMATE_UART_BAUD_COUNT - 1U) %
                            LABMATE_UART_BAUD_COUNT;
+
+    /* STOP + new baud starts a fresh RX session. Old framing errors
+     * must not keep ERR latched after switching to the correct rate.
+     * UART RX IRQ is already stopped; preserve edited TX command. */
+    uart->rx_total = 0U;
+    uart->dropped = 0U;
+    uart->rx_errors = 0U;
+    uart->blocked = false;
+    uart->invalid_baud = false;
+    uart->tx_sent = false;
+    labmate_uart_text_reset(&uart->terminal);
 }
 
 void labmate_uart_edit_cursor(LabMateUart* uart, int8_t dir) {
