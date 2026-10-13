@@ -1,0 +1,59 @@
+name: LabMate v1.9 Scope UX Preview (SIMULATED - NO GPIO)
+
+on:
+  push:
+    branches: [dev/v1.9-logic-scope-core]
+    paths:
+      - "tests/flipper_scope_ui_preview/**"
+      - "src/labmate_scope_trace.*"
+      - "src/labmate_scope_project.*"
+      - "scripts/check_v19_scope_ui_preview.py"
+      - ".github/workflows/v19-scope-ui-preview.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: labmate-v19-scope-preview-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  compile-preview:
+    name: Compile isolated simulated 128x64 Scope demo (never GPIO)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify separate FAP, visible simulation label and no GPIO imports
+        run: python3 scripts/check_v19_scope_ui_preview.py
+
+      - name: Install uFBT
+        run: python3 -m pip install --upgrade ufbt
+
+      - name: Install Momentum development SDK
+        working-directory: tests/flipper_scope_ui_preview
+        run: ufbt update --channel=dev --index-url=https://up.momentum-fw.dev/firmware/directory.json
+
+      - name: Build isolated Scope preview
+        working-directory: tests/flipper_scope_ui_preview
+        run: ufbt
+
+      - name: Verify output FAP and exact file checksum
+        run: |
+          set -euo pipefail
+          FAP=tests/flipper_scope_ui_preview/dist/labmate_scopeuipreview.fap
+          test -s "$FAP"
+          mkdir -p scope-preview-artifacts
+          cp "$FAP" scope-preview-artifacts/
+          (cd scope-preview-artifacts && sha256sum labmate_scopeuipreview.fap > SHA256SUMS.txt && sha256sum -c SHA256SUMS.txt)
+          echo "Isolated 9-scene SIMULATED Scope UI; NOT a GPIO capture app or production release."
+          cat scope-preview-artifacts/SHA256SUMS.txt
+
+      - name: Upload isolated demo artifact (not a release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: labmate-scope-ui-preview
+          path: scope-preview-artifacts/
+          if-no-files-found: error
