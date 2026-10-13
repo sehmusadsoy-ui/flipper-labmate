@@ -54,6 +54,11 @@ void labmate_input_dispatch(LabMateApp* app, FuriStatus status,
     case LabMateScreenUart:
         labmate_input_uart(app, event, work);
         break;
+    case LabMateScreenI2c:
+        /* Do not turn OK into a blocking furi_hal_i2c_acquire call.
+         * Physical scanner is not available on this SDK safety gate. */
+        if(event.key == InputKeyBack) app->screen = LabMateScreenMenu;
+        break;
     default:
         if(event.key == InputKeyBack) app->screen = LabMateScreenMenu;
         break;
