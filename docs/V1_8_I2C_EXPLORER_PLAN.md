@@ -1,6 +1,6 @@
 # LabMate v1.8 — I²C Explorer: Compatibility and Safety Gate
 
-**Status (2026-10-13): HAL-free scan/lifecycle models (G2/G2b) CI PASS; passive result presentation and paging model (G2c) committed with CI PENDING. No connected I²C hardware driver, real Flipper UI screen, actual scan, installed I²C-capable app or physical I²C PASS exists.**  
+**Status (2026-10-13): HAL-free scan/lifecycle/presentation models (G2/G2b/G2c) CI PASS. No connected I²C hardware driver, real Flipper UI screen, actual scan, installed I²C-capable app or physical I²C PASS exists. G1 bounded bus ownership remains BLOCKED.**  
 **Development isolation:** `dev/v1.8-i2c-explorer` branched from `main` after [UART PR #7](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/7) merged. The published v1.7 Stable release is excluded from this work.
 
 ## Goal and initial testable scope
@@ -125,7 +125,7 @@ regression tests only**. Do not expose a functioning-looking SCAN
 button, open the I²C data bus, fake detected addresses, or treat host
 scan simulation as Flipper physical PASS.
 
-## G2c — passive results/pagination model (CI PENDING)
+## G2c — passive results/pagination model (CI PASS)
 
 The dedicated I²C branch now contains `src/labmate_i2c_present.h/.c`,
 a **read-only view snapshot** generated from an app-thread-owned
@@ -152,8 +152,9 @@ scanner**. Planned 128×64 screen implementation is separate.
   any premature app input/render integration. Dedicated native
   C11 compile/run and guard were added to branch CI.
 
-**G2c GitHub CI has not yet been checked.** No I²C-capable FAP,
-physical I²C read or real device detection is claimed.
+**G2c GitHub CI VERIFIED PASS:** [run 38461070300](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38461070300) built exactly source commit `432e61150e7d1b0227236a3bbc60fbec2049fb1f`: I²C passive page/results native C11 test PASS; G2c isolation/static guard PASS; earlier I²C scanner and lifecycle host checks PASS; UART regression PASS; Momentum SDK FAP compilation PASS; Windows mock installer safety PASS; v1.7 Stable publishing job SKIPPED as expected. The `labmate` CI artifact (ID `11844884415`) source SHA matches this commit. Following this exact successful source snapshot, only this plan document changed on the branch before recording this note. Previous [38460893461](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38460893461) and [38460932217](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38460932217) jobs were **cancelled/superseded by new pushes**, not failed G2c tests.
+
+This only compiles the model inside a development FAP; there is **no I²C HAL-backed scanner or UI wiring** and no physical I²C read, detected device, or firmware integration PASS.
 
 ## G2b — lifecycle/STOP model (HAL-free, CI PASS)
 
