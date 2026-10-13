@@ -6,6 +6,38 @@
 **Previous pre-release:** [v1.7 RC1](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7-rc1) remains available at unchanged source `d55eec03`.
 **Validation:** v1.7 refactored Stable Candidate passed 36/36 user-reported device regressions (7B screenshots); exact final `v1.7` FAP passed Test 7G 4/4 device smoke; Test 7H PowerShell `-Channel RC1 -VerifyOnly` passed; approved Stable release CI passed. Published `-Channel Stable -VerifyOnly` and actual `-Channel Stable -Port COM7` USB installation both passed on Windows 2026-10-12; a separate post-reinstall on-screen/data smoke passed 4/4 user-reported Flipper checks (v1.7 label, PWM STOP, Profile S1, historical CSV). No new version was created. **Current development: v1.8 Communication Tools**, coordinator refactor, Counter STOP/RESUME and first UART milestone all integrated into `main`; I²C Explorer is next. No v1.8 release has been published; next **v1.9 Logic Scope and Signal Compare**, then **v2.0 Ultimate**.
 
+## Non-negotiable sequential Stable gate (operator requirement — 2026-10-14)
+
+**Finish and publish each version's Stable release before doing active work
+on the next version.** A successful CI run, an isolated SDK/ABI probe, a
+simulation-only FAP, or a Draft PR is **not** a completed milestone.
+Exceptions are limited to explicitly acknowledged **individual physical
+hardware tests** that cannot reasonably be performed; unfinished functional
+features are not silently waived. Any proposed scope deferral requires the
+operator's explicit decision before release. Never call blocked hardware
+integration "PASS", and never skip a required v1.8 instrument.
+
+**Present gate: v1.8 Communication Tools is INCOMPLETE.**
+The accepted UART Terminal implementation is merged into development
+`main` and is device-tested, but the real I²C Explorer has not been
+integrated into production LabMate or used to scan an actual bus.
+The Momentum external I²C `furi_hal_i2c_acquire` API waits
+`FuriWaitForever` for its resource lock, with no verified public
+bounded/cancellable acquire; this is a release-relevant implementation
+blocker, **not** an excuse to switch versions. Optional 1-Wire DS18B20
+has pure-code CI only and still lacks proven hardware owner arbitration.
+Real bus safety, resource release, and STOP/BACK must be reviewed honestly.
+
+**Do not resume v1.9 implementation, standalone preview production, new
+version publication or v2.0 work until v1.8 Stable is accepted and
+published.** Existing v1.9 Draft PR #10 is archived-in-place/PAUSED
+for provenance only; no merge. Draft I²C PR #8 is the active
+v1.8 engineering workstream; optional 1-Wire PR #9 remains unmerged.
+Do not require or distribute further demonstration-only FAP downloads
+to substitute for production application features. New work must target
+the actual `labmate.fap` under controlled v1.8 development and regression
+testing. Preserve published v1.7 Stable files and tag unchanged.
+
 ## Vision
 
 Turn LabMate into an **electronic technician's digital pocketknife** on Flipper Zero: a practical, portable instrument for measuring, recording, visualizing and diagnosing 3.3 V digital signals. Prioritize real troubleshooting value, reliable measurements, readable controls, and small-device performance over unnecessary feature count.
