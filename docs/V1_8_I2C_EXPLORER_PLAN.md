@@ -1,6 +1,6 @@
 # LabMate v1.8 — I²C Explorer: Compatibility and Safety Gate
 
-**Status (2026-10-13): DESIGN/SDK GATE ONLY. No I²C tool code, FAP, external bus scan or physical I²C PASS exists.**  
+**Status (2026-10-13): HAL-free scan model and host tests implemented on Draft PR #8. No hardware I²C driver/UI, SDK-validated I²C scanner, actual bus scan, I²C app install or physical I²C PASS exists.**  
 **Development isolation:** `dev/v1.8-i2c-explorer` branched from `main` after [UART PR #7](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/7) merged. The published v1.7 Stable release is excluded from this work.
 
 ## Goal and initial testable scope
@@ -24,6 +24,19 @@ An explicit, **read-only device-address explorer** for a user-owned, known-safe 
 - [Momentum I²C external bus code](https://github.com/Next-Flip/Momentum-Firmware/blob/dev/targets/f7/furi_hal/furi_hal_i2c_config.c) confirms the external bus mutex uses `FuriWaitForever`. The official `furi_hal_i2c_acquire()` contract does **not** offer a caller-supplied timeout. This remains the **critical ownership/cancellation blocker** for a responsive integrated UI.
 
 **Status:** source-level pin + signature + external symbol export checks **PASS**; compatibility against the *exact downloaded development SDK snapshot* and a bounded/cancelable resource-acquisition design are **PENDING**. No scan is implemented, no FAP compiled, and no device test passed.
+
+## G2 — HAL-free scanner model implemented, local tests PASS
+
+Files in the **I²C development branch only**:
+
+- `src/labmate_i2c_scan.h/.c`: pure C state machine; **no I²C HAL calls**, register access, GPIO configuration, UI entry or scan timer. This file is picked up by the existing `src/*.c` build glob, but its functions are not invoked by the app yet.
+- `tests/test_i2c_scan.c.inc`: native C tests for 7-bit reserved-range rejection, Momentum address encoding `addr7 << 1`, all **112** addresses from `0x08` to `0x77`, strict request/result pairing, duplicate/out-of-order rejection, empty scan completion, known sparse detection, **16** stored-result cap with accurate **112** total counter, cancel, error and fresh-start reset.
+- `scripts/check_v18_i2c.py`: static guard forbidding HAL/GUI/storage/thread coupling in pure scan model.
+- `.github/workflows/build-v1.7.yml`: adds the isolated I²C tests and pure-source guard to the existing Momentum FAP + Windows installer CI, and enables the dedicated I²C branch.
+
+**Local (non-GitHub) verification performed:** C11 `cc -Wall -Wextra -Werror -pedantic` native tests **PASS**, repeat with `-fsanitize=undefined` **PASS**, static no-HAL/no-GPIO source inspection **PASS**. **GitHub Actions CI run result remains PENDING / not yet independently verified**, and *SDK FAP success cannot be claimed from these local host tests*. Physical I²C implementation is intentionally blocked by G1 acquisition semantics.
+
+**State semantics:** `IDLE` has never scanned, `RUNNING` requests exactly one address before accepting its matching result, `COMPLETE` with zero hits means no device detected only once a *real* worker has traversed all addresses, `CANCELLED` and `ERROR` retain partial results but reject further reports. A full result list displays 16 stored addresses with `total_found` and `truncated`; it never pretends the first 16 are the whole bus. This is **pure simulated state testing**, not a device discovery result.
 
 ## Hardware/resource rules
 
