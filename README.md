@@ -254,4 +254,4 @@ Firmware/API mismatches may require a rebuild.
 
 ## Author and license
 
-Created by **sehma**. Licensed under the [MIT License](LICENSE).
+Created by **Sehmus (SauronLAB)** — [GitHub: sehmusadsoy-ui](https://github.com/sehmusadsoy-ui). Licensed under the [MIT License](LICENSE).
