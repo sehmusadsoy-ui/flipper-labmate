@@ -1,0 +1,14 @@
+# Development-only, *compile-only* Momentum external I2C HAL ABI/linkage probe.
+# Not the LabMate app. Do not install on a Flipper.
+App(
+    appid="labmate_i2capiprobe",
+    name="LabMate I2C API Probe",
+    apptype=FlipperAppType.EXTERNAL,
+    entry_point="labmate_i2c_api_probe_app",
+    sources=["api_probe.c"],
+    stack_size=1024,
+    fap_category="Tools",
+    fap_author="sehma",
+    fap_version="1.8",
+    fap_description="Compile-only dev check for Momentum external I2C HAL exported symbols.",
+)
