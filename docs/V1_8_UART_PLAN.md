@@ -216,3 +216,29 @@ to accumulate. No production source or FAP was changed by this
 review. Physical `D>0` is pending/risk to reconcile before merging
 PR #7; optional extra instrumentation must be justified against
 the already PASS 115200 ST2, not forced only to trigger DROP.
+
+## SBR1 baud-switch ERR reset — code/test added, device PENDING
+
+- **Source fix:** commit `db5392119f84f48ca7391ce8dbab11895d82437c` in
+  `src/labmate_uart.c`. Changing 9600/38400/115200 while **STOP**
+  begins a fresh RX session: clears R/D/E, old text and stale status,
+  preserves TX editor text. Changing baud while **RUN** remains
+  forbidden; pressing STOP alone still preserves counters.
+- **Host regression:** commit `12977d2dd4dfa661a790e3d8ce9dc5d73258d8e4` in
+  `tests/test_uart_hal_host.c`. Exercises prior ERR and DROP, denial
+  of RUN-time baud change, STOP-only reset of old counters/display,
+  preservation of `AT`, and new-baud RX success with E0 D0.
+- **Current gate:** updated host/SDK/installer CI for the second commit
+  **PENDING until workflow results are independently read**. New
+  corrected LabMate FAP **has not been installed or physically tested**.
+  The previous on-device UART, ST2 and controlled BUSY PASS records
+  remain valid for their exact tested binaries; they must not be
+  relabelled proof of this new fix.
+- **Next device check after CI PASS:** user on physical ESP32-S2 ST2
+  115200 peer (detached before any safe reconnection) observes
+  wrong-baud ERR (if reproducible), switches while STOP back to
+  115200, verifies E0 D0, correct `ESP32_READY`, and a responsive
+  STOP/BACK. No ESP32 reflash or unbounded stress needed. An
+  untriggered mismatch error is INCONCLUSIVE, not PASS.
+- Physical DROP `D>0` remains **NOT TESTED** regardless of
+  SBR1 outcome. PR #7 stays Draft; v1.7 Stable unchanged.
