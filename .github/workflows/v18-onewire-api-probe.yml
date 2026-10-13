@@ -1,0 +1,66 @@
+name: LabMate v1.8 1-Wire SDK ABI Probe (NO GPIO)
+
+on:
+  push:
+    branches: [dev/v1.8-onewire-feasibility]
+    paths:
+      - "tests/flipper_onewire_api_probe/**"
+      - ".github/workflows/v18-onewire-api-probe.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: labmate-v18-onewire-sdk-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  compile-abi-probe:
+    name: Link Momentum 1-Wire host exports (never touch hardware)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Guard against hardware calls in ABI proof
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path("tests/flipper_onewire_api_probe/api_probe.c").read_text()
+          body=src.split("int32_t labmate_onewire_api_probe_app(", 1)[1]
+          assert "abi_witness = &imported;" in body
+          for bad in ("onewire_host_start(", "onewire_host_reset(", "onewire_host_write(",
+                      "power_enable_", "furi_hal_gpio_init(", "onewire_host_alloc("):
+              assert bad not in body, bad
+          print("1-Wire ABI probe has no hardware function calls: PASS")
+          PY
+
+      - name: Install uFBT
+        run: python3 -m pip install --upgrade ufbt
+
+      - name: Install Momentum development SDK
+        working-directory: tests/flipper_onewire_api_probe
+        run: ufbt update --channel=dev --index-url=https://up.momentum-fw.dev/firmware/directory.json
+
+      - name: Compile/link inert OneWire host symbols
+        working-directory: tests/flipper_onewire_api_probe
+        run: ufbt
+
+      - name: Verify ABI probe output and record checksum
+        run: |
+          set -euo pipefail
+          PROBE=tests/flipper_onewire_api_probe/dist/labmate_onewireapiprobe.fap
+          test -s "$PROBE"
+          mkdir -p onewire-abi-artifacts
+          cp "$PROBE" onewire-abi-artifacts/
+          (cd onewire-abi-artifacts && sha256sum labmate_onewireapiprobe.fap > SHA256SUMS.txt && sha256sum -c SHA256SUMS.txt)
+          echo "Only a 1-Wire API symbol-link proof; not a sensor reader."
+
+      - name: Upload separate inert ABI proof (no release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: labmate-onewire-abi-probe
+          path: onewire-abi-artifacts/
+          if-no-files-found: error
