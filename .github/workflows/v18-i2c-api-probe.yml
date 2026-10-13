@@ -1,0 +1,52 @@
+name: LabMate v1.8 I2C SDK ABI Probe (compile-only)
+
+on:
+  push:
+    branches: [dev/v1.8-i2c-explorer]
+    paths:
+      - "tests/flipper_i2c_api_probe/**"
+      - ".github/workflows/v18-i2c-api-probe.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: labmate-v18-i2c-sdk-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  compile-abi-probe:
+    name: Link external I2C SDK exports without touching bus
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uFBT
+        run: python3 -m pip install --upgrade ufbt
+
+      - name: Install Momentum development SDK
+        working-directory: tests/flipper_i2c_api_probe
+        run: ufbt update --channel=dev --index-url=https://up.momentum-fw.dev/firmware/directory.json
+
+      - name: Compile and link external I2C ABI symbols (NO hardware calls)
+        working-directory: tests/flipper_i2c_api_probe
+        run: ufbt
+
+      - name: Verify isolated probe exists and record checksum
+        run: |
+          set -euo pipefail
+          PROBE=tests/flipper_i2c_api_probe/dist/labmate_i2capiprobe.fap
+          test -s "$PROBE"
+          mkdir -p i2c-api-artifacts
+          cp "$PROBE" i2c-api-artifacts/
+          (cd i2c-api-artifacts && sha256sum labmate_i2capiprobe.fap > SHA256SUMS.txt && sha256sum -c SHA256SUMS.txt)
+          echo "Compile-only ABI proof; not a functional I2C device test."
+
+      - name: Upload isolated ABI proof (not LabMate FAP)
+        uses: actions/upload-artifact@v4
+        with:
+          name: labmate-i2c-sdk-abi-probe
+          path: i2c-api-artifacts/
+          if-no-files-found: error
