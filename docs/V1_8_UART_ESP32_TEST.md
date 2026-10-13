@@ -502,6 +502,38 @@ rate-controlled external traffic source would be needed. The currently
 installed ESP32 9600 sketch was neither modified nor reflashed.
 Its periodic `ESP32_READY` packets cannot credibly force overflow.
 
+## ST2 external high-rate traffic fixture — source prepared, NOT compiled or flashed
+
+A separate **115200 8N1** ESP32-S2-WROVER Arduino sketch is staged at
+[`tests/esp32_s2_wrover_uart_stress_115200/esp32_s2_wrover_uart_stress_115200.ino`](../tests/esp32_s2_wrover_uart_stress_115200/esp32_s2_wrover_uart_stress_115200.ino).
+
+- Periodic `ESP32_READY` every ~3 s; normal `AT\r\n` still elicits
+  `ESP32_OK`.
+- One explicit `AT` also arms a single **bounded** stress window,
+  beginning 1.2 seconds later, limited to **20,480 ASCII bytes** or
+  **2.5 seconds**, whichever occurs first, with 32-byte writes and
+  checked TX buffer space. End of traffic is marked with `BURST_END`.
+- No automatic repeated load, no network operations, no new UART pins,
+  no unknown-voltage connections. Firmware flashes are only allowed
+  with the original ESP32 Devboard detached from the Flipper and using
+  the ESP32's own USB-C data connector.
+- User must compile/upload this **separate** sketch before a physical
+  ST2 test. Do not change or overwrite the earlier 9600 peer source.
+  The operator has NOT yet compiled or flashed ST2 and no device
+  result can be recorded at this stage.
+- Physical ST2 goal: Flipper UART STOP → choose 115200 → RUN;
+  receive `ESP32_READY`, send `AT`, return to RX promptly, and check
+  RX growth, UI responsiveness, D/E/status before and after load,
+  followed by STOP/BACK/re-entry and readability.
+- This **does not guarantee D > 0** because the application's per-loop
+  receive capacity may exceed the maximum 115200 baud payload rate.
+  If D=0 during ST2, report `normal high-rate RX PASS` when appropriate,
+  **not** physical overflow/DROP PASS.
+
+No ST2 PASS, upload or build can be inferred from the host-only CI
+run 38326055111; its tests cover the Flipper C code, not Arduino
+compilation.
+
 ## Separate remaining stress/conflict gates
 
 - [ ] Demonstrate a legitimate serial-owner conflict: UART refuses
