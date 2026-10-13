@@ -2,6 +2,7 @@
 #include "labmate_ui_primitives.h"
 #include "labmate_counter_math.h"
 #include "labmate_generator.h"
+#include "labmate_i2c_present.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -140,7 +141,7 @@ static const LabMateHelpPage labmate_help[LabMateToolCount] = {
         "Open or delete one", "UD FILE LR MODE OK",
     },
     [LabMateToolAbout] = {
-        "ABOUT / GUIDE", "14 pages, 12 tools",
+        "ABOUT / GUIDE", "15 pages, 13 tools",
         "3.3V GPIO only", "<> PAGE  BK EXIT",
     },
     [LabMateToolProfiles] = {
@@ -163,6 +164,10 @@ static const LabMateHelpPage labmate_help[LabMateToolCount] = {
         "UART TERMINAL", "13 TX / 14 RX 3.3V",
         "9600-115200 8N1", "OK RUN DN EDIT TX",
     },
+    [LabMateToolI2c] = {
+        "I2C EXPLORER", "PC0 SCL / PC1 SDA",
+        "HW SCAN BLOCKED", "BACK MENU / NO SCAN",
+    },
 };
 
 void draw_about(Canvas* canvas, LabMateApp* app) {
@@ -177,7 +182,7 @@ void draw_about(Canvas* canvas, LabMateApp* app) {
     if(page == 0U) {
         canvas_draw_str(canvas, 3, 23, "LabMate " LABMATE_VERSION_TEXT);
         canvas_draw_str(canvas, 3, 33, "SauronLAB / Sehmus");
-        canvas_draw_str(canvas, 3, 43, "12 instrument guides");
+        canvas_draw_str(canvas, 3, 43, "13 instrument guides");
         canvas_draw_str(canvas, 3, 51, "3.3V GPIO ONLY");
     } else if(page == 1U) {
         canvas_draw_str(canvas, 3, 23, "Source / releases:");
@@ -1013,3 +1018,22 @@ void draw_logger(Canvas* canvas, LabMateApp* app) {
 }
 
 
+
+/* This is part of the ACTUAL LabMate development FAP, not a demo.
+ * A future safe I2C worker may publish real control snapshots, but the
+ * available Momentum API has unbounded bus-acquisition semantics.
+ * For now OK cannot arm a bus. NEVER claim an empty bus was scanned.
+ */
+void draw_i2c(Canvas* canvas, LabMateApp* app) {
+    LabMateI2cView view;
+    const bool snapshot_ok = labmate_i2c_present(&app->i2c, 0U, &view);
+    ui_draw_header(canvas, "I2C EXPLORER");
+    canvas_set_font(canvas, FontSecondary);
+    canvas_draw_str(canvas, 3, 22, "HW SCAN DISABLED");
+    canvas_draw_str(canvas, 3, 32, "BUS LOCK NOT BOUNDED");
+    canvas_draw_str(canvas, 3, 42, "PC0 SCL / PC1 SDA");
+    canvas_draw_str(canvas, 3, 50,
+        snapshot_ok && view.status == LabMateI2cViewNotScanned ?
+            "NOT SCANNED" : "MODEL NOT READY");
+    ui_footer_pair(canvas, "OK", "BLOCK", "BACK", "MENU");
+}
