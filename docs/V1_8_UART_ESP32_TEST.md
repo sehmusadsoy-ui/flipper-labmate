@@ -1,6 +1,6 @@
 # LabMate v1.8 UART ↔ ESP32 Interoperability Test
 
-**Current status (2026-10-13):** external ESP32-S2 UART E1–E6 6/6 PASS; SR1-R1 corrected baud retention PASS; clean ERR and fresh-session recovery PASS; ST2 115200 twice-triggered high-rate RX PASS (R:20569 then 41281, final D:0 E:0). **Controlled physical BUSY Probe: 2/2 PASS** (operator-reported, separate diagnostic FAP using real Flipper HAL). SBR1 same-screen baud-switch/ERR recovery **operator-reported PASS** on the checksum-verified updated FAP (2026-10-13; raw post-test counters not supplied). Pending: physical queue overflow/DROP (D>0) and independent instrumented timing. Third-party external-service contention not demonstrated. **PR #7 Draft; v1.7 Stable unchanged.**
+**Current status (2026-10-13):** external ESP32-S2 UART E1–E6 6/6 PASS; SR1-R1 corrected baud retention PASS; clean ERR and fresh-session recovery PASS; ST2 115200 twice-triggered high-rate RX PASS (R:20569 then 41281, final D:0 E:0). **Controlled physical BUSY Probe: 2/2 PASS** (operator-reported, separate diagnostic FAP using real Flipper HAL). SBR1 same-screen baud-switch/ERR recovery **operator-reported PASS** on the checksum-verified updated FAP (2026-10-13; raw post-test counters not supplied). Pending: physical queue overflow/DROP (D>0) and independent instrumented timing. Third-party external-service contention not demonstrated. **PR #7 merged to development `main`; v1.7 Stable unchanged.**
 The user identified an **ESP32-S2-WROVER Flipper Dev Board**. The
 official Flipper Wi-Fi Developer Board schematics were checked:
 https://cdn.flipperzero.one/Flipper_Zero_WI-FI_Module_V1_Schematic.PDF
@@ -48,7 +48,8 @@ https://docs.espressif.com/projects/arduino-esp32/en/latest/tutorials/cdc_dfu_fl
 - LabMate currently offers 9600 / 38400 / 115200 baud, 8N1;
   editable TX text starts as `AT` and explicit SEND appends CRLF.
   Received bytes are rendered as printable ASCII in the UART RX screen.
-- PR #7 remains **draft**, unmerged; official `v1.7` Stable untouched.
+- PR #7 **merged to development `main`** after documented minimal UART
+  acceptance; official `v1.7` Stable remains untouched.
 
 ## Model gate — confirm before assigning ESP32 pins
 
@@ -913,5 +914,7 @@ Previous SBR1 "device PENDING" text in the installation checkpoint
 above is historical (recorded *before* this operator report).
 This test does **not** validate physical RX queue overflow (`D>0`),
 instrument-calibrated baud error, or independent third-party UART
-resource conflict. Keep PR #7 Draft until remaining acceptance/release
-risk is reviewed; leave v1.7 Stable unchanged.
+resource conflict. This evidence was subsequently reviewed under
+[UART integration acceptance](V1_8_UART_ACCEPTANCE.md) and PR #7
+was merged to development `main` without a v1.8 Stable release;
+leave v1.7 Stable unchanged.
