@@ -1,13 +1,18 @@
 # LabMate v1.8 — UART Terminal development plan
 
-**Status:** UART RX/TX **development candidate implemented** and SDK 87.1
-CI PASS. **First two real Flipper local-loopback checkpoints U1–U8:
-8/8 PASS** (operator-reported, 2026-10-13). Basic baud variants,
-UART STOP/BACK cleanup and selected legacy-tool/data regression passed.
-**External 3.3 V peer interoperability, BUSY/overflow behavior,
-independent baud calibration and UART endurance remain PENDING.** This branch was created
-from the already merged, CI-passing Counter STOP/RESUME baseline
-(`main`, PR #6). No Stable release, installer or tag is changed.
+**Current acceptance checkpoint (2026-10-13):** UART Terminal remains an
+unpublished v1.8 development candidate. The original Flipper self-loopback
+U1–U8 **8/8 PASS**, external ESP32-S2 E1–E6 **6/6 PASS** at 9600/115200,
+SR1-R1 baud retention **PASS**, fresh-session ERR recovery **PASS**, ST2
+high-rate receive **PASS**, and standalone *real-HAL controlled USART-owner*
+BUSY Probe **2/2 PASS** are **operator-reported**. SDK/host CI PASS.
+The peer ST2 ended `R:41281 D:0 E:0`; **physical queue DROP (`D>0`)
+has not been demonstrated**, despite host mock tests showing 64/64 expected
+drops. The same-screen baud recovery and independent timing/calibration
+have not been established; BUSY Probe does not stand in for a simultaneous
+unrelated third-party firmware service. PR #7 remains **Draft**, unmerged;
+official v1.7 Stable untouched. Detailed evidence:
+[UART ESP32 + BUSY hardware log](V1_8_UART_ESP32_TEST.md).
 
 ## Goal
 
@@ -53,20 +58,39 @@ Opening a static terminal-looking screen is not feature completion.
   Add a dedicated `labmate_uart_*` owner instead of expanding the
   previously refactored `labmate.c` monolith.
 
-## Test plan and acceptance
+## Test plan and acceptance (updated after device reports)
 
-- [ ] SDK 87.1 compiles: serial HAL symbols and pins verified against
-      the exact build SDK; existing native/static checks still PASS
-- [ ] All prior 11 tools work; Profiles S1 and older CSV history retained
-- [ ] UART 9600 8N1 incoming message displayed on a real Flipper
-- [ ] UART 115200 8N1 received without GUI corruption or lockups
-- [ ] App TX line arrives intact at the external 3.3 V UART endpoint
-- [ ] RX overflow, timeout and repeated start/stop are bounded and visible
-- [ ] BACK exits UART and leaves serial pins/resource in a safe state
-- [ ] Serial resource conflict denies access cleanly, without corrupting
-      generator, Counter, Pulse, Button or microSD state
-- [ ] Real-device smoke/regression screenshots and measured results
-      reviewed **before** merging the UART PR or claiming completion
+- [x] Momentum SDK 87.1 candidate FAP compiles; static/native and
+      Windows installer-mock CI checks PASS (run 38326055111).
+- [x] Original 11 tool IDs preserved; selected PWM/Counter/Frequency,
+      Profiles S1 and Log History regressions PASS after UART use.
+      Full destructive/extended regression is not claimed.
+- [x] External ESP32-S2 at **9600 8N1**: `ESP32_READY`, `AT` /
+      conditional `ESP32_OK` operator-reported PASS.
+- [x] External ESP32-S2 at **115200 8N1**: RX/TX and repeated ST2
+      bounded traffic PASS; responsive UI, no observed DROP/ERR.
+- [x] Explicit Flipper UART TX receives peer's conditional response.
+- [x] Repeated START/STOP and BACK/re-entry release/reacquire paths
+      PASS in operator's Flipper test; 9600 preserved across re-entry.
+- [x] Controlled physical USART BUSY refusal + restart/stop **2/2
+      PASS** in separate diagnostic using production UART code.
+- [x] Clean-baseline UART ERR counter increment (`E:0 → E:88`)
+      and **fresh-session** 9600 recovery operator-reported PASS.
+- [ ] Physical UART RX queue `D>0` overflow not shown. Host HAL
+      tests confirm 320 bytes → 256 queued + 64 dropped, not physical.
+- [ ] Same-screen STOP → change baud → RUN recovery unconfirmed;
+      the current `ERR` badge reflects latched per-session errors.
+- [ ] Independent instrumented baud accuracy, longer endurance,
+      unrelated simultaneous serial-owner contention, and exhaustive
+      screen/calibration test coverage remain unverified.
+
+**Review of actual v1.8 candidate scope:** RX is printable ASCII with
+nonprintables shown as periods; visible counters are display-capped;
+TX uses an explicit 12-character editor with fixed CRLF; LEFT/RIGHT
+change baud only while STOP; STOP/BACK releases UART resources.
+Earlier aspirational mentions of HEX view, PAUSE, selectable CR/LF and
+timeouts are **not implemented as those independent UI features** in
+this candidate. They are deferred design ideas, not acceptance PASS.
 
 **Not this milestone:** automatic protocol decoding, UART bridge to PC,
 full-screen text editor, arbitrary voltage level adaptation, USB serial
@@ -75,7 +99,7 @@ replacement, I²C or 1-Wire (these are separate scoped features).
 Caution: Flipper GPIO is 3.3 V only. Never connect UART to 5 V, RS-232
 signal levels, unknown voltage sources, motor controllers or mains.
 
-## Implemented in this candidate (not yet verified on physical Flipper)
+## Implemented in this candidate (later verified in the specific device checkpoints below)
 
 - USART 8N1 at `9600`, `38400`, or `115200` baud (select while STOP).
 - Flipper GPIO header **pin 13 TX, pin 14 RX** (USART), as specified in
@@ -173,3 +197,22 @@ does **not** prove interoperability with a separate MCU.
 
 Do not publish or merge as a UART-functional release until user-reported
 device tests and, separately, MCU interoperability tests are reviewed.
+
+## Final source review checkpoint — 2026-10-13
+
+Read-only review of `labmate_uart.c/.h`, `labmate_input_uart.c`,
+`labmate_uart_ui.c`, `labmate_uart_text.c/.h`, navigation, deferred
+TX and the CI workflow found the expected bounded ISR-only RX queue,
+app-loop draining, non-GUI ISR, explicit TX outside UI mutex,
+serial acquire/stop/release ordering, dedicated menu tool ID,
+passive 128×64 renderer with capped displayed counts and retained
+baud across re-entry. This is **source review, not a new on-device
+or pixel-calibrated PASS**. Known UX caveat: `rx_errors` remains
+nonzero after STOP/START on the same screen, so ERR can remain lit
+without a new error event; re-entering UART resets the session
+counters while keeping the selected baud. The rendered R/D/E
+values cap at R 999999, D/E 999 although backing counters continue
+to accumulate. No production source or FAP was changed by this
+review. Physical `D>0` is pending/risk to reconcile before merging
+PR #7; optional extra instrumentation must be justified against
+the already PASS 115200 ST2, not forced only to trigger DROP.
