@@ -109,7 +109,7 @@ read-only PB14 pin inspection or a non-atomic "is it busy?" check.
   PC0/PC1 and other pins rejected to protect current instrument
   owners. **PB14 is not assumed safe just because the example
   selects it.**
-- No active capture, GPIO Monitor, PWM Studio, iButton operation,
+- No active capture, GPIO Monitor, PWM Studio, iButton, **RFID**,
   expansion, or unknown other owner. Local flags only report local
   state; they cannot establish a global lock. The assumed
   externally supplied atomic lease is mandatory.
@@ -151,6 +151,57 @@ The job logs explicitly reported:
 - v1.7 publishing step SKIPPED by design. Earlier branch runs `38467507230`, `38467361244`, `38467314329` were cancelled/superseded by new pushes, not failed W2b native tests.
 
 Despite this PASS, W2 real GPIO/resource ownership **remains BLOCKED** until an actual supported atomic owner protocol can be found and validated; no physical W3/W4 sensor test or runtime STOP timing may be inferred from simulation.
+
+## W2c — additional Momentum owner audit, RFID collision, and integration freeze
+
+**2026-10-14 source review (not device validation).** The following
+Momentum `dev` files were inspected directly; these exact file
+snapshots are the basis of the conclusion, rather than a generic
+statement about every possible firmware version:
+
+| Upstream source | Inspected content | File blob SHA |
+| --- | --- | --- |
+| [`furi_hal_gpio.h`](https://github.com/Next-Flip/Momentum-Firmware/blob/dev/targets/f7/furi_hal/furi_hal_gpio.h) | GPIO mode setup, interrupts, read/write; **no documented acquire/release by app owner** in reviewed interface | `9e78872bbc6d0bae806a87d22aae42ed02665bb1` |
+| [`furi_hal_gpio.c`](https://github.com/Next-Flip/Momentum-Firmware/blob/dev/targets/f7/furi_hal/furi_hal_gpio.c) | `furi_hal_gpio_init_ex` enters short critical section to change register state; this is **not** a held owner lock across transactions | `0104dd8989083cc71b1ae496f248aa71240fcb46` |
+| [`one_wire_host.c`](https://github.com/Next-Flip/Momentum-Firmware/blob/dev/lib/one_wire/one_wire_host.c) | `onewire_host_start` immediately reconfigures its passed pin open-drain; `stop` reconfigures analog; **no global GPIO lease call** in these functions | `62d325cf50c80d8d3c61bf2c4ac2d68e697e4fc3` |
+| [`furi_hal_rfid.c`](https://github.com/Next-Flip/Momentum-Firmware/blob/dev/targets/f7/furi_hal/furi_hal_rfid.c) | LF RFID's `furi_hal_rfid_pins_field` uses `furi_hal_ibutton_pin_configure` and drives the shared PB14 iButton pin; RFID pin reset also resets PB14 | `34bb3a516002f322e83c87dece7384cbe30251d7` |
+| [`loader.h`](https://github.com/Next-Flip/Momentum-Firmware/blob/dev/applications/services/loader/loader.h) | `loader_lock` is documented as **locking application start**; not a PB14/RFID/iButton resource arbiter | `da049eaad5529f0a621c1c6cc5764c61b86ce96d` |
+| [`expansion.h`](https://github.com/Next-Flip/Momentum-Firmware/blob/dev/applications/services/expansion/expansion.h) | Expansion enable/disable describes supported **serial port** coordination, not ownership of PB14 | `1b0879b1ec4122a9fdd9b99c7a4f6e5d01a392bf` |
+
+**Rejected shortcuts:** a loader lock cannot prove that
+background firmware services will avoid PB14; checking a pin's
+present mode, taking an app-private mutex, or disabling serial
+expansion support also cannot provide a firmware-wide exclusive
+atomic PB14 lease. A successful FAP ABI-link or simulated
+`AtomicLeaseSupported` input likewise offers no hardware proof.
+We have **not established** that every possible future firmware
+fork lacks an arbiter; the statement is confined to reviewed
+Momentum `dev` public APIs/sources and our available SDK.
+
+**W2b tightened:** `LabMateOneWireEnvironment.rfid_active` is now
+part of the **mock** resource denial model along with iButton,
+PWM, capture, monitor and expansion. There is no official
+global RFID-active read used in LabMate, so a local
+`rfid_active=false` alone would be insufficient. An independent
+external atomic PB14 lease remains a mandatory precondition.
+
+**New W2c static CI freeze (PENDING):**
+`scripts/check_v18_onewire_no_hardware.py` guards the ordinary
+`src/*.c` LabMate build against unreviewed OneWire host
+imports, PB14 configuration calls, GUI/menu routes or accidental
+invocation of the pure decoder/session in production.
+The existing standard FAP CI now runs this guard, together with
+the updated W2b mock RFID denial tests. This is **source
+non-integration evidence only**, not a device permission check.
+Do not weaken/remove it without a new, externally verified
+atomic owner protocol, reviewed STOP/BACK and electrical
+acceptance gates.
+
+**Current W2 decision:** actual DS18B20 driver GPIO acquisition
+**BLOCKED**, even though W1, inert W2 ABI and prior W2b
+HOST tests PASSED. Only offline designs/tests may progress.
+No sensor, ESP32, iButton/RFID hardware, external power or pin
+configurations were changed by this work.
 
 ## W1 pure decoder: current implementation
 
@@ -226,7 +277,7 @@ certify that user hardware has a DS18B20 or suitable voltage.
 | --- | --- | --- |
 | W0 | Momentum source/example audit; isolate from I²C PR #8 and v1.7 Stable | Source review done |
 | W1 | HAL-free CRC/temp codec with strict native host tests and SDK compile | **CI PASS** (38466126162, source 7aac37c8); no physical readings |
-| W2 | Verify exact development SDK host exports and choose a validated GPIO ownership/lifecycle design | **ABI proof PASS**; **W2b pure lease/STOP host CI PASS** (38467638118); **real atomic GPIO owner BLOCKED** |
+| W2 | Verify exact development SDK host exports and choose a validated GPIO ownership/lifecycle design | **ABI proof PASS**; **W2b host CI PASS** (38467638118); W2c RFID denial + static no-hardware guard committed, CI pending; **real atomic GPIO owner BLOCKED** |
 | W3 | Read-only one-sensor demo (no automatic external power, no persistent GPIO owner), STOP/BACK/regression host + SDK tests | Pending |
 | W4 | Operator verifies a **known safe, compatible** sensor and electrical conditions, then physical no-device + one-device runs | NOT TESTED |
 | W5 | Acceptance and explicit review before optional integration; separate Stable decision | Pending |
@@ -243,4 +294,4 @@ another app's GPIO, manipulate its mutex, or terminate a thread
 holding hardware resources. Firmware USB installation and stored
 Profiles/CSV history must remain untouched in these W0/W1 tests.
 
-**Decision:** W1 host/SDK, inert W2 ABI-link, and W2b HAL-free mock event/resource-denial host CI are all PASS. The real hardware atomic GPIO arbiter is still unavailable/unverified; W2 hardware integration is BLOCKED and W4 real-device measurements remain NOT TESTED. No real Flipper temperature reading can be called PASS yet.
+**Decision:** W1 host/SDK, inert W2 ABI-link, and previous W2b HAL-free mock host CI PASS. W2c upstream inspection additionally confirms RFID controls PB14 and the loader/serial expansion interfaces are not GPIO owner leases; W2c amended host tests and source no-hardware guard CI PENDING. The real hardware atomic GPIO arbiter is still unavailable/unverified; W2 integration is BLOCKED and W4 real-device measurements remain NOT TESTED. No real Flipper temperature reading can be called PASS yet.
