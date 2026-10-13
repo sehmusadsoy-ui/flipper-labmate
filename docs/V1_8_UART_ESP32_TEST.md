@@ -1,6 +1,6 @@
 # LabMate v1.8 UART ↔ ESP32 Interoperability Test
 
-**Current status (2026-10-13):** external ESP32-S2 UART E1–E6 6/6 PASS; SR1-R1 corrected baud retention PASS; clean ERR and fresh-session recovery PASS; ST2 115200 twice-triggered high-rate RX PASS (R:20569 then 41281, final D:0 E:0). **Controlled physical BUSY Probe: 2/2 PASS** (operator-reported, separate diagnostic FAP using real Flipper HAL). Pending: physical queue overflow/DROP (D>0), same-screen baud recovery and independent instrumented timing. Third-party external-service contention not demonstrated. **PR #7 Draft; v1.7 Stable unchanged.**
+**Current status (2026-10-13):** external ESP32-S2 UART E1–E6 6/6 PASS; SR1-R1 corrected baud retention PASS; clean ERR and fresh-session recovery PASS; ST2 115200 twice-triggered high-rate RX PASS (R:20569 then 41281, final D:0 E:0). **Controlled physical BUSY Probe: 2/2 PASS** (operator-reported, separate diagnostic FAP using real Flipper HAL). SBR1 same-screen baud-switch/ERR recovery **operator-reported PASS** on the checksum-verified updated FAP (2026-10-13; raw post-test counters not supplied). Pending: physical queue overflow/DROP (D>0) and independent instrumented timing. Third-party external-service contention not demonstrated. **PR #7 Draft; v1.7 Stable unchanged.**
 The user identified an **ESP32-S2-WROVER Flipper Dev Board**. The
 official Flipper Wi-Fi Developer Board schematics were checked:
 https://cdn.flipperzero.one/Flipper_Zero_WI-FI_Module_V1_Schematic.PDF
@@ -882,3 +882,36 @@ whether the SBR1 baud-change ERR clear and same-screen recovery work
 with the ESP32-S2 peer on real Flipper hardware. Keep SBR1 device
 acceptance **PENDING** until an explicit on-device result arrives.
 No ESP32 firmware reflash is needed for the bounded SBR1 scenario.
+
+
+### SBR1 real Flipper same-screen recovery — operator-reported PASS (2026-10-13)
+
+After the independently documented checksum-verified SBR1 development FAP
+installation (source `12977d2dd4dfa661a790e3d8ce9dc5d73258d8e4`,
+FAP SHA256 `f3ce6438280524692908212c0b3c8b4c9a830b7afc467b503aab667d2e7f12d2`),
+the operator was given one bounded ESP32-S2 115200 peer procedure:
+
+1. Verify initial `ESP32_READY` on UART RUN at 115200.
+2. STOP; change to 9600 on the same screen; RUN and observe ERR/E
+   during the deliberate baud mismatch.
+3. STOP; change back to 115200 **without BACK/re-entry**; verify
+   fresh R/D/E counters; RUN and see `ESP32_READY` again.
+4. Check responsive STOP and BACK.
+
+The operator answered **"hepsi passs"** ("all passed") to the entire
+sequence. This is a **positive user-reported result for all requested SBR1
+functional checkpoints**, including the same-screen return to correct baud
+and STOP/BACK. The user did **not** supply the requested numeric E count
+at 9600 nor the raw intermediate/final R/D/E snapshots, so no exact
+numeric counter transition, error total, or drop value may be inferred
+or inserted into the test record. There is no independently captured
+screenshot or instrument data; no new device hardware stress is
+claimed. The SBR1 **functional device acceptance is PASS
+(operator-reported)** on the stated exact FAP, with limited raw metrics.
+
+Previous SBR1 "device PENDING" text in the installation checkpoint
+above is historical (recorded *before* this operator report).
+This test does **not** validate physical RX queue overflow (`D>0`),
+instrument-calibrated baud error, or independent third-party UART
+resource conflict. Keep PR #7 Draft until remaining acceptance/release
+risk is reviewed; leave v1.7 Stable unchanged.
