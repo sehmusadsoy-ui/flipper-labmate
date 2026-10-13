@@ -8,7 +8,7 @@ App(
     requires=["gui"],
     stack_size=4 * 1024,
     fap_category="Tools",
-    fap_author="sehma",
+    fap_author="SauronLAB / Sehmus",
     fap_version="1.8",
     fap_description="Standalone test of real UART owner conflict and cleanup.",
 )
