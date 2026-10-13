@@ -1,7 +1,6 @@
 # LabMate v1.9 — Logic Scope + Signal Compare (early R&D)
 
-**Status (2026-10-14): L0 scope data-model code and host regression/SDK
-CI workflow COMMITTED. New CI results are not yet verified.**
+**Status (2026-10-14): L0 strict C11 host tests, scope HAL-isolation guard, Momentum development FAP SDK build and Windows installer mock all CI PASS. L1 display projection is the next gate; real GPIO capture is still NOT IMPLEMENTED.**
 This is a preliminary v1.9 **development-only branch**, not a
 v1.9 release, not a device-tested oscilloscope, and not authorization
 to skip an unfinished v1.8 milestone.
@@ -83,14 +82,27 @@ but **no runtime code invokes it**. No user-visible Scope menu exists.
 
 | Gate | Evidence required | Present status |
 | --- | --- | --- |
-| L0a | Native strict C11: initial level, trigger modes, filtered edges, stale token, START/STOP | Code + host tests committed, GitHub CI **PENDING** |
-| L0b | Native strict C11: wrap, clock faults, >half-range span, no overwrite, overflow, token exhaustion | Code + host tests committed, GitHub CI **PENDING** |
-| L0c | Static guard: no HAL, GPIO, UI/menu, or runtime calls; SDK development FAP builds alongside older features | Guard + CI committed, **PENDING** |
+| L0a | Native strict C11: initial level, trigger modes, filtered edges, stale token, START/STOP | **CI PASS** run 38473341973; exact source 1febeaf6 |
+| L0b | Native strict C11: wrap, clock faults, >half-range span, no overwrite, overflow, token exhaustion | **CI PASS** run 38473341973; exact source 1febeaf6 |
+| L0c | Static guard: no HAL, GPIO, UI/menu, or runtime calls; SDK development FAP builds alongside older features | **CI PASS** run 38473341973; SDK build and Windows mock installer passed |
 | L1 | Pure 128×64 pixel/column projection with honest unresolved-edge density flags | NOT STARTED |
 | L2 | Real capture driver plan: mutually exclusive PC0/PC1/PB3/PA7, bounded ISR/timebase and STOP/BACK | NOT STARTED — safety gate |
 | L3 | Real Flipper no-signal and known-safe 3.3-V loopback; clean STOP/BACK and regressions | NOT TESTED |
 | L4 | Signal Compare: reference/tolerance pure math and defensible error/missing-signal messaging | NOT STARTED |
 | L5 | Performance/risk acceptance, scope/compare app integration, version release planning | NOT STARTED |
+
+### L0 exact CI acceptance evidence
+
+- [GitHub Actions run 38473341973](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38473341973), tested source SHA `1febeaf67f366e1a60310202f942348ad3d5cd1c`.
+- Job `115557763010` **SUCCESS**; logs explicitly say
+  `v1.9 scope HOST: 128-event cap, triggers, stale tokens, wrap, clock faults, overflow PASS` and
+  `v1.9 Scope trace: HAL-free, bounded and NOT connected to physical GPIO/menu PASS`.
+  Momentum SDK development FAP linked and checksum check reported `labmate.fap: OK`;
+  file SHA256 `f3ce6438280524692908212c0b3c8b4c9a830b7afc467b503aab667d2e7f12d2`.
+  Artifact `labmate` ID `11852083054` is a **development-only** FAP; this is not a v1.9 release or on-device run.
+- Windows installer mock job `115557763256` **SUCCESS** without touching USB.
+  v1.7 release finalization job `115557896247` **SKIPPED** as intended.
+- These PASS results cover only the HAL-free model and build. Physical signal capture, hardware timebase, accuracy, peak edge rate and STOP/BACK on Flipper remain untested.
 
 ### Current limitations
 
