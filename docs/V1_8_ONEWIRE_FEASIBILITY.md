@@ -44,9 +44,13 @@ Reviewed [Next-Flip/Momentum-Firmware](https://github.com/Next-Flip/Momentum-Fir
   Conversion may take up to 750 ms at 12-bit resolution; a GUI
   callback must never wait for sensor conversion.
 - [`lib/one_wire/maxim_crc.h`](https://github.com/Next-Flip/Momentum-Firmware/blob/dev/lib/one_wire/maxim_crc.h)
-  exposes Maxim CRC-8, and Momentum API symbol/header export records
-  include the 1-Wire host library. **Exact development SDK API-link
-  and compiled physical driver validation are still pending.**
+  exposes Maxim CRC-8. Momentum
+  [`targets/f7/api_symbols.csv`](https://github.com/Next-Flip/Momentum-Firmware/blob/dev/targets/f7/api_symbols.csv)
+  marks the public 1-Wire host header, `maxim_crc8`,
+  `onewire_host_alloc/free`, `start/stop`, `reset`, `write`
+  and `read_bytes` **+ exported** for FAP apps (source review PASS).
+  **Exact Momentum SDK ABI-link and compiled physical driver
+  validation remain pending**, separate from the pure decoder.
 - The firmware's own example does **not** establish that any sensor,
   module, cable, GPIO voltage or temperature reading in the operator's
   hardware has been checked. This must stay NOT TESTED.
@@ -82,13 +86,32 @@ selection, conversion command, power control, scratchpad transaction
 or GPIO session here**. The source is compiled by the existing
 `src/*.c` FAP glob but has no runtime entry or menu hookup.
 
+## W2 partial — inert SDK ABI probe committed (CI PENDING)
+
+A separate `tests/flipper_onewire_api_probe/` app builds
+`labmate_onewireapiprobe.fap` as an inert proof of exported
+Momentum 1-Wire symbols. Its app entry takes typed function addresses
+so the dynamic imports must link, then exits immediately without
+allocating/starting a host, reading or writing a 1-Wire pin, sending
+temperature commands, enabling power, or touching another application's
+GPIO. The isolated
+`.github/workflows/v18-onewire-api-probe.yml` installs the Momentum
+development SDK, compiles the proof, verifies a checksum and saves
+an artifact. **The separate compile CI outcome has not yet been
+independently verified**; it must not be installed as a thermometer.
+
+This ABI step verifies signatures/linkage only, not safe pin ownership.
+The later hardware driver still needs an explicit non-concurrent,
+STOP/BACK-safe GPIO ownership design; a source-level example cannot
+certify that user hardware has a DS18B20 or suitable voltage.
+
 ## Safety and scope gates (all require separate evidence)
 
 | Gate | Acceptance | Status |
 | --- | --- | --- |
 | W0 | Momentum source/example audit; isolate from I²C PR #8 and v1.7 Stable | Source review done |
 | W1 | HAL-free CRC/temp codec with strict native host tests and SDK compile | Code committed; CI pending |
-| W2 | Verify exact development SDK host exports and choose a validated GPIO ownership/lifecycle design | Pending |
+| W2 | Verify exact development SDK host exports and choose a validated GPIO ownership/lifecycle design | Export-source review PASS; inert ABI compile CI PENDING; GPIO ownership still OPEN |
 | W3 | Read-only one-sensor demo (no automatic external power, no persistent GPIO owner), STOP/BACK/regression host + SDK tests | Pending |
 | W4 | Operator verifies a **known safe, compatible** sensor and electrical conditions, then physical no-device + one-device runs | NOT TESTED |
 | W5 | Acceptance and explicit review before optional integration; separate Stable decision | Pending |
