@@ -14,6 +14,7 @@
 #include "labmate_button_logic.h"
 #include "labmate_threshold.h"
 #include "labmate_uart.h"
+#include "labmate_i2c_control.h"
 
 #define LABMATE_VERSION_TEXT "v1.8dev"
 /* Shared menu/pin counts: UI and input handling must agree. */
@@ -43,6 +44,7 @@ typedef enum {
     LabMateScreenButton, /* append: preserve original 0..10 */
     LabMateScreenAlerts, /* configuration: no extra GPIO ownership */
     LabMateScreenUart, /* v1.8 UART: append, preserve stable screen IDs */
+    LabMateScreenI2c, /* v1.8: physical I2C scanner BLOCKED until bounded bus ownership */
 } LabMateScreen;
 
 typedef enum {
@@ -247,6 +249,7 @@ typedef struct {
     uint8_t history_first_row_len;
 
     LabMateUart uart; /* USART external GPIO 13/14, no TIM1/TIM2 ownership */
+    LabMateI2cControl i2c; /* fail-closed idle-only app state, no bus owner */
 
     LabMateProfileStore profiles;
     uint8_t profile_active_copy; /* 0=a, 1=b, 255=none */
