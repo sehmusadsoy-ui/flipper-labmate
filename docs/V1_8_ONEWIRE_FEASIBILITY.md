@@ -1,6 +1,6 @@
 # LabMate v1.8 — Optional 1-Wire DS18B20 Feasibility
 
-**2026-10-13 | W1 decoder + SDK CI PASS, W2 inert ABI-link CI PASS, W2b HAL-free lease/STOP host CI PASS. Actual firmware-wide GPIO ownership remains BLOCKED; no sensor measured.**
+**2026-10-14 | W1 decoder + SDK CI PASS, W2 inert ABI-link CI PASS, W2b/W2c HAL-free lease/STOP + RFID-denial + no-hardware guard CI PASS. Real firmware-wide GPIO ownership remains BLOCKED; no sensor measured.**
 Branch: `dev/v1.8-onewire-feasibility` based on development `main` (which already
 includes the accepted UART work). **No physical 1-Wire sensor has been
 connected, no real sensor reading has been performed, and no 1-Wire UI
@@ -185,7 +185,7 @@ global RFID-active read used in LabMate, so a local
 `rfid_active=false` alone would be insufficient. An independent
 external atomic PB14 lease remains a mandatory precondition.
 
-**New W2c static CI freeze (PENDING):**
+**W2c static CI freeze (VERIFIED PASS):**
 `scripts/check_v18_onewire_no_hardware.py` guards the ordinary
 `src/*.c` LabMate build against unreviewed OneWire host
 imports, PB14 configuration calls, GUI/menu routes or accidental
@@ -193,8 +193,31 @@ invocation of the pure decoder/session in production.
 The existing standard FAP CI now runs this guard, together with
 the updated W2b mock RFID denial tests. This is **source
 non-integration evidence only**, not a device permission check.
-Do not weaken/remove it without a new, externally verified
-atomic owner protocol, reviewed STOP/BACK and electrical
+
+**Independently verified W2c GitHub CI PASS:**
+[run 38472442911](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38472442911),
+exact **tested source** `ca78bd62ec5134fcbd81da4cfcf64333ef1f8e6e`.
+Its actual build job `115554687277` log includes:
+
+- `1-Wire W2 HOST lease model: deny unknown, no auto power, late lease STOP, confirm release, stale events PASS` (now includes RFID refusal test);
+- `1-Wire W2 mock model isolated and fail-closed: PASS (HOST ONLY)`;
+- `W2 real 1-Wire GPIO integration remains DISABLED: static fail-closed guard PASS`;
+- Previous W1 decoder CRC/resolution/conversion gate tests PASS; Momentum SDK FAP build PASS; `labmate.fap: OK` SHA256 verification;
+- Separate Windows mock installer job `115554687549` PASS. v1.7 release-finalization job SKIPPED intentionally.
+
+The artifact `labmate` has GitHub artifact ID `11851649784`,
+with exact **FAP file** SHA256
+`f3ce6438280524692908212c0b3c8b4c9a830b7afc467b503aab667d2e7f12d2`
+from the build log. This is a development FAP, **not**
+the GitHub artifact ZIP checksum, a user installation or device PASS.
+An earlier [run 38472362068](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38472362068)
+also had green build + mock installer jobs. Earlier `X` runs
+`38472310337` (cancelled jobs), `38472331151` and `38472347883`
+(no job details returned) do **not** demonstrate a new failing native
+W2c test; no such failure is claimed.
+
+Do not weaken/remove the static freeze without a new, externally
+verified atomic owner protocol, reviewed STOP/BACK and electrical
 acceptance gates.
 
 **Current W2 decision:** actual DS18B20 driver GPIO acquisition
@@ -277,7 +300,7 @@ certify that user hardware has a DS18B20 or suitable voltage.
 | --- | --- | --- |
 | W0 | Momentum source/example audit; isolate from I²C PR #8 and v1.7 Stable | Source review done |
 | W1 | HAL-free CRC/temp codec with strict native host tests and SDK compile | **CI PASS** (38466126162, source 7aac37c8); no physical readings |
-| W2 | Verify exact development SDK host exports and choose a validated GPIO ownership/lifecycle design | **ABI proof PASS**; **W2b host CI PASS** (38467638118); W2c RFID denial + static no-hardware guard committed, CI pending; **real atomic GPIO owner BLOCKED** |
+| W2 | Verify exact development SDK host exports and choose a validated GPIO ownership/lifecycle design | **ABI proof PASS**; **W2b/W2c host CI PASS** (38472442911), including RFID denial + static freeze; **real atomic GPIO owner BLOCKED** |
 | W3 | Read-only one-sensor demo (no automatic external power, no persistent GPIO owner), STOP/BACK/regression host + SDK tests | Pending |
 | W4 | Operator verifies a **known safe, compatible** sensor and electrical conditions, then physical no-device + one-device runs | NOT TESTED |
 | W5 | Acceptance and explicit review before optional integration; separate Stable decision | Pending |
@@ -294,4 +317,4 @@ another app's GPIO, manipulate its mutex, or terminate a thread
 holding hardware resources. Firmware USB installation and stored
 Profiles/CSV history must remain untouched in these W0/W1 tests.
 
-**Decision:** W1 host/SDK, inert W2 ABI-link, and previous W2b HAL-free mock host CI PASS. W2c upstream inspection additionally confirms RFID controls PB14 and the loader/serial expansion interfaces are not GPIO owner leases; W2c amended host tests and source no-hardware guard CI PENDING. The real hardware atomic GPIO arbiter is still unavailable/unverified; W2 integration is BLOCKED and W4 real-device measurements remain NOT TESTED. No real Flipper temperature reading can be called PASS yet.
+**Decision:** W1 host/SDK, inert W2 ABI-link, and W2b/W2c pure mock host CI PASS. W2c upstream inspection confirms RFID controls PB14 and loader/serial expansion interfaces are not GPIO owner leases; amended host tests and source no-hardware guard CI VERIFIED PASS. The real hardware atomic GPIO arbiter is still unavailable/unverified; W2 integration is BLOCKED and W4 real-device measurements remain NOT TESTED. No real Flipper temperature reading can be called PASS yet.
