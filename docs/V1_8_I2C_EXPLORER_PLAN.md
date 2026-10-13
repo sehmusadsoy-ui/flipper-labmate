@@ -1,6 +1,6 @@
 # LabMate v1.8 — I²C Explorer: Compatibility and Safety Gate
 
-**Status (2026-10-13): HAL-free scan model and host tests implemented on Draft PR #8. No hardware I²C driver/UI, SDK-validated I²C scanner, actual bus scan, I²C app install or physical I²C PASS exists.**  
+**Status (2026-10-13): HAL-free scan/lifecycle models (G2/G2b) CI PASS; passive result presentation and paging model (G2c) committed with CI PENDING. No connected I²C hardware driver, real Flipper UI screen, actual scan, installed I²C-capable app or physical I²C PASS exists.**  
 **Development isolation:** `dev/v1.8-i2c-explorer` branched from `main` after [UART PR #7](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/7) merged. The published v1.7 Stable release is excluded from this work.
 
 ## Goal and initial testable scope
@@ -83,6 +83,77 @@ about successful hardware ownership, while investigating whether an
 SDK-supported timed acquire or a documented single-owner restriction
 is feasible. If no safe strategy exists, disclose the limitation and
 keep hardware Explorer gated instead of adding a freezing scan button.
+
+## G1 decision record — no public bounded-acquire API verified
+
+A second exact-source review of **Next-Flip/Momentum-Firmware `dev`**
+confirmed the following implementation facts:
+
+- [`targets/f7/furi_hal/furi_hal_i2c.c`](https://github.com/Next-Flip/Momentum-Firmware/blob/dev/targets/f7/furi_hal/furi_hal_i2c.c):
+  `furi_hal_i2c_acquire()` invokes the bus lock callback unconditionally,
+  does not take a timeout parameter and then assumes exclusive handle
+  ownership. It performs no caller-configurable timed wait.
+- [`targets/f7/furi_hal/furi_hal_i2c_config.c`](https://github.com/Next-Flip/Momentum-Firmware/blob/dev/targets/f7/furi_hal/furi_hal_i2c_config.c):
+  the external I²C3 bus lock calls
+  `furi_mutex_acquire(furi_hal_i2c_bus_external_mutex, FuriWaitForever)`.
+- [`targets/f7/api_symbols.csv`](https://github.com/Next-Flip/Momentum-Firmware/blob/dev/targets/f7/api_symbols.csv):
+  external bus handle and public I²C acquire/release are exported, but
+  **the external mutex object is not**. No exported public
+  timeout/try-acquire counterpart was identified.
+- Our inert Momentum development SDK ABI probe already **PASS**
+  ([run 38451777836](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38451777836));
+  it confirms exported symbols resolve, **not** that acquire is cancellable.
+
+**Decision:** for the currently examined FAP/SKD API, a guaranteed
+bounded/cancellable hardware acquire cannot be implemented through
+these public calls alone. Accessing private mutex state, checking
+`bus->current_handle` without locking, overriding bus callbacks,
+forcibly terminating a blocked worker or taking raw PC0/PC1 without
+I²C ownership are **rejected** as race/resource-hazard workarounds.
+The bounded STOP-and-exit guarantee required for LabMate Explorer's
+integrated live hardware scan remains **G1 BLOCKED**.
+
+The built-in Momentum GPIO scanner is a separately maintained firmware
+feature; the presence of that existing scanner does not grant LabMate
+a timed I²C bus-acquisition API. Any future change to firmware or
+supportable SDK API requires a **separately reviewed compatibility
+decision**, not a silent modification to the published v1.7 Stable
+or to the user's Momentum installation.
+
+Until that blocker changes, build **HAL-free UI presentation and
+regression tests only**. Do not expose a functioning-looking SCAN
+button, open the I²C data bus, fake detected addresses, or treat host
+scan simulation as Flipper physical PASS.
+
+## G2c — passive results/pagination model (CI PENDING)
+
+The dedicated I²C branch now contains `src/labmate_i2c_present.h/.c`,
+a **read-only view snapshot** generated from an app-thread-owned
+`LabMateI2cControl` state. It contains **no Flipper Canvas/UI
+binding, physical bus access, thread synchronization or hardware
+scanner**. Planned 128×64 screen implementation is separate.
+
+- Distinguished statuses: **NOT SCANNED / WAIT BUS /
+  STOP PENDING / SCANNING / RELEASING / RESULTS / NO DEVICES /
+  CANCELLED / ERROR**. Importantly **NO DEVICES** only occurs
+  when a logically completed scan has also reported actual release,
+  not when an unrun/empty/pending scan contains zero results.
+- Preserve measured model counts and show at most **four stored
+  addresses per page**; page selection clamps to an existing page
+  and an overfull count cannot read beyond 16 saved results.
+  Keep total found count and a truncation indicator; never pretend
+  those 16 saved entries are the full bus when `total_found > 16`.
+- A `model_quiescent` flag indicates only logical state, **not proof
+  that a real worker joined or physical HAL bus release occurred**.
+- `tests/test_i2c_present.c.inc` tests idle/wait/STOP states, full
+  112-address negative result only *after* completion, paging,
+  truncation, partial cancellation, and error/restart.
+  `scripts/check_v18_i2c_present.py` forbids HAL/Canvas use and
+  any premature app input/render integration. Dedicated native
+  C11 compile/run and guard were added to branch CI.
+
+**G2c GitHub CI has not yet been checked.** No I²C-capable FAP,
+physical I²C read or real device detection is claimed.
 
 ## G2b — lifecycle/STOP model (HAL-free, CI PASS)
 
