@@ -25,6 +25,8 @@ on:
       - "scripts/check_v18_uart.py"
       - "scripts/check_v19_scope_isolation.py"
       - "tests/test_scope_trace.c.inc"
+      - "scripts/check_v19_scope_projection.py"
+      - "tests/test_scope_project.c.inc"
       - "tests/test_button_logic.c.inc"
       - "tests/test_threshold.c.inc"
       - "scripts/install-labmate.ps1"
@@ -166,6 +168,18 @@ jobs:
 
       - name: Guard v1.9 Scope is not hooked to hardware or menu
         run: python3 scripts/check_v19_scope_isolation.py
+
+      - name: Test v1.9 L1 120-column Scope view projection (host-only)
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc -x c \
+            src/labmate_scope_trace.c src/labmate_scope_project.c \
+            tests/test_scope_project.c.inc \
+            -o /tmp/labmate-scope-project-tests
+          /tmp/labmate-scope-project-tests
+
+      - name: Guard v1.9 L1 scope projection remains HAL-free and menu-disabled
+        run: python3 scripts/check_v19_scope_projection.py
 
       - name: Test Button Analyzer bounce, settling and tick-wrap logic
         run: |
