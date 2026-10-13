@@ -1,6 +1,6 @@
 # LabMate v1.8 — I²C Explorer: Compatibility and Safety Gate
 
-**Status (2026-10-13): HAL-free scan/lifecycle/presentation models (G2/G2b/G2c) CI PASS. No connected I²C hardware driver, real Flipper UI screen, actual scan, installed I²C-capable app or physical I²C PASS exists. G1 bounded bus ownership remains BLOCKED.**  
+**Status (2026-10-13): HAL-free scan/lifecycle/presentation models G2/G2b/G2c CI PASS. G2d isolated SIMULATED Flipper UI preview SDK CI PASS and operator-reported physical UI D1–D5 5/5 PASS. No production I²C Explorer screen or HAL-backed scanner exists, and no real I²C bus/device scan PASS exists. G1 bounded bus ownership remains BLOCKED.**  
 **Development isolation:** `dev/v1.8-i2c-explorer` branched from `main` after [UART PR #7](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/7) merged. The published v1.7 Stable release is excluded from this work.
 
 ## Goal and initial testable scope
@@ -218,7 +218,7 @@ state **AWAIT_ACQUIRE** and preventing safe app shutdown. Thus it
 specifies and tests what safe success, late cancellation and release
 would look like once a bounded HAL acquire strategy exists.
 
-## G2d — isolated 128x64 I2C UX preview (NO BUS; compile CI PASS)
+## G2d — isolated 128x64 I2C UX preview (NO BUS; compile CI PASS, operator device UI 5/5 PASS)
 
 The G1 bus acquisition blocker still prevents enabling a real scanner.
 To exercise actual Flipper Canvas, readability and controls **without
@@ -270,21 +270,40 @@ and [38463688802](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs
 also reported success in the operator's `gh run list` output;
 the most recent run above has been independently inspected in detail.
 
-**Real Flipper preview UI/physical interaction remains PENDING.**
-These logs prove only source isolation and compilation: they do NOT
-prove 128×64 legibility, button responsiveness, native Flipper
-run-time behaviour or real I²C function. The next operator step
-is to download the exact isolated artifact and verify its FAP checksum
-before any test installation. It must NOT overwrite
-`/ext/apps/Tools/labmate.fap`; the separate preview FAP should
-use `/ext/apps/Tools/labmate_i2cuipreview.fap`.
-No ESP32, power accessory, I²C probe, signal wires or reflash is needed.
+**G2d isolated Flipper UI physical test: operator-reported 5/5 PASS (2026-10-13).**
+The user downloaded the exact run `38463902718` artifact on Windows and
+independently verified the standalone FAP SHA256
+`318fc65dc9eb4702199028e85bddbb3cca5eb18d34f19c00d33b129d6d887672`,
+reporting `LABMATE I2C PREVIEW DOWNLOAD + SHA256 PASS`.
+They then used Momentum `runfap.py` over Flipper's COM7 USB transport:
+the log confirmed 100% transfer and requested launch at **separate**
+`/ext/apps/Tools/labmate_i2cuipreview.fap`; the installer command exited
+zero with `I2C PREVIEW INSTALL COMMAND PASS`.
 
-This is a safe UI development milestone **only**. Even a full
-UI-preview hardware PASS would not resolve the separate G1
-`FuriWaitForever` limitation. Before any preview installation,
-its exact isolated FAP checksum and SDK build provenance should
-be verified; it must not overwrite `/ext/apps/Tools/labmate.fap`.
+The operator subsequently reported **`PASS PASS PASS PASS PASS`**
+for the following requested real-device UI test matrix:
+
+| Test | Operator-reported device result | Scope |
+| --- | --- | --- |
+| D1 | **PASS** | `I2C UX DEMO` and permanent `SIMULATED - NO BUS` label visible |
+| D2 | **PASS** | LEFT/RIGHT cycle through nine simulated scenarios |
+| D3 | **PASS** | UP/DOWN page among mock results on the RESULTS screen |
+| D4 | **PASS** | NO DEVICES, STOP PENDING, CANCELLED, ERROR states rendered correctly |
+| D5 | **PASS** | Readable unclipped text and functioning BACK exit |
+
+**Classification: operator-reported isolated on-device GUI PASS, 5/5**,
+not independently instrumented runtime evidence. This verifies the
+simulated UI workflow, **not** a HAL-backed I²C scanner, bus arbitration,
+device ACK, real no-peripheral scan, peripheral wiring, GPIO safety,
+or existing LabMate main-app post-install regression. The separate FAP
+target means the normal `/ext/apps/Tools/labmate.fap` path was not
+overwritten; it does not prove all existing LabMate tools were retested.
+No ESP32 reflash or external I²C peripheral was required.
+
+**G2d DONE. G1 still BLOCKED:** Momentum's `FuriWaitForever`
+external I²C ownership issue remains unresolved. Keep PR #8 Draft,
+G3 HAL scanner integration and G4/G5 physical I²C scan tests open;
+do not merge or publish a v1.8 Stable release based on GUI simulation.
 
 ## Hardware/resource rules
 
