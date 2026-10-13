@@ -577,14 +577,26 @@ R=41281; D=0; E=0; arayüz ve STOP/BACK=yes
   were observed in the reported session. **D:0 is not evidence that
   physical overflow/DROP behavior was exercised**; the 256-byte app
   stream may have been serviced quickly enough.
-- **Accounting caveat:** the reported cumulative **R:41281** is
-  greater than the sketch's **20,480 byte per-AT stress cap**.
-  R is a *session cumulative receive counter*, which also includes
-  protocol messages and could contain multiple individually
-  requested bursts. The user did not report the exact AT count or
-  starting R; do **not** infer a single 41,281-byte stress burst,
-  exact delivery percentage, or guaranteed zero loss across the
-  entire physical link.
+- **Follow-up correction from operator:** the first visible RX
+  counter was **R:20569**, and the later cumulative **R:41281**
+  was observed after the user reported pressing twice, describing it
+  as **"A VE T OLARAK"**. The increments are 20,569 at the first
+  checkpoint and **20,712** additional bytes between readings;
+  **R:41281 is not a single data burst**. Since each ST2
+  `AT` command arms at most 20,480 payload bytes, both totals are
+  broadly consistent with bounded traffic plus protocol/periodic
+  output, but message framing and exact triggering sequence are
+  not independently confirmed.
+- **Command clarification needed:** the Flipper TX editor sends the
+  **entire currently displayed text** plus CRLF for each OK/send.
+  The ESP32 ST2 test sketch triggers only on one complete line
+  `AT`, not on separate `A` and `T` lines. Therefore the operator's
+  phrase `A VE T OLARAK` must not be translated into two guaranteed
+  AT commands without clarification. Initial baseline R and first
+  D/E values also were not separately supplied.
+- Do **not** infer exact delivered-payload percentage, physical DROP
+  behavior under overflow, or perfect physical-layer losslessness
+  from cumulative R and D:0 alone.
 - The previously installed LabMate FAP remains the same;
   no v1.8 release/merge made.
 
