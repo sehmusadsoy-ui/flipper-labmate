@@ -54,6 +54,8 @@ int32_t labmate_app(void* p) {
     labmate_button_capture_reset(app);
     labmate_threshold_init(&app->threshold);
     labmate_uart_reset(&app->uart);
+    /* Real LabMate owns I2C UI state; never arm an unbounded HAL lock. */
+    labmate_i2c_control_reset(&app->i2c);
     app->screen = LabMateScreenMenu;
     app->capture_owner = LabMateCaptureNone;
     app->capture_pin_index = GPIO_COUNT;
