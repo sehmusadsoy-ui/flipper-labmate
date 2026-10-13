@@ -856,3 +856,29 @@ a native USB port may change or disappear across reset.
 No claims of ESP32 external PASS until the operator actually returns
 device results. Do not overwrite an installed debugging/pentest
 firmware merely for a smoke test without informed agreement.
+
+
+## SBR1 updated FAP installation checkpoint — installation PASS, device functional test PENDING
+
+**Operator-provided PowerShell log (2026-10-13):**
+
+- Source commit of CI-built `labmate.fap`: `12977d2dd4dfa661a790e3d8ce9dc5d73258d8e4`.
+- GitHub Actions run `38434053595`: two CI jobs (production FAP compile and
+  Windows installer mock) **PASS**; artifact source SHA independently verified.
+- SHA256 in extracted artifact `SHA256SUMS.txt` matched the actual FAP:
+  `f3ce6438280524692908212c0b3c8b4c9a830b7afc467b503aab667d2e7f12d2`.
+  This is the **FAP hash**, not the ZIP artifact digest.
+- Device checked as actual Flipper USB `VID_0483&PID_5740` on COM7.
+- Momentum `runfap.py` log: installation to exactly
+  `/ext/apps/Tools/labmate.fap`, 100% transfer (9/9 chunks),
+  then successful launch; command exit code 0 and operator print
+  `LABMATE SBR1 INSTALL PASS`.
+- Existing official published v1.7 tag/release was not the install target;
+  the independent `labmate_busydiag.fap` was also not the install target.
+
+**Scope:** this validates source provenance, artifact checksum,
+USB transport and app launch only. The operator has **not yet reported**
+whether the SBR1 baud-change ERR clear and same-screen recovery work
+with the ESP32-S2 peer on real Flipper hardware. Keep SBR1 device
+acceptance **PENDING** until an explicit on-device result arrives.
+No ESP32 firmware reflash is needed for the bounded SBR1 scenario.
