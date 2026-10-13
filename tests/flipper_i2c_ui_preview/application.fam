@@ -1,0 +1,15 @@
+# DEVELOPMENT UX DEMO ONLY. It never drives GPIO or acquires I2C.
+# This is NOT labmate.fap and must never be confused with a hardware scanner.
+App(
+    appid="labmate_i2cuipreview",
+    name="LabMate I2C UI Demo",
+    apptype=FlipperAppType.EXTERNAL,
+    entry_point="labmate_i2c_ui_preview_app",
+    sources=["preview.c"],
+    requires=["gui"],
+    stack_size=4 * 1024,
+    fap_category="Tools",
+    fap_author="sehma",
+    fap_version="1.8",
+    fap_description="Safe, simulated I2C UX preview; never touches I2C/GPIO.",
+)
