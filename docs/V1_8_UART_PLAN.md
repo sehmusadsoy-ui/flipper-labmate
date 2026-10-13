@@ -228,9 +228,19 @@ the already PASS 115200 ST2, not forced only to trigger DROP.
   `tests/test_uart_hal_host.c`. Exercises prior ERR and DROP, denial
   of RUN-time baud change, STOP-only reset of old counters/display,
   preservation of `AT`, and new-baud RX success with E0 D0.
-- **Current gate:** updated host/SDK/installer CI for the second commit
-  **PENDING until workflow results are independently read**. New
-  corrected LabMate FAP **has not been installed or physically tested**.
+- **CI VERIFIED PASS:** GitHub Actions run
+  [38434053595](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38434053595)
+  completed both the Momentum development FAP build (including host UART
+  assertions) and Windows installer-mock safety job **success**; the
+  stable publishing job correctly **skipped**. Run artifact
+  `labmate` (artifact ID `11831648607`) is unexpired and the
+  artifact's own provenance reports exact source head
+  `12977d2dd4dfa661a790e3d8ce9dc5d73258d8e4`. ZIP digest
+  `ea9ab7490194998db0472746fa70ebde9bea01cc2ea2678d34e50b3607422175`
+  is **NOT** the standalone FAP hash; deployment must independently
+  match the packaged `SHA256SUMS.txt` to the extracted `labmate.fap`.
+  New corrected LabMate FAP **has not yet been installed or physically
+  tested**.
   The previous on-device UART, ST2 and controlled BUSY PASS records
   remain valid for their exact tested binaries; they must not be
   relabelled proof of this new fix.
