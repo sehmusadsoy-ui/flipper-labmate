@@ -55,6 +55,37 @@ Reviewed [Next-Flip/Momentum-Firmware](https://github.com/Next-Flip/Momentum-Fir
   module, cable, GPIO voltage or temperature reading in the operator's
   hardware has been checked. This must stay NOT TESTED.
 
+## W2 continued source audit — GPIO/iButton cannot be assumed exclusive
+
+An additional Momentum `dev` read-only source review found:
+
+- [`furi_hal_resources.c`](https://github.com/Next-Flip/Momentum-Firmware/blob/dev/targets/f7/furi_hal/furi_hal_resources.c)
+  maps **`gpio_ibutton` to PB14, header pin 17**; this is the
+  same pin selected by Momentum's thermometer example.
+- [`one_wire_host.c`](https://github.com/Next-Flip/Momentum-Firmware/blob/dev/lib/one_wire/one_wire_host.c)
+  shows `onewire_host_start` directly sets the selected pin to
+  **open-drain output** and `onewire_host_stop` restores
+  **analog mode**. The reviewed host library does **not** itself
+  acquire or hold a firmware-wide exclusive pin-owner token before
+  these calls. Therefore its start/stop API **cannot be treated
+  as collision detection**; simply choosing PB14 is not safe proof
+  that other firmware functions are idle.
+- [`furi_hal_ibutton.c`](https://github.com/Next-Flip/Momentum-Firmware/blob/dev/targets/f7/furi_hal/furi_hal_ibutton.c)
+  also uses **TIM1** in its iButton-emulation HAL path, which
+  overlaps a timer used by LabMate's PWM Studio. That is a separate
+  reason to review internal/peripheral conflicts; a 1-Wire GPIO
+  scratchpad read does not itself establish that any TIM1 session
+  is free.
+
+**Architecture decision:** no silent start on PB14 or PC0/PC1, no
+assumption that a successful `onewire_host_alloc` means exclusive
+ownership, no direct takeover during PWM/iButton/capture activity and
+no call to the example's `power_enable_otg`. The pure decoder and
+inert ABI proof may be tested in CI without accessing these
+resources, but any actual GPIO driver remains **W2 BLOCKED until a
+reviewed resource-policy and STOP/BACK lifecycle are available**.
+This is a source review only, not an on-device contention test.
+
 ## W1 pure decoder: current implementation
 
 - `src/labmate_onewire_ds18b20.h/.c` decodes a **9-byte DS18B20
