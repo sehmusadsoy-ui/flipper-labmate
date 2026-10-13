@@ -15,7 +15,7 @@
 #include "labmate_threshold.h"
 #include "labmate_uart.h"
 
-#define LABMATE_VERSION_TEXT "v1.8dev"
+#define LABMATE_VERSION_TEXT "v1.8RC1"
 /* Shared menu/pin counts: UI and input handling must agree. */
 #define MENU_COUNT LabMateToolCount
 #define GPIO_COUNT LABMATE_MONITOR_PIN_COUNT
