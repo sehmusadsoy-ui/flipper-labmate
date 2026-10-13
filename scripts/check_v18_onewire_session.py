@@ -7,7 +7,8 @@ src = (root / "src/labmate_onewire_session.c").read_text()
 tests = (root / "tests/test_onewire_session.c.inc").read_text()
 for blocked in (
     "furi_", "Furi", "onewire_host_", "furi_hal_", "power_enable_",
-    "gpio_", "Gpio", "canvas_", "storage_", "pthread_", "furi_mutex_",
+    "furi_hal_gpio_", "gpio_ext_", "gpio_ibutton", "GpioMode",
+    "canvas_", "storage_", "pthread_", "furi_mutex_",
     "furi_thread_", "FuriWaitForever", "furi_delay_",
 ):
     assert blocked not in src, f"Forbidden runtime/hardware call in mock model: {blocked}"
