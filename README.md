@@ -39,18 +39,22 @@ The app now has focused capture, input, GUI and deferred-SD modules.
 The repository head is **v1.8dev**, not a published Stable release.
 Counter STOP/RESUME also passed C1–C8 real-device regressions and
 merged in [PR #6](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/6).
-**UART Terminal now has an unpublished SDK-compiled development candidate**
-on branch `dev/v1.8-uart-terminal`: COMM menu, USART pins 13/14, bounded
-RX display, 9600/38400/115200 baud and an explicit 12-character TX editor.
+**UART Terminal development milestone merged into `main` in [PR #7](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/7)**:
+COMM menu, USART pins 13/14, bounded RX display, 9600/38400/115200 baud
+and an explicit 12-character TX editor. It is **not** a v1.8 Stable release.
 **Operator-reported device checkpoints PASS:** local U1–U8,
 external ESP32-S2 UART E1–E6 at 9600/115200, corrected SR1-R1,
 bounded ST2 high-rate receive and controlled USART BUSY Probe 2/2.
 Physical RX overflow `D>0`, independent baud calibration and a
 simultaneous unrelated serial-owner conflict are **not** claimed.
-UART PR #7 remains Draft; I²C and optional 1-Wire are not implemented.
+UART's first feature milestone is integrated into development `main`; its
+physical RX queue overflow, calibrated timing and advanced HEX/PAUSE UI
+remain explicitly outside the verified baseline. The next v1.8 feature
+is I²C Explorer (not yet implemented); optional 1-Wire is also pending.
 [Refactor test record](docs/V1_8_DEV_NOTES.md) ·
 [UART acceptance plan](docs/V1_8_UART_PLAN.md) ·
-[real-device test log](docs/V1_8_UART_ESP32_TEST.md).
+[real-device test log](docs/V1_8_UART_ESP32_TEST.md) ·
+[UART integration acceptance/limitations](docs/V1_8_UART_ACCEPTANCE.md).
 
 ## Repository layout
 
