@@ -1,6 +1,6 @@
 # LabMate v1.8 UART ↔ ESP32 Interoperability Test
 
-**Status: ESP32-S2 UART E1–E6 = 6/6 operator-reported PASS (2026-10-13), including bidirectional 115200 and 9600 baud. SR1-R1 corrected FAP **device PASS** (operator-reported, 2026-10-13): 9600 baud retained across STOP/BACK/re-entry and 2-minute RX stable. Previous SR1 FAIL diagnosed/resolved; controlled BUSY/overflow gates remain pending. BUSY/resource conflict and controlled overflow remain PENDING; PR #7 stays draft.**
+**Status: ESP32-S2 UART E1–E6 = 6/6 operator-reported PASS (2026-10-13), including bidirectional 115200 and 9600 baud. SR1-R1 corrected FAP **device PASS** (operator-reported, 2026-10-13): 9600 baud retained across STOP/BACK/re-entry and 2-minute RX stable. Previous SR1 FAIL diagnosed/resolved. Clean-baseline ERR detection E:0→88 and fresh 9600 re-entry recovery (ESP32_READY, E:0 D:0) PASS; direct same-screen recovery, BUSY conflict and controlled overflow remain PENDING; PR #7 stays draft.**
 The user identified an **ESP32-S2-WROVER Flipper Dev Board**. The
 official Flipper Wi-Fi Developer Board schematics were checked:
 https://cdn.flipperzero.one/Flipper_Zero_WI-FI_Module_V1_Schematic.PDF
@@ -386,6 +386,32 @@ separate lifecycle setting-preservation regression.
 - [x] **E6, Regression:** Disconnect only after UART STOP and
       powered-down rewiring; reopen PWM, Counter/Frequency, Profiles S1
       and Log History, confirm saved data unchanged.
+
+## ERR recovery via fresh 9600 UART session — PASS (operator report, 2026-10-13)
+
+**Operator report:** `LabMate UART 9600 kurtarma testi:
+ESP32_READY=yes; E=0; D=0`. This followed the controlled
+intentional baud mismatch where `E` rose from 0 to 88, and
+the operator's initial same-screen return to 9600 was reported
+unsuccessful.
+
+Test setup: UART STOP → set **9600** → BACK → reopen UART
+(new counters, preserved 9600) → RUN for about 10 seconds.
+The ESP32-S2 peer remained at **9600 baud** throughout.
+
+- **PASS:** `ESP32_READY` legible on the Flipper after UART
+  re-entry, confirming communication resumed at the matching baud.
+- **PASS:** fresh `E:0` and `D:0` after the recovery observation.
+- **PASS:** controlled mismatched-baud receiver error detection
+  was previously shown by `E:0 → E:88`, `R:189`.
+- **Still unverified:** recovery on the **same UART screen**
+  by merely STOP → change baud → RUN. A sticky `ERR` indicator
+  persists while `rx_errors > 0` within the same screen, so the
+  earlier "return=no" cannot be attributed definitively to
+  continuing UART framing errors without fresh measurements.
+- **Not tested by this:** real RX-buffer overflow/DROP,
+  third-party ownership BUSY, high-load endurance or timing
+  calibration. Do not mark these as PASS.
 
 ## ERR mismatch test (clean baseline) — ERROR COUNTER PASS, recovery unconfirmed (operator report, 2026-10-13)
 
