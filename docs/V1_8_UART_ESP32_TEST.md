@@ -616,7 +616,7 @@ Host-only [CI run 38326055111](https://github.com/sehmusadsoy-ui/flipper-labmate
 tested the *Flipper* UART firmware with HAL shims, not this Arduino sketch.
 
 
-## BUSY physical USART owner probe — separate FAP source staged, CI pending
+## BUSY physical USART owner probe — separate FAP Momentum CI PASS; on-device result pending
 
 Development-only application under
 `tests/flipper_uart_busy_probe/`: unique app ID
@@ -644,11 +644,27 @@ a separate unrelated firmware service while simultaneously running
 LabMate. On-device result remains PENDING until the operator
 installs the separate FAP and reports its display.
 
-The standalone diagnostic must first pass Momentum SDK CI from
-`.github/workflows/v18-uart-busy-probe.yml`; installing this FAP
-must use an independent path
-`/ext/apps/Tools/labmate_busydiag.fap`, leaving the ordinary
-`/ext/apps/Tools/labmate.fap` untouched.
+**Standalone probe CI PASS** (2026-10-13):
+[run 38328444425](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38328444425)
+built the independent diagnostic `labmate_busydiag.fap` with the
+Momentum development SDK from code commit
+`213f682eb0e3c1cd0e60df4259690d0596d8aa04`.
+Build/checksum/artifact upload all PASS. **Exact diagnostic FAP
+SHA256:** `0b7bd243dcd752006dbfbf485c462af041b82008a1308e59baff5f9649a97970`
+(the CI ZIP's `sha256:86a615...` is **not** the FAP hash).
+Artifact `labmate-busy-probe`, run 38328444425.
+
+**No Flipper installation or probe observation yet.** The dedicated
+app must be installed under
+`/ext/apps/Tools/labmate_busydiag.fap`, **never** over the existing
+`/ext/apps/Tools/labmate.fap`. The ESP32 Wi-Fi Devboard should be
+detached from the Flipper while this test runs. The diagnostic
+only reserves/releases the genuine USART control handle and invokes
+the production LabMate start/stop routines, and is expected to
+display `BUSY REFUSAL: PASS` + `RESTART/STOP: PASS`.
+A success would demonstrate real hardware serial-handle contention
+within a separate test application, not independently confirm
+a background external service taking that handle.
 
 ## Separate remaining stress/conflict gates
 
