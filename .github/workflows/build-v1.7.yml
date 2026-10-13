@@ -23,10 +23,12 @@ on:
       - "tests/test_uart_hal_host.c"
       - "tests/test_i2c_scan.c.inc"
       - "tests/test_i2c_control.c.inc"
+      - "tests/test_i2c_present.c.inc"
       - "tests/uart_host_stubs/**"
       - "scripts/check_v18_uart.py"
       - "scripts/check_v18_i2c.py"
       - "scripts/check_v18_i2c_control.py"
+      - "scripts/check_v18_i2c_present.py"
       - "tests/test_button_logic.c.inc"
       - "tests/test_threshold.c.inc"
       - "scripts/install-labmate.ps1"
@@ -180,6 +182,18 @@ jobs:
 
       - name: Guard pure I2C lifecycle and blocked-acquire semantics
         run: python3 scripts/check_v18_i2c_control.py
+
+      - name: Test I2C bounded honest results, pagination and STOP states (HOST ONLY)
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc -x c \
+            src/labmate_i2c_scan.c src/labmate_i2c_control.c \
+            src/labmate_i2c_present.c tests/test_i2c_present.c.inc \
+            -o /tmp/labmate-i2c-present-tests
+          /tmp/labmate-i2c-present-tests
+
+      - name: Guard pure I2C UI presentation isolation
+        run: python3 scripts/check_v18_i2c_present.py
 
       - name: Test Button Analyzer bounce, settling and tick-wrap logic
         run: |
