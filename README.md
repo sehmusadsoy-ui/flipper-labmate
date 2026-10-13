@@ -36,7 +36,9 @@ The old ~1,200-line coordinator refactor has **passed R1–R10 device
 regression** (user-reported) and was merged to `main` in
 [PR #5](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/5).
 The app now has focused capture, input, GUI and deferred-SD modules.
-The repository head is **v1.8dev**, not a published Stable release.
+This release-candidate branch builds the *normal* `labmate.fap` with a
+`v1.8RC1` on-screen badge. It is **not yet a published Stable release**;
+[exact-source RC device gates](docs/V1_8_STABLE_CANDIDATE.md) must PASS first.
 Counter STOP/RESUME also passed C1–C8 real-device regressions and
 merged in [PR #6](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/6).
 **UART Terminal development milestone merged into `main` in [PR #7](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/7)**:
@@ -49,8 +51,13 @@ Physical RX overflow `D>0`, independent baud calibration and a
 simultaneous unrelated serial-owner conflict are **not** claimed.
 UART's first feature milestone is integrated into development `main`; its
 physical RX queue overflow, calibrated timing and advanced HEX/PAUSE UI
-remain explicitly outside the verified baseline. The next v1.8 feature
-is I²C Explorer (not yet implemented); optional 1-Wire is also pending.
+remain explicitly outside the verified baseline. After operator review,
+**I²C Explorer and optional 1-Wire were explicitly deferred** from this
+v1.8 Stable candidate because firmware-wide bus/pin ownership could not
+be verified safely. Neither is presented as a functioning tool or
+claimed PASS. Historical research PRs #8/#9 are closed unmerged, and
+v1.9 remains PAUSED until v1.8 Stable is actually published.
+No demo FAPs are required or included in this candidate.
 [Refactor test record](docs/V1_8_DEV_NOTES.md) ·
 [UART acceptance plan](docs/V1_8_UART_PLAN.md) ·
 [real-device test log](docs/V1_8_UART_ESP32_TEST.md) ·
