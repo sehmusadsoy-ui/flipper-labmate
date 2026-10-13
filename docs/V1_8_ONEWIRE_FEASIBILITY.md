@@ -1,6 +1,6 @@
 # LabMate v1.8 — Optional 1-Wire DS18B20 Feasibility
 
-**2026-10-13 | Isolated research / host-code gate only.**
+**2026-10-13 | W1 host codec + Momentum SDK CI PASS; W2 inert SDK ABI-link CI PASS, but hardware GPIO ownership still OPEN. No sensor measured.**
 Branch: `dev/v1.8-onewire-feasibility` based on development `main` (which already
 includes the accepted UART work). **No physical 1-Wire sensor has been
 connected, no real sensor reading has been performed, and no 1-Wire UI
@@ -76,17 +76,28 @@ Reviewed [Next-Flip/Momentum-Firmware](https://github.com/Next-Flip/Momentum-Fir
 - `scripts/check_v18_onewire_codec.py` explicitly forbids
   HAL/power/GPIO/canvas/thread calls inside this pure codec and
   prevents premature menu/production UI activation.
-- Dedicated test steps were added on this branch to the existing
-  Momentum source CI and Windows installer mock workflow.
-  **New branch CI is not yet confirmed PASS**; do not claim a
-  device-test or CI result without checking its exact workflow/job.
+- Strict C11 host tests and the model isolation guard were
+  **independently confirmed PASS** from the exact
+  [GitHub run 38466126162](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38466126162)
+  job logs: `1-Wire DS18B20 HOST codec: CRC, signed range,
+  resolution masks, conversion gate, rounding PASS` and
+  `1-Wire DS18B20 pure codec isolation / unconfirmed-reading safety PASS`.
+  The Momentum SDK production-development FAP build and Windows
+  installer mock both concluded `success`, while the v1.7
+  publication job was `skipped` as expected.
+  **Exact CI source SHA:** `7aac37c889024f2e4a3a94f9faaa3c11caf843c9`.
+  Its separately built `labmate.fap` has SHA256
+  `f3ce6438280524692908212c0b3c8b4c9a830b7afc467b503aab667d2e7f12d2`
+  according to the job log; artifact `labmate`, ID `11848003135`.
+  This is an **unpublished development artifact**, not an installed
+  or physical sensor-tested application.
 
 The decoder is not a reader: there is **no bus reset, sensor address
 selection, conversion command, power control, scratchpad transaction
 or GPIO session here**. The source is compiled by the existing
 `src/*.c` FAP glob but has no runtime entry or menu hookup.
 
-## W2 partial — inert SDK ABI probe committed (CI PENDING)
+## W2 partial — inert SDK ABI proof CI PASS, GPIO ownership still OPEN
 
 A separate `tests/flipper_onewire_api_probe/` app builds
 `labmate_onewireapiprobe.fap` as an inert proof of exported
@@ -97,8 +108,15 @@ temperature commands, enabling power, or touching another application's
 GPIO. The isolated
 `.github/workflows/v18-onewire-api-probe.yml` installs the Momentum
 development SDK, compiles the proof, verifies a checksum and saves
-an artifact. **The separate compile CI outcome has not yet been
-independently verified**; it must not be installed as a thermometer.
+an artifact. Its separate
+[GitHub run 38466409736](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38466409736)
+is now **independently confirmed PASS**: explicit no-hardware-call
+guard PASS, Momentum SDK uFBT `LINK/FAP/APPCHK` PASS and artifact
+upload PASS. **Exact source SHA:**
+`84e65dbec774163aae6e3006a8f2f522a44c08e9`.
+ABI artifact `labmate-onewire-abi-probe`, ID `11848518279`
+(stored separately from production `labmate.fap`).
+This compiled proof **must not** be installed as a thermometer.
 
 This ABI step verifies signatures/linkage only, not safe pin ownership.
 The later hardware driver still needs an explicit non-concurrent,
@@ -110,8 +128,8 @@ certify that user hardware has a DS18B20 or suitable voltage.
 | Gate | Acceptance | Status |
 | --- | --- | --- |
 | W0 | Momentum source/example audit; isolate from I²C PR #8 and v1.7 Stable | Source review done |
-| W1 | HAL-free CRC/temp codec with strict native host tests and SDK compile | Code committed; CI pending |
-| W2 | Verify exact development SDK host exports and choose a validated GPIO ownership/lifecycle design | Export-source review PASS; inert ABI compile CI PENDING; GPIO ownership still OPEN |
+| W1 | HAL-free CRC/temp codec with strict native host tests and SDK compile | **CI PASS** (38466126162, source 7aac37c8); no physical readings |
+| W2 | Verify exact development SDK host exports and choose a validated GPIO ownership/lifecycle design | **Source + inert ABI-link CI PASS** (38466409736, source 84e65dbe); GPIO ownership/STOP-BACK still OPEN |
 | W3 | Read-only one-sensor demo (no automatic external power, no persistent GPIO owner), STOP/BACK/regression host + SDK tests | Pending |
 | W4 | Operator verifies a **known safe, compatible** sensor and electrical conditions, then physical no-device + one-device runs | NOT TESTED |
 | W5 | Acceptance and explicit review before optional integration; separate Stable decision | Pending |
@@ -128,5 +146,4 @@ another app's GPIO, manipulate its mutex, or terminate a thread
 holding hardware resources. Firmware USB installation and stored
 Profiles/CSV history must remain untouched in these W0/W1 tests.
 
-**Decision:** Continue W1 host/SDK testing only. W2/W4 are mandatory
-before a real Flipper temperature reading can be called PASS.
+**Decision:** W1 host/SDK gate is verified PASS and the W2 ABI-link subgate is PASS. Next research concerns exclusive GPIO/iButton ownership, lifecycle, 3.3 V and no automatic external power. The full W2 hardware resource gate and W4 real-device measurements remain NOT TESTED. No real Flipper temperature reading can be called PASS yet.
