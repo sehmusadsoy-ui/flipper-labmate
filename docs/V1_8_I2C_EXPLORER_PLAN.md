@@ -218,6 +218,50 @@ state **AWAIT_ACQUIRE** and preventing safe app shutdown. Thus it
 specifies and tests what safe success, late cancellation and release
 would look like once a bounded HAL acquire strategy exists.
 
+## G2d — isolated 128x64 I2C UX preview (NO BUS; compile CI pending)
+
+The G1 bus acquisition blocker still prevents enabling a real scanner.
+To exercise actual Flipper Canvas, readability and controls **without
+requiring a peripheral or touching the I²C hardware**, an isolated
+`labmate_i2cuipreview.fap` was created in
+`tests/flipper_i2c_ui_preview/`. It is **not** `labmate.fap`,
+does not integrate any I²C menu or code into production event routing,
+and must not be installed as a purported I²C Explorer.
+
+- Every frame permanently displays **`SIMULATED - NO BUS`**.
+  The nine selectable scenarios demonstrate **NOT SCANNED,
+  WAIT BUS, STOP PENDING, NO DEVICES, RESULTS (mock data),
+  TRUNCATED RESULTS (mock), CANCELLED, ERROR, RELEASING**.
+  The term `NO DEVICES` is a *simulated scan end state*, not a
+  physical discovery result.
+- **LEFT/RIGHT** cycle labeled scenarios; **UP/DOWN** page through
+  four-address bounded result views; **BACK** exits promptly. No
+  key starts a real scan. A dedicated UI mutex protects the tiny
+  model/snapshot between input and GUI draw callbacks; rendering
+  copies state then releases this mutex before drawing.
+- The preview directly composes our **actual production pure model**
+  source files `labmate_i2c_scan.c`,
+  `labmate_i2c_control.c` and `labmate_i2c_present.c`.
+  It does not call `furi_hal_i2c_*`, reconfigure PC0/PC1,
+  access SD storage, generate GPIO signals, or energize power.
+- `scripts/check_v18_i2c_ui_preview.py` guards the permanent
+  simulation label, bus/GPIO API absence, separate FAP name,
+  app-menu isolation and UI navigation wiring. New
+  `.github/workflows/v18-i2c-ui-preview.yml` compiles this
+  separate FAP against Momentum SDK and records its checksum,
+  **without creating a release**.
+
+**Current evidence:** source and isolated CI workflow **committed**,
+but dedicated UI-preview SDK compile CI has **not** yet been
+independently verified. No local physical preview test has happened.
+Do not label G2d CI/device as PASS before the respective results.
+
+This is a safe UI development milestone **only**. Even a full
+UI-preview hardware PASS would not resolve the separate G1
+`FuriWaitForever` limitation. Before any preview installation,
+its exact isolated FAP checksum and SDK build provenance should
+be verified; it must not overwrite `/ext/apps/Tools/labmate.fap`.
+
 ## Hardware/resource rules
 
 1. **Only known-safe 3.3 V open-drain I²C**. No 5 V pull-ups or unknown voltage on PC0/PC1. Common ground when using a supported independently powered 3.3 V peripheral. The first tests must not energize unverified accessories.
