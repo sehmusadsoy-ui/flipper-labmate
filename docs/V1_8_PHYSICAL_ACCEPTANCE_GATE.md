@@ -10,12 +10,35 @@ This checklist deliberately separates compiled source from actual Flipper hardwa
 - [ ] Using qFlipper, create and retain an **internal-settings backup** (Advanced Controls → Backup). This does **not** include saved microSD files.
 - [ ] Separately copy relevant **microSD data** to a PC location, including `/ext/apps_data/labmate/` (Profiles S1–S3, Logs/CSV, if present) and preferably a complete microSD backup; inspect the copied files before firmware changes.
 - [ ] Prepare an independently tested way to restore the known working Stable Momentum firmware and historical v1.8/v1.7 LabMate. Keep its official updater package and the known-Stable `labmate.fap` available and verifiable. No automatic restore/erase.
+- [ ] Record the **currently installed** Momentum version/commit from the Flipper before any update. Do not assume its on-device firmware is the pinned `d3f89dfe` build just because the development SDK was. If incompatible/unknown, pause the minimal-updater trial pending a safe compatibility and recovery review.
 - [ ] Identify the exact test build `LabMate commit`, pinned `Momentum base commit`, patched HAL diff hash, `firmware.dfu` SHA256 and `labmate.fap` SHA256 from a **single** CI run's `PROVENANCE.txt` and `SHA256SUMS.txt`; verify both files with SHA256 *again* after retrieval.
 - [ ] Review the patch's scope and firmware startup/recovery behavior separately. No tested ROM compatibility, rollback or hardware coexistence is implied by CI compilation.
 - [ ] Keep the test pair separate from the existing GitHub Stable Release. No background install, USB transfer, firmware flash, automatic publish or tag mutation.
 - [ ] Confirm all external signals and pull-ups are known-compatible **3.3 V**. Never connect unknown voltages, 5 V inputs, mains or other unsafe sources to Flipper GPIO.
 
-The optional GitHub Actions artifact named `v18DEV-patched-firmware-FAP-UNTESTED-DO-NOT-FLASH` is a **development archive only** with a short retention period. It is not an installer, release, recommendation to flash, or a physical acceptance claim. Its FAP must not be used with ordinary stock Momentum firmware: the timed-I²C ABI would be missing.
+The verified **test-only** GitHub Actions artifact named `v18DEV-minimal-updater-FAP-UNTESTED-DO-NOT-FLASH` is a **development archive only** with a short retention period. It is not an installer, release, recommendation to flash, or a physical acceptance claim. Its FAP must not be used with ordinary stock Momentum firmware: the timed-I²C ABI would be missing.
+
+### Matched uninstalled candidate — 2026-10-14
+
+The most recent **exact source + real FAP + DFU + minimal qFlipper-style TGZ**
+was created and triply checksum-verified in
+[CI 38587659583](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38587659583),
+LabMate source `0fdd558291222c54f5b52b762e00fafffa3d0d62`,
+GitHub Actions artifact `11906491025` (**7-day retention**):
+
+| Exact paired file | Verified SHA256 |
+| --- | --- |
+| `labmate.fap` | `9a276e6caa8173a03382d1b6ae7e163ddd535a878264084423c67f66deb6c881` |
+| `firmware.dfu` | `e69f717df28f2ff5a417a69ac212f242cf2725a48ce8c4e31296ceb4a0157ec0` |
+| `firmware-update.tgz` | `b796b42cb5756fc8bb2bb3180ae2c2cb00775b3f88ceceae1025299a2f424ad2` |
+
+CI verified that the TGZ contains the **identical DFU bytes**, is targeted
+at f7 and does not request extra radio/SD-resource or option-byte changes.
+The patched firmware contains the expected callable bounded-I2C API.
+Both the Windows mock and the real artifact read-only preflight passed.
+This does **not** validate recovery, startup or USB flashing on a device.
+Historical Stable v1.8 FAP SHA256 for rollback:
+`119c44bb854030a73a60fa205d38770bf77f048bb166ab379a03135c1de5f3b0`.
 
 ### Read-only paired-file verification (Windows; no installation)
 
@@ -24,7 +47,8 @@ After obtaining the **specific official GitHub Actions artifact** and extracting
 ```powershell
 & .\scripts\verify-v18-matched-pair.ps1 `
     -PairDirectory 'C:\LabMate-CI-Pair' `
-    -ExpectedSourceSha 'YOUR_EXACT_40_CHAR_LABMATE_COMMIT'
+    -ExpectedSourceSha '0fdd558291222c54f5b52b762e00fafffa3d0d62' `
+    -RequireUpdater
 ```
 
 The verifier rejects missing/mixed files, mismatched firmware/FAP SHA256, wrong pinned Momentum base, missing provenance, and wrong expected LabMate commit. It **never** contacts a USB/COM port, copies a FAP, or flashes firmware. A PASS establishes file self-consistency, **not GitHub download authenticity or physical compatibility**; confirm the artifact's official GitHub Actions origin separately. The mocked PowerShell rejection tests do not prove real hardware functionality.
