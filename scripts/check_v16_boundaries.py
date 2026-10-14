@@ -230,9 +230,20 @@ expect(
     "void labmate_logger_capture_stop(LabMateApp* app) {\n    labmate_capture_stop_all(app);" in MAIN,
     "Logger stop must call shared teardown",
 )
+# The v1.8 exit safeguard intentionally runs capture STOP regardless of
+# the visible screen, including MENU, then releases the snapshotted IRQ pin.
+# Do not accidentally require the old screen-gated teardown in this guard.
+EXIT = COORDINATOR.split(
+    "/* Teardown must not depend on which screen was visible on exit.", 1
+)
 expect(
-    "if(labmate_screen_uses_gpio(app->screen)) {\n        labmate_capture_stop_all(app);" in MAIN,
-    "App exit must call shared teardown",
+    len(EXIT) == 2 and
+    "const uint8_t captured_gpio_index = app->capture_pin_index;" in EXIT[1] and
+    "labmate_capture_stop_all(app);" in EXIT[1] and
+    "labmate_monitor_gpio_release(app, captured_gpio_index);" in EXIT[1] and
+    EXIT[1].index("labmate_capture_stop_all(app);") <
+    EXIT[1].index("if(labmate_screen_uses_gpio(app->screen)"),
+    "App exit must unconditionally stop capture before any screen-gated release",
 )
 
 expect("static void frequency_gpio_callback(" in FREQ_CAPTURE and
