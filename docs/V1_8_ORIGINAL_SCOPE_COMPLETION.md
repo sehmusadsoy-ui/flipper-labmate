@@ -136,7 +136,7 @@ and About's final position. Do not move About into COMM.
   no OTG auto-power and immediate STOP cleanup.
 - [x] Connect single integrated `COMM → 1-Wire Temp` screen with
   READY/RUN/DONE/NONE/BUSY/ERROR/PWR/STOP, explicit OK and BACK.
-  INFO → About remains immediately above COMM.
+  COMM remains immediately above the final INFO → About root group.
 - [x] Verified exact-source [CI 38563555290](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38563555290)
   on source `a40333dd2e8d2abccaa176ebd63f9037e7f5ee9b`:
   true Momentum SDK/FAP compilation, native CRC/temp tests, UI/menu
