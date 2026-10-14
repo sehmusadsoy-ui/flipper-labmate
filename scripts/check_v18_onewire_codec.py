@@ -56,7 +56,7 @@ for required in (
 for forbidden in ("power_enable_otg(", "gpio_ibutton", "gpio_ext_pb14",
                   "furi_hal_power_enable_otg"):
     assert forbidden not in hw, f"Forbidden automatic power/shared pin: {forbidden}"
-assert "event.key == InputKeyOk" in input_src
+assert "if(event.key != InputKeyOk) return;" in input_src
 assert "event.key == InputKeyBack" in input_src
 assert "labmate_onewire_hw_stop(&app->thermometer);" in input_src
 assert '"1-Wire Temp"' in menu
