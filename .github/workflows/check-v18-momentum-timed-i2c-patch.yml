@@ -45,6 +45,7 @@ jobs:
           git -C momentum-src diff --check
           test "$(git -C momentum-src diff --name-only | wc -l)" -eq 3
           grep -q "bool furi_hal_i2c_external_acquire_timeout" momentum-src/targets/furi_hal_include/furi_hal_i2c.h
+          grep -q "#define FURI_HAL_I2C_HAS_EXTERNAL_ACQUIRE_TIMEOUT 1" momentum-src/targets/furi_hal_include/furi_hal_i2c.h
           grep -q "furi_mutex_acquire(furi_hal_i2c_bus_external_mutex" momentum-src/targets/f7/furi_hal/furi_hal_i2c.c
           grep -q 'Function,+,furi_hal_i2c_external_acquire_timeout,_Bool,uint32_t' momentum-src/targets/f7/api_symbols.csv
           echo "Source patch applicability PASS. This does NOT compile, flash or confirm the firmware API at runtime."
