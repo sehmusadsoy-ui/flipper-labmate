@@ -1,7 +1,7 @@
 # LabMate v1.8 — Single-App Stable Candidate Acceptance
 
 **Decision: 2026-10-14 — operator-authorized scope deferral.**
-**Status: RC1 physical smoke 15/15 PASS; FINAL v1.8 FAP SDK/host CI PASS; final physical-device acceptance and Stable publication PENDING.**
+**Status: RC1 physical smoke 15/15 PASS; FINAL v1.8 FAP SDK/host CI PASS and checksum-verified USB install/launch command PASS; final Flipper on-screen/device smoke and Stable publication PENDING.**
 This is the *actual* `labmate.fap` built from `src/*.c`, not a UI demo
 or separate tool application. Do not publish Stable while a required
 gate remains open. The existing immutable published v1.7 Stable is
@@ -53,9 +53,7 @@ advancement to v1.9 before actual v1.8 Stable publication.
 ## Candidate gates
 
 - [x] **C1 PASS — exact source** `d2e3fe8b41599289464db077f1d4a9d26dc442e7` at [run 38482399817](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38482399817), compile job `115587842090` and Windows installer mock job `115587842270` both successful; Stable publishing job intentionally SKIPPED. SDK compiled the real `labmate.fap`, all bundled host regressions and boundary guards passed. Artifact `labmate` ID `11858875740`, source SHA matches run. CI's explicit **FAP file SHA256** `3d33cca37e9c59927e42f101b7cea118677e457eaefae1306aab741999c97d63`; the artifact ZIP digest `5584e52bf3287402ce3c929076f4c2b6340fec0939365103bf320f8a948bba10` is not the FAP hash. No physical USB/Flipper results claimed yet.
-- [ ] **C2:** User downloads and SHA256-verifies *labmate.fap*, installs
-  by one PowerShell+USB workflow over the **existing**
-  `/ext/apps/Tools/labmate.fap` and does NOT create a duplicate.
+- [x] **C2 PASS — final FAP SHA256 and one existing LabMate target (operator terminal log, 2026-10-14 13:06 local).** User downloaded artifact `labmate` from run `38546662091`; local SHA256 matched `119c44bb854030a73a60fa205d38770bf77f048bb166ab379a03135c1de5f3b0`. First USB attempt at 13:04 showed `100%, chunk 9 of 9`, but stopped with exit code 4 when the already-open LabMate refused `loader close` (must close manually). Following manual exit, the second installer invocation at **13:06** re-verified the exact SHA256, used COM7, targeted only `/ext/apps/Tools/labmate.fap`, printed `Launching app: /ext/apps/Tools/labmate.fap` and `SUCCESS: runfap.py exited 0 and requested app launch.` with process exit code **0**. The device's post-install app contents/label and tool behavior **have not yet been physically rechecked for final v1.8**; installer success is not a substitute for C6 final-device smoke. No duplicate FAP install destination or data deletion was requested.
 - [x] **C3 PASS — user-reported on-device Test 18-R1, 6/6**, 2026-10-14:
   R1 app opens + `v1.8RC1` badge; R2 COMM/UART present; R3 UART screen
   RUN/STOP responsive; R4 BACK returns to menu; R5 PWM Studio,
@@ -82,8 +80,8 @@ advancement to v1.9 before actual v1.8 Stable publication.
   BUSY or application crash during this smoke. This is a functional
   operator report; no independent calibrated PWM waveform measurement
   or exhaustive SD failure injection is inferred.
-- [ ] **C6 PARTIAL — FINAL `v1.8`-LABEL FAP SDK/host CI PASS;
-  physical installation and final-device smoke PENDING.**
+- [ ] **C6 PARTIAL — FINAL `v1.8`-LABEL FAP SDK/host CI +
+  COM7 checksum-verified install/launch PASS; final-device smoke PENDING.**
   At source commit `02b05639364d6dd71f5eb70456eca379c59218cb`,
   GitHub Actions [38546662091](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38546662091)
   compiled the actual single `labmate.fap` with Momentum SDK;
@@ -95,7 +93,9 @@ advancement to v1.9 before actual v1.8 Stable publication.
   Code changes since the tested RC1 are **only the on-device version
   label `v1.8RC1` → `v1.8`**, plus the associated static guards;
   historical/device report Markdown updates do not change the FAP.
-  The final artifact has not yet passed on-device smoke. Tag/release
+  The final artifact passed the installer command and requested app launch
+  with exit code 0 on 2026-10-14 after manual closure of previous LabMate,
+  but has not yet passed the distinct **final on-device smoke**. Tag/release
   `v1.8`, README update and acceptance are **PROHIBITED until
   final-device test PASS**, and known I²C / optional 1-Wire exclusions
   must be in the actual release notes.
@@ -184,6 +184,24 @@ last-device smoke before Stable publication (C6).
   Do not delete user data.
 - **Release control:** no tag, GitHub Stable release, merge or
   release publication before operator reports final FAP smoke PASS.
+
+## Final-label v1.8 USB handoff — checksum/install PASS (2026-10-14)
+
+User supplied the real PowerShell transcript: SHA256 VERIFIED, first
+COM7 invocation transferred 9/9 chunks but exited with error 4 because
+LabMate was still open (`has to be closed manually`). This first run
+is **FAIL** as an installer run and is never counted as a PASS. After
+closing LabMate manually, a second invocation verified the same SHA256,
+used the existing `/ext/apps/Tools/labmate.fap` destination, printed
+`Launching app` and returned exit code 0 (`SUCCESS ... requested app launch`).
+The separate `LABMATE v1.8 INSTALL COMMAND PASS` message is consistent
+with the captured zero exit code, unlike the earlier user-authored
+`Write-Host` in the failed first run.
+
+**Only installation and launch-request success are proven:** no separate
+post-flash readback hash or final-device menu/peripheral observation
+has yet been submitted. The final-v1.8 acceptance test is required
+before merging/tagging/publishing Stable.
 
 ## Removing old demonstrations (not required for build)
 
