@@ -26,6 +26,8 @@ int main(void) {
     assert(strcmp(labmate_nav_group_title(LabMateGroupComm), "COMM") == 0);
     assert(labmate_nav_tool_at(LabMateGroupInfo, 0U) == LabMateToolAbout);
     assert(labmate_nav_tool_at(LabMateGroupComm, 0U) == LabMateToolUart);
+    assert(labmate_nav_tool_at(LabMateGroupComm, 1U) == LabMateToolOneWire);
+    assert(LabMateToolOneWire == LabMateToolUart + 1);
     uint8_t visits[LabMateToolCount] = {0};
     for(uint8_t group = 0U; group < LabMateGroupCount; ++group) {
         assert(labmate_nav_group_size(group) == expected_sizes[group]);
