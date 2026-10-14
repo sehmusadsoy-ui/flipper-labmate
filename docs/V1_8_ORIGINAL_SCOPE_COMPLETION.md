@@ -51,7 +51,8 @@ INFO/COMM positions and titles. Do not move About into COMM.
   operator-reported **6/6 PASS**, source in previous draft PR #12.
   This is carry-forward behavior evidence, **not a physical PASS on
   the newly combined v1.8DEV build**.
-- [ ] Integrated `v1.8DEV` CI and final full-scope device acceptance.
+- [x] Integrated `v1.8DEV` SDK/host CI [38558631375](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38558631375) PASS, exact source `8956f76d29d8e20d775533e1b066adfb05536872`, same candidate FAP SHA256 `524006f7229a8e706d270a108f21193021f7597ff1bfd6d70e03b66c21981ba9`; native Button, navigation and app-local COMM collision guards plus Windows installer mock PASS.
+- [ ] Final *full-scope* device acceptance after I²C/optional 1-Wire integration.
 
 ### M — v1.6 resource and module completion
 
@@ -59,9 +60,15 @@ INFO/COMM positions and titles. Do not move About into COMM.
   deterministic internal capture owner, PWM TIM1 and USART lifecycle.
 - [ ] Audit every production GPIO/IRQ/TIM/UART path, all STOP/BACK/
   failed-acquire/exit transitions and potential concurrent claims.
-- [ ] Extend app-wide resource exclusion policy to I²C PC0/PC1
-  and the selected 1-Wire GPIO, with PWM/Counter/Logger/Profiles
-  and busy/rollback tests.
+- [x] Implement **isolated application-local** COMM mutual-exclusion
+  model for I²C PC0/PC1 and candidate 1-Wire PA4 (not PB14), explicitly
+  refusing capture, GPIO Monitor, PWM, UART, Logger activity; non-owner
+  STOP does not release the active owner. Portable tests PASS in
+  [CI 38558631375](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38558631375).
+  This is *not yet wired to real drivers or a global firmware lock*.
+- [ ] Connect this model to real I²C / 1-Wire driver start, error,
+  STOP/BACK and final teardown, then test interoperability with
+  Profiles/CSV and existing instruments on device.
 - [ ] A firmware-wide lock claim requires a real exported HAL
   owner/lock contract or verified firmware change. App-local flags
   alone never guarantee global ownership.
