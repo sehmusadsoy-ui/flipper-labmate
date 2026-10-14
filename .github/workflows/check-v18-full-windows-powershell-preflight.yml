@@ -1,0 +1,42 @@
+name: Verify FULL MNTM-012 artifact with REAL Windows PowerShell (NO FLASH)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - ".github/workflows/check-v18-full-windows-powershell-preflight.yml"
+      - "scripts/prepare-v18-full012-test.ps1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  verify_real_candidate:
+    name: Real full candidate Windows SHA256 verification (NO USB)
+    runs-on: windows-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout exact PowerShell preparer
+        uses: actions/checkout@v4
+
+      - name: Verify REAL full firmware / FAP artifact on Windows
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $out = Join-Path $env:RUNNER_TEMP 'Full-MNTM012-Candidate'
+          & ./scripts/prepare-v18-full012-test.ps1 -Directory $out
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Windows REAL candidate preflight failed.'
+          }
+          $expected = @('labmate.fap','firmware.dfu','firmware-full-update.tgz')
+          foreach ($name in $expected) {
+            if ((Get-Item -LiteralPath (Join-Path $out $name)).Length -le 0) {
+              throw "Empty checked candidate file: $name"
+            }
+          }
+          Write-Host 'ACTUAL MNTM012 FULL FIRMWARE AND FAP VERIFIED ON WINDOWS: PASS.'
+          Write-Host 'NO USB, NO FIRMWARE FLASH, NO INSTALL, NO RELEASE.'
