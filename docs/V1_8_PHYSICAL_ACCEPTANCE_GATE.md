@@ -706,12 +706,24 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   **request**, NOT verified on-screen startup or STOP/BACK resource
   behavior. Pinned DFU/TGZ were not installed; old UARTFIX rollback
   FAP hash was checked before install. Stable/main unchanged.
-- [ ] **EXITFIX physical on-screen launch, capture/EXIT resource
-  regression and COMM/UART/Profiles regression STILL OPEN** until
-  actual operator device observations are recorded. Historical UARTFIX
-  physical PASS does not transfer automatically to the new EXITFIX
-  artifact. A normal BACK cleanup regression cannot by itself prove
-  the fixed abnormal stale-capture exit branch is dynamically reached.
+- [x] **EXITFIX E1 — Button Analyzer / app exit and relaunch:
+  OPERATOR PHYSICAL PASS, 2026-10-15.** On the exact USB-installed
+  EXITFIX FAP (SHA256
+  `7a76f626f34a65059d9536fa2cd52b2639f4d1038a9b5c69291fa28d5e4f63be`),
+  the operator performed the requested no-external-wires test:
+  enter MEASURE > Button Analyzer, OK RUN ~5 s, OK STOP, BACK,
+  exit app, reopen, repeat RUN/STOP. Raw operator result:
+  `EXITFIX E1: APP=yes; RUN/STOP=yes; EXIT=yes; REOPEN=yes; ERROR=no`.
+  This establishes a real screen startup and basic Button owner/EXIT
+  lifecycle smoke PASS; it does **not** establish external button
+  bounce accuracy, firmware-wide resource leasing, or whether the
+  exceptional stale-capture forced-exit guard was dynamically reached.
+- [ ] **Other EXITFIX device regressions still OPEN:** Event Counter
+  TIM2 STOP/restart; PWM/Logger cleanup and coexistence; UART external
+  peer and I2C/1-Wire negative paths; Profiles and CSV preservation.
+  Historical UARTFIX physical PASS does not transfer automatically
+  to the new EXITFIX artifact. A normal BACK cleanup regression does
+  not prove the fixed abnormal stale-capture exit branch executes.
 
 ## Stable release boundary
 
