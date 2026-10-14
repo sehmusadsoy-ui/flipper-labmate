@@ -220,11 +220,22 @@ int main(void) {
     assert(mock_tx_count == 1U && mock_tx_len == sizeof(command) - 1U);
     assert(memcmp(mock_tx_data, command, mock_tx_len) == 0);
 
-    /* Simulate actual HAL RX callback receiving 320 bytes faster than
-       app-loop polling. Queue capacity is 256: exactly 64 must DROP. */
-    uint8_t burst[LABMATE_UART_RX_QUEUE + 64U];
+    /* A 320-byte burst used to overflow the 256-byte queue; with
+       1024-byte headroom all bytes must be buffered without drops. */
+    assert(LABMATE_UART_RX_QUEUE == 1024U);
+    uint8_t burst[320U];
     memset(burst, 'X', sizeof(burst));
     emit_data(burst, sizeof(burst), FuriHalSerialRxEventData);
+    assert(uart.dropped == 0U && uart.rx_errors == 0U);
+    assert(mock_stream.count == sizeof(burst));
+
+    /* Saturation stays truthful: 3x320 + 128 = 1088 bytes without
+       polling. Exactly 64 genuine over-capacity bytes must DROP. */
+    emit_data(burst, sizeof(burst), FuriHalSerialRxEventData);
+    emit_data(burst, sizeof(burst), FuriHalSerialRxEventData);
+    assert(mock_stream.count == 960U && uart.dropped == 0U);
+    emit_data(burst, 128U, FuriHalSerialRxEventData);
+    assert(mock_stream.count == LABMATE_UART_RX_QUEUE);
     assert(uart.dropped == 64U && uart.rx_errors == 0U);
     assert(uart.rx_total == sizeof(message) - 1U); /* poll not run yet */
     labmate_uart_poll(&uart);
@@ -260,6 +271,9 @@ int main(void) {
     emit_data(message, sizeof(message) - 1U, FuriHalSerialRxEventData);
     labmate_uart_poll(&uart);
     emit_data(burst, sizeof(burst), FuriHalSerialRxEventData);
+    emit_data(burst, sizeof(burst), FuriHalSerialRxEventData);
+    emit_data(burst, sizeof(burst), FuriHalSerialRxEventData);
+    emit_data(burst, 128U, FuriHalSerialRxEventData);
     emit_data(NULL, 0U, FuriHalSerialRxEventFrameError);
     assert(uart.rx_total == sizeof(message) - 1U);
     assert(uart.dropped == 64U && uart.rx_errors == 1U);
