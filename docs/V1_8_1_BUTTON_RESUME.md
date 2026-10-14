@@ -1,6 +1,6 @@
 # LabMate v1.8.1 maintenance — Button Analyzer STOP / RESUME
 
-**State:** development candidate; NOT a published Stable release.
+**State:** development candidate; CI PASS and operator-reported Button test B1/B3/B4/B5/B6 PASS (5/6); B2 NOT VERIFIED. NOT a published Stable release.
 **Base:** published v1.8 Stable source and its post-release documentation.
 No change to the existing immutable v1.8 tag/assets or user's installed FAP.
 
@@ -31,20 +31,47 @@ This is previous design behavior, not an observed firmware crash.
 - PC1 3.3 V pull-up/active-low polarity and original EXTI ownership
   safety constraints remain unchanged.
 
+## On-device Test 18.1-B1 — operator report (2026-10-14)
+
+The operator submitted:
+`B1=PASS; B2=DOĞRULANMADI; B3=PASS; B4=PASS; B5=PASS; B6=PASS`.
+
+| Test | Defined criterion | Operator result |
+| --- | --- | --- |
+| B1 | On-device `v1.8.1d` label | PASS |
+| B2 | Button Analyzer START begins measurement | **NOT VERIFIED**, not FAIL and not PASS |
+| B3 | STOP retains press/release counts | PASS |
+| B4 | RESUME continues counters without clearing | PASS |
+| B5 | STOP → UP RESET clears counters | PASS |
+| B6 | BACK exits normally | PASS |
+
+**Count: 5 PASS, 1 not verified (5/6), zero reported failures.**
+Because B3/B4 PASSED, START/RESUME interaction was apparently usable,
+but this does **not** override the explicitly unverified B2 criterion.
+Keep B2 open until the operator separately verifies that a new START
+with a known-safe dry contact or existing 3.3V test signal on PC1
+registers at least one press/release event.
+No new code or final Stable tag is justified solely by this report.
+
 ## Verification gates
 
-- [ ] Host native test confirms resume keeps counts / metrics and
-  discards pending transition and stopped-time HOLD.
-- [ ] Static guard ensures non-destructive STOP, correct STOP/RESUME
+- [x] Host native test confirms resume keeps counts / metrics and
+  discards pending transition and stopped-time HOLD. CI run
+  [38551143503](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38551143503).
+- [x] Static guard ensures non-destructive STOP, correct STOP/RESUME
   footer, explicit RESET and version badge fit.
-- [ ] Momentum SDK builds the actual integrated `labmate.fap`,
-  with `v1.8.1d` on-screen development label.
-- [ ] Operator installs checksum-checked candidate on the real
-  Flipper; original v1.8 Stable remains available for rollback.
-- [ ] Real-device tests: initial START, count at least one press,
-  STOP retains counts, RESUME increases counts without clearing,
-  STOP then UP resets, BACK exits without freeze, PWM/Counter/
-  UART/Profiles/History regression sanity.
+- [x] Momentum SDK built the actual integrated `labmate.fap`,
+  with `v1.8.1d` on-screen development label. Source
+  `9086c9d4af3f1cbc3dd92ea22385a5a68826baf2`, FAP SHA256
+  `7862d0ebb36a8b77699db2037ba4cc6b641f6c291a5f18d36b27ad883931fcc9`.
+- [ ] A complete independent USB installation transcript (including
+  installer exit code) was not supplied. User-confirmed `v1.8.1d`
+  visible on actual Flipper in B1 PASS supports use of the candidate.
+  Original v1.8 Stable remains available for rollback.
+- [ ] Real-device Button test B1–B6: **5/6 explicitly PASS,
+  B2 NOT VERIFIED**; full Button functional acceptance pending.
+  Details below. Other-tool regressions PWM/Counter/UART/Profiles/History
+  still pending.
 - [ ] Final `v1.8.1`-labelled source/binary and real hardware
   final smoke before publication. No GitHub v1.8.1 Stable tag
   should be created prematurely.
