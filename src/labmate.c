@@ -173,13 +173,20 @@ int32_t labmate_app(void* p) {
     }
     labmate_history_close(app);
 
-    if(labmate_screen_uses_gpio(app->screen)) {
-        labmate_capture_stop_all(app);
+    /* Teardown must not depend on which screen was visible on exit.
+     * A stale capture owner must never survive a future menu route.
+     * Snapshot the armed pin before stop_all resets capture_pin_index. */
+    const uint8_t captured_gpio_index = app->capture_pin_index;
+    labmate_capture_stop_all(app);
+    if(captured_gpio_index < GPIO_COUNT) {
+        labmate_monitor_gpio_release(app, captured_gpio_index);
+    }
+    /* GPIO Monitor has no capture owner; release its selected input too.
+     * Avoid releasing the same GPIO twice for capture screens. */
+    if(labmate_screen_uses_gpio(app->screen) &&
+       app->gpio_index != captured_gpio_index) {
         labmate_monitor_gpio_release(app, app->gpio_index);
     }
-    /* Defensive cleanup even if a future navigation path leaves counter RUN. */
-    labmate_event_counter_stop(app);
-    labmate_button_capture_stop(app);
 
     gui_remove_view_port(
         gui,
