@@ -684,11 +684,17 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   `e69f717df28f2ff5a417a69ac212f242cf2725a48ce8c4e31296ceb4a0157ec0`.
   Exit code guard did not raise an error. **No USB install** was
   attempted; previous UARTFIX backup was independently verified.
-- [ ] **Physical EXITFIX FAP install + targeted regression STILL OPEN.**
-  Do not change firmware or install the DFU/TGZ. Obtain a separate
-  explicit operator decision before single `labmate.fap` update.
-  Previously reported UARTFIX device passes do not transfer automatically
-  to the new EXITFIX artifact. Stable/main remain untouched.
+- [x] **Operator explicitly approved the EXITFIX FAP-only update**
+  in project chat on 2026-10-15, **after** stage-only SHA/provenance
+  PASS. Approval scope is strictly a replacement of
+  `/ext/apps/Tools/labmate.fap` with the pinned candidate SHA256
+  `7a76f626f34a65059d9536fa2cd52b2639f4d1038a9b5c69291fa28d5e4f63be`.
+  No firmware DFU/TGZ flash, other app install, microSD CSV/profile
+  deletion or Stable publication is approved.
+- [ ] **Physical EXITFIX FAP install + targeted regression STILL OPEN**
+  until actual operator Windows USB installer output and device screen
+  evidence. Already reported UARTFIX physical passes do not transfer
+  automatically to EXITFIX. Stable/main unchanged.
 
 ## Stable release boundary
 
