@@ -305,10 +305,11 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   BACK returns to RX without sending; OK STOP, BACK to menu;
   re-enter UART and selected 115200 baud preserved, with no
   persistent BUSY/ERR.
-- [ ] ESP32 3.3 V peer RX/TX throughput, actual TX send/echo,
-  error/drop accounting and repeated RUN/STOP under traffic on
-  the **new firmware/FAP pair** remain OPEN. Earlier ESP32 tests
-  on prior images do not substitute for this regression.
+- [x] The subsequently installed UARTFIX ST3 pair **did** pass
+  ESP32-S2 115200 physical throughput and TX with `R=20543`,
+  `D=0`, `E=0` and STOP/BACK/re-entry. See ST3 record below.
+  Other baud rates under real traffic and longer-term stress
+  remain untested.
 
 ### 2026-10-14 — UART ESP32-S2 stress: **UARTFIX ST3 PHYSICAL PASS** (initial D=52 retained as historical failure)
 
@@ -400,6 +401,23 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
 - [ ] Real live threshold crossing, latched alert, ACK, hysteresis /
   event timing, and valid-sample response remain **NOT TESTED**.
   No-pulse UI acceptance cannot verify sensor/alert triggering.
+
+### 2026-10-14 — PWM/UART/GPIO monitor app-exit resource regression: physical PASS
+
+- [x] Operator explicitly reported `RESOURCE EXIT PASS` following
+  the requested no-external-connection test: leave PWM Studio RUN
+  through BACK into menu; cycle GPIO Monitor pins and observe PA7
+  excluded while TIM1 PWM owns it; UART 115200 can independently
+  RUN/STOP without stale BUSY while PWM remains RUN; revisit PWM
+  and observe RUN; exit **entire LabMate application** with PWM
+  still RUN; relaunch and observe PWM STOP and PA7 once again
+  selectable; subsequent I2C Explorer empty scan completes NONE
+  and 1-Wire no-sensor test returns NONE without lingering BUSY.
+- [ ] This confirms only the specified LabMate-local ownership,
+  TIM1/UART coexistence, clean exit/re-entry and no-sensor COMM
+  recovery on the matched firmware/FAP pair. It does not prove
+  unrelated firmware-service resource exclusion, actual I2C ACK,
+  real DS18B20 reading or calibrated GPIO/waveform accuracy.
 
 ## Stable release boundary
 
