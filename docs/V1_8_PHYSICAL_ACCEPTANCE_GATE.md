@@ -267,7 +267,11 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
 
 - [x] Logger and History: operator reported `LOGGER HISTORY PASS` for new PC1 frequency CSV recording, advancing rows, STOP/SAVED, opening the newest log and inspecting row count, and canceling the delete confirmation without loss.
 - [x] Profiles: operator reported `PROFILES PASS` for inspecting S1-S3, LOAD from a saved slot, canceling SAVE and DELETE confirmations with BACK, and checking profile preservation after reopening.
-- [ ] Actual deletion of a disposable CSV, independent CSV content review, and actual profile SAVE/DELETE/persistence mutations remain open. Preserve existing data.
+- [x] Disposable newly-created CSV deletion, including BACK cancel,
+  targeted confirmed DELETE and persistent absence after app reentry
+  **physically PASS** in the 2026-10-14 Log History section below.
+- [ ] Independent CSV byte/content audit and actual profile
+  SAVE/DELETE/persistence mutations remain open. Preserve existing data.
 
 ### 2026-10-14 — MEASURE suite navigation and capture lifecycle: physical PASS
 
@@ -429,10 +433,27 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   Log History listing the newly created CSV while preserving old logs.
   This establishes the specified app-local TIM1 PWM and logger capture/
   SD recording coexistence, and safe Profiles LOAD refusal during RUN.
-- [ ] This report does NOT exercise actual Profiles SAVE/DELETE
-  mutations, deletion of a disposable newly created CSV, independent
-  file-content inspection, SD failure recovery, or calibrated pulse/
-  frequency capture with external applied signals. These remain OPEN.
+- [ ] This `PWM LOGGER PASS` itself does NOT exercise actual Profiles
+  SAVE/DELETE mutations, independent file-content inspection, SD failure
+  recovery, or calibrated pulse/frequency capture with external signals.
+  Deletion of the disposable new CSV was subsequently physically
+  reported PASS in the `HISTORY DELETE PASS` test below.
+
+### 2026-10-14 — Log History disposable CSV real deletion: physical PASS
+
+- [x] Operator explicitly reported `HISTORY DELETE PASS` for the
+  immediately requested physical sequence: with PWM/Logger STOP,
+  identify the new disposable `log_XXXX.csv`, open its LOG VIEW
+  and inspect rows, enter DELETE confirmation for that **same**
+  filename, BACK cancels without removing it, re-enter confirmation,
+  OK permanently deletes that one test CSV, prior CSV files
+  remain listed, and after exiting/reopening LabMate the deleted
+  file remains absent while old files remain present.
+- [ ] The test verifies app-visible real single-file DELETE,
+  cancel/no-delete and persistence over app reentry. It does not
+  establish bytewise independent CSV integrity, resilience to
+  unexpected SD removal, power failure, or deletion of any older
+  non-disposable logs. Preserve preexisting files and backups.
 
 ## Stable release boundary
 
