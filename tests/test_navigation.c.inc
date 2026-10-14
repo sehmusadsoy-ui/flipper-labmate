@@ -20,8 +20,9 @@ int main(void) {
     assert(LabMateGroupMeasure == 0);
     assert(LabMateGroupOutput == 1);
     assert(LabMateGroupRecords == 2);
-    assert(LabMateGroupInfo == 3);
-    assert(LabMateGroupComm == 4);
+    assert(LabMateGroupComm == 3);
+    assert(LabMateGroupInfo == 4);
+    assert(LabMateGroupInfo == LabMateGroupCount - 1);
     assert(strcmp(labmate_nav_group_title(LabMateGroupInfo), "INFO") == 0);
     assert(strcmp(labmate_nav_group_title(LabMateGroupComm), "COMM") == 0);
     assert(labmate_nav_tool_at(LabMateGroupInfo, 0U) == LabMateToolAbout);
