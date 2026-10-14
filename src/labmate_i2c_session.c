@@ -24,6 +24,12 @@ bool labmate_i2c_session_execute(
      */
     const bool acquired =
         ops->acquire_bounded(ops->context, LABMATE_I2C_ACQUIRE_TIMEOUT_MS);
+    /* A STOP can arrive while firmware waits for the external mutex.
+     * Account for it BEFORE reporting a failed bounded acquisition:
+     * STOP+timeout is CANCELLED, not a spurious bus fault. If acquired,
+     * acquire_done moves directly to AwaitRelease (no probe). */
+    if(labmate_i2c_session_cancel(ops))
+        (void)labmate_i2c_control_request_stop(control);
     if(!labmate_i2c_control_acquire_done(control, generation, acquired))
         return false;
     if(!acquired) return false;
