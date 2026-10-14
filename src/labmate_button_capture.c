@@ -43,11 +43,17 @@ void labmate_button_capture_start(LabMateApp* app) {
     const GpioPin* pin = labmate_gpio_pins[app->gpio_index];
     /* Internal pull-up: button closure to GND => LOW. */
     furi_hal_gpio_init(pin, GpioModeInterruptRiseFall, GpioPullUp, GpioSpeedVeryHigh);
-    labmate_button_state_init(&app->button_irq, furi_hal_gpio_read(pin));
+    const bool resume = app->button_session_started;
+    const bool current_level = furi_hal_gpio_read(pin);
+    if(resume) {
+        labmate_button_state_resume(&app->button_irq, current_level);
+    } else {
+        labmate_button_state_init(&app->button_irq, current_level);
+        app->button_bounce_us = 0U;
+        app->button_settle_ms = 0U;
+        app->button_hold_ms = 0U;
+    }
     labmate_button_snapshot(&app->button_irq, &app->button_stats);
-    app->button_bounce_us = 0U;
-    app->button_settle_ms = 0U;
-    app->button_hold_ms = 0U;
     app->capture_pin_index = app->gpio_index;
     app->capture_owner = LabMateCaptureButton;
     app->button_active = true;
