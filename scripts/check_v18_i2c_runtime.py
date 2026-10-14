@@ -32,6 +32,8 @@ assert "furi_thread_join(" in runtime
 assert "furi_thread_free(" in runtime
 assert "labmate_comm_local_claim(" in runtime
 assert "labmate_comm_local_release(" in runtime
+assert "LabMateI2cControlBusy" in runtime
+assert "s->status = LabMateI2cRuntimeBusy;" in runtime
 assert "s->stop_requested = true;" in runtime
 assert "labmate_i2c_momentum_available()" in runtime
 assert "labmate_i2c_runtime_reap(s);" in runtime
@@ -51,6 +53,7 @@ assert "event.key == InputKeyBack" in handler
 assert "if(event.key != InputKeyOk) return;" in handler
 
 assert '"FW API"' in screen
+assert '"I2C BUS / TOOL BUSY"' in screen
 assert '"NO ACKS / CHECK BUS"' in screen
 assert '"REAL ACK RESULTS"' in screen
 assert "result.row_address[i]" in screen
