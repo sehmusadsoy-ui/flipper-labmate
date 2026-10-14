@@ -15,8 +15,8 @@ int main(void) {
         {LabMateToolUart, LabMateToolI2c, LabMateToolOneWire, LabMateToolInvalid, LabMateToolInvalid},
         {LabMateToolAbout, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
     };
-    /* User-mandated root order: ABOUT stays in INFO, COMM is below INFO.
-     * Keep enum IDs stable for previously stored Profiles and menu routes. */
+    /* User-mandated ROOT order: COMM above INFO; About absolutely last.
+     * Tool IDs stay stable for Profiles; only root group positions change. */
     assert(LabMateGroupMeasure == 0);
     assert(LabMateGroupOutput == 1);
     assert(LabMateGroupRecords == 2);
