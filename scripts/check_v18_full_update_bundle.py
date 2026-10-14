@@ -14,7 +14,7 @@ from pathlib import Path, PurePosixPath
 
 _ALLOWED = {
     "firmware.dfu", "updater.bin", "update.fuf",
-    "radio.bin", "resources.tgz", "splash.bin",
+    "radio.bin", "resources.tgz", "splash.bin", "firstboot.bin",
 }
 _REQUIRED = {"firmware.dfu", "updater.bin", "update.fuf", "radio.bin", "resources.tgz"}
 
