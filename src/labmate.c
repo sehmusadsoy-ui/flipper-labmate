@@ -56,6 +56,11 @@ int32_t labmate_app(void* p) {
     labmate_uart_reset(&app->uart);
     labmate_onewire_hw_init(&app->thermometer);
     app->comm_owner = LabMateCommNone;
+    app->i2c = labmate_i2c_runtime_alloc();
+    if(!app->i2c) {
+        free(app);
+        return -1;
+    }
     app->screen = LabMateScreenMenu;
     app->capture_owner = LabMateCaptureNone;
     app->capture_pin_index = GPIO_COUNT;
