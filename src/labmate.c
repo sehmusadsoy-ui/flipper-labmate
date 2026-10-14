@@ -70,6 +70,7 @@ int32_t labmate_app(void* p) {
             FuriMutexTypeNormal);
 
     if(!app->mutex) {
+        labmate_i2c_runtime_free(app->i2c);
         free(app);
         return -1;
     }
