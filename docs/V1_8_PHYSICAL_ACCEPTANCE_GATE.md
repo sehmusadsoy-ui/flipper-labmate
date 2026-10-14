@@ -155,9 +155,9 @@ on-device LabMate/COMM tests. A prepared updater is not acceptance.
 
 | ID | Check | Required evidence | Status |
 | --- | --- | --- | --- |
-| F1 | Test firmware boots and basic OS menu, Back and input work | Operator result + exact build IDs | NOT TESTED |
-| F2 | The single LabMate entry launches; shows `v1.8DEV` | Operator result + FAP SHA256 | NOT TESTED |
-| F3 | Root order is `MEASURE → OUTPUT → RECORDS → COMM → INFO`; About remains last | Operator screen observation | NOT TESTED |
+| F1 | Test firmware boots and basic OS menu, Back and input work | Operator result + exact build IDs | **PASS — operator reports boot, controls and UI functional on matched dev trial** |
+| F2 | The single LabMate entry launches; shows `v1.8DEV` | Operator result + FAP SHA256 | **PASS — operator reports v1.8DEV menu; FAP install SHA verified** |
+| F3 | Root order is `MEASURE → OUTPUT → RECORDS → COMM → INFO`; About remains last | Operator screen observation | **PASS — operator confirms expected order, INFO bottom** |
 | F4 | No automatic USB OTG/5 V activation; idle tools do not seize pins | Operator observation | NOT TESTED |
 
 ## Gate 2 — External I²C3 functionality
@@ -166,14 +166,14 @@ on-device LabMate/COMM tests. A prepared updater is not acceptance.
 
 | ID | Check | Pass condition | Status |
 | --- | --- | --- | --- |
-| I1 | Enter `COMM → I2C Explorer` on **matching patched firmware** | READY, not `FW API`, no automatic scan | NOT TESTED |
-| I2 | Scan an unconnected/known-idle bus | Completes with NONE/no ACK, never fabricates a hit, no freeze | NOT TESTED |
+| I1 | Enter `COMM → I2C Explorer` on **matching patched firmware** | READY, not `FW API`, no automatic scan | **PASS — operator confirms READY; scan only on OK** |
+| I2 | Scan an unconnected/known-idle bus | Completes with NONE/no ACK, never fabricates a hit, no freeze | **PASS — operator reports NONE, responsive UI on empty bus** |
 | I3 | Scan a known-safe peripheral with a confirmed 7-bit address | Correct real ACK address displayed; pagination does not change measurements | NOT TESTED |
 | I4 | Press OK STOP during scan | Returns to STOP/CANCELLED without deadlock and releases ownership | NOT TESTED |
-| I5 | BACK during scan, then re-enter and start again | Returns to menu and can reacquire without stale worker/handle | NOT TESTED |
+| I5 | BACK during scan, then re-enter and start again | Returns to menu and can reacquire without stale worker/handle | **PARTIAL — operator confirms BACK and re-entry after scan; BACK DURING active scan and new scan still OPEN** |
 | I6 | External firmware I²C mutex contention, **only with an independently safe, verified owner** | BUSY/refusal; no arbitrary pin takeover or deadlock | BLOCKED: safe real owner fixture needed |
 | I7 | Force probe timeout/fault **only with a safe fixture** | Distinguish non-ACK from transport fault where HAL permits; no leak | BLOCKED: safe fault fixture needed |
-| I8 | Repeat STOP and reopen after successful and empty scans | No stuck BUSY, no inherited stale result, no reboot | NOT TESTED |
+| I8 | Repeat STOP and reopen after successful and empty scans | No stuck BUSY, no inherited stale result, no reboot | **PARTIAL — re-entry after empty scan PASS; STOP/repeated runs with ACK still OPEN** |
 
 ## Gate 3 — PA4 1-Wire DS18B20
 
@@ -181,10 +181,27 @@ Use one independently verified, compatible, externally VDD-powered **3.3 V** DS1
 
 | ID | Check | Pass condition | Status |
 | --- | --- | --- | --- |
-| W1 | Enter `COMM → 1-Wire Temp` with no sensor | Correct NONE/no-sensor result; no pin leak | NOT TESTED |
+| W1 | Enter `COMM → 1-Wire Temp` with no sensor | Correct NONE/no-sensor result; no pin leak | **PASS (visible behavior) — operator confirms NONE and BACK; low-level pin-lease validation not independently proven** |
 | W2 | Read real DS18B20 | Plausible measured reading + valid scratchpad CRC; no simulated result | NOT TESTED |
 | W3 | STOP during conversion, BACK, reopen, read again | Cancellation and resource recovery | NOT TESTED |
 | W4 | Legacy capture/PWM/UART/Logger active | App-local conflict is blocked safely; no false ownership claims | NOT TESTED |
+
+### 2026-10-14 — first matched-FAP physical no-peripheral acceptance (operator-reported)
+
+After [exact matched FAP COM7 upload](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38611756627)
+(SHA256 `9a276e6caa8173a03382d1b6ae7e163ddd535a878264084423c67f66deb6c881`),
+the operator explicitly reported **"hepsi çalışıyor pass"** for
+three immediately preceding test sets: `v1.8DEV` badge + root
+`MEASURE, OUTPUT, RECORDS, COMM, INFO`, I2C Explorer
+`READY`/no `FW API` + empty-bus `NONE` and BACK/re-entry,
+and 1-Wire Temp no-sensor `NONE` + BACK. Mark F1–F3, I1–I2,
+and W1 (user-visible subset) PASS. I5/I8 are **PARTIAL** because
+cancellation *during* scan was not explicitly demonstrated;
+I3 actual 7-bit ACK, I6 contention, I7 fault, W2 CRC sensor,
+W3 mid-conversion STOP and W4 coexistence are **NOT tested**.
+This report does not claim successful sensor connection, firmware-wide
+GPIO arbitration, or every remaining v1.8 acceptance requirement.
+Firmware About build string still has not been separately photographed.
 
 ## Gate 4 — Regression of earlier Stable features
 
