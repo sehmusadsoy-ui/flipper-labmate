@@ -134,7 +134,8 @@ static void test_probe_error_and_restart(void) {
     assert(c.scan.status == LabMateI2cScanError && c.error_pending);
     assert(!labmate_i2c_control_start(&c, &next));
     assert(labmate_i2c_control_release_done(&c, token));
-    assert(c.state == LabMateI2cControlBusy && !c.bus_held);
+    /* A real probe fault is ERROR, not mutex contention BUSY. */
+    assert(c.state == LabMateI2cControlFailed && !c.bus_held);
     assert(labmate_i2c_control_start(&c, &next) && next != token);
     assert(c.scan.scanned_count == 0U && !c.stop_requested);
     assert(labmate_i2c_control_acquire_done(&c, next, false));
