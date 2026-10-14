@@ -12,8 +12,8 @@ int main(void) {
         {LabMateToolGpio, LabMateToolFrequency, LabMateToolPulse, LabMateToolCounter, LabMateToolButton},
         {LabMateToolGenerator, LabMateToolAlerts, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
         {LabMateToolLogger, LabMateToolHistory, LabMateToolProfiles, LabMateToolInvalid, LabMateToolInvalid},
-        {LabMateToolAbout, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
         {LabMateToolUart, LabMateToolI2c, LabMateToolOneWire, LabMateToolInvalid, LabMateToolInvalid},
+        {LabMateToolAbout, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
     };
     /* User-mandated root order: ABOUT stays in INFO, COMM is below INFO.
      * Keep enum IDs stable for previously stored Profiles and menu routes. */
