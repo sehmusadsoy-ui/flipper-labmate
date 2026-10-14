@@ -251,6 +251,8 @@ typedef struct {
     uint8_t history_first_row_len;
 
     LabMateUart uart; /* USART external GPIO 13/14, no TIM1/TIM2 ownership */
+    LabMateCommOwner comm_owner; /* local exclusive I2C/1Wire sessions */
+    LabMateOneWireHw thermometer; /* external PA4, no OTG auto-power */
 
     LabMateProfileStore profiles;
     uint8_t profile_active_copy; /* 0=a, 1=b, 255=none */
