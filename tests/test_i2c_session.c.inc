@@ -7,6 +7,7 @@ typedef struct {
     uint32_t acquire_calls, release_calls, probe_calls, max_timeout;
     bool grant;
     bool cancel_early;
+    bool cancel_during_acquire;
     uint8_t cancel_after;
     uint8_t fail_address;
     uint8_t seen[LABMATE_I2C_ADDR_COUNT];
@@ -35,6 +36,7 @@ static void release(void* c) { ((Fake*)c)->release_calls++; }
 static bool cancelled(void* c) {
     const Fake* f = c;
     return f->cancel_early ||
+           (f->cancel_during_acquire && f->acquire_calls != 0U) ||
            (f->cancel_after != 0 && f->probe_calls >= f->cancel_after);
 }
 static LabMateI2cSessionOps ops(Fake* f) {
@@ -101,6 +103,29 @@ int main(void) {
     assert(control.state == LabMateI2cControlFailed);
     assert(f.probe_calls == 33U && f.release_calls == 1U);
     assert(!control.bus_held);
+
+    /* STOP while a contended, bounded mutex wait times out is CANCELLED,
+     * not a misleading transport fault; no unowned bus is released. */
+    memset(&f, 0, sizeof(f));
+    f.cancel_during_acquire = true;
+    callbacks = ops(&f);
+    labmate_i2c_control_reset(&control);
+    assert(labmate_i2c_session_execute(&control, &callbacks));
+    assert(control.state == LabMateI2cControlCancelled);
+    assert(f.acquire_calls == 1U && !f.probe_calls && !f.release_calls);
+    assert(!control.bus_held && !control.probe_inflight);
+
+    /* STOP can also race a SUCCESSFUL bounded acquisition: do not
+     * probe, and release the newly owned bus exactly once. */
+    memset(&f, 0, sizeof(f));
+    f.cancel_during_acquire = true;
+    f.grant = true;
+    callbacks = ops(&f);
+    labmate_i2c_control_reset(&control);
+    assert(labmate_i2c_session_execute(&control, &callbacks));
+    assert(control.state == LabMateI2cControlCancelled);
+    assert(f.acquire_calls == 1U && !f.probe_calls && f.release_calls == 1U);
+    assert(!control.bus_held && !control.probe_inflight);
 
     puts("I2C bounded transport lifecycle: ACK/STOP/BUSY/FAULT/release PASS (HOST ONLY)");
     return 0;
