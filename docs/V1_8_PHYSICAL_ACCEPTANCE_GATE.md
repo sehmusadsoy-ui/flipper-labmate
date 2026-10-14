@@ -353,9 +353,16 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   rejected a deliberately tampered FAP and rejected `-Apply`
   with missing prior DEV FAP backup **before any USB call**.
   No Flipper or hardware device was modified by CI.
-- [ ] **Operator install and physical ESP32 traffic with D=0** remain
-  OPEN before lifting the UART acceptance blocker. Source queue
-  increase alone is not proof of no-loss physical UART performance.
+- [x] **Operator reports successful FAP-only USB installer command**:
+  PowerShell printed `SUCCESS: runfap.py exited 0 and requested app launch.`
+  and `LABMATE UARTFIX FAP INSTALL COMMAND PASS. Confirm actual app launch on screen.`
+  The script's preflight was designed to verify the pinned artifact and
+  preserve the previous development FAP. This confirms USB installer exit
+  status and app-launch request; it is **not yet independent proof** that
+  Flipper visibly launched the new app. No firmware flash was requested.
+- [ ] **Actual post-install Flipper screen confirmation and fresh ESP32
+  115200 stress test with D=0** remain OPEN. Source and installation
+  changes alone cannot close the existing D=52 device regression.
 
 ## Stable release boundary
 
