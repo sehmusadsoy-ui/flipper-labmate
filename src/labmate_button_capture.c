@@ -56,6 +56,7 @@ void labmate_button_capture_start(LabMateApp* app) {
     labmate_button_snapshot(&app->button_irq, &app->button_stats);
     app->capture_pin_index = app->gpio_index;
     app->capture_owner = LabMateCaptureButton;
+    app->button_session_started = true;
     app->button_active = true;
     furi_hal_gpio_add_int_callback(pin, labmate_button_irq, app);
     furi_hal_gpio_enable_int_callback(pin);
