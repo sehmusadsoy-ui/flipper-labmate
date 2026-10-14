@@ -19,6 +19,8 @@ on:
       - "tests/test_i2c_control.c.inc"
       - "tests/test_i2c_present.c.inc"
       - "tests/test_i2c_session.c.inc"
+      - "scripts/check_v18_onewire_codec.py"
+      - "tests/test_onewire_ds18b20.c.inc"
       - "tests/test_resource_policy.c.inc"
       - "tests/test_comm_resource.c.inc"
       - "tests/test_navigation.c.inc"
@@ -75,6 +77,15 @@ jobs:
 
       - name: Guard v1.8 Counter STOP/RESUME semantics
         run: python3 scripts/check_v18_counter_resume.py
+
+      - name: Native DS18B20 decoder, real PA4 owner and no-auto-power source gates
+        run: |
+          set -euo pipefail
+          python3 scripts/check_v18_onewire_codec.py
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc -x c \
+            src/labmate_onewire_ds18b20.c tests/test_onewire_ds18b20.c.inc \
+            -o /tmp/labmate-onewire-codec
+          /tmp/labmate-onewire-codec
 
       - name: Native I2C bounded address scan, control and result page models
         run: |
