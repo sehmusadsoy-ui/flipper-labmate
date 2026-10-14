@@ -394,6 +394,8 @@ jobs:
             if ($text.Contains($forbidden)) { throw "Preparation script unexpectedly installs: $forbidden" }
           }
           Write-Host 'One-command PowerShell download/verify-only negative gate PASS; NO USB.'
+          # The deliberate rejection leaves LASTEXITCODE=1; reset it after the assertion.
+          $global:LASTEXITCODE = 0
 
   publish_v17_stable:
     name: Finalize verified v1.7 draft as Stable
