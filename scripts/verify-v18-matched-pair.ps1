@@ -42,7 +42,7 @@ try {
         throw 'Unexpected number of binary SHA256 entries.'
     }
     foreach ($line in $lines) {
-        if ($line -cnotmatch '^([A-Fa-f0-9]{64})\s+\*?(labmate\.fap|firmware\.dfu|firmware-update\.tgz)) {
+        if ($line -cnotmatch '^([A-Fa-f0-9]{64})\s+\*?(labmate\.fap|firmware\.dfu|firmware-update\.tgz)$') {
             throw 'Unexpected checksum manifest entry.'
         }
         $hash = $Matches[1]
