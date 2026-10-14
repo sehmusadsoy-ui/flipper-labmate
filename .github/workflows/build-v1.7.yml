@@ -44,6 +44,8 @@ on:
       - "scripts/install-labmate.ps1"
       - "scripts/install-v17-from-github.ps1"
       - "scripts/test-v17-installer-mock.ps1"
+      - "scripts/verify-v18-matched-pair.ps1"
+      - "scripts/test-v18-pair-verify-mock.ps1"
       - "scripts/install-from-github.ps1"
       - "application.fam"
       - "src/labmate_generator.c"
@@ -370,6 +372,13 @@ jobs:
           $ErrorActionPreference = 'Stop'
           & ./scripts/test-v17-installer-mock.ps1
           if ($LASTEXITCODE -ne 0) { throw 'v1.7 installer mock regressions failed' }
+
+      - name: Verify v1.8 matched firmware-FAP pair WITHOUT USB or firmware changes
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & ./scripts/test-v18-pair-verify-mock.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'Development-pair preflight mock failed' }
 
   publish_v17_stable:
     name: Finalize verified v1.7 draft as Stable
