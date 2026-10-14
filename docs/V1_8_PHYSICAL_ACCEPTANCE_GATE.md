@@ -285,6 +285,17 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   firmware/FAP pair. Earlier real peripheral evidence is historical;
   current matched-pair signal tests are still OPEN.
 
+### 2026-10-14 — PWM Studio custom-frequency control: physical PASS
+
+- [x] Operator-reported `PWM CUSTOM PASS` for the exact staged
+  no-external-load test: PWM Studio STOP frequency preset and duty
+  edits; long-OK CUSTOM editor, frequency and step adjustments;
+  BACK cancels; re-enter editor and OK saves; PWM RUN, live duty
+  change, OK STOP and BACK with no freeze/reboot.
+- [ ] PA7 waveform frequency, duty-cycle and switching accuracy
+  measured on external hardware remain OPEN. This PASS covers
+  device UI, edit/cancel/save and state transitions only.
+
 ## Stable release boundary
 
 Only after **all required** software, matched-firmware and safe physical acceptance gates are reported and verified may a revised `v1.8` Stable asset be considered. Historical source `v1.8` tag provenance must remain immutable; document exact old and replacement source/FAP SHA256, review release asset updates explicitly, then redownload and independently verify the remote asset. No v1.8.1 or v1.9 feature work until the original v1.8 completion decision is satisfied.
