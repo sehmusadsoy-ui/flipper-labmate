@@ -1,0 +1,130 @@
+name: Verify FULL MNTM-012 to LabMate v1.8DEV candidate (NO FLASH)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - ".github/workflows/check-v18-full-012-upgrade-package.yml"
+      - "scripts/check_v18_full_update_bundle.py"
+      - "scripts/patch_momentum_i2c_timeout.py"
+      - "src/labmate_i2c_*"
+      - "application.fam"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  review_full_update:
+    name: Build and audit full Momentum 012 migration (NO USB)
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: LabMate development source
+        uses: actions/checkout@v4
+        with:
+          path: labmate
+          persist-credentials: false
+
+      - name: Exact Momentum development source
+        uses: actions/checkout@v4
+        with:
+          repository: Next-Flip/Momentum-Firmware
+          ref: d3f89dfe2ef6b01839201598e9be1590cba80322
+          path: momentum-src
+          persist-credentials: false
+
+      - name: Installed MNTM-012 release source for upgrade comparison
+        uses: actions/checkout@v4
+        with:
+          repository: Next-Flip/Momentum-Firmware
+          ref: mntm-012
+          path: momentum-012
+          persist-credentials: false
+
+      - name: Compare radio and option-byte policy; apply exact tested patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C momentum-src rev-parse HEAD)" = "d3f89dfe2ef6b01839201598e9be1590cba80322"
+          test "$(git -C momentum-012 rev-parse HEAD)" = "e1784e7418d8b074e971983ceb6fef0f37e52ae4"
+          cmp momentum-012/scripts/ob.data momentum-src/scripts/ob.data
+          for key in COPRO_CUBE_VERSION COPRO_STACK_BIN COPRO_STACK_TYPE COPRO_OB_DATA; do
+            before="$(grep -E "^${key} = " momentum-012/fbt_options.py)"
+            after="$(grep -E "^${key} = " momentum-src/fbt_options.py)"
+            test "$before" = "$after"
+            echo "MNTM012 C2/option-byte source setting MATCH: $after"
+          done
+          python3 labmate/scripts/patch_momentum_i2c_timeout.py momentum-src
+          python3 labmate/scripts/patch_momentum_i2c_timeout.py momentum-src --apply
+          git -C momentum-src diff --check
+          echo "SOURCE SETTINGS MATCH; still not physical flash evidence."
+
+      - name: Stage single genuine LabMate app
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p momentum-src/applications_user/labmate/src
+          cp labmate/application.fam labmate/labmate_10px.png momentum-src/applications_user/labmate/
+          cp labmate/src/*.c labmate/src/*.h momentum-src/applications_user/labmate/src/
+
+      - name: Compile full updater, radio stack, SD resources and matched real FAP (NO FLASH)
+        shell: bash
+        working-directory: momentum-src
+        timeout-minutes: 40
+        env:
+          FBT_GIT_SUBMODULE_SHALLOW: "1"
+        run: |
+          set -euo pipefail
+          # No flash_usb, selfupdate.py, runfap.py, or release.
+          ./fbt copro_dist updater_package fap_labmate
+          test -s build/f7-firmware-C/firmware.dfu
+          test -s build/f7-firmware-C/.extapps/labmate.fap
+          readelf -Ws build/f7-firmware-C/firmware.elf | awk '
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_i2c_external_acquire_timeout" {found=1}
+            END {exit !found}
+          '
+          mapfile -t tgzs < <(find dist -type f -name '*.tgz' -print)
+          test "${#tgzs[@]}" -eq 1
+          python3 ../labmate/scripts/check_v18_full_update_bundle.py \
+            "${tgzs[0]}" build/f7-firmware-C/firmware.dfu \
+            lib/stm32wb_copro/firmware/stm32wb5x_BLE_Stack_light_fw.bin
+          echo "FULL UPDATER AND MATCHED LABMATE COMPILE/AUDIT PASS; NO FLASH."
+
+      - name: Checksums and provenance for separate development artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dev-full-candidate
+          cp momentum-src/build/f7-firmware-C/.extapps/labmate.fap dev-full-candidate/labmate.fap
+          cp momentum-src/build/f7-firmware-C/firmware.dfu dev-full-candidate/firmware.dfu
+          mapfile -t tgzs < <(find momentum-src/dist -type f -name '*.tgz' -print)
+          test "${#tgzs[@]}" -eq 1
+          cp "${tgzs[0]}" dev-full-candidate/firmware-full-update.tgz
+          (
+            cd dev-full-candidate
+            sha256sum labmate.fap firmware.dfu firmware-full-update.tgz > SHA256SUMS.txt
+            sha256sum -c SHA256SUMS.txt
+          )
+          printf 'LabMate commit: %s\n' "$(git -C labmate rev-parse HEAD)" > dev-full-candidate/PROVENANCE.txt
+          printf 'Momentum base: %s\n' "$(git -C momentum-src rev-parse HEAD)" >> dev-full-candidate/PROVENANCE.txt
+          printf 'Installed Momentum012 source: %s\n' "$(git -C momentum-012 rev-parse HEAD)" >> dev-full-candidate/PROVENANCE.txt
+          printf 'Actions run: %s\n' "$GITHUB_RUN_ID" >> dev-full-candidate/PROVENANCE.txt
+          cat > dev-full-candidate/READ_ME_FIRST.txt <<'EOF'
+          LABMATE DEVELOPMENT — FULL MOMENTUM UPDATER WITH MATCHED FAP.
+          NOT A RELEASE. DO NOT FLASH. NO PHYSICAL ACCEPTANCE/RESTORE TEST.
+          Includes SD resources and a C2 radio stack, and MAY apply the
+          option-byte policy from the exact Momentum development source.
+          Requires separate operator backup, source and device review.
+          Never mix this matched FAP with unpatched Momentum firmware.
+          EOF
+          echo "DEV TEST ARCHIVE MADE: NO DEVICE INTERACTION."
+
+      - name: Archive for review ONLY (not a release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: v18DEV-FULL-MNTM012-REVIEW-DO-NOT-FLASH
+          path: dev-full-candidate/
+          retention-days: 7
+          if-no-files-found: error
