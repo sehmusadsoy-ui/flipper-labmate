@@ -60,7 +60,7 @@ pages = re.findall(
     r'\[LabMateTool\w+\]\s*=\s*\{\s*"([^"]+)",\s*"([^"]+)",'
     r'\s*"([^"]+)",\s*"([^"]+)",\s*\}', UI,
 )
-assert len(pages) == 13, f"Expected 13 About tool guides; got {len(pages)}"
+assert len(pages) == 14, f"Expected 14 About tool guides; got {len(pages)}"
 assert '"PWM Studio"' in NAV, "Menu must display PWM Studio"
 assert '"Signal Generator"' not in NAV, "Obsolete menu label returned"
 assert '"PWM STUDIO"' in UI, "About tool guide must say PWM STUDIO"
