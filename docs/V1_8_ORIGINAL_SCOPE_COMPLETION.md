@@ -29,8 +29,8 @@ No standalone preview FAP is an acceptable feature substitute.
 | v1.6 code/UI/peripheral architecture | App/driver/GUI/SD/input modules and app-local capture owner implemented | Firmware-wide exclusive resource safety across unrelated system services is not yet proven |
 | v1.7 PWM/Counter/Button/Alerts | Implemented, physical functional smoke; Button STOP/RESUME improvement integrated in this working branch | Calibrated PWM, mechanical contact bounce, exhaustive 3.3V extremes |
 | v1.8 UART | Implemented and external-peer tested | Physical RX DROP and calibrated baud |
-| v1.8 I²C Explorer | **UNFINISHED**: closed unmerged research PR #8 has address scan/results/lifecycle models and disabled production UI | Known 3.3V peripheral and actual device detection, timeouts/STOP/exit |
-| v1.8 optional 1-Wire | **UNFINISHED**: closed unmerged research PR #9 has CRC/temp decoder and a mock ownership session | Known supported DS18B20 sensor and actual temperature if feasible |
+| v1.8 I²C Explorer | **UNFINISHED:** 112-address read-only scan, view/worker lifecycle and injected bounded transport are now compiled/tested in the integrated development FAP; **real HAL bus acquire is NOT CONNECTED** | Known 3.3V peripheral, safe acquire with true cancellation and device detection |
+| v1.8 optional 1-Wire | **REAL DRIVER CODE INTEGRATED, HARDWARE TEST PENDING:** PA4 1-Wire host reset/convert/wait/read, scratchpad CRC/temp decoding, no auto OTG, COMM UI and BACK/STOP resource cleanup compile in actual LabMate | Known 3.3 V externally powered single DS18B20 test, pin collision and measured temperature |
 
 ## Menu policy (fixed)
 
@@ -66,9 +66,13 @@ INFO/COMM positions and titles. Do not move About into COMM.
   STOP does not release the active owner. Portable tests PASS in
   [CI 38558631375](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38558631375).
   This is *not yet wired to real drivers or a global firmware lock*.
-- [ ] Connect this model to real I²C / 1-Wire driver start, error,
-  STOP/BACK and final teardown, then test interoperability with
-  Profiles/CSV and existing instruments on device.
+- [x] Connect local COMM owner gate to actual PA4 1-Wire driver
+  START and all STOP/BACK/exit cleanup paths. Direct HAL-backed
+  one-shot DS18B20 implemented and compiled; firmware-wide arbitration
+  cannot be inferred from app-local exclusivity.
+- [ ] Connect I²C to a **verified** timed external bus acquisition;
+  existing Momentum API still has unbounded mutex locking. Test new
+  instruments against Profiles/CSV and other tools on physical Flipper.
 - [ ] A firmware-wide lock claim requires a real exported HAL
   owner/lock contract or verified firmware change. App-local flags
   alone never guarantee global ownership.
@@ -80,9 +84,15 @@ INFO/COMM positions and titles. Do not move About into COMM.
 - [ ] Establish a technically supported, *bounded/cancellable*
   external I²C bus acquisition or formally justified safe ownership
   protocol for the exact installed Momentum firmware/API.
-- [ ] Add real read-only hardware address scan using
-  `furi_hal_i2c_is_device_ready` with a per-transaction timeout,
-  true 7-bit address encoding, actual hit list and coherent status.
+- [x] Integrate original pure address scanner, result pages, per-probe
+  lifecycle and **transport-injected worker** for true 0x08..0x77
+  addresses, ACK/NACK/FAULT, bounded probe contract, STOP and exactly
+  one matching owner release. All native tests + SDK FAP CI PASS in
+  [38561645642](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38561645642).
+- [ ] Provide a genuinely **bounded external I²C HAL owner** and wire
+  actual `furi_hal_i2c_is_device_ready` calls to that owner, then
+  connect live scan to COMM screen. No unsafe direct HAL acquire while
+  its mutex wait can remain `FuriWaitForever`.
 - [ ] STOP/BACK and bus release must survive contention/error
   without GUI deadlock or orphaned worker. Host+SDK tests first.
 - [ ] Physical known-safe **3.3V** hardware scan (device/no-device)
@@ -97,14 +107,25 @@ INFO/COMM positions and titles. Do not move About into COMM.
   supports alternative external GPIO pins (PC0, PC1, PC3, PB2, PB3,
   PA4, PA6, PA7), not just shared PB14/`gpio_ibutton`.
   Changing to a non-PB14 pin needs an appropriate 3.3V pull-up.
-- [ ] Select a non-iButton pin safely excluded from other
-  LabMate instruments, and audit background firmware owner paths.
-- [ ] Implement real one-wire host reset, read, conversion,
-  scratchpad CRC and timeout, no surprise OTG/power enable.
-- [ ] Stable sensor UI, BUSY/ERROR/STOP/BACK with actual measurements.
-- [ ] Physical safe sensor test is separately pending.
-  Optional means a genuine feasibility verdict is allowed,
-  *not* declaring decoder-only code a completed sensor reader.
+- [x] Select **external PA4**, not PB14, and enforce LabMate-local
+  capture/PWM/UART/Logger ownership exclusions (no firmware-wide GPIO
+  arbiter exported); physical shared-owner cases still require review.
+- [x] Implement actual 1-Wire host reset, 0xCC/0x44 conversion,
+  nonblocking 800 ms conservative wait, 0xCC/0xBE scratchpad read,
+  CRC8, signed temperature, unknown-power-on 85 C refusal,
+  no OTG auto-power and immediate STOP cleanup.
+- [x] Connect single integrated `COMM → 1-Wire Temp` screen with
+  READY/RUN/DONE/NONE/BUSY/ERROR/PWR/STOP, explicit OK and BACK.
+  INFO → About remains immediately above COMM.
+- [x] Verified exact-source [CI 38563555290](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38563555290)
+  on source `a40333dd2e8d2abccaa176ebd63f9037e7f5ee9b`:
+  true Momentum SDK/FAP compilation, native CRC/temp tests, UI/menu
+  guards, ownership and Windows installer mock PASS. FAP SHA256
+  `afa88deb4d64752d9305708909663216778a17f7d8473611bb3c20513b2a1794`.
+  **This proves SDK compilation, not physical sensor reading.**
+- [ ] Physical known-safe 3.3 V, externally VDD-powered *single*
+  DS18B20 test on PA4 with suitable pull-up; BUSY, STOP/BACK and
+  existing-instrument regression pending. This is not yet Stable.
 
 ### R — in-place v1.8 final release gate (NOT YET OPEN)
 
