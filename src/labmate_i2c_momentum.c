@@ -1,6 +1,13 @@
 #include "labmate_i2c_momentum.h"
 #include <furi_hal_i2c.h>
 
+/* A patched Momentum SDK advertises the exported timed-lock API.
+ * Stock SDK builds remain a safe no-op without manual build flags. */
+#if defined(FURI_HAL_I2C_HAS_EXTERNAL_ACQUIRE_TIMEOUT) && \
+    !defined(LABMATE_MOMENTUM_TIMED_I2C_API)
+#define LABMATE_MOMENTUM_TIMED_I2C_API 1
+#endif
+
 #ifdef LABMATE_MOMENTUM_TIMED_I2C_API
 /* A missing exported symbol must fail linking; never fall back to an
  * unbounded lock or direct GPIO register manipulation. */
