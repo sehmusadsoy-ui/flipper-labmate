@@ -332,14 +332,26 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   drain succeeds. Static UART guard also checks both bounds.
   [Source CI 38635609797](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38635609797)
   **SUCCESS**, but this is NOT a physical UART throughput result.
-- [ ] The independent patched-firmware-matched FAP build
-  [FULL CI 38635690935](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38635690935)
-  must prove exact old firmware DFU SHA256
-  `e69f717df28f2ff5a417a69ac212f242cf2725a48ce8c4e31296ceb4a0157ec0`,
-  APPCHK and new FAP digest before any operator-reviewed FAP install.
-  Existing tested firmware need not be reflashed for a FAP-only fix.
-  No installation has been attempted for the queue mitigation.
-  An actual new-FAP ESP32 stress run with `D=0` is still required.
+- [x] [FULL pinned patched firmware/FAP build 38635690935](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38635690935)
+  **SUCCESS** on exact source `f24a08640e7938cfaf7000a8f5b3e470c9b6ad14`;
+  compiled firmware.dfu digest `e69f717df28f2ff5a417a69ac212f242cf2725a48ce8c4e31296ceb4a0157ec0`
+  is byte-identical to the firmware image previously flashed successfully.
+  Real patched-SDK LabMate APPCHK passed; pinned new `labmate.fap`
+  SHA256 `eaadc85aba2c8a78074dc97935dc6d71de982582054f8addbeea227428b4f0cf`
+  independently verified from actual GitHub artifact
+  `11927944759` together with provenance and all ZIP file digests.
+- [x] Added `scripts/install-v18-uart-queue-dev-fap.ps1`:
+  exact pinned Actions run/source, three fixed artifact digests,
+  6-file allow-list, checksum manifest and provenance checks;
+  default only stages/verifies, `-Apply` refuses unless the previous
+  LabMate DEV FAP is backed up and SHA-correct, SDK USB tooling exists
+  and operator manually confirms YUKLE. Only installs
+  `/ext/apps/Tools/labmate.fap`; it does NOT flash firmware.
+- [ ] Real Windows preflight CI
+  [38637386364](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38637386364)
+  and **physical install/new ESP32 traffic with D=0** must pass
+  before lifting the UART acceptance blocker. Do not claim the
+  1024-byte source change already resolved the physical 52-byte drop.
 
 ## Stable release boundary
 
