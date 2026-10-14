@@ -292,6 +292,51 @@ and About's final position. Do not move About into COMM.
   No physical firmware startup, I2C, DS18B20, or legacy tools accepted.
   Physical test gates: [V1_8_PHYSICAL_ACCEPTANCE_GATE.md](V1_8_PHYSICAL_ACCEPTANCE_GATE.md).
 
+### 2026-10-14 — ACTUAL full MNTM-012 migration firmware/FAP CI PASS
+
+- [x] The operator reported **official MNTM-012 rollback updater + prior
+  LabMate v1.8 Stable FAP `ROLLBACK READY PASS`**: both publicly
+  published SHA256 values matched, downloaded to
+  `Downloads\LabMate-Rollback-MNTM012`.
+  An actual device recovery/restore remains NOT TESTED.
+- [x] [FULL migration CI run 38611756627](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38611756627) **SUCCESS**
+  on exact LabMate source `370bc048dc21d7d58ee69c8e762f5c29705a1c1c`.
+  Actual pinned Momentum (18 Aug 2026) full updater + C2 radio +
+  **SD resources** + one integrated genuine LabMate FAP compiled.
+  `APPCHK`, compiled bounded-I2C firmware ELF symbol, real DFU identity
+  within TGZ and read-only full-package checks PASS.
+- [x] CI downloaded the **OFFICIAL MNTM-012** updater, matched public
+  vendor SHA256
+  `1d9e1e600c8680172ff6f6913ca0b12484e7d45adbc72a66552e534784c8c1a7`,
+  and proved the actual radio payload **byte-identical** to the new
+  full updater (radio SHA256
+  `134a9af448d2bc35995600c9e95723a387c144c2d1adea671086f16f95d327df`).
+  Option-byte reference, compare mask and write mask in the two
+  firmware update manifests are **identical**, not zero: the official
+  manifests can apply option-byte policy. This is an on-disk format
+  check, not safe-to-flash physical proof.
+- [x] Test-only GitHub Actions artifact `11918707230`, named
+  `v18DEV-FULL-MNTM012-REVIEW-DO-NOT-FLASH`, archived matched files
+  and provenance; independently retrieved and unpacked its ZIP
+  (6 entries, all hashes MATCH):
+  - `labmate.fap` SHA256
+    `9a276e6caa8173a03382d1b6ae7e163ddd535a878264084423c67f66deb6c881`.
+  - `firmware.dfu` SHA256
+    `e69f717df28f2ff5a417a69ac212f242cf2725a48ce8c4e31296ceb4a0157ec0`.
+  - `firmware-full-update.tgz` SHA256
+    `5e3267d780a56178e8ff40cb81ca2f6562e81d4d07daf703ab1c7db34e967d0d`.
+  - GitHub artifact ZIP SHA256
+    `fc581a79e999b64b853095a87c0075d8894856f132299e13f9fef4c1922e4493`.
+- [x] New `scripts/prepare-v18-full012-test.ps1` prepares **only**
+  the pinned exact successful full artifact through PowerShell
+  and validates the fixed three independent binary digests, manifest,
+  provenance and the GitHub run success/source. It NEVER flashes.
+- [ ] **NO physical update or on-device PASS has occurred.**
+  Before loading custom firmware, run the PowerShell preflight on the
+  operator's own verified files, ensure original backups remain available
+  and review recovery/physical testing.
+  v1.8 Stable and main remain unchanged. v1.9 is frozen.
+
 ### R — in-place v1.8 final release gate (NOT YET OPEN)
 
 - [ ] Original v1.8 functional code gates above are satisfied or
