@@ -21,7 +21,7 @@ SCREEN_HANDLERS = "\n".join(
     (SRC / filename).read_text(encoding="utf-8") for filename in (
         "labmate_input_menu.c", "labmate_input_profiles.c",
         "labmate_input_history.c", "labmate_input_measure.c",
-        "labmate_input_output.c"))
+        "labmate_input_output.c", "labmate_input_onewire.c"))
 MAIN = "\n".join((COORDINATOR, INPUT_DISPATCH, SCREEN_HANDLERS,
                   CAPTURE_SESSION, VIEW_COORDINATOR, DEFERRED_IO))
 MEASUREMENTS = (SRC / "labmate_measurements.c").read_text(encoding="utf-8")
