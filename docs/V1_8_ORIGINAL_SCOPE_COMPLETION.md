@@ -331,11 +331,7 @@ and About's final position. Do not move About into COMM.
   the pinned exact successful full artifact through PowerShell
   and validates the fixed three independent binary digests, manifest,
   provenance and the GitHub run success/source. It NEVER flashes.
-- [ ] **NO physical update or on-device PASS has occurred.**
-  Before loading custom firmware, run the PowerShell preflight on the
-  operator's own verified files, ensure original backups remain available
-  and review recovery/physical testing.
-  v1.8 Stable and main remain unchanged. v1.9 is frozen.
+- [x] **Physical firmware update handoff and matched LabMate FAP upload occurred on COM7 (2026-10-14)** with exact artifact digests and user-retained backups: full MNTM-012 replacement TGZ transferred, update command accepted, device rebooted, actual pinned SHA256 `9a276e6caa8173a03382d1b6ae7e163ddd535a878264084423c67f66deb6c881` FAP transferred to `/ext/apps/Tools/labmate.fap` and launch requested. Operator subsequently confirmed app `v1.8DEV`, root order with INFO at bottom, empty I2C `READY→NONE` and no-sensor 1-Wire `NONE` with responsive BACK. These are FIRST physical PASS observations, recorded gate-by-gate in [V1_8_PHYSICAL_ACCEPTANCE_GATE.md](V1_8_PHYSICAL_ACCEPTANCE_GATE.md); **not** real ACK/CRC sensor or comprehensive regression. Device About build string and physical recovery remain OPEN. v1.8 Stable and main remain unchanged. v1.9 is frozen.
 
 ### R — in-place v1.8 final release gate (NOT YET OPEN)
 
