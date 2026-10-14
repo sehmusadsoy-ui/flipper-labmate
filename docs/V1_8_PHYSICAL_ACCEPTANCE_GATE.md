@@ -296,6 +296,20 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   measured on external hardware remain OPEN. This PASS covers
   device UI, edit/cancel/save and state transitions only.
 
+### 2026-10-14 — UART Terminal control regression: physical PASS
+
+- [x] Operator reported `UART UI PASS` after the requested
+  no-connected-peripheral test: baud selection 9600/38400/115200,
+  ending at 115200; UART OK RUN with no unexpected busy/error;
+  DOWN opens TX editor with default AT and edit controls;
+  BACK returns to RX without sending; OK STOP, BACK to menu;
+  re-enter UART and selected 115200 baud preserved, with no
+  persistent BUSY/ERR.
+- [ ] ESP32 3.3 V peer RX/TX throughput, actual TX send/echo,
+  error/drop accounting and repeated RUN/STOP under traffic on
+  the **new firmware/FAP pair** remain OPEN. Earlier ESP32 tests
+  on prior images do not substitute for this regression.
+
 ## Stable release boundary
 
 Only after **all required** software, matched-firmware and safe physical acceptance gates are reported and verified may a revised `v1.8` Stable asset be considered. Historical source `v1.8` tag provenance must remain immutable; document exact old and replacement source/FAP SHA256, review release asset updates explicitly, then redownload and independently verify the remote asset. No v1.8.1 or v1.9 feature work until the original v1.8 completion decision is satisfied.
