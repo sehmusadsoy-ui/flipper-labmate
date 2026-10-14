@@ -32,7 +32,9 @@ bool labmate_i2c_session_execute(
         (void)labmate_i2c_control_request_stop(control);
     if(!labmate_i2c_control_acquire_done(control, generation, acquired))
         return false;
-    if(!acquired) return false;
+    /* A STOP-triggered acquisition timeout is a successful cancellation,
+     * distinct from an unsolicited BUSY/failure. */
+    if(!acquired) return control->state == LabMateI2cControlCancelled;
 
     /* Fail closed if STOP arrived during the bounded acquisition. */
     if(labmate_i2c_session_cancel(ops))
