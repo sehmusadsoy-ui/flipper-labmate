@@ -7,7 +7,7 @@
 #include <stdio.h>
 
 int main(void) {
-    const uint8_t expected_sizes[] = {5U, 2U, 3U, 1U, 3U};
+    const uint8_t expected_sizes[] = {5U, 2U, 3U, 3U, 1U};
     const uint8_t expected_tools[][LABMATE_NAV_MAX_CHILDREN] = {
         {LabMateToolGpio, LabMateToolFrequency, LabMateToolPulse, LabMateToolCounter, LabMateToolButton},
         {LabMateToolGenerator, LabMateToolAlerts, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
