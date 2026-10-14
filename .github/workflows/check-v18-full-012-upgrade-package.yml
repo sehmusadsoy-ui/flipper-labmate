@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/check-v18-full-012-upgrade-package.yml"
       - "scripts/check_v18_full_update_bundle.py"
+      - "tests/test_v18_full_update_bundle.py"
       - "scripts/check_v18_full_vs_mntm012.py"
       - "scripts/patch_momentum_i2c_timeout.py"
       - "src/labmate_i2c_*"
