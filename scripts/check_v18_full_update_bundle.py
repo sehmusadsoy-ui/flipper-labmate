@@ -82,7 +82,7 @@ def audit(tgz: Path, firmware: Path, radio: Path, max_total: int = 90_000_000):
         # Do NOT claim zero option-byte changes or risk-free flashing.
         for key in ("OB reference", "OB mask", "OB write mask"):
             value = fields.get(key, "")
-            if not value or len(value.split()) != 8:
+            if not value or len(value.split()) != 128:
                 raise ValueError("unverified option-byte configuration: " + key)
             if any(len(x) != 2 or any(c not in "0123456789abcdefABCDEF" for c in x)
                    for x in value.split()):
