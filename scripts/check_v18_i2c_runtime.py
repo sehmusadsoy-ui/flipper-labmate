@@ -41,7 +41,8 @@ assert "labmate_i2c_runtime_poll(app->i2c);" in app
 
 for s in ("LabMateToolI2c", "LabMateToolOneWire", "LabMateToolUart"):
     assert s in menu
-assert '"MEASURE", "OUTPUT", "RECORDS", "INFO", "COMM"' in menu
+assert '"MEASURE", "OUTPUT", "RECORDS", "COMM", "INFO"' in menu
+assert menu.index('"COMM", "INFO"') >= 0
 assert "LabMateScreenI2c" in routing
 assert "labmate_input_i2c(app, event, work);" in routing
 assert "labmate_i2c_runtime_start(" in handler
