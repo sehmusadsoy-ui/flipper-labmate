@@ -269,6 +269,22 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
 - [x] Profiles: operator reported `PROFILES PASS` for inspecting S1-S3, LOAD from a saved slot, canceling SAVE and DELETE confirmations with BACK, and checking profile preservation after reopening.
 - [ ] Actual deletion of a disposable CSV, independent CSV content review, and actual profile SAVE/DELETE/persistence mutations remain open. Preserve existing data.
 
+### 2026-10-14 — MEASURE suite navigation and capture lifecycle: physical PASS
+
+- [x] **Operator-reported `MEASURE PASS` with external GPIO disconnected**
+  after the exact on-device four-part regression:
+  GPIO Monitor switches pins, OK HOLD/LIVE and BACK;
+  Frequency Meter switches HIGH PB3 / LOW PC1, OK HOLD/LIVE,
+  UP stats reset and BACK; Pulse Analyzer LIVE/HOLD/LIVE,
+  UP STATS and BACK; afterward, I2C Explorer displays READY
+  and completes an empty-bus scan with NONE. No stuck BUSY
+  or unresponsive application was reported.
+- [ ] This is UI/control and LabMate-local resource reuse acceptance;
+  it does not re-establish frequency, pulse width/duty, edge
+  counting or GPIO electrical accuracy for the newly installed
+  firmware/FAP pair. Earlier real peripheral evidence is historical;
+  current matched-pair signal tests are still OPEN.
+
 ## Stable release boundary
 
 Only after **all required** software, matched-firmware and safe physical acceptance gates are reported and verified may a revised `v1.8` Stable asset be considered. Historical source `v1.8` tag provenance must remain immutable; document exact old and replacement source/FAP SHA256, review release asset updates explicitly, then redownload and independently verify the remote asset. No v1.8.1 or v1.9 feature work until the original v1.8 completion decision is satisfied.
