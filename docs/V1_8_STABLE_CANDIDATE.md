@@ -75,9 +75,13 @@ advancement to v1.9 before actual v1.8 Stable publication.
   new independent burst byte count or physical queue overflow:
   no fresh R/D/E values or `BURST_END` evidence were submitted for
   this RC1. Basic external RX/TX and UI resource recovery passed.
-- [ ] **C5:** Regression smoke: PWM starts/stops; Counter
-  STOP/RESUME is sane; Profiles and existing CSV History open;
-  no unexpected deleted data or resource conflict.
+- [x] **C5 PASS — user-reported Test 18-R3, 5/5**, 2026-10-14:
+  R3-1 PWM Studio START/STOP; R3-2 Event Counter START/STOP/RESUME;
+  R3-3 existing Profiles S1 opens (no edit); R3-4 historical CSV Log
+  History entries list/open (no delete); R3-5 no freeze, unexpected
+  BUSY or application crash during this smoke. This is a functional
+  operator report; no independent calibrated PWM waveform measurement
+  or exhaustive SD failure injection is inferred.
 - [ ] **C6:** Final exact-source Stable `v1.8` label/manifest build
   and post-build installation checksum / 4-point device smoke PASS,
   only then tag/publish v1.8 Stable and update README to Stable.
@@ -96,7 +100,8 @@ that final line alone. The physical RC1 label is user-reported PASS.
 Test 18-R2 external UART 4/4 PASS was subsequently reported;
 see below. PWM output validation, Counter STOP/RESUME, Profile storage
 and History record rechecks are still pending for this RC1.
-Stable publication remains blocked by C5/C6.
+Test 18-R3 5/5 PASS was subsequently reported. Stable publication
+remains blocked by the final exact-source/binary and device gate C6.
 
 ## Test 18-R2 — external UART, 4/4 PASS (operator report 2026-10-14)
 
@@ -128,6 +133,27 @@ and should not be conflated with this RC1 pass.
 **Current device acceptance:** R1 6/6 + R2 4/4 functional items PASS
 (operator-reported). C5 current RC1 regressions and final C6 Stable
 source/binary/device acceptance still outstanding.
+
+## Test 18-R3 — existing instrument regression, 5/5 PASS (2026-10-14)
+
+User's exact operator report:
+`R3-1=PASS; R3-2=PASS; R3-3=PASS; R3-4=PASS; R3-5=PASS`.
+Mapping to the five previously prescribed checks:
+
+- R3-1 PWM Studio START / STOP: PASS.
+- R3-2 Event Counter START / STOP / RESUME: PASS.
+- R3-3 Profiles existing S1 opens without modifying saved values: PASS.
+- R3-4 previously saved CSV Log History entries list and open without
+  deletion: PASS.
+- R3-5 no freeze or unexpected error while checking these: PASS.
+
+**RC1 physical functional acceptance: 18-R1 6/6 + 18-R2 4/4 +
+18-R3 5/5 = 15/15 user-reported PASS.** No claim of independent
+waveform calibration, synthetic SD failure tests or fresh ST2 R/D/E
+burst statistics. **Do not publish yet:** the final `v1.8`-label
+binary is different from the RC1 FAP and must itself pass exact
+source SDK/host CI, checksum check, USB installation, and a distinct
+last-device smoke before Stable publication (C6).
 
 ## Removing old demonstrations (not required for build)
 
