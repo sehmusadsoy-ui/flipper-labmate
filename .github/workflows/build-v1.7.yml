@@ -21,6 +21,8 @@ on:
       - "tests/test_i2c_session.c.inc"
       - "scripts/check_v18_onewire_codec.py"
       - "tests/test_onewire_ds18b20.c.inc"
+      - "tests/test_onewire_hw.c"
+      - "tests/onewire_host_stubs/**"
       - "tests/test_resource_policy.c.inc"
       - "tests/test_comm_resource.c.inc"
       - "tests/test_navigation.c.inc"
@@ -86,6 +88,12 @@ jobs:
             src/labmate_onewire_ds18b20.c tests/test_onewire_ds18b20.c.inc \
             -o /tmp/labmate-onewire-codec
           /tmp/labmate-onewire-codec
+          cc -std=c11 -Wall -Wextra -Werror -pedantic \
+            -Itests/onewire_host_stubs -Isrc -x c \
+            src/labmate_comm_resource.c src/labmate_onewire_ds18b20.c \
+            src/labmate_onewire_hw.c tests/test_onewire_hw.c \
+            -o /tmp/labmate-onewire-hw
+          /tmp/labmate-onewire-hw
 
       - name: Native I2C bounded address scan, control and result page models
         run: |
