@@ -33,7 +33,7 @@ void labmate_input_button(LabMateApp* app, InputEvent event, LabMateDeferredWork
                         labmate_button_capture_start(app);
                     }
                 } else if(event.key == InputKeyUp) {
-                    /* Preserve measurements during RUN; clear them while stopped. */
+                    /* RESET works only during STOP; RUN cannot erase counters. */
                     labmate_button_capture_reset(app);
                 } else if(event.key == InputKeyLeft) {
                     labmate_button_capture_change_quiet(app, -1);
