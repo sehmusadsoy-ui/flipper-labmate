@@ -668,11 +668,27 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   finished **SUCCESS**: source guard, development FAP compile,
   Windows installer mock PASS; unrelated old v1.7 Stable finalize
   job SKIPPED. CI never wrote to operator's Flipper.
-- [ ] Operator Windows **stage-only** result pending. The new EXITFIX
-  FAP is NOT installed, does not inherit previous UARTFIX device
-  passes, and must have real Flipper focused exit regression before
-  any Stable decision. The pinned DFU **need not** be reflashed.
-  Previous backup data/firmware and Stable remain untouched.
+- [x] **Operator Windows stage-only PASS, 2026-10-15:** Windows
+  PowerShell executed the pinned `prepare-v18-exitfix-fap.ps1`
+  from dev source commit `08b385f41a9664a7ffffcdbe94b7ccf56f94dfe7`.
+  Actual output: `SHA256 PASS: previous UARTFIX rollback FAP`,
+  `SHA256 PASS: labmate.fap`, `SHA256 PASS: firmware.dfu`,
+  `SHA256 PASS: firmware-full-update.tgz`,
+  `SHA256 MANIFEST PASS`, `PROVENANCE PASS`, then
+  `LABMATE V1.8 EXITFIX STAGE PASS. NO DEVICE CHANGE.`.
+  New candidate path:
+  `C:\Users\sehmu\Downloads\LabMate-v18DEV-EXITFIX\labmate.fap`;
+  new FAP SHA-256
+  `7a76f626f34a65059d9536fa2cd52b2639f4d1038a9b5c69291fa28d5e4f63be`,
+  pinned firmware DFU SHA-256
+  `e69f717df28f2ff5a417a69ac212f242cf2725a48ce8c4e31296ceb4a0157ec0`.
+  Exit code guard did not raise an error. **No USB install** was
+  attempted; previous UARTFIX backup was independently verified.
+- [ ] **Physical EXITFIX FAP install + targeted regression STILL OPEN.**
+  Do not change firmware or install the DFU/TGZ. Obtain a separate
+  explicit operator decision before single `labmate.fap` update.
+  Previously reported UARTFIX device passes do not transfer automatically
+  to the new EXITFIX artifact. Stable/main remain untouched.
 
 ## Stable release boundary
 
