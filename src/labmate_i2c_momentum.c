@@ -8,11 +8,10 @@
 #define LABMATE_MOMENTUM_TIMED_I2C_API 1
 #endif
 
-#ifdef LABMATE_MOMENTUM_TIMED_I2C_API
-/* A missing exported symbol must fail linking; never fall back to an
- * unbounded lock or direct GPIO register manipulation. */
-extern bool furi_hal_i2c_external_acquire_timeout(uint32_t timeout_ms);
-#endif
+/* The patched furi_hal_i2c.h (or the host HAL stub) declares the
+ * timeout API. Do not redeclare it: Momentum compiles with -Werror and
+ * -Wredundant-decls. A missing firmware export must still fail FAP
+ * linking; never fall back to unbounded locking or direct GPIO access. */
 
 static bool labmate_i2c_momentum_acquire(void* ctx, uint32_t timeout_ms) {
     if(!ctx) return false;
