@@ -15,6 +15,7 @@ on:
       - "scripts/check_v18_i2c.py"
       - "scripts/check_v18_i2c_control_model.py"
       - "scripts/check_v18_i2c_present.py"
+      - "scripts/check_v18_i2c_runtime.py"
       - "tests/test_i2c_scan.c.inc"
       - "tests/test_i2c_control.c.inc"
       - "tests/test_i2c_present.c.inc"
@@ -96,6 +97,9 @@ jobs:
             src/labmate_onewire_hw.c tests/test_onewire_hw.c \
             -o /tmp/labmate-onewire-hw
           /tmp/labmate-onewire-hw
+
+      - name: Validate integrated I2C worker, STOP and truthful firmware requirement
+        run: python3 scripts/check_v18_i2c_runtime.py
 
       - name: Native I2C bounded address scan, control and result page models
         run: |
