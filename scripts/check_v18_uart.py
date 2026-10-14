@@ -20,6 +20,10 @@ for fn in ("expansion_is_connected(", "expansion_disable(", "expansion_enable(",
     assert fn in uart, fn
 assert "furi_stream_buffer_send(uart->stream, &data, 1U, 0U)" in uart
 assert "uart->dropped++;" in uart
+# ESP32 115200 stress originally lost 52 bytes in a 256-byte queue.
+# Mitigation retains visible overflow accounting; it is NOT a physical PASS.
+assert "#define LABMATE_UART_RX_QUEUE 1024U" in read("labmate_uart.h")
+assert "for(uint8_t round = 0; round < 16U; ++round)" in uart
 callback = uart.split("static void uart_rx_callback(", 1)[1].split("bool labmate_uart_start(", 1)[0]
 for forbidden in ("canvas_", "storage_", "furi_mutex_", "furi_hal_serial_tx("):
     assert forbidden not in callback, forbidden
