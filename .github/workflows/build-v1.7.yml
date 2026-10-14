@@ -10,6 +10,8 @@ on:
       - "scripts/check_v17_ui_layout.py"
       - "scripts/check_repo_layout.py"
       - "scripts/check_v18_coordinator.py"
+      - "scripts/prepare-v18-exitfix-fap.ps1"
+      - "scripts/check_v18_exitfix_stage.py"
       - "scripts/check_v18_counter_resume.py"
       - "scripts/check_v18_button_resume.py"
       - "scripts/check_v18_i2c.py"
@@ -83,6 +85,9 @@ jobs:
 
       - name: Guard v1.8 coordinator and deferred I/O boundaries
         run: python3 scripts/check_v18_coordinator.py
+
+      - name: Guard pinned stage-only v1.8 FAP preparation (no USB)
+        run: python3 scripts/check_v18_exitfix_stage.py
 
       - name: Guard v1.8 Counter STOP/RESUME semantics
         run: python3 scripts/check_v18_counter_resume.py
