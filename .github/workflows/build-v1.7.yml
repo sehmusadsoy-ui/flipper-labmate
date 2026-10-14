@@ -46,6 +46,7 @@ on:
       - "scripts/test-v17-installer-mock.ps1"
       - "scripts/verify-v18-matched-pair.ps1"
       - "scripts/prepare-v18-dev-test.ps1"
+      - "scripts/prepare-v18-full012-test.ps1"
       - "scripts/test-v18-pair-verify-mock.ps1"
       - "scripts/install-from-github.ps1"
       - "application.fam"
@@ -396,6 +397,36 @@ jobs:
           Write-Host 'One-command PowerShell download/verify-only negative gate PASS; NO USB.'
           # The deliberate rejection leaves LASTEXITCODE=1; reset it after the assertion.
           $global:LASTEXITCODE = 0
+
+      - name: Parse and fail-closed test PowerShell full Momentum candidate preparer (NO USB)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path ./scripts/prepare-v18-full012-test.ps1).Path,
+            [ref]$null,
+            [ref]$errors
+          ) | Out-Null
+          if ($errors.Count -ne 0) {
+            throw "PowerShell syntax failed: $($errors | Out-String)"
+          }
+          $none = Join-Path $env:RUNNER_TEMP 'Missing-Full-Pair'
+          New-Item -ItemType Directory -Path $none -Force | Out-Null
+          & ./scripts/prepare-v18-full012-test.ps1 -VerifyOnly -Directory $none -FullUpdateSha256 ('b' * 64)
+          if ($LASTEXITCODE -eq 0) {
+            throw 'PowerShell preparer incorrectly accepted missing full development package.'
+          }
+          $scriptText = Get-Content -Raw ./scripts/prepare-v18-full012-test.ps1
+          foreach ($bad in @('selfupdate.py', 'runfap.py', 'flash_usb')) {
+            # A warning/comment about lack of install is permitted, but code
+            # must NEVER invoke the dangerous direct commands.
+            if ($scriptText -match ('(?im)^\s*(&|cmd\.exe|python)\s+.*' + [regex]::Escape($bad))) {
+              throw "Preparer contains firmware/app install command: $bad"
+            }
+          }
+          $global:LASTEXITCODE = 0
+          Write-Host 'PowerShell FULL candidate parser/fail-closed PASS; NO USB OR FLASH.'
 
   publish_v17_stable:
     name: Finalize verified v1.7 draft as Stable
