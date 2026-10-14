@@ -1,10 +1,10 @@
 # LabMate Master Roadmap — v1.0 to v2.0
 
-**Status:** Updated 2026-10-14: v1.7 remains the currently **published** Stable while v1.8 final release publication is pending. v1.8 modular coordinator (PR #5), Counter STOP/RESUME (PR #6) and real UART (PR #7) are integrated; **RC1 15/15 and final v1.8 FAP 4/4 on-device acceptance PASS**, SDK/Windows CI and COM7 USB installation PASS. I²C and optional 1-Wire explicitly DEFERRED by operator due unverified firmware-wide bus/pin ownership. v1.9 remains PAUSED until the v1.8 GitHub Release actually exists.  
-**Current published Stable:** [v1.7 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7), original tag `d0e1bc6a95b257841533f0aa8745e3a79bbc8dcd`; updated, on-device-tested PWM Studio label FAP from source `0aeb0ca7ceba092c8adb6e44add0a2212cae1a74`, SHA256 `A0B305E5FD8D71C85C51480EE06A8B7E5EBD5BEE0E82935B0ED3B7E74E7EBCEA`. No new version or tag was created.  
-**Previous Stable fallback:** [v1.6.1 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1), [v1.6 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6), and older unchanged releases.  
+**Status:** Updated 2026-10-14: **[LabMate v1.8 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8) is PUBLISHED**, not a draft. Modular coordinator (PR #5), Counter STOP/RESUME (PR #6), and real UART Terminal (PR #7) are integrated into the actual single `labmate.fap`. RC1 15/15 and exact final v1.8 FAP 4/4 operator-reported on-device PASS; Momentum/Windows CI, COM7 USB installer and published-asset SHA256 all PASS. I²C Explorer and optional 1-Wire explicitly DEFERRED, not delivered. v1.9 may now proceed, but its Draft PR #10 has not been merged.  
+**Current published Stable:** [v1.8 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8), tag source `02b05639364d6dd71f5eb70456eca379c59218cb`, exact published FAP SHA256 `119c44bb854030a73a60fa205d38770bf77f048bb166ab379a03135c1de5f3b0`, published 2026-10-14. CI [38546662091](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38546662091) and final functional device tests 4/4 PASS following RC1 15/15.  
+**Previous Stable fallback:** [v1.7 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7) (original v1.7 tag `d0e1bc6a95b257841533f0aa8745e3a79bbc8dcd`, later PWM Studio label asset adjustment remains untouched), [v1.6.1 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1), [v1.6 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6), and older unchanged releases.  
 **Previous pre-release:** [v1.7 RC1](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7-rc1) remains available at unchanged source `d55eec03`.
-**Validation:** v1.7 refactored Stable Candidate passed 36/36 user-reported device regressions (7B screenshots); exact final `v1.7` FAP passed Test 7G 4/4 device smoke; Test 7H PowerShell `-Channel RC1 -VerifyOnly` passed; approved Stable release CI passed. Published `-Channel Stable -VerifyOnly` and actual `-Channel Stable -Port COM7` USB installation both passed on Windows 2026-10-12; a separate post-reinstall on-screen/data smoke passed 4/4 user-reported Flipper checks (v1.7 label, PWM STOP, Profile S1, historical CSV). No new version was created. **Current development: v1.8 Communication Tools**, coordinator refactor, Counter STOP/RESUME and first UART milestone all integrated into `main`; I²C/1-Wire are explicitly deferred rather than passed. v1.8 final source at `02b05639364d6dd71f5eb70456eca379c59218cb` passed CI and Flipper 4/4 after RC1 15/15; FAP SHA256 `119c44bb854030a73a60fa205d38770bf77f048bb166ab379a03135c1de5f3b0`. The GitHub Stable **publication** is still pending; only after publication may work resume on **v1.9 Logic Scope and Signal Compare**, then **v2.0 Ultimate**.
+**Validation summary:** v1.7 historical tests remain recorded unchanged. For the current v1.8 Stable: coordinator R1–R10, Counter C1–C8, external UART peer checks, RC1 Test 18-R1 6/6, 18-R2 4/4, 18-R3 5/5, and final `v1.8`-labeled 18-FINAL F1–F4 **4/4 user-reported PASS**. Combined new release physical smoke 19/19. Exact-source Momentum CI from `02b05639364d6dd71f5eb70456eca379c59218cb` yielded published `labmate.fap` hash `119c44bb854030a73a60fa205d38770bf77f048bb166ab379a03135c1de5f3b0`; main post-merge CI generated the identical FAP SHA256. GitHub Release and tag/asset checks confirmed public, non-prerelease, two checksum-valid assets. Known scope deferrals and uncalibrated measurements remain explicit. Next **v1.9 Logic Scope and Signal Compare** (not yet implemented), then **v2.0 Ultimate**.
 
 ## Non-negotiable sequential Stable gate (operator requirement — 2026-10-14)
 
@@ -17,7 +17,7 @@ features are not silently waived. Any proposed scope deferral requires the
 operator's explicit decision before release. Never call blocked hardware
 integration "PASS"; scope removal must be explicit and listed as DEFERRED.
 
-**Present gate: v1.8 Stable functional acceptance COMPLETE; GitHub tag/release PUBLICATION PENDING.**
+**Present gate: v1.8 Stable COMPLETE and PUBLISHED 2026-10-14.**
 The accepted UART Terminal implementation is merged into development
 `main` and device-tested. The user approved a **scope reduction**
 on 2026-10-14 after review of the blocked I²C and optional 1-Wire
@@ -28,14 +28,16 @@ requires unresolved shared PB14 pin ownership. Both are DEFERRED
 until technically justified later. The actual single `labmate.fap`
 passed source CI, checksum-verified COM7 install and physical final
 4/4 test after the 15/15 RC1 smoke. Publish **only that tested artifact**
-with the documented exclusions. [Candidate evidence](docs/V1_8_STABLE_CANDIDATE.md)
+with the documented exclusions. Published as the verified `v1.8` Release;
+[tag + checksum-verified download](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8). [Acceptance evidence](docs/V1_8_STABLE_CANDIDATE.md)
 · [release notes](docs/releases/RELEASE_NOTES_v1.8.md).
 
-**Do not resume v1.9 implementation, standalone preview production, new
-version publication or v2.0 work until v1.8 Stable is accepted and
-published.** Existing v1.9 Draft PR #10 remains PAUSED and unmerged.
-Historical I²C PR #8 and 1-Wire PR #9 remain unmerged and DEFERRED.
-The **v1.8 Stable publication** is the only active release work.
+**The sequential Stable gate is now satisfied for v1.8**: next planned
+v1.9 development may resume as normal work on the integrated LabMate
+app, not in demo FAPs. Existing v1.9 Draft PR #10 remains unmerged
+and must be reassessed against actual firmware safety before use.
+Historical I²C PR #8 and 1-Wire PR #9 remain closed/unmerged/DEFERRED.
+No v2.0 feature work starts before v1.9 Stable.
 Do not require or distribute further demonstration-only FAP downloads
 to substitute for production application features. New work must target
 the actual `labmate.fap` under controlled v1.8 development and regression
@@ -200,8 +202,8 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
 | v1.4 | Frequency and pulse MIN/MAX, signal-loss behavior, UI stability | Stable published |
 | **v1.5** | **Data Logger, CSV recording and Log History** | **Stable published 2026-10-09** |
 | v1.6 | Code/UI refactor | Stable published; v1.6.1 remains a previous Stable fallback |
-| **v1.7** | **PWM Studio and Counter** | **Stable published 2026-10-12; current Stable** |
-| v1.8 | Coordinator cleanup → Counter resume → real UART; I²C + optional 1-Wire DEFERRED by operator | **Final v1.8 FAP CI/COM7 and device PASS** (RC1 15/15 + final 4/4); GitHub tag/release publication PENDING |
+| **v1.7** | **PWM Studio and Counter** | **Previous Stable published 2026-10-12; retained for rollback** |
+| **v1.8** | **Coordinator cleanup → Counter resume → real UART; I²C + optional 1-Wire DEFERRED by operator** | **CURRENT STABLE published 2026-10-14. Tested exact FAP and SHA256 release assets VERIFIED; RC1 15/15 + final 4/4 PASS** |
 | v1.9 | Logic Scope and Signal Compare | Planned |
 | v2.0 | LabMate Ultimate / Signal Doctor | Planned |
 
