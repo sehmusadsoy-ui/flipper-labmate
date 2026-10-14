@@ -19,6 +19,7 @@ typedef enum {
     LabMateI2cControlAwaitRelease,
     LabMateI2cControlFinished,
     LabMateI2cControlCancelled,
+    LabMateI2cControlBusy, /* bounded external mutex acquisition refused */
     LabMateI2cControlFailed,
 } LabMateI2cControlState;
 
