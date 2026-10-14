@@ -7,10 +7,12 @@
 /* HAL-free, event-driven lifecycle model. NOT a thread, hardware lock,
  * asynchronous cancellation implementation, or GPIO driver.
  *
- * IMPORTANT: A worker stuck in furi_hal_i2c_acquire(FuriWaitForever)
- * CANNOT receive cancellation or report acquire_done. This model therefore
- * stays AwaitAcquire (stop_requested=true) and forbids app teardown/restart.
- * Production bus integration is blocked until that hazard is solved.
+ * Stock Momentum's furi_hal_i2c_acquire(FuriWaitForever) is not a safe
+ * cancellable implementation; production therefore fails closed on stock
+ * firmware. On the matched patched SDK, the driver uses an independently
+ * bounded acquire of the SAME external firmware mutex. STOP is still only
+ * a request until the worker returns, releases and joins. This source
+ * contract has CI compilation evidence, not physical runtime validation.
  */
 typedef enum {
     LabMateI2cControlIdle = 0,
