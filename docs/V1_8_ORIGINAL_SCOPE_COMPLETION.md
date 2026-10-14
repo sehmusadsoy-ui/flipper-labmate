@@ -34,12 +34,12 @@ No standalone preview FAP is an acceptable feature substitute.
 
 ## Menu policy (fixed)
 
-**MEASURE → OUTPUT → RECORDS → INFO (About) → COMM**.
-About stays in the second-last root group; COMM is physically below
-it as the last root group. Future I²C and possible 1-Wire children
-belong under COMM. Preserve the stable tool IDs, profile storage
-format and 128×64 scrolling. Portable navigation test asserts the
-INFO/COMM positions and titles. Do not move About into COMM.
+**MEASURE → OUTPUT → RECORDS → COMM → INFO (About)**.
+INFO/ABOUT is always the **last root group and bottommost menu item**;
+COMM is directly above it and contains UART, I²C Explorer and 1-Wire Temp.
+Preserve historical tool IDs, profile storage format and 128×64 scrolling.
+Portable navigation tests assert the COMM/INFO positions, child mapping
+and About's final position. Do not move About into COMM.
 
 ## Code gates
 
