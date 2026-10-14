@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/check-v18-full-windows-powershell-preflight.yml"
       - "scripts/prepare-v18-full012-test.ps1"
+      - "scripts/install-v18-full012-dev-firmware.ps1"
   workflow_dispatch:
 
 permissions:
@@ -40,3 +41,19 @@ jobs:
           }
           Write-Host 'ACTUAL MNTM012 FULL FIRMWARE AND FAP VERIFIED ON WINDOWS: PASS.'
           Write-Host 'NO USB, NO FIRMWARE FLASH, NO INSTALL, NO RELEASE.'
+
+      - name: Test real full updater Windows TAR extraction and checks (STAGE ONLY)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $out = Join-Path $env:RUNNER_TEMP 'Full-MNTM012-Candidate'
+          & ./scripts/install-v18-full012-dev-firmware.ps1 -BundleDirectory $out
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Real full updater extraction / manifest validation failed.'
+          }
+          $stages = @(Get-ChildItem -LiteralPath $out -Directory | Where-Object { $_.Name -like 'full-updater-stage-*' })
+          if ($stages.Count -ne 1) {
+            throw 'Full updater staging did not create exactly one new folder.'
+          }
+          Write-Host 'REAL FULL UPDATER STAGE/VERIFY PASS: NO COM, NO FLASH.'
+
