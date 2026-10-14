@@ -84,6 +84,44 @@ After obtaining the **specific official GitHub Actions artifact** and extracting
 
 The verifier rejects missing/mixed files, mismatched firmware/FAP SHA256, wrong pinned Momentum base, missing provenance, and wrong expected LabMate commit. It **never** contacts a USB/COM port, copies a FAP, or flashes firmware. A PASS establishes file self-consistency, **not GitHub download authenticity or physical compatibility**; confirm the artifact's official GitHub Actions origin separately. The mocked PowerShell rejection tests do not prove real hardware functionality.
 
+### FULL MNTM-012 migration pair — CI and Windows PASS (2026-10-14)
+
+The vendor's **official MNTM-012** update TGZ SHA256 matches the
+original release, and the pinned newer Momentum full update from
+[CI 38611756627](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38611756627)
+contains the **exact same C2 radio binary bytes** (SHA256
+`134a9af448d2bc35995600c9e95723a387c144c2d1adea671086f16f95d327df`).
+Its update manifest's **option-byte reference, mask and write mask** are
+also byte-equivalent to the official MNTM-012 updater. They are not
+all zero; no claims of risk-free physical flashing or restore are made.
+
+The **FULL** firmware-only **plus radio and SD resources** build passed,
+and the single genuine LabMate FAP `APPCHK` passed. The verified
+test-only artifact is
+[GitHub Actions artifact 11918707230](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38611756627/artifacts/11918707230)
+(7-day retention), pinned LabMate source commit
+`370bc048dc21d7d58ee69c8e762f5c29705a1c1c`.
+It contains:
+
+| Name | SHA256 |
+| --- | --- |
+| `labmate.fap` | `9a276e6caa8173a03382d1b6ae7e163ddd535a878264084423c67f66deb6c881` |
+| `firmware.dfu` | `e69f717df28f2ff5a417a69ac212f242cf2725a48ce8c4e31296ceb4a0157ec0` |
+| `firmware-full-update.tgz` | `5e3267d780a56178e8ff40cb81ca2f6562e81d4d07daf703ab1c7db34e967d0d` |
+
+Independently retrieved artifact ZIP and checked all six internal
+entries and hashes. The exact full update (not the earlier minimal
+test package) was also downloaded and verified by the **actual Windows
+PowerShell** preparer in [CI 38613472751](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38613472751):
+all three SHA256 checks and `LABMATE FULL MNTM012 PREPARE PASS`.
+**NO USB or firmware flash** occurred in CI.
+
+Windows operator preparation uses reviewed
+`scripts/prepare-v18-full012-test.ps1` with an exact frozen successful
+artifact ID, CI run, source SHA and all file SHA256 values.
+The full test package still requires controlled physical startup and
+on-device LabMate/COMM tests. A prepared updater is not acceptance.
+
 ## Gate 1 — Firmware startup and single-app sanity (after approved installation only)
 
 | ID | Check | Required evidence | Status |
