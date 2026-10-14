@@ -1,4 +1,4 @@
-/* Portable navigation tests: exhaustive access to all 13 tools.
+/* Portable navigation tests: exhaustive access to all 14 tools.
  * Do not include this host test in the firmware FAP build.
  */
 #include "labmate_navigation.h"
@@ -90,6 +90,6 @@ int main(void) {
             assert(start <= selected && selected < (uint8_t)(start + 3U));
         }
     }
-    puts("LabMate v1.6 navigation mapping/wrap: all 13 tools reachable once");
+    puts("LabMate v1.6 navigation mapping/wrap: all 14 tools reachable once");
     return 0;
 }
