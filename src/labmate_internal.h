@@ -255,6 +255,8 @@ typedef struct {
     LabMateUart uart; /* USART external GPIO 13/14, no TIM1/TIM2 ownership */
     LabMateCommOwner comm_owner; /* local exclusive I2C/1Wire sessions */
     LabMateOneWireHw thermometer; /* external PA4, no OTG auto-power */
+    LabMateI2cRuntime* i2c; /* worker-owned timed external PC0/PC1 bus */
+    uint8_t i2c_page;
 
     LabMateProfileStore profiles;
     uint8_t profile_active_copy; /* 0=a, 1=b, 255=none */
