@@ -196,7 +196,7 @@ Use one independently verified, compatible, externally VDD-powered **3.3 V** DS1
 | W1 | Enter `COMM → 1-Wire Temp` with no sensor | Correct NONE/no-sensor result; no pin leak | **PASS (visible behavior) — operator confirms NONE and BACK; low-level pin-lease validation not independently proven** |
 | W2 | Read real DS18B20 | Plausible measured reading + valid scratchpad CRC; no simulated result | NOT TESTED |
 | W3 | STOP during conversion, BACK, reopen, read again | Cancellation and resource recovery | NOT TESTED |
-| W4 | Legacy capture/PWM/UART/Logger active | App-local conflict is blocked safely; no false ownership claims | NOT TESTED |
+| W4 | Legacy capture/PWM/UART/Logger active | App-local conflict is blocked safely; no false ownership claims | **PARTIAL — real PWM RUN blocks 1-Wire (`BUSY`), PWM STOP restores no-sensor `NONE`; capture/UART/Logger conflicts OPEN** |
 
 ### 2026-10-14 — first matched-FAP physical no-peripheral acceptance (operator-reported)
 
@@ -214,6 +214,20 @@ W3 mid-conversion STOP and W4 coexistence are **NOT tested**.
 This report does not claim successful sensor connection, firmware-wide
 GPIO arbitration, or every remaining v1.8 acceptance requirement.
 Firmware About build string still has not been separately photographed.
+
+### 2026-10-14 — PWM local resource arbitration vs. I²C and 1-Wire
+
+- [x] **Operator physical PASS, GPIO disconnected:** PWM Studio OK to
+  `RUN` on PA7; BACK to root with PWM still running; I²C Explorer
+  OK refused with `BUSY`; 1-Wire Temp OK refused with `BUSY`.
+  Re-enter PWM Studio, OK `STOP`; I²C scan completed with empty-bus
+  `NONE` and 1-Wire READ completed with no-sensor `NONE`.
+  Operator replied **"pass"** to this exact seven-step procedure.
+  This verifies LabMate **app-local** PWM ownership checks and
+  release/reuse across tools. It does not establish cross-app
+  firmware-wide GPIO arbitration or PA7 waveform precision.
+- [ ] Additional clashes with UART, Logger, Counter, Button and
+  firmware subsystems, plus real PA7 output waveform, remain OPEN.
 
 ## Gate 4 — Regression of earlier Stable features
 
