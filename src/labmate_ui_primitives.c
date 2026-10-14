@@ -196,6 +196,7 @@ void ui_draw_menu_icon(Canvas* canvas, uint8_t item, uint8_t x, uint8_t y) {
     case LabMateToolButton: ui_icon_button(canvas, x, y); break;
     case LabMateToolAlerts: ui_icon_alerts(canvas, x, y); break;
     case LabMateToolUart: ui_icon_uart(canvas, x, y); break;
+    case LabMateToolOneWire: ui_icon_thermo(canvas, x, y); break;
     default: break;
     }
 }
