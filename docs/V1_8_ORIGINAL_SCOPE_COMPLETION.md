@@ -216,6 +216,15 @@ and About's final position. Do not move About into COMM.
   `labmate.fap`, matching `firmware.dfu`, `SHA256SUMS.txt`,
   `PROVENANCE.txt` and `READ_ME_FIRST.txt`. This is NOT a new
   Stable release, not a separate demo FAP and not an installation event.
+- [x] Follow-up exact matched build [CI 38582754108](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38582754108)
+  **PASS** on source `0195b9d4bbbd4d5480ef340a7b6d49479cb78b34`.
+  This run again built the full patched firmware and single integrated
+  LabMate FAP, verified both hashes and archived paired artifact
+  `11903867521`. Patched FAP SHA256
+  `9a276e6caa8173a03382d1b6ae7e163ddd535a878264084423c67f66deb6c881`.
+  The only source change after the previous matched binary was a
+  truthful comment clarification in the HAL-free control header;
+  neither run supplies physical device evidence.
 - [x] Added [physical acceptance gates](V1_8_PHYSICAL_ACCEPTANCE_GATE.md):
   exact-image pairing, independent firmware approval/rollback,
   real I2C3 ACK/NACK/STOP/BACK/BUSY, PA4 DS18B20 and old instruments.
