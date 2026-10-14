@@ -278,7 +278,8 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   verified (2026-10-15, see record below).
 - [x] Disposable S3 targeted DELETE/BACK cancel and app-restart
   persistence **physically PASS** (see S3 record below).
-- [ ] Flipper-side vs downloaded-byte checksum comparison remains open;
+- [x] Flipper-side vs downloaded-byte MD5 checksum equality
+  physical USB PASS for `log_0056.csv` on 2026-10-15;
   preserve S1/S2 and backups.
 
 ### 2026-10-14 — MEASURE suite navigation and capture lifecycle: physical PASS
@@ -509,11 +510,21 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   signal-absent sampling; not an electrical accuracy test.
 - [x] SHA-256 **of Windows-downloaded local file**:
   `1BE4426E638B2227AD69ED6D9CA78E82FB406DD8F3DF2196F112AC17015968C3`.
-  This establishes a local audit reference, **not** independent
-  equality with on-device checksum (not queried). CSV header,
-  structure, timing sequence and sample content are PASS; device
-  hash parity, arbitrary capture accuracy and durability under
-  power/storage faults remain untested.
+  This is a local SHA-256 audit reference; no matching
+  device-side SHA-256 was queried. CSV header, structure, timing
+  sequence and sample content are PASS; electrical capture accuracy
+  and durability under power/storage faults remain untested.
+- [x] **Device-vs-PC MD5 equality physical USB PASS, 2026-10-15:**
+  operator ran read-only official FlipperStorage `storage md5` for
+  `/ext/apps_data/labmate/log_0056.csv` over COM7, and independently
+  computed Python `hashlib.md5` on the locally downloaded file.
+  Both returned
+  `6c66004157cf7142eb7984441e7e4c18`;
+  printed `CSV DEVICE HASH MATCH PASS`, with PowerShell exit-code
+  guard not raising an error. The checksum equality confirms this
+  copy's bytes match by the device/host MD5 check. It does not
+  replace the separate SHA-256 local digest or imply a cryptographic
+  security guarantee under malicious collision attacks.
 
 ## Stable release boundary
 
