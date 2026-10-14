@@ -19,3 +19,4 @@ void draw_alerts(Canvas* canvas, LabMateApp* app);
 void draw_pulse(Canvas* canvas, LabMateApp* app);
 void draw_logger(Canvas* canvas, LabMateApp* app);
 void draw_uart(Canvas* canvas, LabMateApp* app);
+void draw_onewire(Canvas* canvas, LabMateApp* app);
