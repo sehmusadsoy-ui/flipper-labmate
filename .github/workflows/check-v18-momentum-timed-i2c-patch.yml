@@ -1,0 +1,50 @@
+name: Verify optional Momentum timed-I2C source patch (NO FLASH)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - "scripts/patch_momentum_i2c_timeout.py"
+      - ".github/workflows/check-v18-momentum-timed-i2c-patch.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source_patch:
+    name: Check exact Momentum source and bounded owner patch
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout LabMate source (patch script only)
+        uses: actions/checkout@v4
+        with:
+          path: labmate
+
+      - name: Checkout exact tested Momentum SDK firmware source
+        uses: actions/checkout@v4
+        with:
+          repository: Next-Flip/Momentum-Firmware
+          ref: d3f89dfe
+          path: momentum-src
+          persist-credentials: false
+
+      - name: Check script and verify read-only patch preconditions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile labmate/scripts/patch_momentum_i2c_timeout.py
+          python3 labmate/scripts/patch_momentum_i2c_timeout.py momentum-src
+
+      - name: Apply proof patch to ephemeral CI checkout ONLY
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 labmate/scripts/patch_momentum_i2c_timeout.py momentum-src --apply
+          git -C momentum-src diff --check
+          test "$(git -C momentum-src diff --name-only | wc -l)" -eq 3
+          grep -q "bool furi_hal_i2c_external_acquire_timeout" momentum-src/targets/furi_hal_include/furi_hal_i2c.h
+          grep -q "furi_mutex_acquire(furi_hal_i2c_bus_external_mutex" momentum-src/targets/f7/furi_hal/furi_hal_i2c.c
+          grep -q 'Function,+,furi_hal_i2c_external_acquire_timeout,_Bool,uint32_t' momentum-src/targets/f7/api_symbols.csv
+          echo "Source patch applicability PASS. This does NOT compile, flash or confirm the firmware API at runtime."
