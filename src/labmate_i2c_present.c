@@ -12,6 +12,7 @@ static LabMateI2cViewStatus labmate_i2c_view_resolve(const LabMateI2cControl* c)
     case LabMateI2cControlFinished:
         return c->scan.total_found == 0U ? LabMateI2cViewNoDevices : LabMateI2cViewResults;
     case LabMateI2cControlCancelled: return LabMateI2cViewCancelled;
+    case LabMateI2cControlBusy: return LabMateI2cViewBusy;
     case LabMateI2cControlFailed: return LabMateI2cViewFailed;
     default: return LabMateI2cViewFailed;
     }
@@ -56,6 +57,7 @@ const char* labmate_i2c_view_status_text(LabMateI2cViewStatus status) {
     case LabMateI2cViewResults: return "RESULTS";
     case LabMateI2cViewNoDevices: return "NO DEVICES";
     case LabMateI2cViewCancelled: return "CANCELLED";
+    case LabMateI2cViewBusy: return "BUSY";
     case LabMateI2cViewFailed: return "ERROR";
     default: return "ERROR";
     }
