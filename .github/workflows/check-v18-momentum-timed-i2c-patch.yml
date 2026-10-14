@@ -140,6 +140,16 @@ jobs:
           EOF
           echo "Checksum/provenance-only CI test pair prepared; NOT approved for installation."
 
+      - name: Reverify ACTUAL built pair with read-only Windows-compatible preflight
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $source = (git -C labmate rev-parse HEAD).Trim()
+          & ./labmate/scripts/verify-v18-matched-pair.ps1 -PairDirectory ./ci-matching-test-pair -ExpectedSourceSha $source
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Actual matched firmware/FAP preflight rejected the CI archive.'
+          }
+
       - name: Archive matching development pair (NOT A RELEASE)
         uses: actions/upload-artifact@v4
         with:
