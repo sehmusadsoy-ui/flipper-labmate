@@ -18,6 +18,7 @@ on:
       - "tests/test_i2c_scan.c.inc"
       - "tests/test_i2c_control.c.inc"
       - "tests/test_i2c_present.c.inc"
+      - "tests/test_i2c_session.c.inc"
       - "tests/test_resource_policy.c.inc"
       - "tests/test_comm_resource.c.inc"
       - "tests/test_navigation.c.inc"
@@ -94,6 +95,11 @@ jobs:
             src/labmate_i2c_present.c tests/test_i2c_present.c.inc \
             -o /tmp/labmate-i2c-present
           /tmp/labmate-i2c-present
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc -x c \
+            src/labmate_i2c_scan.c src/labmate_i2c_control.c \
+            src/labmate_i2c_session.c tests/test_i2c_session.c.inc \
+            -o /tmp/labmate-i2c-session
+          /tmp/labmate-i2c-session
 
       - name: Test v1.8 COMM application-local I2C / 1-Wire ownership exclusions
         run: |
