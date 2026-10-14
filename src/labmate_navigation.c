@@ -28,7 +28,7 @@ static const uint8_t group_tools[LabMateGroupCount][LABMATE_NAV_MAX_CHILDREN] = 
     {LabMateToolGenerator, LabMateToolAlerts, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
     {LabMateToolLogger, LabMateToolHistory, LabMateToolProfiles, LabMateToolInvalid, LabMateToolInvalid},
     {LabMateToolAbout, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
-    {LabMateToolUart, LabMateToolOneWire, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid}
+    {LabMateToolUart, LabMateToolI2c, LabMateToolOneWire, LabMateToolInvalid, LabMateToolInvalid}
 };
 
 uint8_t labmate_nav_group_size(uint8_t group) {
