@@ -1,0 +1,45 @@
+name: LabMate v1.8 UART FAP-only Windows preflight (NO USB)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - "scripts/install-v18-uart-queue-dev-fap.ps1"
+      - ".github/workflows/check-v18-uart-fap-windows-preflight.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify_uart_fap:
+    name: Verify real paired artifact, Windows stage and fail-closed install
+    runs-on: windows-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download pinned built FAP and verify exact hashes/provenance (NO USB)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $bundle = Join-Path $env:RUNNER_TEMP 'uartfix-stage'
+          & ./scripts/install-v18-uart-queue-dev-fap.ps1 -Directory $bundle
+          if ($LASTEXITCODE -ne 0) { throw 'Legitimate staging failed.' }
+          & ./scripts/install-v18-uart-queue-dev-fap.ps1 -Directory $bundle
+          if ($LASTEXITCODE -ne 0) { throw 'Repeated verification failed.' }
+
+          $tampered = Join-Path $env:RUNNER_TEMP 'uartfix-tampered'
+          New-Item -ItemType Directory -Path $tampered -Force | Out-Null
+          Copy-Item -Path (Join-Path $bundle '*') -Destination $tampered -Force
+          Add-Content -NoNewline -LiteralPath (Join-Path $tampered 'labmate.fap') -Value 'X'
+          & ./scripts/install-v18-uart-queue-dev-fap.ps1 -Directory $tampered
+          if ($LASTEXITCODE -eq 0) { throw 'Tampered FAP accepted.' }
+
+          # Missing old DEV backup must stop -Apply BEFORE USB/consent.
+          & ./scripts/install-v18-uart-queue-dev-fap.ps1 -Directory $bundle -Apply -PreviousDevFap (Join-Path $env:RUNNER_TEMP 'missing-previous.fap')
+          if ($LASTEXITCODE -eq 0) { throw 'Missing previous DEV FAP backup was accepted.' }
+          $global:LASTEXITCODE = 0
+          Write-Host 'WINDOWS UARTFIX FAP PREPARE + NEGATIVE GATES PASS. NO DEVICE MODIFIED.'
