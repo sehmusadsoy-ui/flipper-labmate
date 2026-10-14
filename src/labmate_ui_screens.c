@@ -646,12 +646,12 @@ void draw_button(Canvas* canvas, LabMateApp* app) {
         canvas_draw_str(canvas, 67, 51, value);
     }
 
+    const char* button_action = app->button_active ? "STOP" :
+        (app->button_session_started ? "RESUME" : "START");
     if(app->button_details_view) {
-        ui_footer_pair(canvas, "DOWN", "MAIN", "OK",
-                       app->button_active ? "STOP" : "START");
+        ui_footer_pair(canvas, "DOWN", "MAIN", "OK", button_action);
     } else {
-        ui_footer_pair(canvas, "DOWN", "MORE", "OK",
-                       app->button_active ? "STOP" : "START");
+        ui_footer_pair(canvas, "DOWN", "MORE", "OK", button_action);
     }
 }
 
