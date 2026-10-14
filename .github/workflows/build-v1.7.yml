@@ -13,6 +13,7 @@ on:
       - "scripts/check_v18_counter_resume.py"
       - "scripts/check_v18_button_resume.py"
       - "tests/test_resource_policy.c.inc"
+      - "tests/test_comm_resource.c.inc"
       - "tests/test_navigation.c.inc"
       - "tests/test_profiles.c.inc"
       - "tests/test_frequency_gate.c.inc"
@@ -67,6 +68,14 @@ jobs:
 
       - name: Guard v1.8 Counter STOP/RESUME semantics
         run: python3 scripts/check_v18_counter_resume.py
+
+      - name: Test v1.8 COMM application-local I2C / 1-Wire ownership exclusions
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc -x c \
+            src/labmate_comm_resource.c tests/test_comm_resource.c.inc \
+            -o /tmp/labmate-comm-resource-tests
+          /tmp/labmate-comm-resource-tests
 
       - name: Test portable GPIO / PA7 ownership policy
         run: |
