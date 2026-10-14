@@ -163,6 +163,16 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
   Missing physical contact, calibrated scope and destructive SD tests
   remain explicitly deferred.
 
+### v1.8 original-scope completion work — 2026-10-14
+
+- **Working branch:** `dev/v1.8-completion`; original public v1.8 Stable release remains unchanged; a revised final binary is NOT published.
+- **Button Analyzer:** tested STOP/RESUME maintenance code incorporated back into v1.8; native/source CI PASS. No independent `v1.8.1` release is planned.
+- **Menu:** INFO/About remains second-to-last root group, COMM last. `COMM → UART Terminal` and `COMM → 1-Wire Temp` are present in the new development FAP; existing IDs unaffected.
+- **I²C:** scan, worker lifecycle and 4-result-row model are integrated and pass host/SDK tests; **real I²C3 HAL acquisition/ACK discovery is NOT integrated** while the current unbounded external firmware lock remains.
+- **1-Wire:** real PA4 DS18B20 host conversion, 800ms wait, scratchpad CRC/temp decoder, status UI, explicit START, STOP and BACK cleanup compiled in actual LabMate FAP. No automatic OTG, no PB14. [SDK/host build PASS](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38563555290). **Actual safe sensor temperature reading not yet physically tested.**
+- **Resource ownership:** mutual exclusion for new COMM hardware inside LabMate is implemented; source review does not establish firmware-wide GPIO locks. Physical and cross-tool stress tests remain separate gates.
+- **v1.9 on HOLD** until genuine v1.8 remaining capability is completed/technically resolved and final operator acceptance done. Details: [v1.8 scope completion ledger](docs/V1_8_ORIGINAL_SCOPE_COMPLETION.md).
+
 ### v1.8 — Communication Tools
 
 - **Completed groundwork (PR #5, no release):** Split the old ~1,200-line
