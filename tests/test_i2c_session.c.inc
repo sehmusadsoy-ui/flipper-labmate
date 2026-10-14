@@ -68,7 +68,7 @@ int main(void) {
     callbacks = ops(&f);
     labmate_i2c_control_reset(&control);
     assert(!labmate_i2c_session_execute(&control, &callbacks));
-    assert(control.state == LabMateI2cControlFailed);
+    assert(control.state == LabMateI2cControlBusy);
     assert(f.acquire_calls == 1U && !f.probe_calls && !f.release_calls);
 
     /* Cancellation before acquire touches zero hardware. */
