@@ -53,7 +53,7 @@ assert len("OK") * GLYPH + 9 + len("RESUME") * GLYPH <= 60
 
 # Stable version text fits the same badge used by RC1; do not alter UI layout.
 assert 'ui_badge(canvas, 70, 1, 56, LABMATE_VERSION_TEXT, false);' in UI
-assert len("v1.8") * GLYPH + 8 <= 56
+assert len("v1.8DEV") * GLYPH + 8 <= 56
 
 # Entire help guide and its safety/credit page must remain readable.
 pages = re.findall(
