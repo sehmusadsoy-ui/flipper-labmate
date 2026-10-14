@@ -169,11 +169,23 @@ on-device LabMate/COMM tests. A prepared updater is not acceptance.
 | I1 | Enter `COMM → I2C Explorer` on **matching patched firmware** | READY, not `FW API`, no automatic scan | **PASS — operator confirms READY; scan only on OK** |
 | I2 | Scan an unconnected/known-idle bus | Completes with NONE/no ACK, never fabricates a hit, no freeze | **PASS — operator reports NONE, responsive UI on empty bus** |
 | I3 | Scan a known-safe peripheral with a confirmed 7-bit address | Correct real ACK address displayed; pagination does not change measurements | NOT TESTED |
-| I4 | Press OK STOP during scan | Returns to STOP/CANCELLED without deadlock and releases ownership | NOT TESTED |
-| I5 | BACK during scan, then re-enter and start again | Returns to menu and can reacquire without stale worker/handle | **PARTIAL — operator confirms BACK and re-entry after scan; BACK DURING active scan and new scan still OPEN** |
+| I4 | Press OK STOP during scan | Returns to STOP/CANCELLED without deadlock and releases ownership | **PASS — operator reports RUN→OK STOP/CANCELLED with no freeze and subsequent scan** |
+| I5 | BACK during scan, then re-enter and start again | Returns to menu and can reacquire without stale worker/handle | **PASS — operator reports BACK during RUN, re-entry, new scan→NONE** |
 | I6 | External firmware I²C mutex contention, **only with an independently safe, verified owner** | BUSY/refusal; no arbitrary pin takeover or deadlock | BLOCKED: safe real owner fixture needed |
 | I7 | Force probe timeout/fault **only with a safe fixture** | Distinguish non-ACK from transport fault where HAL permits; no leak | BLOCKED: safe fault fixture needed |
-| I8 | Repeat STOP and reopen after successful and empty scans | No stuck BUSY, no inherited stale result, no reboot | **PARTIAL — re-entry after empty scan PASS; STOP/repeated runs with ACK still OPEN** |
+| I8 | Repeat STOP and reopen after successful and empty scans | No stuck BUSY, no inherited stale result, no reboot | **PARTIAL — STOP, retry/reopen and empty-bus scan PASS; ACK-device repetition still OPEN** |
+
+### 2026-10-14 — real Flipper I²C cancellation/STOP lifecycle PASS
+
+Operator replied **"I2C STOP PASS"** following the explicit no-peripheral
+test with: `COMM → I2C Explorer`; scan by OK; OK during `RUN`
+to stop with `STOP / SCAN CANCELLED`; new scan to `NONE`; BACK
+during `RUN`; re-enter and scan to `NONE`; no stuck `BUSY`,
+UI freeze or spontaneous reboot. Classify **I4 and I5 PASS**,
+and **I8 PARTIAL** because repeated runs with an actual ACK device
+have not yet occurred. This confirms operator-observed app lifecycle,
+not firmware-wide arbitration, scan accuracy with external sensor,
+or transport-fault differentiation.
 
 ## Gate 3 — PA4 1-Wire DS18B20
 
