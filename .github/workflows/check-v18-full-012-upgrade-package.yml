@@ -9,8 +9,9 @@ on:
       - "tests/test_v18_full_update_bundle.py"
       - "scripts/check_v18_full_vs_mntm012.py"
       - "scripts/patch_momentum_i2c_timeout.py"
-      - "src/labmate_i2c_*"
-      - "src/labmate_uart.*"
+      # Any production LabMate change requires a new exact matching
+      # patched-Momentum FAP build before physical acceptance/release.
+      - "src/**"
       - "tests/test_uart_hal_host.c"
       - "scripts/check_v18_uart.py"
       - "application.fam"
