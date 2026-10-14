@@ -81,6 +81,7 @@ int32_t labmate_app(void* p) {
             sizeof(InputEvent));
 
     if(!queue) {
+        labmate_i2c_runtime_free(app->i2c);
         furi_mutex_free(app->mutex);
         free(app);
         return -1;
