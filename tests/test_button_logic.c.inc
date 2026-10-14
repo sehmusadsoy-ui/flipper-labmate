@@ -58,6 +58,47 @@ int main(void) {
     labmate_button_poll(&state, 100U, 0U);
     assert(state.presses == 0U);
 
-    puts("Button Analyzer pure bounce/settle/glitch/wrap tests PASS");
+    /* Pause/restart must retain completed counts and last measurements,
+     * not manufacture events from a contact that moved while STOP. */
+    labmate_button_state_init(&state, true);
+    labmate_button_edge(&state, false, 20U, 100U);
+    labmate_button_poll(&state, 30U, 10U);
+    labmate_button_edge(&state, true, 40U, 160U);
+    labmate_button_poll(&state, 50U, 10U);
+    assert(state.presses == 1U && state.releases == 1U);
+    assert(state.last_hold_ticks == 20U);
+    const uint32_t saved_hold = state.last_hold_ticks;
+    const uint32_t saved_settle = state.last_settle_ticks;
+
+    /* Pending electrical transition is discarded when re-arming. */
+    labmate_button_edge(&state, false, 55U, 190U);
+    assert(state.pending);
+    labmate_button_state_resume(&state, true); /* pin is currently high */
+    labmate_button_snapshot(&state, &view);
+    assert(!view.pending && view.stable_level);
+    assert(view.presses == 1U && view.releases == 1U);
+    assert(view.last_hold_ticks == saved_hold);
+    assert(view.last_settle_ticks == saved_settle);
+    assert(!state.press_started);
+
+    labmate_button_edge(&state, false, 80U, 200U);
+    labmate_button_poll(&state, 90U, 10U);
+    assert(state.presses == 2U && state.releases == 1U);
+
+    /* A pressed contact at RESUME must not count paused time as HOLD. */
+    labmate_button_state_resume(&state, false);
+    assert(!state.pending && !state.press_started && !state.stable_level);
+    labmate_button_edge(&state, true, 110U, 400U);
+    labmate_button_poll(&state, 120U, 10U);
+    assert(state.releases == 2U);
+    assert(state.last_hold_ticks == saved_hold);
+
+    /* Explicit RESET clears the resumable measurements. */
+    labmate_button_state_init(&state, true);
+    labmate_button_snapshot(&state, &view);
+    assert(view.presses == 0U && view.releases == 0U && !view.pending);
+    assert(view.last_hold_ticks == 0U && view.last_settle_ticks == 0U);
+
+    puts("Button Analyzer bounce/settle/wrap and STOP-RESUME preservation PASS");
     return 0;
 }
