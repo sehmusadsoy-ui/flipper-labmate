@@ -89,3 +89,44 @@ jobs:
           echo "Patched firmware + matching integrated LabMate FAP COMPILE PASS."
           sha256sum "$FAP"
           echo "NO FLASH, NO USB INSTALL, NO RELEASE ASSET UPLOAD."
+
+      - name: Record checksummed matching firmware and LabMate pair (CI ONLY)
+        shell: bash
+        run: |
+          set -euo pipefail
+          PAIR="ci-matching-test-pair"
+          FAP="momentum-src/build/f7-firmware-C/.extapps/labmate.fap"
+          FW="momentum-src/build/f7-firmware-C/firmware.dfu"
+          test -s "$FAP"
+          test -s "$FW"
+          mkdir -p "$PAIR"
+          cp "$FAP" "$PAIR/labmate.fap"
+          cp "$FW" "$PAIR/firmware.dfu"
+          (
+            cd "$PAIR"
+            sha256sum labmate.fap firmware.dfu > SHA256SUMS.txt
+            sha256sum -c SHA256SUMS.txt
+          )
+          printf 'LabMate commit: %s\n' "$(git -C labmate rev-parse HEAD)" > "$PAIR/PROVENANCE.txt"
+          printf 'Momentum base commit: %s\n' "$(git -C momentum-src rev-parse HEAD)" >> "$PAIR/PROVENANCE.txt"
+          printf 'Patched HAL source diff SHA256: %s\n' "$(git -C momentum-src diff -- targets/f7/furi_hal/furi_hal_i2c.c targets/furi_hal_include/furi_hal_i2c.h targets/f7/api_symbols.csv | sha256sum | cut -d ' ' -f 1)" >> "$PAIR/PROVENANCE.txt"
+          printf 'GitHub Actions run: %s\n' "$GITHUB_RUN_ID" >> "$PAIR/PROVENANCE.txt"
+          cat > "$PAIR/READ_ME_FIRST.txt" <<'EOF'
+          LABMATE v1.8 DEVELOPMENT — NOT AN APPROVED INSTALL PACKAGE.
+          This pair is archived ONLY to prove the exact firmware/FAP
+          compilation relationship and provide checksums for later review.
+          Do NOT flash this firmware or install this FAP yet.
+          Stock Momentum firmware does NOT export the timed external I2C API;
+          this paired LabMate FAP must NOT be mixed with stock firmware.
+          No real Flipper or external I2C/1-Wire hardware acceptance exists.
+          No automatic firmware flashing, USB install, or Stable publication.
+          EOF
+          echo "Checksum/provenance-only CI test pair prepared; NOT approved for installation."
+
+      - name: Archive matching development pair (NOT A RELEASE)
+        uses: actions/upload-artifact@v4
+        with:
+          name: v18DEV-patched-firmware-FAP-UNTESTED-DO-NOT-FLASH
+          path: ci-matching-test-pair/
+          retention-days: 7
+          if-no-files-found: error
