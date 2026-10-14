@@ -15,6 +15,18 @@ This checklist deliberately separates compiled source from actual Flipper hardwa
 
 The optional GitHub Actions artifact named `v18DEV-patched-firmware-FAP-UNTESTED-DO-NOT-FLASH` is a **development archive only** with a short retention period. It is not an installer, release, recommendation to flash, or a physical acceptance claim. Its FAP must not be used with ordinary stock Momentum firmware: the timed-I²C ABI would be missing.
 
+### Read-only paired-file verification (Windows; no installation)
+
+After obtaining the **specific official GitHub Actions artifact** and extracting its files to a dedicated folder, from the LabMate source root run the following **verification only** in PowerShell (adjust the folder and source SHA to the exact originating CI run):
+
+```powershell
+& .\scripts\verify-v18-matched-pair.ps1 `
+    -PairDirectory 'C:\LabMate-CI-Pair' `
+    -ExpectedSourceSha 'YOUR_EXACT_40_CHAR_LABMATE_COMMIT'
+```
+
+The verifier rejects missing/mixed files, mismatched firmware/FAP SHA256, wrong pinned Momentum base, missing provenance, and wrong expected LabMate commit. It **never** contacts a USB/COM port, copies a FAP, or flashes firmware. A PASS establishes file self-consistency, **not GitHub download authenticity or physical compatibility**; confirm the artifact's official GitHub Actions origin separately. The mocked PowerShell rejection tests do not prove real hardware functionality.
+
 ## Gate 1 — Firmware startup and single-app sanity (after approved installation only)
 
 | ID | Check | Required evidence | Status |
