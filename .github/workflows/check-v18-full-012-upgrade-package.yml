@@ -42,6 +42,12 @@ jobs:
           path: momentum-012
           persist-credentials: false
 
+      - name: Unit-test full archive parser and reject paths (NO USB)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -v -s labmate/tests -p test_v18_full_update_bundle.py
+
       - name: Compare radio and option-byte policy; apply exact tested patch
         shell: bash
         run: |
