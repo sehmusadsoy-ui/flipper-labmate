@@ -124,6 +124,20 @@ and About's final position. Do not move About into COMM.
   had a real `-Werror=redundant-decls` app compile failure, fixed in
   `e33213309240fdb8c9134de84625a987ee5e8bed`. **This PASS is not
   firmware flashing, physical I2C or independent runtime validation.**
+- [x] **STOP-during-acquire race corrected and host verified:**
+  [source `82d211b`](https://github.com/sehmusadsoy-ui/flipper-labmate/commit/82d211b4820a2ed301665ad28585360786db7d75) now records STOP
+  immediately after a bounded external-mutex attempt and before the
+  acquire-result transition. Timeout after STOP is CANCELLED (zero
+  release without ownership); acquired-after-STOP performs zero probes,
+  releases exactly once, and reports CANCELLED. Added two native
+  regression cases; stock SDK FAP and installer-mock tests PASS in
+  [Actions 38579861058](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38579861058).
+  Matching patched Momentum firmware + integrated real FAP build and
+  APPCHK PASS in
+  [Actions 38579860905](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38579860905).
+  Patched FAP SHA256
+  `7eaf093d4499a95c0410ef4bfe4a5c5ece5110c66a900bece73e737503a58377`.
+  **CI only; no firmware flash or physical STOP race test.**
 - [ ] **Physical owner, contention and STOP/BACK still NOT VERIFIED:**
   demonstrate no deadlock under real bus contention, I2C transfer
   timeouts, actual STOP/BACK/release and peripheral recovery.
