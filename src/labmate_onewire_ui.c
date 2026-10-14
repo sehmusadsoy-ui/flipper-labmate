@@ -47,7 +47,7 @@ void draw_onewire(Canvas* canvas, LabMateApp* app) {
     canvas_draw_str(canvas, 3, 32, "EXTERNAL VDD ONLY");
     canvas_draw_line(canvas, 2, 35, 126, 35);
 
-    if(s->has_temperature) {
+    if(s->status == LabMateOneWireHwMeasured && s->has_temperature) {
         const int32_t value = s->temperature_tenths;
         const uint32_t magnitude = (uint32_t)(value < 0 ? -value : value);
         char text[32];
