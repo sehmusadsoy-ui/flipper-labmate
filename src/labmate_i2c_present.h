@@ -19,6 +19,7 @@ typedef enum {
     LabMateI2cViewResults,
     LabMateI2cViewNoDevices,
     LabMateI2cViewCancelled,
+    LabMateI2cViewBusy,
     LabMateI2cViewFailed,
 } LabMateI2cViewStatus;
 
