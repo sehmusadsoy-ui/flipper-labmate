@@ -17,12 +17,15 @@ for required in (
     "#define LABMATE_I2C_VIEW_ROWS 4U",
     "LabMateI2cViewNotScanned",
     "LabMateI2cViewStopPending",
+    "LabMateI2cViewBusy",
     "LabMateI2cViewNoDevices",
     "LabMateI2cViewReleasing",
     "model_quiescent",
 ):
     assert required in header, required
 
+assert "case LabMateI2cControlBusy: return LabMateI2cViewBusy;" in source
+assert 'case LabMateI2cViewBusy: return "BUSY";' in source
 assert "case LabMateI2cControlFinished:" in source
 assert "c->scan.total_found == 0U ? LabMateI2cViewNoDevices" in source
 assert "case LabMateI2cControlIdle: return LabMateI2cViewNotScanned;" in source
@@ -33,6 +36,7 @@ assert "!labmate_i2c_control_active(c) && !c->bus_held" in source
 
 for required in (
     "test_unscanned_and_blocked();",
+    "test_bounded_acquire_busy_snapshot();",
     "test_no_device_only_after_real_model_finish();",
     "test_pages_results_and_truncation();",
     "test_partial_cancel_and_error();",
