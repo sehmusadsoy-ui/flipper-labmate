@@ -30,20 +30,29 @@ reported device checks; the exact final v1.7 FAP passed a separate
 > mains or other high-voltage signals directly to Flipper Zero GPIO.
 > Use only verified, compatible digital signals and safe equipment.
 
-## v1.8 development (not a Stable release)
+## v1.8 Stable — device accepted, GitHub publication pending
 
 The old ~1,200-line coordinator refactor has **passed R1–R10 device
 regression** (user-reported) and was merged to `main` in
 [PR #5](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/5).
 The app now has focused capture, input, GUI and deferred-SD modules.
-This release-candidate branch builds the *normal* `labmate.fap` with a
-`v1.8RC1` on-screen badge. It is **not yet a published Stable release**;
-[exact-source RC device gates](docs/V1_8_STABLE_CANDIDATE.md) must PASS first.
+**Final v1.8 FAP is compiled and physically accepted; GitHub release
+publication is a distinct pending step.** This is the real, normal
+`labmate.fap` with the final on-device `v1.8` label. Exact compiled
+source `02b05639364d6dd71f5eb70456eca379c59218cb` from
+[CI 38546662091](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38546662091),
+FAP SHA256 `119c44bb854030a73a60fa205d38770bf77f048bb166ab379a03135c1de5f3b0`.
+Operator-reported physical acceptance: **RC1 15/15 PASS plus exact final
+v1.8 FAP 4/4 PASS**, including UART RX/STOP, PWM, Counter, Profile S1
+and old Log History. The GitHub Stable release/tag **must not be called
+published until it actually exists**. [Evidence](docs/V1_8_STABLE_CANDIDATE.md)
+· [prepared v1.8 release notes](docs/releases/RELEASE_NOTES_v1.8.md).
 Counter STOP/RESUME also passed C1–C8 real-device regressions and
 merged in [PR #6](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/6).
 **UART Terminal development milestone merged into `main` in [PR #7](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/7)**:
 COMM menu, USART pins 13/14, bounded RX display, 9600/38400/115200 baud
-and an explicit 12-character TX editor. It is **not** a v1.8 Stable release.
+and an explicit 12-character TX editor. This feature was then
+physically verified in the v1.8 release candidate.
 **Operator-reported device checkpoints PASS:** local U1–U8,
 external ESP32-S2 UART E1–E6 at 9600/115200, corrected SR1-R1,
 bounded ST2 high-rate receive and controlled USART BUSY Probe 2/2.
@@ -53,11 +62,11 @@ UART's first feature milestone is integrated into development `main`; its
 physical RX queue overflow, calibrated timing and advanced HEX/PAUSE UI
 remain explicitly outside the verified baseline. After operator review,
 **I²C Explorer and optional 1-Wire were explicitly deferred** from this
-v1.8 Stable candidate because firmware-wide bus/pin ownership could not
+v1.8 release scope because firmware-wide bus/pin ownership could not
 be verified safely. Neither is presented as a functioning tool or
 claimed PASS. Historical research PRs #8/#9 are closed unmerged, and
 v1.9 remains PAUSED until v1.8 Stable is actually published.
-No demo FAPs are required or included in this candidate.
+No demo FAPs are required or included in v1.8.
 [Refactor test record](docs/V1_8_DEV_NOTES.md) ·
 [UART acceptance plan](docs/V1_8_UART_PLAN.md) ·
 [real-device test log](docs/V1_8_UART_ESP32_TEST.md) ·
