@@ -15,7 +15,7 @@ jobs:
   source_patch:
     name: Check exact Momentum source and bounded owner patch
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 45
     steps:
       - name: Checkout LabMate source (patch script only)
         uses: actions/checkout@v4
@@ -49,3 +49,38 @@ jobs:
           grep -q "furi_mutex_acquire(furi_hal_i2c_bus_external_mutex" momentum-src/targets/f7/furi_hal/furi_hal_i2c.c
           grep -q 'Function,+,furi_hal_i2c_external_acquire_timeout,_Bool,uint32_t' momentum-src/targets/f7/api_symbols.csv
           echo "Source patch applicability PASS. This does NOT compile, flash or confirm the firmware API at runtime."
+
+      # This is deliberately NOT an installation or firmware update. Both the
+      # patched firmware and LabMate FAP remain inside ephemeral CI storage.
+      - name: Stage real integrated LabMate app into exact patched tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f labmate/application.fam
+          test -f labmate/labmate_10px.png
+          test -d labmate/src
+          mkdir -p momentum-src/applications_user/labmate/src
+          cp labmate/application.fam labmate/labmate_10px.png momentum-src/applications_user/labmate/
+          cp labmate/src/*.c labmate/src/*.h momentum-src/applications_user/labmate/src/
+          test -f momentum-src/applications_user/labmate/src/labmate_i2c_momentum.c
+          echo "Only the actual LabMate integrated app staged. No demo FAP."
+
+      - name: Compile patched Momentum firmware and integrated FAP (NO FLASH)
+        shell: bash
+        working-directory: momentum-src
+        timeout-minutes: 35
+        env:
+          FBT_GIT_SUBMODULE_SHALLOW: "1"
+        run: |
+          set -euo pipefail
+          # Firmware compilation, not just source-patch applicability.
+          # fbt provisions its own supported toolchain and git submodules.
+          ./fbt firmware_all
+          # Compiling the real app against this exact patched firmware
+          # must resolve its new exported bounded external I2C API.
+          ./fbt fap_labmate
+          FAP="$(find build -type f -name labmate.fap -print -quit)"
+          test -n "$FAP" && test -s "$FAP"
+          echo "Patched firmware + matching integrated LabMate FAP COMPILE PASS."
+          sha256sum "$FAP"
+          echo "NO FLASH, NO USB INSTALL, NO RELEASE ASSET UPLOAD."
