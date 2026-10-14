@@ -33,6 +33,23 @@ try {
     if ($LASTEXITCODE -eq 0) { throw 'Tampered FAP was accepted.' }
     [IO.File]::WriteAllBytes((Join-Path $root 'labmate.fap'), [byte[]](1,2,3,4))
 
+    # Verify the firmware digest independently; a matching FAP alone
+    # cannot prove the pair is safe or even complete.
+    [IO.File]::WriteAllBytes((Join-Path $root 'firmware.dfu'), [byte[]](9,8,7,0))
+    & ./scripts/verify-v18-matched-pair.ps1 -PairDirectory $root -ExpectedSourceSha $source
+    if ($LASTEXITCODE -eq 0) { throw 'Tampered firmware was accepted.' }
+    [IO.File]::WriteAllBytes((Join-Path $root 'firmware.dfu'), [byte[]](9,8,7,6))
+
+    # Reject duplicate checksum names that could conceal mixed runs.
+    $manifestPath = Join-Path $root 'SHA256SUMS.txt'
+    $validManifest = [IO.File]::ReadAllText($manifestPath)
+    [IO.File]::WriteAllText($manifestPath,
+        "$fapHash  labmate.fap" + [Environment]::NewLine +
+        "$fapHash  labmate.fap" + [Environment]::NewLine)
+    & ./scripts/verify-v18-matched-pair.ps1 -PairDirectory $root -ExpectedSourceSha $source
+    if ($LASTEXITCODE -eq 0) { throw 'Duplicate FAP hash entries were accepted.' }
+    [IO.File]::WriteAllText($manifestPath, $validManifest)
+
     [IO.File]::WriteAllText((Join-Path $root 'PROVENANCE.txt'),
         $provenance.Replace($base, ('c' * 40)))
     & ./scripts/verify-v18-matched-pair.ps1 -PairDirectory $root -ExpectedSourceSha $source
