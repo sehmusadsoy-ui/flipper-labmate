@@ -176,6 +176,12 @@ static void ui_icon_uart(Canvas* c, uint8_t x, uint8_t y) {
     canvas_draw_line(c, x + 8, y + 8, x + 11, y + 8);
 }
 
+static void ui_icon_thermo(Canvas* c, uint8_t x, uint8_t y) {
+    canvas_draw_frame(c, x + 4, y + 1, 5, 8);
+    canvas_draw_line(c, x + 6, y + 4, x + 6, y + 10);
+    canvas_draw_box(c, x + 4, y + 9, 5, 3);
+}
+
 void ui_draw_menu_icon(Canvas* canvas, uint8_t item, uint8_t x, uint8_t y) {
     switch(item) {
     case LabMateToolGpio: ui_icon_gpio(canvas, x, y); break;
