@@ -1,7 +1,7 @@
 # LabMate v1.8 — Single-App Stable Candidate Acceptance
 
 **Decision: 2026-10-14 — operator-authorized scope deferral.**
-**Status: RC1 physical smoke 15/15 PASS; FINAL v1.8 FAP SDK/host CI PASS and checksum-verified USB install/launch command PASS; final Flipper on-screen/device smoke and Stable publication PENDING.**
+**Status: FINAL v1.8 FAP CI/USB PASS and final physical smoke 4/4 PASS (operator 2026-10-14). Functional Stable acceptance complete; GitHub release publication pending.**
 This is the *actual* `labmate.fap` built from `src/*.c`, not a UI demo
 or separate tool application. Do not publish Stable while a required
 gate remains open. The existing immutable published v1.7 Stable is
@@ -80,8 +80,8 @@ advancement to v1.9 before actual v1.8 Stable publication.
   BUSY or application crash during this smoke. This is a functional
   operator report; no independent calibrated PWM waveform measurement
   or exhaustive SD failure injection is inferred.
-- [ ] **C6 PARTIAL — FINAL `v1.8`-LABEL FAP SDK/host CI +
-  COM7 checksum-verified install/launch PASS; final-device smoke PENDING.**
+- [x] **C6 PHYSICAL ACCEPTANCE PASS — FINAL `v1.8`-LABEL FAP SDK/host CI,
+  COM7 checksum-verified install/launch and real Flipper 18-FINAL 4/4 PASS.**
   At source commit `02b05639364d6dd71f5eb70456eca379c59218cb`,
   GitHub Actions [38546662091](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38546662091)
   compiled the actual single `labmate.fap` with Momentum SDK;
@@ -94,11 +94,14 @@ advancement to v1.9 before actual v1.8 Stable publication.
   label `v1.8RC1` → `v1.8`**, plus the associated static guards;
   historical/device report Markdown updates do not change the FAP.
   The final artifact passed the installer command and requested app launch
-  with exit code 0 on 2026-10-14 after manual closure of previous LabMate,
-  but has not yet passed the distinct **final on-device smoke**. Tag/release
-  `v1.8`, README update and acceptance are **PROHIBITED until
-  final-device test PASS**, and known I²C / optional 1-Wire exclusions
-  must be in the actual release notes.
+  with exit code 0 on 2026-10-14 after manual closure of previous LabMate.
+  The operator subsequently reported **18-FINAL F1–F4 all PASS**:
+  on-device `v1.8` label, 115200 `ESP32_READY` RX with STOP/BACK,
+  PWM START/STOP and Counter STOP/RESUME, and preserved existing
+  Profiles S1 and CSV Log History. Thus the **final exact FAP's physical
+  smoke acceptance is complete**. GitHub release/tag publication is
+  a separate pending action. Release notes must disclose I²C/optional
+  1-Wire deferrals and uninstrumented limitations.
 
 ## Test 18-R1 — physical device acceptance (operator report 2026-10-14)
 
@@ -182,8 +185,12 @@ last-device smoke before Stable publication (C6).
   on-device label `v1.8`, COMM UART 115200 RX/TX and STOP/BACK,
   PWM STOP, Counter STOP/RESUME, existing Profiles S1 and CSV History.
   Do not delete user data.
-- **Release control:** no tag, GitHub Stable release, merge or
-  release publication before operator reports final FAP smoke PASS.
+- **18-FINAL now PASS**: user-submitted `F1=PASS; F2=PASS; F3=PASS; F4=PASS` on
+  the exact final installed `v1.8` FAP; no fresh AT-triggered stress test
+  or independently calibrated waveform validation claimed.
+- **Release control:** physical acceptance completed 2026-10-14.
+  Publish only the verified final artifact and checksum, with notes
+  reflecting deferred functionality and exact source provenance.
 
 ## Final-label v1.8 USB handoff — checksum/install PASS (2026-10-14)
 
@@ -198,10 +205,30 @@ The separate `LABMATE v1.8 INSTALL COMMAND PASS` message is consistent
 with the captured zero exit code, unlike the earlier user-authored
 `Write-Host` in the failed first run.
 
-**Only installation and launch-request success are proven:** no separate
-post-flash readback hash or final-device menu/peripheral observation
-has yet been submitted. The final-v1.8 acceptance test is required
-before merging/tagging/publishing Stable.
+The installation/launch success alone was not proof of app behavior,
+but the operator then submitted the final Flipper test results on the
+installed binary: **18-FINAL F1–F4 4/4 PASS**. No separate post-flash
+FAP readback hash or independently calibrated waveform test was provided;
+this is a verified-source plus operator-reported physical acceptance.
+
+## Test 18-FINAL — exact final `v1.8` FAP on-device PASS 4/4 (2026-10-14)
+
+Operator's exact report after checksum-verified COM7 final FAP installation:
+`F1=PASS; F2=PASS; F3=PASS; F4=PASS`.
+
+- **F1 PASS**: Launching the final installed app displays `v1.8`.
+- **F2 PASS**: COMM/UART at 115200 receives `ESP32_READY` and STOP/BACK work.
+  No fresh stress trigger was required or reported in this final check.
+- **F3 PASS**: PWM Studio START/STOP and Event Counter STOP/RESUME work.
+- **F4 PASS**: Saved Profile S1 and previously logged CSV History are preserved.
+
+**Release acceptance basis:** full RC1 functional smoke 15/15 user-reported
+PASS + final-labeled FAP 4/4 user-reported PASS + true Momentum SDK build and
+SHA256 verification + successful existing-target USB installation (exit 0).
+User-approved exclusions: I²C Explorer and optional 1-Wire are NOT delivered;
+physical UART D>0 drop, independent measurement calibration and exhaustive
+storage failure tests are NOT claimed. The v1.8 GitHub tag/release is
+separate from test acceptance and must not be falsely marked published.
 
 ## Removing old demonstrations (not required for build)
 
