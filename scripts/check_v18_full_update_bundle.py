@@ -14,9 +14,9 @@ from pathlib import Path, PurePosixPath
 
 _ALLOWED = {
     "firmware.dfu", "updater.bin", "update.fuf",
-    "radio.bin", "resources.tgz", "splash.bin", "firstboot.bin",
+    "radio.bin", "resources.tar.gz", "splash.bin", "firstboot.bin",
 }
-_REQUIRED = {"firmware.dfu", "updater.bin", "update.fuf", "radio.bin", "resources.tgz"}
+_REQUIRED = {"firmware.dfu", "updater.bin", "update.fuf", "radio.bin", "resources.tar.gz"}
 
 
 def _sha(data: bytes) -> str:
@@ -72,7 +72,7 @@ def audit(tgz: Path, firmware: Path, radio: Path, max_total: int = 90_000_000):
             ("Firmware", "firmware.dfu"),
             ("Loader", "updater.bin"),
             ("Radio", "radio.bin"),
-            ("Resources", "resources.tgz"),
+            ("Resources", "resources.tar.gz"),
         ):
             if fields.get(key) != value:
                 raise ValueError("full updater manifest mismatch: " + key)
@@ -88,7 +88,7 @@ def audit(tgz: Path, firmware: Path, radio: Path, max_total: int = 90_000_000):
                    for x in value.split()):
                 raise ValueError("malformed option-byte configuration: " + key)
 
-        with tarfile.open(fileobj=io.BytesIO(files["resources.tgz"]), mode="r:gz") as resources:
+        with tarfile.open(fileobj=io.BytesIO(files["resources.tar.gz"]), mode="r:gz") as resources:
             entries = resources.getmembers()
             if not entries:
                 raise ValueError("empty SD resource archive")
