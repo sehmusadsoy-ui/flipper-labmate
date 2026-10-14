@@ -1,7 +1,7 @@
 # LabMate v1.8 — Single-App Stable Candidate Acceptance
 
 **Decision: 2026-10-14 — operator-authorized scope deferral.**
-**Status: RC1 exact-source CI PASS; physical acceptance PENDING.**
+**Status: RC1 physical smoke 15/15 PASS; FINAL v1.8 FAP SDK/host CI PASS; final physical-device acceptance and Stable publication PENDING.**
 This is the *actual* `labmate.fap` built from `src/*.c`, not a UI demo
 or separate tool application. Do not publish Stable while a required
 gate remains open. The existing immutable published v1.7 Stable is
@@ -82,10 +82,23 @@ advancement to v1.9 before actual v1.8 Stable publication.
   BUSY or application crash during this smoke. This is a functional
   operator report; no independent calibrated PWM waveform measurement
   or exhaustive SD failure injection is inferred.
-- [ ] **C6:** Final exact-source Stable `v1.8` label/manifest build
-  and post-build installation checksum / 4-point device smoke PASS,
-  only then tag/publish v1.8 Stable and update README to Stable.
-  Source/binary provenance and known exclusions are documented.
+- [ ] **C6 PARTIAL — FINAL `v1.8`-LABEL FAP SDK/host CI PASS;
+  physical installation and final-device smoke PENDING.**
+  At source commit `02b05639364d6dd71f5eb70456eca379c59218cb`,
+  GitHub Actions [38546662091](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38546662091)
+  compiled the actual single `labmate.fap` with Momentum SDK;
+  compile job `115794345536` and Windows installer mock job
+  `115794345068` PASSED; v1.7 publishing was intentionally SKIPPED.
+  Artifact `labmate` ID `11884807062`.
+  **FAP SHA256 `119c44bb854030a73a60fa205d38770bf77f048bb166ab379a03135c1de5f3b0`**
+  from the verified FAP file log (not the artifact ZIP digest).
+  Code changes since the tested RC1 are **only the on-device version
+  label `v1.8RC1` → `v1.8`**, plus the associated static guards;
+  historical/device report Markdown updates do not change the FAP.
+  The final artifact has not yet passed on-device smoke. Tag/release
+  `v1.8`, README update and acceptance are **PROHIBITED until
+  final-device test PASS**, and known I²C / optional 1-Wire exclusions
+  must be in the actual release notes.
 
 ## Test 18-R1 — physical device acceptance (operator report 2026-10-14)
 
@@ -154,6 +167,23 @@ burst statistics. **Do not publish yet:** the final `v1.8`-label
 binary is different from the RC1 FAP and must itself pass exact
 source SDK/host CI, checksum check, USB installation, and a distinct
 last-device smoke before Stable publication (C6).
+
+## Final-labeled FAP handoff (not yet Stable)
+
+- **Actual candidate artifact:** GitHub Actions run
+  [38546662091](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38546662091),
+  artifact name `labmate`, `labmate.fap` and `SHA256SUMS.txt`;
+  source commit `02b05639364d6dd71f5eb70456eca379c59218cb`.
+- **Exact verified FAP SHA256:**
+  `119c44bb854030a73a60fa205d38770bf77f048bb166ab379a03135c1de5f3b0`.
+  Keep separate from the GitHub artifact ZIP SHA256.
+- **Next gate:** checksum-confirmed install replaces only
+  `/ext/apps/Tools/labmate.fap` (never demo or duplicate);
+  on-device label `v1.8`, COMM UART 115200 RX/TX and STOP/BACK,
+  PWM STOP, Counter STOP/RESUME, existing Profiles S1 and CSV History.
+  Do not delete user data.
+- **Release control:** no tag, GitHub Stable release, merge or
+  release publication before operator reports final FAP smoke PASS.
 
 ## Removing old demonstrations (not required for build)
 
