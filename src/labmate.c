@@ -139,6 +139,7 @@ int32_t labmate_app(void* p) {
         }
         threshold_update_from_measurement(app);
         if(app->screen == LabMateScreenUart) labmate_uart_poll(&app->uart);
+        if(app->screen == LabMateScreenOneWire) labmate_onewire_hw_poll(&app->thermometer);
 
         labmate_input_dispatch(app, status, event, &work);
         labmate_deferred_prepare(app, &work);
