@@ -21,6 +21,7 @@ static void labmate_button_irq(void* context) {
 
 void labmate_button_capture_reset(LabMateApp* app) {
     if(app->button_active) return;
+    app->button_session_started = false;
     labmate_button_state_init(&app->button_irq, true);
     labmate_button_snapshot(&app->button_irq, &app->button_stats);
     app->button_bounce_us = 0U;
