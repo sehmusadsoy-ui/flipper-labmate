@@ -54,6 +54,8 @@ int32_t labmate_app(void* p) {
     labmate_button_capture_reset(app);
     labmate_threshold_init(&app->threshold);
     labmate_uart_reset(&app->uart);
+    labmate_onewire_hw_init(&app->thermometer);
+    app->comm_owner = LabMateCommNone;
     app->screen = LabMateScreenMenu;
     app->capture_owner = LabMateCaptureNone;
     app->capture_pin_index = GPIO_COUNT;
