@@ -8,6 +8,22 @@ void labmate_button_state_init(volatile LabMateButtonState* state, bool initial_
     *state = reset;
 }
 
+void labmate_button_state_resume(volatile LabMateButtonState* state, bool initial_level) {
+    /* No IRQ is armed while this state transition occurs. Preserve cumulative
+     * counts and completed metrics, but do not count edges or elapsed hold
+     * time across an inactive STOP interval. */
+    state->stable_level = initial_level;
+    state->raw_level = initial_level;
+    state->pending = false;
+    state->first_tick = 0U;
+    state->last_tick = 0U;
+    state->first_cycle = 0U;
+    state->last_cycle = 0U;
+    state->edges_in_transition = 0U;
+    state->pressed_tick = 0U;
+    state->press_started = false;
+}
+
 void labmate_button_edge(
     volatile LabMateButtonState* state, bool level, uint32_t tick, uint32_t cycle) {
     if(level == state->raw_level) return;
