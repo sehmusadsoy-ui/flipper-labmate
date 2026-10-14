@@ -18,7 +18,7 @@ void draw_i2c(Canvas* canvas, LabMateApp* app) {
         break;
     case LabMateI2cRuntimeBusy:
         badge = "BUSY";
-        message = "OTHER TOOL ACTIVE";
+        message = "I2C BUS / TOOL BUSY";
         break;
     case LabMateI2cRuntimeScanning:
         badge = "RUN";
