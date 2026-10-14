@@ -19,6 +19,8 @@ on:
       - "tests/test_i2c_control.c.inc"
       - "tests/test_i2c_present.c.inc"
       - "tests/test_i2c_session.c.inc"
+      - "tests/test_i2c_momentum_hal.c"
+      - "tests/i2c_hal_stubs/**"
       - "scripts/check_v18_onewire_codec.py"
       - "tests/test_onewire_ds18b20.c.inc"
       - "tests/test_onewire_hw.c"
@@ -119,6 +121,20 @@ jobs:
             src/labmate_i2c_session.c tests/test_i2c_session.c.inc \
             -o /tmp/labmate-i2c-session
           /tmp/labmate-i2c-session
+          # Default stock firmware FAP: real adapter MUST fail closed.
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc \
+            -Itests/i2c_hal_stubs \
+            src/labmate_i2c_scan.c src/labmate_i2c_control.c \
+            src/labmate_i2c_session.c src/labmate_i2c_momentum.c \
+            tests/test_i2c_momentum_hal.c -o /tmp/labmate-i2c-bridge-stock
+          /tmp/labmate-i2c-bridge-stock
+          # Patched firmware API contract: ACK comes from real HAL callback.
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc \
+            -Itests/i2c_hal_stubs -DLABMATE_MOMENTUM_TIMED_I2C_API=1 \
+            src/labmate_i2c_scan.c src/labmate_i2c_control.c \
+            src/labmate_i2c_session.c src/labmate_i2c_momentum.c \
+            tests/test_i2c_momentum_hal.c -o /tmp/labmate-i2c-bridge-timed
+          /tmp/labmate-i2c-bridge-timed
 
       - name: Test v1.8 COMM application-local I2C / 1-Wire ownership exclusions
         run: |
