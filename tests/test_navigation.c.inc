@@ -15,6 +15,17 @@ int main(void) {
         {LabMateToolAbout, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
         {LabMateToolUart, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
     };
+    /* User-mandated root order: ABOUT stays in INFO, COMM is below INFO.
+     * Keep enum IDs stable for previously stored Profiles and menu routes. */
+    assert(LabMateGroupMeasure == 0);
+    assert(LabMateGroupOutput == 1);
+    assert(LabMateGroupRecords == 2);
+    assert(LabMateGroupInfo == 3);
+    assert(LabMateGroupComm == 4);
+    assert(strcmp(labmate_nav_group_title(LabMateGroupInfo), "INFO") == 0);
+    assert(strcmp(labmate_nav_group_title(LabMateGroupComm), "COMM") == 0);
+    assert(labmate_nav_tool_at(LabMateGroupInfo, 0U) == LabMateToolAbout);
+    assert(labmate_nav_tool_at(LabMateGroupComm, 0U) == LabMateToolUart);
     uint8_t visits[LabMateToolCount] = {0};
     for(uint8_t group = 0U; group < LabMateGroupCount; ++group) {
         assert(labmate_nav_group_size(group) == expected_sizes[group]);
