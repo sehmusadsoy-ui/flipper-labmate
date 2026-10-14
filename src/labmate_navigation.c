@@ -22,7 +22,7 @@ static const char* const tool_titles[LabMateToolCount] = {
 };
 
 /* Each instrument remains reachable once, with its previous tool ID. */
-static const uint8_t group_sizes[LabMateGroupCount] = {5U, 2U, 3U, 1U, 2U};
+static const uint8_t group_sizes[LabMateGroupCount] = {5U, 2U, 3U, 1U, 3U};
 static const uint8_t group_tools[LabMateGroupCount][LABMATE_NAV_MAX_CHILDREN] = {
     {LabMateToolGpio, LabMateToolFrequency, LabMateToolPulse, LabMateToolCounter, LabMateToolButton},
     {LabMateToolGenerator, LabMateToolAlerts, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
