@@ -1,11 +1,11 @@
 # LabMate v1.8 — Single-App Stable Candidate Acceptance
 
 **Decision: 2026-10-14 — operator-authorized scope deferral.**
-**Status: FINAL v1.8 FAP CI/USB PASS and final physical smoke 4/4 PASS (operator 2026-10-14). Functional Stable acceptance complete; GitHub release publication pending.**
+**Status: RELEASED — [v1.8 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8) published 2026-10-14. RC1 15/15 + exact final FAP 4/4 operator-reported physical PASS; compiled binary, checksum, USB install and published release assets VERIFIED.**
 This is the *actual* `labmate.fap` built from `src/*.c`, not a UI demo
-or separate tool application. Do not publish Stable while a required
-gate remains open. The existing immutable published v1.7 Stable is
-preserved for rollback.
+or separate tool application. All planned release gates were satisfied
+before GitHub Stable publication. The previously published v1.7 Stable
+is preserved for rollback.
 
 ## Release scope — only implemented, useful features
 
@@ -99,9 +99,9 @@ advancement to v1.9 before actual v1.8 Stable publication.
   on-device `v1.8` label, 115200 `ESP32_READY` RX with STOP/BACK,
   PWM START/STOP and Counter STOP/RESUME, and preserved existing
   Profiles S1 and CSV Log History. Thus the **final exact FAP's physical
-  smoke acceptance is complete**. GitHub release/tag publication is
-  a separate pending action. Release notes must disclose I²C/optional
-  1-Wire deferrals and uninstrumented limitations.
+  smoke acceptance is complete**. The GitHub `v1.8` release and tag
+  were subsequently published with exactly the checked binary and
+  explicit I²C/1-Wire exclusions and uninstrumented limitations.
 
 ## Test 18-R1 — physical device acceptance (operator report 2026-10-14)
 
@@ -116,8 +116,8 @@ that final line alone. The physical RC1 label is user-reported PASS.
 Test 18-R2 external UART 4/4 PASS was subsequently reported;
 see below. PWM output validation, Counter STOP/RESUME, Profile storage
 and History record rechecks are still pending for this RC1.
-Test 18-R3 5/5 PASS was subsequently reported. Stable publication
-remains blocked by the final exact-source/binary and device gate C6.
+Test 18-R3 5/5 and final v1.8 on-device F1–F4 4/4 were subsequently
+reported, allowing verified v1.8 Stable publication.
 
 ## Test 18-R2 — external UART, 4/4 PASS (operator report 2026-10-14)
 
@@ -166,12 +166,11 @@ Mapping to the five previously prescribed checks:
 **RC1 physical functional acceptance: 18-R1 6/6 + 18-R2 4/4 +
 18-R3 5/5 = 15/15 user-reported PASS.** No claim of independent
 waveform calibration, synthetic SD failure tests or fresh ST2 R/D/E
-burst statistics. **Do not publish yet:** the final `v1.8`-label
-binary is different from the RC1 FAP and must itself pass exact
-source SDK/host CI, checksum check, USB installation, and a distinct
-last-device smoke before Stable publication (C6).
+burst statistics. **At this R3 checkpoint**, the final `v1.8`-label
+binary still required separate validation; C6 later passed and the
+identical checksum-verified binary was published as Stable.
 
-## Final-labeled FAP handoff (not yet Stable)
+## Final-labeled FAP handoff (completed, v1.8 Stable published)
 
 - **Actual candidate artifact:** GitHub Actions run
   [38546662091](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38546662091),
@@ -188,9 +187,10 @@ last-device smoke before Stable publication (C6).
 - **18-FINAL now PASS**: user-submitted `F1=PASS; F2=PASS; F3=PASS; F4=PASS` on
   the exact final installed `v1.8` FAP; no fresh AT-triggered stress test
   or independently calibrated waveform validation claimed.
-- **Release control:** physical acceptance completed 2026-10-14.
-  Publish only the verified final artifact and checksum, with notes
-  reflecting deferred functionality and exact source provenance.
+- **Release control COMPLETE:** physical acceptance and GitHub Stable
+  publication completed 2026-10-14. Only the SHA256-verified final
+  artifact/checksum were published, with explicit deferrals and exact
+  source provenance.
 
 ## Final-label v1.8 USB handoff — checksum/install PASS (2026-10-14)
 
@@ -227,8 +227,31 @@ PASS + final-labeled FAP 4/4 user-reported PASS + true Momentum SDK build and
 SHA256 verification + successful existing-target USB installation (exit 0).
 User-approved exclusions: I²C Explorer and optional 1-Wire are NOT delivered;
 physical UART D>0 drop, independent measurement calibration and exhaustive
-storage failure tests are NOT claimed. The v1.8 GitHub tag/release is
-separate from test acceptance and must not be falsely marked published.
+storage failure tests are NOT claimed. The separately executed GitHub
+v1.8 publication is now VERIFIED and did not precede physical acceptance.
+
+## GitHub v1.8 Stable — publication verified 2026-10-14
+
+- **Release:** [LabMate v1.8 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8)
+  is public, `draft=false`, `prerelease=false` and the latest Release.
+- **Tag immutability:** `v1.8` references exact tested source commit
+  `02b05639364d6dd71f5eb70456eca379c59218cb`.
+  The PR #11 merge changed only documentation compared to that compiled
+  source; post-merge [CI 38548200859](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38548200859)
+  independently produced the **same** `labmate.fap` SHA256.
+- **Publishing CI:** [one-time run 38548634392](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38548634392)
+  PASS, including source/CI guard, selected artifact download,
+  SHA256 verification, publication, GitHub tag checks and an actual
+  second download/verification of the published release assets.
+- **Assets:** exactly `labmate.fap` (65,580 bytes; GitHub digest
+  `sha256:119c44bb854030a73a60fa205d38770bf77f048bb166ab379a03135c1de5f3b0`)
+  and `SHA256SUMS.txt`, both uploaded.
+- **Historical preservation:** published v1.7 tag/release and
+  earlier Stable assets remain untouched. The verified v1.8 FAP
+  is already installed on the operator's Flipper; no reinstall needed.
+- **Sequential gate:** v1.8 is officially CLOSED as Stable and v1.9
+  may proceed in normal integrated LabMate development. Unresolved
+  I²C/1-Wire hardware ownership remains explicitly deferred, not PASS.
 
 ## Removing old demonstrations (not required for build)
 
