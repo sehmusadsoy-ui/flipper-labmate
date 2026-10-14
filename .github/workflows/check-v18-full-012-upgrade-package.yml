@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/check-v18-full-012-upgrade-package.yml"
       - "scripts/check_v18_full_update_bundle.py"
+      - "scripts/check_v18_full_vs_mntm012.py"
       - "scripts/patch_momentum_i2c_timeout.py"
       - "src/labmate_i2c_*"
       - "application.fam"
@@ -97,6 +98,20 @@ jobs:
             "${tgzs[0]}" build/f7-firmware-C/firmware.dfu \
             lib/stm32wb_copro/firmware/stm32wb5x_BLE_Stack_light_fw.bin
           echo "FULL UPDATER AND MATCHED LABMATE COMPILE/AUDIT PASS; NO FLASH."
+
+      - name: Compare with verified OFFICIAL MNTM-012 radio and option-byte policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --silent --show-error \
+            "https://github.com/Next-Flip/Momentum-Firmware/releases/download/mntm-012/flipper-z-f7-update-mntm-012.tgz" \
+            -o momentum-012-official.tgz
+          echo '1d9e1e600c8680172ff6f6913ca0b12484e7d45adbc72a66552e534784c8c1a7  momentum-012-official.tgz' | sha256sum -c
+          mapfile -t tgzs < <(find momentum-src/dist -type f -name '*.tgz' -print)
+          test "${#tgzs[@]}" -eq 1
+          python3 labmate/scripts/check_v18_full_vs_mntm012.py \
+            momentum-012-official.tgz "${tgzs[0]}"
+          echo "OFFICIAL MNTM012 COMPARISON PASS; NO FLASH."
 
       - name: Checksums and provenance for separate development artifact
         shell: bash
