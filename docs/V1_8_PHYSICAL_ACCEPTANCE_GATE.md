@@ -146,12 +146,8 @@ on-device LabMate/COMM tests. A prepared updater is not acceptance.
   PASS, real Windows TAR extraction + manifest + DFU/radio digest
   verification PASS, `-Apply` fails closed for missing rollback.
   **No USB/flashing** was performed in CI.
-- [ ] **Actual user machine firmware install and new version boot
-  remain OPEN**. Only after the operator reports the device has
-  rebooted into the matching modified Momentum image should the
-  real `labmate.fap` be transferred and its I2C/1-Wire tested.
-  Official rollback file availability is proven, physical recovery
-  remains UNTESTED.
+- [x] **Operator's actual COM7 USB update upload and firmware updater handoff — 2026-10-14 21:36–21:37 local — REPORTED PASS:** on Windows, `install-v18-full012-dev-firmware.ps1 -Apply -SettingsBackupPath ...` revalidated all three SHA256s, embedded DFU and radio, both rollback digests, 14 microSD backup files and qFlipper settings archive; operator explicitly typed `YUKLE`. Momentum `selfupdate.py` connected to `FLIP_UYBELAV` on **COM7**, transferred all seven firmware update components (firmware.dfu, firstboot.bin, radio.bin, resources.tar.gz, splash.bin, update.fuf, updater.bin), then returned `FIRMWARE UPDATE COMMAND ACCEPTED; WAIT FOR FLIPPER TO REBOOT.` No upload transport error was reported.
+- [ ] **Physical reboot and verified new firmware remain OPEN.** Command handoff success is NOT proof that the updater completed or that the Flipper booted. Await user's on-device About screen/version and confirmation of normal operation **before** sending or launching matching `labmate.fap`. Official rollback file availability is proven; physical recovery remains UNTESTED.
 
 ## Gate 1 — Firmware startup and single-app sanity (after approved installation only)
 
