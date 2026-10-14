@@ -8,8 +8,8 @@
 > 1-Wire/DS18B20 support, and complete new tool/peripheral safety boundaries
 > **before starting v1.9**. Include the already Button-device-tested
 > STOP/RESUME feature in **v1.8 itself**, with no v1.8.1 release. The
-> requested menu order is MEASURE → OUTPUT → RECORDS → INFO (About) → COMM,
-> with COMM below About. Only make an in-place v1.8 asset update after
+> requested menu order is MEASURE → OUTPUT → RECORDS → COMM → INFO (About),
+> with INFO/About always the bottommost root entry. Only make an in-place v1.8 asset update after
 > exact-source FAP and actual on-device regressions; leave existing Stable
 > assets unchanged meanwhile. See
 > [active source-and-test ledger](docs/V1_8_ORIGINAL_SCOPE_COMPLETION.md)
