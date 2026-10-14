@@ -632,6 +632,42 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   measurements and tested restore are still OPEN. Local owner
   guards and source CI are not substitutes.
 
+### 2026-10-15 — Rebuilt exit-cleanup FAP, exact matched archive: independently VERIFIED (NO USB)
+
+- [x] Full patched Momentum + real integrated LabMate production FAP
+  [GitHub Actions run 38645876409](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38645876409)
+  concluded **SUCCESS** at source commit
+  `a3c52e8ef5ff09c51cd3b5eb40c6c1108cb89e18`;
+  compile log contains actual `APPCHK` on `labmate.fap`.
+  The 13 MB artifact ZIP (ID `11931799735`) was downloaded
+  independently and its six entries were inspected; ZIP integrity
+  and embedded `SHA256SUMS.txt` and `PROVENANCE.txt` verified.
+- [x] Independently recalculated SHA256 of actual ZIP entries:
+  - New **EXITFIX LabMate FAP** `labmate.fap`:
+    `7a76f626f34a65059d9536fa2cd52b2639f4d1038a9b5c69291fa28d5e4f63be`.
+  - **Firmware DFU (unchanged exact pinned patched Momentum)**:
+    `e69f717df28f2ff5a417a69ac212f242cf2725a48ce8c4e31296ceb4a0157ec0`.
+  - **Full update TGZ (DO NOT FLASH)**:
+    `d7665bf273f69d98aef8bdab06705640833127465d9241c00dff399248b57b18`.
+  All equal the independent CI archive's three SHA256SUMS entries.
+  PROVENANCE matches the LabMate source SHA, pinned Momentum base
+  `d3f89dfe2ef6b01839201598e9be1590cba80322`,
+  MNTM012 previous source `e1784e7418d8b074e971983ceb6fef0f37e52ae4`
+  and Actions run ID `38645876409`.
+- [x] Implemented DEV-only **stage/verify, no USB** PowerShell script
+  `scripts/prepare-v18-exitfix-fap.ps1`: pins real CI run,
+  exact source/FAP/DFU/TGZ digests, backup of prior working
+  UARTFIX FAP SHA
+  `eaadc85aba2c8a78074dc97935dc6d71de982582054f8addbeea227428b4f0cf`,
+  strict directory contents, manifest/provenance and release warning.
+  This script cannot install/flash firmware or update a Flipper;
+  validates locally before permitting **separately approved** action.
+- [ ] Operator Windows **stage-only** result pending. The new EXITFIX
+  FAP is NOT installed, does not inherit previous UARTFIX device
+  passes, and must have real Flipper focused exit regression before
+  any Stable decision. The pinned DFU **need not** be reflashed.
+  Previous backup data/firmware and Stable remain untouched.
+
 ## Stable release boundary
 
 Only after **all required** software, matched-firmware and safe physical acceptance gates are reported and verified may a revised `v1.8` Stable asset be considered. Historical source `v1.8` tag provenance must remain immutable; document exact old and replacement source/FAP SHA256, review release asset updates explicitly, then redownload and independently verify the remote asset. No v1.8.1 or v1.9 feature work until the original v1.8 completion decision is satisfied.
