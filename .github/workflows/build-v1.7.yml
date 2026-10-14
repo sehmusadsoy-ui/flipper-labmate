@@ -413,7 +413,7 @@ jobs:
           }
           $none = Join-Path $env:RUNNER_TEMP 'Missing-Full-Pair'
           New-Item -ItemType Directory -Path $none -Force | Out-Null
-          & ./scripts/prepare-v18-full012-test.ps1 -VerifyOnly -Directory $none -FullUpdateSha256 ('b' * 64)
+          & ./scripts/prepare-v18-full012-test.ps1 -VerifyOnly -Directory $none
           if ($LASTEXITCODE -eq 0) {
             throw 'PowerShell preparer incorrectly accepted missing full development package.'
           }
