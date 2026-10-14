@@ -1,5 +1,21 @@
 # LabMate Master Roadmap — v1.0 to v2.0
 
+> **Original-scope restoration — operator direction 2026-10-14.**
+> The public v1.8 Stable release previously shipped an explicitly reduced
+> scope; that is a historical release fact, **not evidence that the original
+> 2026-10-08 Communication Tools milestone is completely developed**.
+> Return to v1.8 and complete its I²C Explorer, investigate feasible real
+> 1-Wire/DS18B20 support, and complete new tool/peripheral safety boundaries
+> **before starting v1.9**. Include the already Button-device-tested
+> STOP/RESUME feature in **v1.8 itself**, with no v1.8.1 release. The
+> requested menu order is MEASURE → OUTPUT → RECORDS → INFO (About) → COMM,
+> with COMM below About. Only make an in-place v1.8 asset update after
+> exact-source FAP and actual on-device regressions; leave existing Stable
+> assets unchanged meanwhile. See
+> [active source-and-test ledger](docs/V1_8_ORIGINAL_SCOPE_COMPLETION.md)
+> and [Draft PR #13](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/13).
+>
+
 **Status:** Updated 2026-10-14: **[LabMate v1.8 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8) is PUBLISHED**, not a draft. Modular coordinator (PR #5), Counter STOP/RESUME (PR #6), and real UART Terminal (PR #7) are integrated into the actual single `labmate.fap`. RC1 15/15 and exact final v1.8 FAP 4/4 operator-reported on-device PASS; Momentum/Windows CI, COM7 USB installer and published-asset SHA256 all PASS. I²C Explorer and optional 1-Wire explicitly DEFERRED, not delivered. v1.9 may now proceed, but its Draft PR #10 has not been merged.  
 **Current published Stable:** [v1.8 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8), tag source `02b05639364d6dd71f5eb70456eca379c59218cb`, exact published FAP SHA256 `119c44bb854030a73a60fa205d38770bf77f048bb166ab379a03135c1de5f3b0`, published 2026-10-14. CI [38546662091](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38546662091) and final functional device tests 4/4 PASS following RC1 15/15.  
 **Previous Stable fallback:** [v1.7 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7) (original v1.7 tag `d0e1bc6a95b257841533f0aa8745e3a79bbc8dcd`, later PWM Studio label asset adjustment remains untouched), [v1.6.1 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1), [v1.6 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6), and older unchanged releases.  
@@ -164,8 +180,9 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
   [device evidence](docs/V1_8_UART_ESP32_TEST.md) ·
   [integration risk acceptance](docs/V1_8_UART_ACCEPTANCE.md).
 - **RC1 implementation:** 3.3 V-compatible **UART Terminal** for development and diagnostics, preserving all verified v1.7 tools in one `labmate.fap`.
-- **DEFERRED (not implemented, not a hardware test PASS):** I²C Explorer for owned 3.3-V peripherals, because a bounded/cancellable bus lock is not verified.
-- **DEFERRED (optional, not implemented):** 1-Wire sensor reading, because the shared PB14 ownership gate is not verified.
+- **ORIGINAL TARGET OPEN: I²C Explorer — NOT IMPLEMENTED YET:** scan/results models exist in unmerged research PR #8, but a verified bounded/cancellable external I²C acquisition and real hardware scanner are not in the current v1.8 binary. Actively investigate firmware-supported ownership and safe true device detection in PR #13.
+- **ORIGINAL OPTIONAL TARGET OPEN: 1-Wire sensor — NOT IMPLEMENTED YET:** previous DS18B20 pure decoder and session model are not a reader; source review confirms **other external GPIOs can be chosen instead of shared PB14**, subject to correct pull-up, supported API, coordinated ownership and real hardware tests. Decide feasibility based on actual driver work, not an assumed PB14 limitation.
+- **Button Analyzer STOP/RESUME — COMPLETION CODE IN v1.8 BRANCH:** merged into the v1.8-completion candidate after prior 6/6 Button-specific hardware tests; a combined-app device regression remains necessary. No separate v1.8.1 release.
 - **Accepted scope reduction:** operator permitted skipping these unavailable functions, provided the release notes disclose exclusions; no useless disabled menu entries or separate FAP demos.
 - **Stable gating:** validate UART conflicts, input safety, STOP/BACK and resource release of implemented tools; preserve profile/CSV compatibility and verify exact build at release.
 
@@ -204,7 +221,7 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
 | v1.6 | Code/UI refactor | Stable published; v1.6.1 remains a previous Stable fallback |
 | **v1.7** | **PWM Studio and Counter** | **Previous Stable published 2026-10-12; retained for rollback** |
 | **v1.8** | **Coordinator cleanup → Counter resume → real UART; I²C + optional 1-Wire DEFERRED by operator** | **CURRENT STABLE published 2026-10-14. Tested exact FAP and SHA256 release assets VERIFIED; RC1 15/15 + final 4/4 PASS** |
-| v1.9 | Logic Scope and Signal Compare | Planned |
+| v1.9 | Logic Scope and Signal Compare | Planned; implementation HOLD until original v1.8 backlog in PR #13 is honestly completed |
 | v2.0 | LabMate Ultimate / Signal Doctor | Planned |
 
 The sequence above remains the agreed project roadmap. The 2026-10-09 documentation update records the completed v1.5 milestone **without changing any future version goals**. Subsequent scope changes should be explicit and agreed.
