@@ -14,6 +14,8 @@
 #include "labmate_button_logic.h"
 #include "labmate_threshold.h"
 #include "labmate_uart.h"
+#include "labmate_comm_resource.h"
+#include "labmate_onewire_hw.h"
 
 #define LABMATE_VERSION_TEXT "v1.8DEV"
 /* Shared menu/pin counts: UI and input handling must agree. */
