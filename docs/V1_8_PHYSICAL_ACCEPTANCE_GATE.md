@@ -691,10 +691,27 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   `7a76f626f34a65059d9536fa2cd52b2639f4d1038a9b5c69291fa28d5e4f63be`.
   No firmware DFU/TGZ flash, other app install, microSD CSV/profile
   deletion or Stable publication is approved.
-- [ ] **Physical EXITFIX FAP install + targeted regression STILL OPEN**
-  until actual operator Windows USB installer output and device screen
-  evidence. Already reported UARTFIX physical passes do not transfer
-  automatically to EXITFIX. Stable/main unchanged.
+- [x] **EXITFIX FAP-only USB transfer + launcher-request: REAL DEVICE
+  TRANSPORT PASS, 2026-10-15 at 02:10 local.** Operator PowerShell
+  confirmed `SHA256 VERIFIED:
+  7A76F626F34A65059D9536FA2CD52B2639F4D1038A9B5C69291FA28D5E4F63BE`,
+  `Installing to /ext/apps/Tools/labmate.fap via auto`,
+  `Using FLIP_UYBELAV on COM7`,
+  `Sending ... labmate.fap`, `100%, chunk 10 of 10`,
+  `Closing current app, if any`, `Launching app:
+  /ext/apps/Tools/labmate.fap`, and
+  `SUCCESS: runfap.py exited 0 and requested app launch.`.
+  Operator's final guard printed `EXITFIX USB INSTALL COMMAND PASS`.
+  This confirms successful reported USB file transfer and app launch
+  **request**, NOT verified on-screen startup or STOP/BACK resource
+  behavior. Pinned DFU/TGZ were not installed; old UARTFIX rollback
+  FAP hash was checked before install. Stable/main unchanged.
+- [ ] **EXITFIX physical on-screen launch, capture/EXIT resource
+  regression and COMM/UART/Profiles regression STILL OPEN** until
+  actual operator device observations are recorded. Historical UARTFIX
+  physical PASS does not transfer automatically to the new EXITFIX
+  artifact. A normal BACK cleanup regression cannot by itself prove
+  the fixed abnormal stale-capture exit branch is dynamically reached.
 
 ## Stable release boundary
 
