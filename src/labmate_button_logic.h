@@ -40,6 +40,9 @@ typedef struct {
 } LabMateButtonStats;
 
 void labmate_button_state_init(volatile LabMateButtonState* state, bool initial_level);
+/* Re-arm after STOP without erasing cumulative counts or last measurements.
+ * Do not carry a pending edge or hold timer through the stopped interval. */
+void labmate_button_state_resume(volatile LabMateButtonState* state, bool initial_level);
 void labmate_button_edge(
     volatile LabMateButtonState* state, bool level, uint32_t tick, uint32_t cycle);
 void labmate_button_poll(
