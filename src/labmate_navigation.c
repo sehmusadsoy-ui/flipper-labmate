@@ -17,6 +17,7 @@ static const char* const tool_titles[LabMateToolCount] = {
     "Button Analyzer",
     "Threshold Alerts",
     "UART Terminal",
+    "1-Wire Temp",
 };
 
 /* Each instrument remains reachable once, with its previous tool ID. */
