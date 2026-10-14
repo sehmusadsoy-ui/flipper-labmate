@@ -6,6 +6,11 @@ on:
     paths:
       - "scripts/patch_momentum_i2c_timeout.py"
       - ".github/workflows/check-v18-momentum-timed-i2c-patch.yml"
+      # Production adapter, runtime and manifest changes must be compiled
+      # against the exact patched SDK, not just against the stock SDK.
+      - "src/labmate_i2c_*"
+      - "src/labmate_comm_resource.*"
+      - "application.fam"
   workflow_dispatch:
 
 permissions:
