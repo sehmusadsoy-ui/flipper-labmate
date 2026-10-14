@@ -177,7 +177,7 @@ assert "app->about_page = labmate_nav_wrap(" in APP
 assert 'canvas_draw_line(canvas, 0, 52, 127, 52);' in PRIMITIVES
 
 for tool in ("Gpio", "Frequency", "Pulse", "Generator", "Logger",
-             "History", "About", "Profiles", "Counter", "Button", "Alerts", "Uart"):
+             "History", "About", "Profiles", "Counter", "Button", "Alerts", "Uart", "OneWire"):
     assert f"case LabMateTool{tool}:" in PRIMITIVES, f"Missing icon {tool}"
 
 print(f"LabMate v1.7 final UI polish PASS: {len(footer_pairs)} context footers, "
