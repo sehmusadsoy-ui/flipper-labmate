@@ -77,6 +77,8 @@ static void labmate_i2c_runtime_reap(LabMateI2cRuntime* s) {
             LabMateI2cRuntimeResults : LabMateI2cRuntimeNoDevices;
     else if(s->model.state == LabMateI2cControlCancelled)
         s->status = LabMateI2cRuntimeCancelled;
+    else if(s->model.state == LabMateI2cControlBusy)
+        s->status = LabMateI2cRuntimeBusy;
     else
         s->status = LabMateI2cRuntimeFailed;
 }
