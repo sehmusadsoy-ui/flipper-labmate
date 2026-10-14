@@ -151,6 +151,7 @@ int32_t labmate_app(void* p) {
 
     /* Defensive cleanup even if a future route exits while UART RUN. */
     labmate_uart_stop(&app->uart);
+    labmate_onewire_hw_stop(&app->thermometer);
 
     if(app->generator_running) {
         labmate_generator_stop(app);
