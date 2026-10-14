@@ -310,6 +310,25 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   the **new firmware/FAP pair** remain OPEN. Earlier ESP32 tests
   on prior images do not substitute for this regression.
 
+### 2026-10-14 — UART ESP32-S2 new full-firmware stress: **NOT PASS (byte drop)**
+
+- [x] **Positive link and TX evidence:** operator's actual ESP32-S2
+  115200 8N1 trial on the matching firmware/FAP reports
+  `ESP32_READY=yes; R=20621; D=52; E=0; TX A/T=yes`.
+  RX is active, two explicit TX commands produced expected replies,
+  and UART framing/noise error counter stayed zero.
+- [ ] **No-loss RX stress acceptance is OPEN / this run FAILED
+  the D=0 threshold.** The `D=52` counter means 52 received bytes
+  could not be queued by the UART ISR in this session; do not call
+  overall stress PASS or use earlier `D=0` from an older image to
+  override this finding. No conclusion about root cause or physical
+  fix until updated build and matched-device rerun.
+- [ ] Review the 256-byte original `LABMATE_UART_RX_QUEUE` and
+  finite 256-byte-per-loop drain cap; preserve actual drop counting.
+  Fix must pass host queue-saturation / HAL ownership checks and
+  be compiled into a **separate exact FAP** for the existing patched
+  firmware. Do NOT silently replace the user's installed binary.
+
 ## Stable release boundary
 
 Only after **all required** software, matched-firmware and safe physical acceptance gates are reported and verified may a revised `v1.8` Stable asset be considered. Historical source `v1.8` tag provenance must remain immutable; document exact old and replacement source/FAP SHA256, review release asset updates explicitly, then redownload and independently verify the remote asset. No v1.8.1 or v1.9 feature work until the original v1.8 completion decision is satisfied.
