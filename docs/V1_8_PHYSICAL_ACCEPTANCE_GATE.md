@@ -122,6 +122,37 @@ artifact ID, CI run, source SHA and all file SHA256 values.
 The full test package still requires controlled physical startup and
 on-device LabMate/COMM tests. A prepared updater is not acceptance.
 
+### Controlled PowerShell firmware install — 2026-10-14
+
+- [x] Operator on **Windows** reported full matched artifact
+  `LABMATE FULL MNTM012 PREPARE PASS`, **all three**
+  `firmware.dfu`, `firmware-full-update.tgz`, `labmate.fap`
+  SHA256 checks PASS; directory:
+  `C:\Users\sehmu\Downloads\LabMate-v18DEV-FULL`.
+  This was a **download-only** action.
+- [x] Added `scripts/install-v18-full012-dev-firmware.ps1`: real
+  **stage-only by default** and `-Apply` with the 3 pinned
+  artifact SHA256 values; checks archive entries against an exact
+  file allow-list, extracts to a **fresh** directory, verifies
+  embedded DFU/radio hashes and manifest target,
+  rechecks official MNTM-012 rollback and v1.8 Stable FAP SHA256,
+  confirms recorded 14-file LabMate backup plus a qFlipper settings
+  archive, validates Momentum SDK tools and requires user to type
+  `YUKLE` before sending the package through Momentum
+  `scripts/selfupdate.py`. No LabMate FAP overwrite occurs in
+  this firmware-only step.
+- [x] [Actual Windows CI 38614867094](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38614867094)
+  PASS: downloaded REAL full artifact, original preparer hash-check
+  PASS, real Windows TAR extraction + manifest + DFU/radio digest
+  verification PASS, `-Apply` fails closed for missing rollback.
+  **No USB/flashing** was performed in CI.
+- [ ] **Actual user machine firmware install and new version boot
+  remain OPEN**. Only after the operator reports the device has
+  rebooted into the matching modified Momentum image should the
+  real `labmate.fap` be transferred and its I2C/1-Wire tested.
+  Official rollback file availability is proven, physical recovery
+  remains UNTESTED.
+
 ## Gate 1 — Firmware startup and single-app sanity (after approved installation only)
 
 | ID | Check | Required evidence | Status |
