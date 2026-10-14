@@ -57,3 +57,17 @@ jobs:
           }
           Write-Host 'REAL FULL UPDATER STAGE/VERIFY PASS: NO COM, NO FLASH.'
 
+      - name: Assert APPLY refuses missing rollback before any USB activity
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $out = Join-Path $env:RUNNER_TEMP 'Full-MNTM012-Candidate'
+          $nonexistent = Join-Path $env:RUNNER_TEMP 'Missing-MNTM012-rollback'
+          & ./scripts/install-v18-full012-dev-firmware.ps1 -BundleDirectory $out -RollbackDirectory $nonexistent -Apply
+          if ($LASTEXITCODE -eq 0) {
+            throw 'DANGEROUS: Firmware trial APPLY accepted missing official rollback.'
+          }
+          $global:LASTEXITCODE = 0
+          Write-Host 'APPLY FAIL-CLOSED PASS; NO COM/USB/FLASH WAS ATTEMPTED.'
+
+
