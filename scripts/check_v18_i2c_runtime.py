@@ -47,7 +47,7 @@ assert "labmate_input_i2c(app, event, work);" in routing
 assert "labmate_i2c_runtime_start(" in handler
 assert "labmate_i2c_runtime_stop(" in handler
 assert "event.key == InputKeyBack" in handler
-assert "event.key == InputKeyOk" in handler
+assert "if(event.key != InputKeyOk) return;" in handler
 
 assert '"FW API"' in screen
 assert '"NO ACKS / CHECK BUS"' in screen
