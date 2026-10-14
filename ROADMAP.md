@@ -1,10 +1,10 @@
 # LabMate Master Roadmap — v1.0 to v2.0
 
-**Status:** Updated 2026-10-13: v1.7 Stable remains published. v1.8 coordinator refactor (PR #5), Counter STOP/RESUME (PR #6), and the UART minimum milestone (PR #7) are merged into development `main`; **I²C Explorer is next**. UART physical DROP/independent timing are documented limitations; no v1.8 release yet. v1.9 remains mandatory before v2.0.  
+**Status:** Updated 2026-10-14: v1.7 remains the currently **published** Stable while v1.8 final release publication is pending. v1.8 modular coordinator (PR #5), Counter STOP/RESUME (PR #6) and real UART (PR #7) are integrated; **RC1 15/15 and final v1.8 FAP 4/4 on-device acceptance PASS**, SDK/Windows CI and COM7 USB installation PASS. I²C and optional 1-Wire explicitly DEFERRED by operator due unverified firmware-wide bus/pin ownership. v1.9 remains PAUSED until the v1.8 GitHub Release actually exists.  
 **Current published Stable:** [v1.7 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7), original tag `d0e1bc6a95b257841533f0aa8745e3a79bbc8dcd`; updated, on-device-tested PWM Studio label FAP from source `0aeb0ca7ceba092c8adb6e44add0a2212cae1a74`, SHA256 `A0B305E5FD8D71C85C51480EE06A8B7E5EBD5BEE0E82935B0ED3B7E74E7EBCEA`. No new version or tag was created.  
 **Previous Stable fallback:** [v1.6.1 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1), [v1.6 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6), and older unchanged releases.  
 **Previous pre-release:** [v1.7 RC1](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7-rc1) remains available at unchanged source `d55eec03`.
-**Validation:** v1.7 refactored Stable Candidate passed 36/36 user-reported device regressions (7B screenshots); exact final `v1.7` FAP passed Test 7G 4/4 device smoke; Test 7H PowerShell `-Channel RC1 -VerifyOnly` passed; approved Stable release CI passed. Published `-Channel Stable -VerifyOnly` and actual `-Channel Stable -Port COM7` USB installation both passed on Windows 2026-10-12; a separate post-reinstall on-screen/data smoke passed 4/4 user-reported Flipper checks (v1.7 label, PWM STOP, Profile S1, historical CSV). No new version was created. **Current development: v1.8 Communication Tools**, coordinator refactor, Counter STOP/RESUME and first UART milestone all integrated into `main`; I²C Explorer is next. No v1.8 release has been published; next **v1.9 Logic Scope and Signal Compare**, then **v2.0 Ultimate**.
+**Validation:** v1.7 refactored Stable Candidate passed 36/36 user-reported device regressions (7B screenshots); exact final `v1.7` FAP passed Test 7G 4/4 device smoke; Test 7H PowerShell `-Channel RC1 -VerifyOnly` passed; approved Stable release CI passed. Published `-Channel Stable -VerifyOnly` and actual `-Channel Stable -Port COM7` USB installation both passed on Windows 2026-10-12; a separate post-reinstall on-screen/data smoke passed 4/4 user-reported Flipper checks (v1.7 label, PWM STOP, Profile S1, historical CSV). No new version was created. **Current development: v1.8 Communication Tools**, coordinator refactor, Counter STOP/RESUME and first UART milestone all integrated into `main`; I²C/1-Wire are explicitly deferred rather than passed. v1.8 final source at `02b05639364d6dd71f5eb70456eca379c59218cb` passed CI and Flipper 4/4 after RC1 15/15; FAP SHA256 `119c44bb854030a73a60fa205d38770bf77f048bb166ab379a03135c1de5f3b0`. The GitHub Stable **publication** is still pending; only after publication may work resume on **v1.9 Logic Scope and Signal Compare**, then **v2.0 Ultimate**.
 
 ## Non-negotiable sequential Stable gate (operator requirement — 2026-10-14)
 
@@ -15,24 +15,27 @@ Exceptions are limited to explicitly acknowledged **individual physical
 hardware tests** that cannot reasonably be performed; unfinished functional
 features are not silently waived. Any proposed scope deferral requires the
 operator's explicit decision before release. Never call blocked hardware
-integration "PASS", and never skip a required v1.8 instrument.
+integration "PASS"; scope removal must be explicit and listed as DEFERRED.
 
-**Present gate: v1.8 Communication Tools is INCOMPLETE.**
+**Present gate: v1.8 Stable functional acceptance COMPLETE; GitHub tag/release PUBLICATION PENDING.**
 The accepted UART Terminal implementation is merged into development
-`main` and is device-tested, but the real I²C Explorer has not been
-integrated into production LabMate or used to scan an actual bus.
-The Momentum external I²C `furi_hal_i2c_acquire` API waits
-`FuriWaitForever` for its resource lock, with no verified public
-bounded/cancellable acquire; this is a release-relevant implementation
-blocker, **not** an excuse to switch versions. Optional 1-Wire DS18B20
-has pure-code CI only and still lacks proven hardware owner arbitration.
-Real bus safety, resource release, and STOP/BACK must be reviewed honestly.
+`main` and device-tested. The user approved a **scope reduction**
+on 2026-10-14 after review of the blocked I²C and optional 1-Wire
+safety gates: neither has been integrated as a usable feature and
+neither is claimed PASS. Momentum external I²C acquisition can wait
+`FuriWaitForever` without a verified bounded cancellation API; 1-Wire
+requires unresolved shared PB14 pin ownership. Both are DEFERRED
+until technically justified later. The actual single `labmate.fap`
+passed source CI, checksum-verified COM7 install and physical final
+4/4 test after the 15/15 RC1 smoke. Publish **only that tested artifact**
+with the documented exclusions. [Candidate evidence](docs/V1_8_STABLE_CANDIDATE.md)
+· [release notes](docs/releases/RELEASE_NOTES_v1.8.md).
 
 **Do not resume v1.9 implementation, standalone preview production, new
 version publication or v2.0 work until v1.8 Stable is accepted and
-published.** Existing v1.9 Draft PR #10 is archived-in-place/PAUSED
-for provenance only; no merge. Draft I²C PR #8 is the active
-v1.8 engineering workstream; optional 1-Wire PR #9 remains unmerged.
+published.** Existing v1.9 Draft PR #10 remains PAUSED and unmerged.
+Historical I²C PR #8 and 1-Wire PR #9 remain unmerged and DEFERRED.
+The **v1.8 Stable publication** is the only active release work.
 Do not require or distribute further demonstration-only FAP downloads
 to substitute for production application features. New work must target
 the actual `labmate.fap` under controlled v1.8 development and regression
@@ -158,11 +161,11 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
   unverified. [UART test plan](docs/V1_8_UART_PLAN.md) ·
   [device evidence](docs/V1_8_UART_ESP32_TEST.md) ·
   [integration risk acceptance](docs/V1_8_UART_ACCEPTANCE.md).
-- **Next new instrument after UART device PASS:** I²C Explorer.
-- 3.3 V-compatible **UART Terminal** for development and diagnostics.
-- **I²C Explorer** for suitable, owned test peripherals on a safe bus.
-- If feasible, basic **1-Wire sensor reading** (e.g., a supported temperature sensor).
-- Test bus conflicts, input safety, timeouts and resource release.
+- **RC1 implementation:** 3.3 V-compatible **UART Terminal** for development and diagnostics, preserving all verified v1.7 tools in one `labmate.fap`.
+- **DEFERRED (not implemented, not a hardware test PASS):** I²C Explorer for owned 3.3-V peripherals, because a bounded/cancellable bus lock is not verified.
+- **DEFERRED (optional, not implemented):** 1-Wire sensor reading, because the shared PB14 ownership gate is not verified.
+- **Accepted scope reduction:** operator permitted skipping these unavailable functions, provided the release notes disclose exclusions; no useless disabled menu entries or separate FAP demos.
+- **Stable gating:** validate UART conflicts, input safety, STOP/BACK and resource release of implemented tools; preserve profile/CSV compatibility and verify exact build at release.
 
 ### v1.9 — Logic Scope and Signal Compare
 
@@ -198,7 +201,7 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
 | **v1.5** | **Data Logger, CSV recording and Log History** | **Stable published 2026-10-09** |
 | v1.6 | Code/UI refactor | Stable published; v1.6.1 remains a previous Stable fallback |
 | **v1.7** | **PWM Studio and Counter** | **Stable published 2026-10-12; current Stable** |
-| v1.8 | Coordinator cleanup → Counter resume → UART → I²C → optional 1-Wire | PR #5/#6/#7 merged into development `main`; UART scope accepted with disclosed DROP/calibration limits; I²C not yet implemented; no v1.8 Stable |
+| v1.8 | Coordinator cleanup → Counter resume → real UART; I²C + optional 1-Wire DEFERRED by operator | **Final v1.8 FAP CI/COM7 and device PASS** (RC1 15/15 + final 4/4); GitHub tag/release publication PENDING |
 | v1.9 | Logic Scope and Signal Compare | Planned |
 | v2.0 | LabMate Ultimate / Signal Doctor | Planned |
 

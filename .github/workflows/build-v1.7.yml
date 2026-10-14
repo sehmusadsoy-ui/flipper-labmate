@@ -2,7 +2,7 @@ name: LabMate Source CI (v1.7 baseline / v1.8 dev)
 
 on:
   push:
-    branches: [main, dev/v1.8-coordinator-refactor, dev/v1.8-counter-resume, dev/v1.8-uart-terminal, v1.7-rc1, v1.7-profiles-ux-fix, v1.7-stable-candidate, v1.7-stable-final]
+    branches: [main, dev/v1.8-coordinator-refactor, dev/v1.8-counter-resume, dev/v1.8-uart-terminal, v1.8-stable-candidate, v1.7-rc1, v1.7-profiles-ux-fix, v1.7-stable-candidate, v1.7-stable-final]
     paths:
       - "src/*.c"
       - "src/*.h"
