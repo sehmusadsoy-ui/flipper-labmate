@@ -173,6 +173,34 @@ and About's final position. Do not move About into COMM.
   DS18B20 test on PA4 with suitable pull-up; BUSY, STOP/BACK and
   existing-instrument regression pending. This is not yet Stable.
 
+### I²C STOP and contention semantics — 2026-10-14
+
+- [x] STOP while the firmware external-mutex acquire is pending now
+  returns **CANCELLED** rather than reporting an unrelated bus fault.
+  A failed acquire never releases an unowned bus. If STOP races a
+  successful acquire, no address probes run, and the bus is released
+  exactly once. Fake transport cases cover both races.
+- [x] A bounded acquire refusal **without STOP** is now reported as
+  **BUSY**, distinct from an actual probe/transfer **ERROR**. The
+  complete lifecycle model, runtime status mapping and I²C screen
+  preserve this distinction. Bus contention and a local conflicting
+  LabMate tool intentionally share the user-facing BUSY status.
+- [x] Final portable test suite, real stock Momentum SDK FAP build and
+  Windows installer mock PASS for source
+  [`2045951b`](https://github.com/sehmusadsoy-ui/flipper-labmate/commit/2045951b020c07449e47a77bac44bc75bb2e83f2)
+  in [Actions 38580743450](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38580743450).
+- [x] Patched Momentum firmware and exact integrated LabMate FAP built
+  with source [`5238c3f9`](https://github.com/sehmusadsoy-ui/flipper-labmate/commit/5238c3f9b27cbd1f7052aa5e82ec6955350293bf)
+  in [Actions 38580514575](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38580514575).
+  `firmware_all`, `fap_labmate` and APPCHK PASS; patched FAP SHA256:
+  `c67569797439819f846b0f6cd7d636483207d0b581151c692f90eee122cc7e59`.
+  The subsequent changes are native-test assertions/source guards
+  rather than production `src/` changes, so do not attribute a new
+  exact patched artifact hash to the later commit.
+- [ ] Physical I²C contention, STOP latency, device ACK, empty bus,
+  firmware service coexistence and PA4 DS18B20 tests remain OPEN.
+  **No firmware flashing or physical BUSY verification was performed.**
+
 ### R — in-place v1.8 final release gate (NOT YET OPEN)
 
 - [ ] Original v1.8 functional code gates above are satisfied or
