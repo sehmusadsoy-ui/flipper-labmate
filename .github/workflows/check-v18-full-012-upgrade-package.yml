@@ -10,6 +10,9 @@ on:
       - "scripts/check_v18_full_vs_mntm012.py"
       - "scripts/patch_momentum_i2c_timeout.py"
       - "src/labmate_i2c_*"
+      - "src/labmate_uart.*"
+      - "tests/test_uart_hal_host.c"
+      - "scripts/check_v18_uart.py"
       - "application.fam"
   workflow_dispatch:
 
@@ -87,6 +90,10 @@ jobs:
           # No flash_usb, selfupdate.py, runfap.py, or release.
           ./fbt copro_dist updater_package fap_labmate
           test -s build/f7-firmware-C/firmware.dfu
+          # FAP-only UART changes must pair with the already installed
+          # unchanged custom firmware image; refuse mismatch rather than
+          # asking the operator to reflash a different firmware.
+          echo 'e69f717df28f2ff5a417a69ac212f242cf2725a48ce8c4e31296ceb4a0157ec0  build/f7-firmware-C/firmware.dfu' | sha256sum -c
           test -s build/f7-firmware-C/.extapps/labmate.fap
           readelf -Ws build/f7-firmware-C/firmware.elf | awk '
             $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
