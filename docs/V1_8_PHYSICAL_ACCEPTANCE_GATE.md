@@ -323,11 +323,23 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   overall stress PASS or use earlier `D=0` from an older image to
   override this finding. No conclusion about root cause or physical
   fix until updated build and matched-device rerun.
-- [ ] Review the 256-byte original `LABMATE_UART_RX_QUEUE` and
-  finite 256-byte-per-loop drain cap; preserve actual drop counting.
-  Fix must pass host queue-saturation / HAL ownership checks and
-  be compiled into a **separate exact FAP** for the existing patched
-  firmware. Do NOT silently replace the user's installed binary.
+- [x] Source-only mitigation committed on `dev/v1.8-completion`:
+  original 256-byte UART queue increased to 1024 bytes, consumer
+  cap raised from 4x64 to 16x64 bytes per event-loop pass, ISR drop
+  reporting preserved. Native HAL mock now confirms a 320-byte burst
+  (previously overflowing) has `D=0`, 1088-byte queued without
+  a poll still reports exactly 64 drops and a full 1024-byte
+  drain succeeds. Static UART guard also checks both bounds.
+  [Source CI 38635609797](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38635609797)
+  **SUCCESS**, but this is NOT a physical UART throughput result.
+- [ ] The independent patched-firmware-matched FAP build
+  [FULL CI 38635690935](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38635690935)
+  must prove exact old firmware DFU SHA256
+  `e69f717df28f2ff5a417a69ac212f242cf2725a48ce8c4e31296ceb4a0157ec0`,
+  APPCHK and new FAP digest before any operator-reviewed FAP install.
+  Existing tested firmware need not be reflashed for a FAP-only fix.
+  No installation has been attempted for the queue mitigation.
+  An actual new-FAP ESP32 stress run with `D=0` is still required.
 
 ## Stable release boundary
 
