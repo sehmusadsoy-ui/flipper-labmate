@@ -232,6 +232,36 @@ and About's final position. Do not move About into COMM.
   User authorization, recoverability review, suitable 3.3 V test devices,
   and real firmware-wide coexistence/STOP validation remain required.
 
+### Firmware export and local pair-verification hardening — 2026-10-14
+
+- [x] Added compiled firmware **ELF symbol-table check**:
+  `furi_hal_i2c_external_acquire_timeout` must be an actually DEFINED
+  global function in `firmware.elf`, not merely mentioned in header/API CSV.
+  Full patched Momentum source + real integrated `labmate.fap` compiled and
+  custom function symbol verified in [CI 38584209652](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38584209652) PASS.
+- [x] Created **read-only** `scripts/verify-v18-matched-pair.ps1` to verify
+  both FAP and firmware SHA256 plus pinned Momentum base, patch diff
+  fingerprint, source commit, Actions run, and unapproved-development
+  warning. It has **no USB or flashing operations** and checks only
+  internal file consistency, not artifact authenticity.
+- [x] Windows native mock tests reject mismatched source SHA, tampered
+  FAP, tampered firmware, duplicate hashes, wrong Momentum base and
+  absent binaries. FAP SDK + full host suite and installer mock
+  [CI 38585242107](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38585242107) PASS.
+- [x] Actual built firmware+FAP pair was verified by **that same**
+  PowerShell preflight within
+  [CI 38584936591](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38584936591) PASS
+  on source `60464ed4df3c1133525b91dad0bfc09610eab855`.
+  Matched FAP SHA256:
+  `9a276e6caa8173a03382d1b6ae7e163ddd535a878264084423c67f66deb6c881`.
+  Matched firmware.dfu SHA256:
+  `e69f717df28f2ff5a417a69ac212f242cf2725a48ce8c4e31296ceb4a0157ec0`.
+  Both are in test-only artifact `11905990133` with a 7-day retention.
+- [ ] **Still not tested:** physical Flipper boot of modified firmware,
+  original Momentum service coexistence, real I2C3 ACK/NACK/STOP/BACK,
+  DS18B20 PA4 sensor reading, full integrated legacy tools.
+  Nothing was flashed, merged, published or installed.
+
 ### R — in-place v1.8 final release gate (NOT YET OPEN)
 
 - [ ] Original v1.8 functional code gates above are satisfied or
