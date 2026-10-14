@@ -32,6 +32,7 @@ screens = {
     "Pulse": "labmate_input_measure.c",
     "Generator": "labmate_input_output.c",
     "Uart": "labmate_input_uart.c",
+    "OneWire": "labmate_input_onewire.c",
 }
 handlers = [read(p) for p in sorted(set(screens.values()))]
 assert len(main.splitlines()) < 250, "labmate.c must be a thin coordinator"
