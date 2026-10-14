@@ -1,0 +1,98 @@
+name: Publish accepted LabMate v1.8 Stable (one-time)
+
+on:
+  push:
+    branches: [v1.8-release-publish]
+    paths:
+      - ".github/workflows/publish-v18-stable.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Verify tested binary and publish v1.8 Stable
+    if: github.repository == 'sehmusadsoy-ui/flipper-labmate' && github.ref_name == 'v1.8-release-publish'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: sehmusadsoy-ui/flipper-labmate
+      TAG: v1.8
+      TESTED_SOURCE: 02b05639364d6dd71f5eb70456eca379c59218cb
+      MERGED_MAIN: 063359222c7e9d2b74639838e6558b91e01e17db
+      EXPECTED_FAP_SHA256: 119c44bb854030a73a60fa205d38770bf77f048bb166ab379a03135c1de5f3b0
+      FINAL_TESTED_RUN: "38546662091"
+      MAIN_REPRO_RUN: "38548200859"
+    steps:
+      - name: Checkout merged, reviewed release documentation
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Fail closed on unexpected refs, CI results or existing v1.8
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = 'v1.8-release-publish'
+          test "$(gh api "repos/$GH_REPO/actions/runs/$FINAL_TESTED_RUN" --jq '.conclusion')" = success
+          test "$(gh api "repos/$GH_REPO/actions/runs/$FINAL_TESTED_RUN" --jq '.head_sha')" = "$TESTED_SOURCE"
+          test "$(gh api "repos/$GH_REPO/actions/runs/$MAIN_REPRO_RUN" --jq '.conclusion')" = success
+          test "$(gh api "repos/$GH_REPO/actions/runs/$MAIN_REPRO_RUN" --jq '.head_sha')" = "$MERGED_MAIN"
+          test "$(gh api "repos/$GH_REPO/releases/tags/v1.7" --jq '.prerelease')" = false
+          test -s docs/releases/RELEASE_NOTES_v1.8.md
+          if gh api "repos/$GH_REPO/git/ref/tags/$TAG" >/dev/null 2>&1; then
+            echo "::error::$TAG tag already exists; refuse to alter it"
+            exit 1
+          fi
+          if gh api "repos/$GH_REPO/releases/tags/$TAG" >/dev/null 2>&1; then
+            echo "::error::$TAG release already exists; refuse to alter it"
+            exit 1
+          fi
+
+      - name: Download only the exact physically tested final FAP
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets
+          gh run download "$FINAL_TESTED_RUN" --repo "$GH_REPO" --name labmate --dir release-assets
+          test -s release-assets/labmate.fap
+          test -s release-assets/SHA256SUMS.txt
+          test "$(find release-assets -maxdepth 1 -type f | wc -l)" -eq 2
+          test "$(wc -l < release-assets/SHA256SUMS.txt)" -eq 1
+          (cd release-assets && sha256sum -c SHA256SUMS.txt)
+          test "$(sha256sum release-assets/labmate.fap | cut -d' ' -f1)" = "$EXPECTED_FAP_SHA256"
+          test "$(cut -d' ' -f1 release-assets/SHA256SUMS.txt)" = "$EXPECTED_FAP_SHA256"
+          echo "Physically accepted v1.8 FAP SHA256 VERIFIED: $EXPECTED_FAP_SHA256"
+
+      - name: Publish one immutable-source v1.8 Stable GitHub Release
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" release-assets/labmate.fap release-assets/SHA256SUMS.txt \
+            --repo "$GH_REPO" \
+            --target "$TESTED_SOURCE" \
+            --title "LabMate v1.8 Stable" \
+            --notes-file docs/releases/RELEASE_NOTES_v1.8.md \
+            --latest
+
+      - name: Verify published tag, assets, and actual remote FAP digest
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$GH_REPO/git/ref/tags/$TAG" --jq '.object.sha')" = "$TESTED_SOURCE"
+          meta="$(gh api "repos/$GH_REPO/releases/tags/$TAG")"
+          test "$(jq -r '.draft' <<< "$meta")" = false
+          test "$(jq -r '.prerelease' <<< "$meta")" = false
+          test "$(jq -r '.target_commitish' <<< "$meta")" = "$TESTED_SOURCE"
+          test "$(jq -r '[.assets[].name] | sort | join(",")' <<< "$meta")" = 'SHA256SUMS.txt,labmate.fap'
+          test "$(jq -r '.assets[] | select(.name=="labmate.fap") | .digest' <<< "$meta")" = "sha256:$EXPECTED_FAP_SHA256"
+          mkdir -p verify-published
+          gh release download "$TAG" --repo "$GH_REPO" \
+            --pattern labmate.fap --pattern SHA256SUMS.txt --dir verify-published
+          (cd verify-published && sha256sum -c SHA256SUMS.txt)
+          test "$(sha256sum verify-published/labmate.fap | cut -d' ' -f1)" = "$EXPECTED_FAP_SHA256"
+          echo "PUBLISHED AND VERIFIED: https://github.com/$GH_REPO/releases/tag/$TAG"
