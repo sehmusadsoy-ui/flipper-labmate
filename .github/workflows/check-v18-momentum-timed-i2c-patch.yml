@@ -90,6 +90,23 @@ jobs:
           sha256sum "$FAP"
           echo "NO FLASH, NO USB INSTALL, NO RELEASE ASSET UPLOAD."
 
+      - name: Verify bounded I2C API is really defined in compiled firmware ELF
+        shell: bash
+        run: |
+          set -euo pipefail
+          FW_ELF="momentum-src/build/f7-firmware-C/firmware.elf"
+          test -s "$FW_ELF"
+          # A header declaration and API CSV entry alone do not prove
+          # the firmware actually defines the callable function.
+          readelf -Ws "$FW_ELF" | awk '
+            $4 == "FUNC" && $5 == "GLOBAL" && $7 != "UND" &&
+            $8 == "furi_hal_i2c_external_acquire_timeout" { found = 1 }
+            END { exit !found }
+          '
+          echo "Bounded external I2C function is DEFINED in the firmware ELF (CI ONLY)."
+          # This checks the on-disk symbol, not its runtime lock behavior.
+          # Real I2C contention, transfer, STOP and rollback require device tests.
+
       - name: Record checksummed matching firmware and LabMate pair (CI ONLY)
         shell: bash
         run: |
