@@ -419,6 +419,21 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   unrelated firmware-service resource exclusion, actual I2C ACK,
   real DS18B20 reading or calibrated GPIO/waveform accuracy.
 
+### 2026-10-14 — PWM background with Logger and Profiles conflict: physical PASS
+
+- [x] Operator explicitly reported `PWM LOGGER PASS` for the exact
+  no-external-GPIO sequence: PWM Studio RUN then BACK, Profiles LOAD
+  blocked with visible PWM ON and no SAVE/DELETE, Data Logger FREQ /
+  PC1 LOW recording while PWM remains active with rows advancing,
+  STOP/SAVED and BACK, PWM still RUN on re-entry and then STOP, and
+  Log History listing the newly created CSV while preserving old logs.
+  This establishes the specified app-local TIM1 PWM and logger capture/
+  SD recording coexistence, and safe Profiles LOAD refusal during RUN.
+- [ ] This report does NOT exercise actual Profiles SAVE/DELETE
+  mutations, deletion of a disposable newly created CSV, independent
+  file-content inspection, SD failure recovery, or calibrated pulse/
+  frequency capture with external applied signals. These remain OPEN.
+
 ## Stable release boundary
 
 Only after **all required** software, matched-firmware and safe physical acceptance gates are reported and verified may a revised `v1.8` Stable asset be considered. Historical source `v1.8` tag provenance must remain immutable; document exact old and replacement source/FAP SHA256, review release asset updates explicitly, then redownload and independently verify the remote asset. No v1.8.1 or v1.9 feature work until the original v1.8 completion decision is satisfied.
