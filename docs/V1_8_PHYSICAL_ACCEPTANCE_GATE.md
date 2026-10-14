@@ -473,10 +473,16 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   100 Hz; LOAD S3 and observe LOADED; return to PWM Studio and
   confirm 100 Hz selected while still STOP. S1 and S2 were not
   selected for modification.
-- [ ] **DELETE on disposable S3 with app restart** remains open and is
-  the next scoped test. Avoid modifying S1/S2. Actual SD torn-write
-  / corrupt-copy recovery and independent backup-restore verification
-  also remain open.
+- [x] **Disposable S3 actual DELETE / cancel / persistence PASS:**
+  operator explicitly reported `PROFILE S3 DELETE PASS` following
+  the requested test of DELETE S3? confirmation, BACK cancel
+  preserving S3, confirming targeted DELETE, seeing DELETED / EMPTY,
+  and fully exiting/reopening LabMate with S3 still EMPTY while
+  previously saved S1/S2 remain intact. Together with the earlier
+  S3 SAVE/LOAD result, all tested Profiles SD lifecycle operations
+  now have actual operator-reported device evidence.
+- [ ] SD torn-write or corrupt-copy recovery and independent
+  backup-restore verification still remain OPEN.
 
 ## Stable release boundary
 
