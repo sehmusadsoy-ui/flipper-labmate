@@ -107,6 +107,26 @@ jobs:
           # This checks the on-disk symbol, not its runtime lock behavior.
           # Real I2C contention, transfer, STOP and rollback require device tests.
 
+      - name: Build minimal updater and audit bundled DFU identity (NO FLASH)
+        shell: bash
+        working-directory: momentum-src
+        run: |
+          set -euo pipefail
+          FAP="build/f7-firmware-C/.extapps/labmate.fap"
+          FW="build/f7-firmware-C/firmware.dfu"
+          before_fap="$(sha256sum "$FAP" | cut -d ' ' -f 1)"
+          before_fw="$(sha256sum "$FW" | cut -d ' ' -f 1)"
+          # Unlike updater_package, the minimal target does not request
+          # an accompanying C2 radio stack, SD resources or option-byte data.
+          # The target BUILDS only; it cannot connect to a physical Flipper.
+          ./fbt updater_minpackage
+          test "$before_fap" = "$(sha256sum "$FAP" | cut -d ' ' -f 1)"
+          test "$before_fw" = "$(sha256sum "$FW" | cut -d ' ' -f 1)"
+          mapfile -t bundles < <(find dist -type f -name '*.tgz' -print)
+          test "${#bundles[@]}" -eq 1
+          python3 ../labmate/scripts/check_v18_minimal_update_bundle.py "${bundles[0]}" "$FW"
+          echo "MINIMAL UPDATE FILE CONTENTS VERIFIED. NO FIRMWARE FLASHED."
+
       - name: Record checksummed matching firmware and LabMate pair (CI ONLY)
         shell: bash
         run: |
