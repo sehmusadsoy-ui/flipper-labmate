@@ -50,7 +50,7 @@ for name in screens:
     needle = f"case LabMateScreen{name}:"
     assert router.count(needle) == 1, f"Unrouted screen {name}"
 for name in ("Gpio", "Frequency", "Pulse", "Counter", "Button", "Alerts",
-             "Generator", "Logger", "History", "About", "Profiles", "Uart"):
+             "Generator", "Logger", "History", "About", "Profiles", "Uart", "OneWire"):
     assert sum(x.count(f"case LabMateTool{name}:") for x in handlers) == 1, (
         f"Missing or duplicate tool launch: {name}"
     )
