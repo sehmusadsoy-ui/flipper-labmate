@@ -30,7 +30,8 @@ void draw_i2c(Canvas* canvas, LabMateApp* app) {
         break;
     case LabMateI2cRuntimeNoDevices:
         badge = "NONE";
-        message = "NO DEVICES FOUND";
+        /* HAL reports NACK and transfer timeout alike as false. */
+        message = "NO ACKS / CHECK BUS";
         break;
     case LabMateI2cRuntimeCancelled:
         badge = "STOP";
