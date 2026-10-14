@@ -163,6 +163,10 @@ static const LabMateHelpPage labmate_help[LabMateToolCount] = {
         "UART TERMINAL", "13 TX / 14 RX 3.3V",
         "9600-115200 8N1", "OK RUN DN EDIT TX",
     },
+    [LabMateToolOneWire] = {
+        "1-WIRE TEMP", "PA4 DQ / 3.3V VDD",
+        "External sensor VDD", "OK READ  BK EXIT",
+    },
 };
 
 void draw_about(Canvas* canvas, LabMateApp* app) {
