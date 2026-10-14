@@ -16,6 +16,7 @@
 #include "labmate_uart.h"
 #include "labmate_comm_resource.h"
 #include "labmate_onewire_hw.h"
+#include "labmate_i2c_runtime.h"
 
 #define LABMATE_VERSION_TEXT "v1.8DEV"
 /* Shared menu/pin counts: UI and input handling must agree. */
