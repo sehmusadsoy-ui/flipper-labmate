@@ -91,6 +91,7 @@ int32_t labmate_app(void* p) {
         view_port_alloc();
 
     if(!viewport) {
+        labmate_i2c_runtime_free(app->i2c);
         furi_message_queue_free(queue);
         furi_mutex_free(app->mutex);
         free(app);
