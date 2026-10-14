@@ -5,6 +5,9 @@ on:
     branches: [dev/v1.8-completion]
     paths:
       - "scripts/patch_momentum_i2c_timeout.py"
+      - "scripts/check_v18_minimal_update_bundle.py"
+      - "scripts/verify-v18-matched-pair.ps1"
+      - "tests/test_v18_minimal_update_bundle.py"
       - ".github/workflows/check-v18-momentum-timed-i2c-patch.yml"
       # Production adapter, runtime and manifest changes must be compiled
       # against the exact patched SDK, not just against the stock SDK.
@@ -40,6 +43,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m py_compile labmate/scripts/patch_momentum_i2c_timeout.py
+          python3 -m unittest discover -s labmate/tests -p test_v18_minimal_update_bundle.py
           python3 labmate/scripts/patch_momentum_i2c_timeout.py momentum-src
 
       - name: Apply proof patch to ephemeral CI checkout ONLY
@@ -139,9 +143,13 @@ jobs:
           mkdir -p "$PAIR"
           cp "$FAP" "$PAIR/labmate.fap"
           cp "$FW" "$PAIR/firmware.dfu"
+          mapfile -t bundles < <(find momentum-src/dist -type f -name '*.tgz' -print)
+          test "${#bundles[@]}" -eq 1
+          cp "${bundles[0]}" "$PAIR/firmware-update.tgz"
+          python3 labmate/scripts/check_v18_minimal_update_bundle.py             "$PAIR/firmware-update.tgz" "$PAIR/firmware.dfu"
           (
             cd "$PAIR"
-            sha256sum labmate.fap firmware.dfu > SHA256SUMS.txt
+            sha256sum labmate.fap firmware.dfu firmware-update.tgz > SHA256SUMS.txt
             sha256sum -c SHA256SUMS.txt
           )
           printf 'LabMate commit: %s\n' "$(git -C labmate rev-parse HEAD)" > "$PAIR/PROVENANCE.txt"
@@ -152,7 +160,7 @@ jobs:
           LABMATE v1.8 DEVELOPMENT — NOT AN APPROVED INSTALL PACKAGE.
           This pair is archived ONLY to prove the exact firmware/FAP
           compilation relationship and provide checksums for later review.
-          Do NOT flash this firmware or install this FAP yet.
+          Do NOT flash/install the firmware, minimal TGZ or FAP yet.
           Stock Momentum firmware does NOT export the timed external I2C API;
           this paired LabMate FAP must NOT be mixed with stock firmware.
           No real Flipper or external I2C/1-Wire hardware acceptance exists.
@@ -165,7 +173,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $source = (git -C labmate rev-parse HEAD).Trim()
-          & ./labmate/scripts/verify-v18-matched-pair.ps1 -PairDirectory ./ci-matching-test-pair -ExpectedSourceSha $source
+          & ./labmate/scripts/verify-v18-matched-pair.ps1 -PairDirectory ./ci-matching-test-pair -ExpectedSourceSha $source -RequireUpdater
           if ($LASTEXITCODE -ne 0) {
             throw 'Actual matched firmware/FAP preflight rejected the CI archive.'
           }
@@ -173,7 +181,7 @@ jobs:
       - name: Archive matching development pair (NOT A RELEASE)
         uses: actions/upload-artifact@v4
         with:
-          name: v18DEV-patched-firmware-FAP-UNTESTED-DO-NOT-FLASH
+          name: v18DEV-minimal-updater-FAP-UNTESTED-DO-NOT-FLASH
           path: ci-matching-test-pair/
           retention-days: 7
           if-no-files-found: error
