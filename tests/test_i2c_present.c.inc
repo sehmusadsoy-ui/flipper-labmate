@@ -36,6 +36,24 @@ static void test_unscanned_and_blocked(void) {
     assert(v.status == LabMateI2cViewCancelled && v.model_quiescent);
 }
 
+/* Distinguish firmware external-mutex contention from scan errors. */
+static void test_bounded_acquire_busy_snapshot(void) {
+    LabMateI2cControl c;
+    LabMateI2cView v;
+    uint32_t generation;
+    labmate_i2c_control_reset(&c);
+    assert(labmate_i2c_control_start(&c, &generation));
+    assert(labmate_i2c_control_acquire_done(&c, generation, false));
+    assert(c.state == LabMateI2cControlBusy && !c.bus_held);
+    assert(labmate_i2c_present(&c, 0U, &v));
+    assert(v.status == LabMateI2cViewBusy && v.model_quiescent);
+    assert(v.found_total == 0U && v.scanned_count == 0U && v.row_count == 0U);
+    assert(strcmp(labmate_i2c_view_status_text(v.status), "BUSY") == 0);
+    assert(labmate_i2c_control_start(&c, &generation));
+    assert(labmate_i2c_present(&c, 0U, &v));
+    assert(v.status == LabMateI2cViewWaitBus);
+}
+
 static void test_no_device_only_after_real_model_finish(void) {
     LabMateI2cControl c;
     LabMateI2cView v;
@@ -134,6 +152,7 @@ static void test_partial_cancel_and_error(void) {
 
 int main(void) {
     test_unscanned_and_blocked();
+    test_bounded_acquire_busy_snapshot();
     test_no_device_only_after_real_model_finish();
     test_pages_results_and_truncation();
     test_partial_cancel_and_error();
