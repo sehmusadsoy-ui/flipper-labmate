@@ -149,7 +149,15 @@ on-device LabMate/COMM tests. A prepared updater is not acceptance.
 - [x] **Operator's actual COM7 USB update upload and firmware updater handoff — 2026-10-14 21:36–21:37 local — REPORTED PASS:** on Windows, `install-v18-full012-dev-firmware.ps1 -Apply -SettingsBackupPath ...` revalidated all three SHA256s, embedded DFU and radio, both rollback digests, 14 microSD backup files and qFlipper settings archive; operator explicitly typed `YUKLE`. Momentum `selfupdate.py` connected to `FLIP_UYBELAV` on **COM7**, transferred all seven firmware update components (firmware.dfu, firstboot.bin, radio.bin, resources.tar.gz, splash.bin, update.fuf, updater.bin), then returned `FIRMWARE UPDATE COMMAND ACCEPTED; WAIT FOR FLIPPER TO REBOOT.` No upload transport error was reported.
 - [x] **Operator-reported physical reboot and basic UI launch: PASS (2026-10-14).** User reports the Flipper rebooted, all basic controls are working and they can open LabMate. This upgrades the earlier updater-handoff-only status to **basic physical boot/UI PASS**, but the **on-device firmware About/version was not yet reported** and it may be the pre-existing Stable LabMate FAP from microSD.
 - [x] **EXACT MATCHED LabMate FAP USB upload and launcher request — OPERATOR LOG PASS, 2026-10-14 21:52 local.** PowerShell installer verified `labmate.fap` SHA256 `9a276e6caa8173a03382d1b6ae7e163ddd535a878264084423c67f66deb6c881`; `runfap.py` connected to `FLIP_UYBELAV` COM7, installed to `/ext/apps/Tools/labmate.fap`, closed the previous app if any, logged `Launching app: /ext/apps/Tools/labmate.fap`, and exited `0` (`SUCCESS: runfap.py exited 0 and requested app launch.`). This **proves transfer plus launch request only**; matching FAP is staged on Flipper, but rendered v1.8DEV menu/normal operation has not yet been observed.
-- [ ] **On-device new LabMate UI and exact patched firmware About are OPEN.** Check About for `MNTM-HEAD` / the expected development identity, confirm actual app screen and the menu order. Real I2C/OneWire, Button Analyzer and full regression remain OPEN. Physical recovery remains UNTESTED.
+- [x] **Subsequently obtained app UI and firmware identity evidence.**
+  Operator reported v1.8DEV menu, root order and operating tools;
+  additionally supplied screenshots showing `mntm-dev [14-10-2026]`,
+  `d3f89dfe`, `HEAD`, and Flipper Zero FZ.1. See
+  firmware About identity record near end. Those screenshots identify
+  the reported development firmware, not its installed DFU byte-hash.
+  The original note above is historical upload-stage evidence;
+  firmware-wide arbitration, positive I2C/1-Wire peripherals and
+  tested physical rollback remain OPEN.
 
 ## Gate 1 — Firmware startup and single-app sanity (after approved installation only)
 
@@ -525,6 +533,30 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   copy's bytes match by the device/host MD5 check. It does not
   replace the separate SHA-256 local digest or imply a cryptographic
   security guarantee under malicious collision attacks.
+
+### 2026-10-15 — On-device firmware About identity: screenshot evidence PASS
+
+- [x] User-provided three screenshots from Flipper's firmware/hardware
+  information screens (capture filenames dated 2026-10-14 ~21:57).
+  The actual display reports device model `FZ.1` and firmware
+  `mntm-dev [14-10-2026]`, abbreviated commit `d3f89dfe`,
+  and branch label `HEAD`. The abbreviated commit **matches
+  the first eight characters** of the project's pinned Momentum
+  source `d3f89dfe2ef6b01839201598e9be1590cba80322`.
+  An additional visible build label `[87.1] 2.0.0:L` is
+  transcribed as display metadata only; no semantic or checksum
+  claim is inferred from it.
+- [x] This closes **on-device displayed firmware identity** acceptance
+  for the reported development build. It does not independently
+  verify flashed firmware's complete DFU SHA-256 or the historical
+  screenshots' exact contemporaneity with later UARTFIX FAP
+  installation. The UARTFIX installation did not request any firmware
+  reflash and the DFU hash from the known matched build remained
+  `e69f717df28f2ff5a417a69ac212f242cf2725a48ce8c4e31296ceb4a0157ec0`.
+- [ ] Firmware-wide external service resource coordination, safe
+  rollback/recovery, optional live peripheral I2C/DS18B20
+  hardware acceptance and calibrated electrical outputs remain OPEN.
+  Do not publish or retag Stable based solely on this identity PASS.
 
 ## Stable release boundary
 
