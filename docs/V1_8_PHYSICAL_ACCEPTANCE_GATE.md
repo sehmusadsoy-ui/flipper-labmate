@@ -263,6 +263,12 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   The above reports successful UI/timer/ownership transitions and
   elapsed-time semantics only, not hardware pulse-accuracy proof.
 
+### Physical regressions: Logger/History and Profiles (2026-10-14)
+
+- [x] Logger and History: operator reported `LOGGER HISTORY PASS` for new PC1 frequency CSV recording, advancing rows, STOP/SAVED, opening the newest log and inspecting row count, and canceling the delete confirmation without loss.
+- [x] Profiles: operator reported `PROFILES PASS` for inspecting S1-S3, LOAD from a saved slot, canceling SAVE and DELETE confirmations with BACK, and checking profile preservation after reopening.
+- [ ] Actual deletion of a disposable CSV, independent CSV content review, and actual profile SAVE/DELETE/persistence mutations remain open. Preserve existing data.
+
 ## Stable release boundary
 
 Only after **all required** software, matched-firmware and safe physical acceptance gates are reported and verified may a revised `v1.8` Stable asset be considered. Historical source `v1.8` tag provenance must remain immutable; document exact old and replacement source/FAP SHA256, review release asset updates explicitly, then redownload and independently verify the remote asset. No v1.8.1 or v1.9 feature work until the original v1.8 completion decision is satisfied.
