@@ -207,6 +207,22 @@ Firmware About build string still has not been separately photographed.
 
 Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved completed counts; PWM Studio START/STOP; Counter STOP/RESUME; GPIO Monitor, Frequency and Pulse; UART ESP32 RX/TX RUN/STOP/BACK; Logger/History open and delete confirmation; Profiles S1–S3 LOAD/SAVE/DELETE with real prior data; application exit and re-entry without stuck hardware ownership. Recheck INFO at bottom and COMM directly above. Do not overwrite old CSV or profiles during exploratory tests.
 
+### 2026-10-14 — Button Analyzer control regression: operator physical PASS
+
+- [x] **No external button connected — UI/state transition PASS.** Operator
+  answered **"pass"** to the exact on-device Button Analyzer test:
+  `MEASURE → Button Analyzer` initial `STOP` / `PC1 / PULLUP` /
+  `DB 10 ms`; OK `RUN`; DOWN detail page and back to main;
+  OK `STOP`; OK `RESUME`; OK `STOP`; UP `RESET` yielding
+  next OK `START`; BACK returns to menu. No crash or stuck UI
+  reported. This is real-device operator confirmation of **input,
+  display and lifecycle controls**, not a synthetic CI claim.
+- [ ] **Measured real switch press/release counts, debounce, bounce
+  duration, settle time and completed nonzero results preserved by
+  STOP→RESUME remain OPEN.** They require a real known-safe contact on
+  PC1/ground, not an unattached pin. Do not infer electrical accuracy
+  from the control-only PASS.
+
 ## Stable release boundary
 
 Only after **all required** software, matched-firmware and safe physical acceptance gates are reported and verified may a revised `v1.8` Stable asset be considered. Historical source `v1.8` tag provenance must remain immutable; document exact old and replacement source/FAP SHA256, review release asset updates explicitly, then redownload and independently verify the remote asset. No v1.8.1 or v1.9 feature work until the original v1.8 completion decision is satisfied.
