@@ -42,10 +42,14 @@ for left_key, left_action, right_key, right_action in footer_pairs:
         width = len(key) * GLYPH + 6 + 3 + len(action) * GLYPH
         assert width <= 60, f"Footer overlaps adjacent cell: {key} {action}"
         assert key.isalpha() and action.isalpha(), "Avoid cryptic glyph/arrow footers"
-# Dynamic Button STOP/START strings share equal/smaller widths.
+# Dynamic Button footer keeps STOP/START/RESUME inside the original zones.
 for fragment in ('"DOWN", "MAIN"', '"DOWN", "MORE"',
-                 'app->button_active ? "STOP" : "START"'):
+                 'app->button_active ? "STOP" :',
+                 'app->button_session_started ? "RESUME" : "START"',
+                 'ui_footer_pair(canvas, "DOWN", "MAIN", "OK", button_action);',
+                 'ui_footer_pair(canvas, "DOWN", "MORE", "OK", button_action);'):
     assert fragment in UI, f"Missing Button footer mode: {fragment}"
+assert len("OK") * GLYPH + 9 + len("RESUME") * GLYPH <= 60
 
 # Stable version text fits the same badge used by RC1; do not alter UI layout.
 assert 'ui_badge(canvas, 70, 1, 56, LABMATE_VERSION_TEXT, false);' in UI
