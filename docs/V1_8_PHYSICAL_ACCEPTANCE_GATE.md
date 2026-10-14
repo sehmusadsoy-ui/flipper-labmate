@@ -272,8 +272,14 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   **physically PASS** in the 2026-10-14 Log History section below.
 - [x] Disposable S3 real **SAVE/LOAD across full application restart**
   is physically PASS; see S3 section below.
-- [ ] Independent CSV byte/content audit and disposable S3 actual
-  DELETE/restart persistence remain open. Preserve S1/S2 and backups.
+- [x] Independent Windows CSV structure/content audit of a later
+  untouched test file `log_0056.csv`: USB receive, 8 parsed rows,
+  correct header, strictly increasing timestamps and FREQ/PC1 source
+  verified (2026-10-15, see record below).
+- [x] Disposable S3 targeted DELETE/BACK cancel and app-restart
+  persistence **physically PASS** (see S3 record below).
+- [ ] Flipper-side vs downloaded-byte checksum comparison remains open;
+  preserve S1/S2 and backups.
 
 ### 2026-10-14 — MEASURE suite navigation and capture lifecycle: physical PASS
 
@@ -451,11 +457,12 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   OK permanently deletes that one test CSV, prior CSV files
   remain listed, and after exiting/reopening LabMate the deleted
   file remains absent while old files remain present.
-- [ ] The test verifies app-visible real single-file DELETE,
-  cancel/no-delete and persistence over app reentry. It does not
-  establish bytewise independent CSV integrity, resilience to
-  unexpected SD removal, power failure, or deletion of any older
-  non-disposable logs. Preserve preexisting files and backups.
+- [ ] The DELETE test verifies app-visible real single-file DELETE,
+  cancel/no-delete and persistence over app reentry. A **different**
+  intact log `log_0056.csv` received independent Windows CSV
+  content review on 2026-10-15 (details below), but not device-side
+  checksum comparison, unexpected SD removal/power-fail resilience,
+  or deletion of old non-disposable logs. Preserve preexisting files.
 
 ### 2026-10-14 — Profiles S3 real SAVE/LOAD and app restart: physical PASS
 
@@ -483,6 +490,30 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   now have actual operator-reported device evidence.
 - [ ] SD torn-write or corrupt-copy recovery and independent
   backup-restore verification still remain OPEN.
+
+### 2026-10-15 — USB-downloaded CSV content audit: physical + Windows PASS
+
+- [x] Operator's real Windows PowerShell transcript shows official
+  `scripts/storage.py -p auto receive` receiving
+  `/ext/apps_data/labmate/log_0056.csv` on `COM7` into
+  `Downloads/LabMate-CSV-Audit/log_0056.csv` without writing back to
+  the Flipper, with exit status zero and 100% receive.
+- [x] Independent `Import-Csv` header comparison exactly matches
+  `elapsed_ms,source,pin,valid,frequency_hz,high_us,low_us,period_us,duty_pct`;
+  `ROWS: 8`; all rows pass strictly increasing signed integer
+  `elapsed_ms` and exact `source=FREQ`, `pin=PC1` checks.
+  Visible first three timestamps: 1003, 2003, 3003 ms; final
+  three 6003, 7003, 8003 ms; reported `LAST_MS: 8003`.
+  Displayed rows use `valid=0`, `frequency_hz=0.000`
+  with no externally connected signal, consistent with invalid/
+  signal-absent sampling; not an electrical accuracy test.
+- [x] SHA-256 **of Windows-downloaded local file**:
+  `1BE4426E638B2227AD69ED6D9CA78E82FB406DD8F3DF2196F112AC17015968C3`.
+  This establishes a local audit reference, **not** independent
+  equality with on-device checksum (not queried). CSV header,
+  structure, timing sequence and sample content are PASS; device
+  hash parity, arbitrary capture accuracy and durability under
+  power/storage faults remain untested.
 
 ## Stable release boundary
 
