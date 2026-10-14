@@ -586,6 +586,52 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   energize external GPIO, change the power setting or claim
   physical 5 V OFF merely from source inspection.
 
+### 2026-10-15 — v1.8 app-exit capture cleanup hardening: SOURCE CI PASS, device retest OPEN
+
+- [x] Reviewed current real production capture, TIM2/EXTI, PWM,
+  UART/Expansion, external I2C3 worker, PA4 1-Wire and SD lifecycle
+  code; owner/release matrix and exact unresolved firmware-wide scope
+  are recorded in [V1_8_RESOURCE_LIFECYCLE_AUDIT.md](V1_8_RESOURCE_LIFECYCLE_AUDIT.md).
+- [x] **Real source defect/risk corrected on DEV only:** `src/labmate.c`
+  previously conditioned its last `labmate_capture_stop_all` on
+  `labmate_screen_uses_gpio(app->screen)`. Normal UI BACK routes
+  already released capture, but a stale active owner on future MENU
+  exit would skip that final STOP. Production commit
+  `d89d2715e246546b1eb07c483d3ba46a3713b5ed` calls
+  `labmate_capture_stop_all` unconditionally, snapshots the
+  armed capture GPIO before STOP clears the pin index, and releases
+  it even after a menu exit. GPIO-only selected input release is
+  retained; redundant direct counter/button stops removed because
+  the shared STOP already invokes both.
+- [x] Source guards `check_v18_coordinator.py` and
+  `check_v16_boundaries.py` updated for the safer unconditional
+  teardown. Initial CI runs 38645684019/38645836650 failed an
+  **obsolete v1.6 structural assertion** that demanded the old
+  screen-gated STOP, not a device failure. Guard corrected in commit
+  `f865a8099c5ba7d83971933fcff1def51d98b358`.
+  [Source CI 38645962260](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38645962260)
+  **SUCCESS** (native/SDK + installer mocks). It did not contact
+  or update the user's Flipper.
+- [x] Full patched Momentum + one real LabMate FAP build workflow
+  changed to trigger for **any** `src/**` modification, not only
+  UART or I2C module edits. New full [CI run
+  38645876409](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38645876409)
+  was **IN PROGRESS** when documented. Until it finishes and its
+  real outputs/DFU digest are reviewed, do not assign a new FAP hash.
+- [ ] **New source is NOT PHYSICALLY INSTALLED or ACCEPTED.** The
+  operator's previous UARTFIX ST3, CSV/Profiles, RESOURCE EXIT and
+  other actual Flipper passes refer only to the **earlier installed
+  FAP SHA256 `eaadc85aba2c8a78074dc97935dc6d71de982582054f8addbeea227428b4f0cf`**.
+  Before any new source can be declared device PASS, verify the exact
+  patched firmware identity/unchanged DFU SHA, separately pin and
+  verify the rebuilt FAP, stage it with fail-closed checks, obtain
+  explicit operator approval before any USB installation, and repeat
+  the focused capture/pin-exit/UART/COMM regressions.
+- [ ] Firmware-wide exclusive lease coordination with unrelated
+  services, positive I2C/DS18B20 signal fixtures, calibrated GPIO
+  measurements and tested restore are still OPEN. Local owner
+  guards and source CI are not substitutes.
+
 ## Stable release boundary
 
 Only after **all required** software, matched-firmware and safe physical acceptance gates are reported and verified may a revised `v1.8` Stable asset be considered. Historical source `v1.8` tag provenance must remain immutable; document exact old and replacement source/FAP SHA256, review release asset updates explicitly, then redownload and independently verify the remote asset. No v1.8.1 or v1.9 feature work until the original v1.8 completion decision is satisfied.
