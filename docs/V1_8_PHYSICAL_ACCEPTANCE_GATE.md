@@ -40,6 +40,34 @@ This does **not** validate recovery, startup or USB flashing on a device.
 Historical Stable v1.8 FAP SHA256 for rollback:
 `119c44bb854030a73a60fa205d38770bf77f048bb166ab379a03135c1de5f3b0`.
 
+### Windows PowerShell — one-command preparation (NO DEVICE CHANGE)
+
+The operator continues using the original Windows **PowerShell** workflow.
+For the currently pinned candidate, obtain the preparation script from its
+reviewable GitHub commit, then run it:
+
+```powershell
+$prep = "$env:TEMP\\prepare-labmate-v18dev.ps1"
+Invoke-WebRequest -UseBasicParsing "https://raw.githubusercontent.com/sehmusadsoy-ui/flipper-labmate/715973ed94f14a60e90cac037611f0d4501d6e90/scripts/prepare-v18-dev-test.ps1" -OutFile $prep
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File $prep
+```
+
+This script uses the previously established `gh` login, downloads the
+**exact pinned** [Actions 38587659583](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38587659583)
+archive, verifies all three fixed file SHA256s, the checksum list and
+source provenance, then prints `PREPARE PASS`. It does **not** talk to
+COM ports, call qFlipper, install firmware, or replace LabMate Stable.
+The archive expires after 7 days; an expired run must fail closed, never
+automatically substitute a newer build.
+
+**Subsequent PowerShell firmware installation** uses the firmware's
+`scripts/selfupdate.py -p COMx <path-to-update.fuf>`, and a separate
+`scripts/install-labmate.ps1` only after the matching custom firmware
+has booted. That later phase requires independently verified backups,
+rollback, installed Momentum version and reviewed update compatibility.
+Do **not** run either installation command just because preparation
+passed. Device USB/port may change after a firmware reboot.
+
 ### Read-only paired-file verification (Windows; no installation)
 
 After obtaining the **specific official GitHub Actions artifact** and extracting its files to a dedicated folder, from the LabMate source root run the following **verification only** in PowerShell (adjust the folder and source SHA to the exact originating CI run):
