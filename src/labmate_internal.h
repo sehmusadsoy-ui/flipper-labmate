@@ -47,6 +47,7 @@ typedef enum {
     LabMateScreenAlerts, /* configuration: no extra GPIO ownership */
     LabMateScreenUart, /* v1.8 UART: append, preserve stable screen IDs */
     LabMateScreenOneWire, /* append only; previous screen IDs preserved */
+    LabMateScreenI2c, /* real I2C only on a firmware with bounded HAL API */
 } LabMateScreen;
 
 typedef enum {
