@@ -46,6 +46,24 @@ assert 'labmate_generator_stop(app);' in main
 assert 'labmate_logger_storage_stop(app);' in main
 assert 'labmate_history_close(app);' in main
 
+# Exit cleanup must release capture even if the visible screen is MENU.
+# STOP resets capture_pin_index, so retain the physical pin before STOP.
+# GPIO Monitor has no capture owner and needs separate selected-pin cleanup.
+teardown = main.split("/* Teardown must not depend on which screen was visible on exit.", 1)
+assert len(teardown) == 2, "Missing unconditional application teardown"
+teardown = teardown[1].split("gui_remove_view_port(", 1)[0]
+assert "const uint8_t captured_gpio_index = app->capture_pin_index;" in teardown
+assert "labmate_capture_stop_all(app);" in teardown
+assert "labmate_monitor_gpio_release(app, captured_gpio_index);" in teardown
+assert "app->gpio_index != captured_gpio_index" in teardown
+assert "labmate_monitor_gpio_release(app, app->gpio_index);" in teardown
+assert teardown.index("const uint8_t captured_gpio_index") < teardown.index(
+    "labmate_capture_stop_all(app);"
+), "Snapshot armed pin before STOP clears identity"
+assert teardown.index("labmate_capture_stop_all(app);") < teardown.index(
+    "if(labmate_screen_uses_gpio(app->screen)"
+), "Capture STOP must not depend on displayed screen"
+
 # One and only one physical tool entry mapping per original enum value.
 for name in screens:
     needle = f"case LabMateScreen{name}:"
@@ -109,4 +127,4 @@ for forbidden in ("storage_file_write(", "storage_file_open(", "storage_file_clo
     )
 
 print("LabMate v1.8 coordinator PASS: 16 screen routes, 14 tools, ownership, "
-      "PWM safeguards, deferred I/O, bounded coordinator")
+      "unconditional capture/pin exit cleanup, PWM safeguards, deferred I/O")
