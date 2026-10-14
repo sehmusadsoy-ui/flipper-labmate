@@ -262,6 +262,36 @@ and About's final position. Do not move About into COMM.
   DS18B20 PA4 sensor reading, full integrated legacy tools.
   Nothing was flashed, merged, published or installed.
 
+### Approved trial preparation, minimal updater and rollback prerequisites — 2026-10-14
+
+- [x] Operator's explicit project-chat consent to **try** temporary
+  custom test firmware recorded on 2026-10-14. This does **not**
+  imply physical installation has happened.
+- [x] Built **minimal firmware-only** Momentum updater TGZ (no radio/
+  SD-resource/option-byte updates requested) from the same exact patched
+  source as the real integrated LabMate FAP. Read-only Python gate verified
+  embedded DFU SHA256 matches the separately compiled firmware; native
+  synthetic archive tests covered substitution, extra radio data,
+  dangerous option-byte mask, path traversal and wrong hardware target.
+- [x] On exact LabMate source `0fdd558291222c54f5b52b762e00fafffa3d0d62`,
+  [CI run 38587659583](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38587659583)
+  PASS: patched firmware/FAP compile, firmware ELF exported API symbol,
+  minimal TGZ internal identity, three local checksums and the real
+  matched-pair PowerShell read-only preflight. Original Stable untouched.
+  Artifact `11906491025` (7-day retention) includes:
+  - `labmate.fap` SHA256 `9a276e6caa8173a03382d1b6ae7e163ddd535a878264084423c67f66deb6c881`.
+  - `firmware.dfu` SHA256 `e69f717df28f2ff5a417a69ac212f242cf2725a48ce8c4e31296ceb4a0157ec0`.
+  - `firmware-update.tgz` SHA256 `b796b42cb5756fc8bb2bb3180ae2c2cb00775b3f88ceceae1025299a2f424ad2`.
+- [x] [Windows 38587659841](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38587659841)
+  stock Momentum FAP build and read-only verification mocks PASS, including
+  absent updater, mismatched source and tampered FAP/firmware/TGZ.
+- [ ] **Still required BEFORE any firmware installation:** successful
+  verified backup of the existing Flipper's internal settings AND separate
+  microSD Profiles/CSV, current installed Momentum version/compatibility
+  report, and a reviewed, available working rollback/recovery option.
+  No physical firmware startup, I2C, DS18B20, or legacy tools accepted.
+  Physical test gates: [V1_8_PHYSICAL_ACCEPTANCE_GATE.md](V1_8_PHYSICAL_ACCEPTANCE_GATE.md).
+
 ### R — in-place v1.8 final release gate (NOT YET OPEN)
 
 - [ ] Original v1.8 functional code gates above are satisfied or
