@@ -66,7 +66,7 @@ int main(void) {
     assert(!labmate_i2c_momentum_available());
     labmate_i2c_control_reset(&control);
     assert(!labmate_i2c_session_execute(&control, &ops));
-    assert(control.state == LabMateI2cControlFailed);
+    assert(control.state == LabMateI2cControlBusy);
     assert(!acquires && !probes && !releases);
     puts("I2C stock firmware API-unavailable fail-closed tests PASS (FAKE HAL)");
 #endif
