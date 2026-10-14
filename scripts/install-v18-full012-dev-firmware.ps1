@@ -65,20 +65,13 @@ try {
         throw 'Duplicate updater archive member.'
     }
 
-    $stage = Join-Path $bundle 'full-updater-stage'
+    # Always extract from the hash-pinned archive into a new directory.
+    # Never trust stale staged updater resources or binaries from a prior run.
+    $stage = Join-Path $bundle ('full-updater-stage-' + [guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Path $stage -ErrorAction Stop | Out-Null
+    & tar.exe -xzf $tgz -C $stage
+    if ($LASTEXITCODE -ne 0) { throw 'Updater TGZ extraction failed.' }
     $updatePath = Join-Path $stage $rootName
-    if (Test-Path -LiteralPath $stage) {
-        if (@(Get-ChildItem -LiteralPath $stage -Force).Count -gt 0 -and
-            -not (Test-Path -LiteralPath (Join-Path $updatePath 'update.fuf') -PathType Leaf)) {
-            throw "Stage directory has unexpected contents: $stage"
-        }
-    } else {
-        New-Item -ItemType Directory -Path $stage | Out-Null
-    }
-    if (-not (Test-Path -LiteralPath (Join-Path $updatePath 'update.fuf') -PathType Leaf)) {
-        & tar.exe -xzf $tgz -C $stage
-        if ($LASTEXITCODE -ne 0) { throw 'Updater TGZ extraction failed.' }
-    }
     $manifest = Join-Path $updatePath 'update.fuf'
     Assert-Digest (Join-Path $updatePath 'firmware.dfu') $expected['firmware.dfu']
     Assert-Digest (Join-Path $updatePath 'radio.bin') '134a9af448d2bc35995600c9e95723a387c144c2d1adea671086f16f95d327df'
