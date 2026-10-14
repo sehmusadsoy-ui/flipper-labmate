@@ -558,6 +558,34 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   hardware acceptance and calibrated electrical outputs remain OPEN.
   Do not publish or retag Stable based solely on this identity PASS.
 
+### 2026-10-15 — OTG UI check: not executable in pinned Momentum Power menu
+
+- [ ] Operator reports no `5V on GPIO` / `OTG Power` control in
+  Flipper's `Settings → Power` while attempting the proposed
+  read-only OTG UI regression. This is **NOT a LabMate bug report,
+  NOT an OTG test failure, and NOT a PASS**. No toggle was used.
+- [x] Reviewed exact pinned firmware source
+  `Next-Flip/Momentum-Firmware@d3f89dfe` file
+  `applications/settings/power_settings_app/scenes/power_settings_scene_start.c`.
+  Its Power main list is **Battery Info, Reboot, Power OFF,
+  Auto PowerOff, Limit Charge** — no OTG / 5V GPIO item.
+  The proposed `Settings → Power` UI test is therefore **not
+  applicable to this firmware menu**; do not ask operator to
+  find or change a nonexistent setting.
+- [x] Source-level inspection of six relevant LabMate production
+  modules (`labmate.c`, `labmate_onewire_hw.c`,
+  `labmate_generator.c`, `labmate_input_menu.c`,
+  `labmate_uart.c`, `labmate_i2c_momentum.c`)
+  found no OTG enabling API calls; 1-Wire source comments
+  explicitly do not require OTG 5 V. This is **partial source
+  evidence**, not a whole-program proof or physical power-state
+  measurement.
+- [ ] Gate F4 (no automatic USB OTG / 5 V activation) remains
+  **OPEN / NOT TESTED** pending a real, non-invasive read-only
+  power-state method or independent safe measurement. Do not
+  energize external GPIO, change the power setting or claim
+  physical 5 V OFF merely from source inspection.
+
 ## Stable release boundary
 
 Only after **all required** software, matched-firmware and safe physical acceptance gates are reported and verified may a revised `v1.8` Stable asset be considered. Historical source `v1.8` tag provenance must remain immutable; document exact old and replacement source/FAP SHA256, review release asset updates explicitly, then redownload and independently verify the remote asset. No v1.8.1 or v1.9 feature work until the original v1.8 completion decision is satisfied.
