@@ -1,6 +1,6 @@
 # LabMate v1.8.1 maintenance — Button Analyzer STOP / RESUME
 
-**State:** development candidate; CI PASS and operator-reported Button test B1/B3/B4/B5/B6 PASS (5/6); B2 NOT VERIFIED. NOT a published Stable release.
+**State:** development candidate; CI PASS and operator-reported Button test B1–B6 **6/6 PASS**, with B2 separately retested PASS. NOT a published Stable release.
 **Base:** published v1.8 Stable source and its post-release documentation.
 No change to the existing immutable v1.8 tag/assets or user's installed FAP.
 
@@ -39,19 +39,21 @@ The operator submitted:
 | Test | Defined criterion | Operator result |
 | --- | --- | --- |
 | B1 | On-device `v1.8.1d` label | PASS |
-| B2 | Button Analyzer START begins measurement | **NOT VERIFIED**, not FAIL and not PASS |
+| B2 | Button Analyzer START begins measurement | Initially NOT VERIFIED; separate follow-up PASS |
 | B3 | STOP retains press/release counts | PASS |
 | B4 | RESUME continues counters without clearing | PASS |
 | B5 | STOP → UP RESET clears counters | PASS |
 | B6 | BACK exits normally | PASS |
 
-**Count: 5 PASS, 1 not verified (5/6), zero reported failures.**
-Because B3/B4 PASSED, START/RESUME interaction was apparently usable,
-but this does **not** override the explicitly unverified B2 criterion.
-Keep B2 open until the operator separately verifies that a new START
-with a known-safe dry contact or existing 3.3V test signal on PC1
-registers at least one press/release event.
-No new code or final Stable tag is justified solely by this report.
+**Initial report count: 5 PASS, 1 not verified; zero reported failures.**
+The operator subsequently completed the specifically requested B2 retest:
+**`LabMate v1.8.1d B2 tekrar testi: PASS`**. The retest criterion was
+STOP → UP RESET, confirm START, OK START to RUN, then a known-safe PC1
+button/digital event causing PRESS and RELEASE counters to increase.
+Thus **cumulative B1–B6 physical functional acceptance is 6/6 PASS**
+(user-reported). No extra USB log, unrelated instrument regression,
+independent oscilloscope evidence or final Stable candidate acceptance
+is inferred.
 
 ## Verification gates
 
@@ -68,10 +70,9 @@ No new code or final Stable tag is justified solely by this report.
   installer exit code) was not supplied. User-confirmed `v1.8.1d`
   visible on actual Flipper in B1 PASS supports use of the candidate.
   Original v1.8 Stable remains available for rollback.
-- [ ] Real-device Button test B1–B6: **5/6 explicitly PASS,
-  B2 NOT VERIFIED**; full Button functional acceptance pending.
-  Details below. Other-tool regressions PWM/Counter/UART/Profiles/History
-  still pending.
+- [x] Real-device Button test B1–B6: **6/6 operator-reported PASS**
+  after separate B2 retest PASS. Button functional acceptance complete;
+  other-tool regressions PWM/Counter/UART/Profiles/History still pending.
 - [ ] Final `v1.8.1`-labelled source/binary and real hardware
   final smoke before publication. No GitHub v1.8.1 Stable tag
   should be created prematurely.
