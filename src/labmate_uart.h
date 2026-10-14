@@ -11,7 +11,8 @@ typedef struct Expansion Expansion;
  * or PA7/TIM1 or PB3/TIM2 ownership is transferred to this module.
  * RX interrupt feeds a bounded stream, never touches Canvas or SD.
  */
-#define LABMATE_UART_RX_QUEUE 256U
+/* 115200 8N1: absorb bounded GUI/SD scheduling gaps without hiding drops. */
+#define LABMATE_UART_RX_QUEUE 1024U
 #define LABMATE_UART_TX_CAP 12U
 #define LABMATE_UART_BAUD_COUNT 3U
 typedef struct {
