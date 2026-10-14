@@ -167,6 +167,10 @@ static const LabMateHelpPage labmate_help[LabMateToolCount] = {
         "1-WIRE TEMP", "PA4 DQ / 3.3V VDD",
         "External sensor VDD", "OK READ  BK EXIT",
     },
+    [LabMateToolI2c] = {
+        "I2C EXPLORER", "PC0 SCL / PC1 SDA",
+        "3.3V OWNED BUS", "OK SCAN BK EXIT",
+    },
 };
 
 void draw_about(Canvas* canvas, LabMateApp* app) {
