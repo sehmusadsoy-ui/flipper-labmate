@@ -270,8 +270,10 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
 - [x] Disposable newly-created CSV deletion, including BACK cancel,
   targeted confirmed DELETE and persistent absence after app reentry
   **physically PASS** in the 2026-10-14 Log History section below.
-- [ ] Independent CSV byte/content audit and actual profile
-  SAVE/DELETE/persistence mutations remain open. Preserve existing data.
+- [x] Disposable S3 real **SAVE/LOAD across full application restart**
+  is physically PASS; see S3 section below.
+- [ ] Independent CSV byte/content audit and disposable S3 actual
+  DELETE/restart persistence remain open. Preserve S1/S2 and backups.
 
 ### 2026-10-14 — MEASURE suite navigation and capture lifecycle: physical PASS
 
@@ -454,6 +456,27 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   establish bytewise independent CSV integrity, resilience to
   unexpected SD removal, power failure, or deletion of any older
   non-disposable logs. Preserve preexisting files and backups.
+
+### 2026-10-14 — Profiles S3 real SAVE/LOAD and app restart: physical PASS
+
+- [x] **Before writing:** operator used read-only Windows PowerShell to
+  verify that previously archived `profiles_a.bin` and
+  `profiles_b.bin` are both present and 32 bytes each in the retained
+  LabMate backup `LabMate-Backup-20261014-201529`. This checks
+  existence and expected size, **not independently verified binary
+  integrity or tested restore**.
+- [x] Operator confirmed S3 originally `EMPTY` and then explicitly
+  reported `PROFILE S3 SAVE LOAD PASS` following the exact controlled
+  physical test: with PWM STOP, select preset **100 Hz**, SAVE only
+  to S3 and confirm the SAVE TO S3? prompt; observe SAVED and occupied
+  S3; completely exit/relaunch app; observe S3 still present showing
+  100 Hz; LOAD S3 and observe LOADED; return to PWM Studio and
+  confirm 100 Hz selected while still STOP. S1 and S2 were not
+  selected for modification.
+- [ ] **DELETE on disposable S3 with app restart** remains open and is
+  the next scoped test. Avoid modifying S1/S2. Actual SD torn-write
+  / corrupt-copy recovery and independent backup-restore verification
+  also remain open.
 
 ## Stable release boundary
 
