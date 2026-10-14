@@ -43,7 +43,7 @@ bool labmate_i2c_control_acquire_done(LabMateI2cControl* c, uint32_t token, bool
     if(!token || token != c->generation || c->state != LabMateI2cControlAwaitAcquire)
         return false;
     if(!acquired) {
-        c->state = c->stop_requested ? LabMateI2cControlCancelled : LabMateI2cControlFailed;
+        c->state = c->stop_requested ? LabMateI2cControlCancelled : LabMateI2cControlBusy;
         return true;
     }
     c->bus_held = true;
