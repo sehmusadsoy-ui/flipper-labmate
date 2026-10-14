@@ -249,6 +249,20 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   PC1/ground, not an unattached pin. Do not infer electrical accuracy
   from the control-only PASS.
 
+### 2026-10-14 — Event Counter TIM2 control/time regression: physical PASS
+
+- [x] **Operator-reported on-device PASS, no externally applied pulses:**
+  `MEASURE → Event Counter` initial STOP, COUNT 0, TIME 0 s;
+  OK RUN, wait ~5 seconds and observe elapsed time advance; OK STOP
+  freezes time; OK RESUME continues accumulated elapsed time; OK STOP
+  then UP RESET zeros COUNT and TIME; BACK and re-enter without
+  lingering BUSY/freeze. The operator explicitly replied
+  **"COUNTER PASS"** to these exact steps.
+- [ ] **Real external PB3 rising-edge count accuracy, counter rollover,
+  latency and coexistence with other live input capture remain OPEN.**
+  The above reports successful UI/timer/ownership transitions and
+  elapsed-time semantics only, not hardware pulse-accuracy proof.
+
 ## Stable release boundary
 
 Only after **all required** software, matched-firmware and safe physical acceptance gates are reported and verified may a revised `v1.8` Stable asset be considered. Historical source `v1.8` tag provenance must remain immutable; document exact old and replacement source/FAP SHA256, review release asset updates explicitly, then redownload and independently verify the remote asset. No v1.8.1 or v1.9 feature work until the original v1.8 completion decision is satisfied.
