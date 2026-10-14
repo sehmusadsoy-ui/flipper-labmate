@@ -40,7 +40,7 @@ class FullUpdaterTests(unittest.TestCase):
             "Loader: updater.bin",
             "Radio: radio.bin",
             "Radio version: 01 14 00 00 00 00 00",
-            "Resources: resources.tgz",
+            "Resources: resources.tar.gz",
             "OB reference: " + " ".join(["00"] * 128),
             "OB mask: " + " ".join(["00"] * 128),
             "OB write mask: " + " ".join(["00"] * 128),
@@ -55,7 +55,7 @@ class FullUpdaterTests(unittest.TestCase):
             "radio.bin": self.radio.read_bytes() if radio is None else radio,
             "updater.bin": b"test-only-stage",
             "update.fuf": (self.manifest if manifest is None else manifest).encode(),
-            "resources.tgz": self.resources if resources is None else resources,
+            "resources.tar.gz": self.resources if resources is None else resources,
         }
         names.update(extra or {})
         files = {"f7-update-test/" + key: data for key, data in names.items()}
@@ -78,7 +78,7 @@ class FullUpdaterTests(unittest.TestCase):
     def test_resource_missing(self):
         self.prepare()
         with tarfile.open(self.pkg, "r:gz") as tf:
-            other = {m.name: tf.extractfile(m).read() for m in tf if m.isfile() and m.name != "f7-update-test/resources.tgz"}
+            other = {m.name: tf.extractfile(m).read() for m in tf if m.isfile() and m.name != "f7-update-test/resources.tar.gz"}
         self.pkg.write_bytes(tgz_bytes(other))
         with self.assertRaisesRegex(ValueError, "missing radio, SD resources"):
             audit(self.pkg, self.dfu, self.radio)
