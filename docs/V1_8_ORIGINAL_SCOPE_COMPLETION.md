@@ -201,6 +201,28 @@ and About's final position. Do not move About into COMM.
   firmware service coexistence and PA4 DS18B20 tests remain OPEN.
   **No firmware flashing or physical BUSY verification was performed.**
 
+### Matched firmware/FAP test archive — 2026-10-14
+
+- [x] [CI run 38582296921](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38582296921)
+  on exact code source `f643b6dcd78224c7248ad9e85e97a7d2a31ce653`:
+  real pinned patched Momentum `firmware_all`, integrated `fap_labmate`,
+  FAP APPCHK and both local file SHA256 verifications PASS.
+  FAP SHA256: `ac62c5a64b34376ddf0b1855634d490ecc0d870049f9be2652d48b19fd9e5003`.
+  Exact paired `firmware.dfu` checksum is in the CI artifact's
+  `SHA256SUMS.txt`; do not infer it from the FAP hash.
+- [x] Created GitHub Actions **development-only** archive
+  `v18DEV-patched-firmware-FAP-UNTESTED-DO-NOT-FLASH` (artifact
+  `11902833775`, retention 7 days) containing the **one real**
+  `labmate.fap`, matching `firmware.dfu`, `SHA256SUMS.txt`,
+  `PROVENANCE.txt` and `READ_ME_FIRST.txt`. This is NOT a new
+  Stable release, not a separate demo FAP and not an installation event.
+- [x] Added [physical acceptance gates](V1_8_PHYSICAL_ACCEPTANCE_GATE.md):
+  exact-image pairing, independent firmware approval/rollback,
+  real I2C3 ACK/NACK/STOP/BACK/BUSY, PA4 DS18B20 and old instruments.
+- [ ] **No custom firmware flash or physical test is approved/claimed.**
+  User authorization, recoverability review, suitable 3.3 V test devices,
+  and real firmware-wide coexistence/STOP validation remain required.
+
 ### R — in-place v1.8 final release gate (NOT YET OPEN)
 
 - [ ] Original v1.8 functional code gates above are satisfied or
