@@ -662,6 +662,12 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   strict directory contents, manifest/provenance and release warning.
   This script cannot install/flash firmware or update a Flipper;
   validates locally before permitting **separately approved** action.
+- [x] Source-only staging safety static guard
+  `scripts/check_v18_exitfix_stage.py` integrated into source
+  workflow. [CI run 38650032766](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38650032766)
+  finished **SUCCESS**: source guard, development FAP compile,
+  Windows installer mock PASS; unrelated old v1.7 Stable finalize
+  job SKIPPED. CI never wrote to operator's Flipper.
 - [ ] Operator Windows **stage-only** result pending. The new EXITFIX
   FAP is NOT installed, does not inherit previous UARTFIX device
   passes, and must have real Flipper focused exit regression before
