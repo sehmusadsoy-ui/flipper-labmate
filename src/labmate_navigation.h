@@ -29,8 +29,8 @@ typedef enum {
     LabMateGroupMeasure = 0,
     LabMateGroupOutput,
     LabMateGroupRecords,
-    LabMateGroupInfo,
-    LabMateGroupComm, /* add after original four groups */
+    LabMateGroupComm, /* communication tools immediately above INFO */
+    LabMateGroupInfo, /* final root entry: About always at bottom */
     LabMateGroupCount
 } LabMateMenuGroup;
 
