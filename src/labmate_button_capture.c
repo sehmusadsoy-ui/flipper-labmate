@@ -21,6 +21,7 @@ static void labmate_button_irq(void* context) {
 
 void labmate_button_capture_reset(LabMateApp* app) {
     if(app->button_active) return;
+    app->button_session_started = false;
     labmate_button_state_init(&app->button_irq, true);
     labmate_button_snapshot(&app->button_irq, &app->button_stats);
     app->button_bounce_us = 0U;
@@ -42,13 +43,20 @@ void labmate_button_capture_start(LabMateApp* app) {
     const GpioPin* pin = labmate_gpio_pins[app->gpio_index];
     /* Internal pull-up: button closure to GND => LOW. */
     furi_hal_gpio_init(pin, GpioModeInterruptRiseFall, GpioPullUp, GpioSpeedVeryHigh);
-    labmate_button_state_init(&app->button_irq, furi_hal_gpio_read(pin));
+    const bool resume = app->button_session_started;
+    const bool current_level = furi_hal_gpio_read(pin);
+    if(resume) {
+        labmate_button_state_resume(&app->button_irq, current_level);
+    } else {
+        labmate_button_state_init(&app->button_irq, current_level);
+        app->button_bounce_us = 0U;
+        app->button_settle_ms = 0U;
+        app->button_hold_ms = 0U;
+    }
     labmate_button_snapshot(&app->button_irq, &app->button_stats);
-    app->button_bounce_us = 0U;
-    app->button_settle_ms = 0U;
-    app->button_hold_ms = 0U;
     app->capture_pin_index = app->gpio_index;
     app->capture_owner = LabMateCaptureButton;
+    app->button_session_started = true;
     app->button_active = true;
     furi_hal_gpio_add_int_callback(pin, labmate_button_irq, app);
     furi_hal_gpio_enable_int_callback(pin);
