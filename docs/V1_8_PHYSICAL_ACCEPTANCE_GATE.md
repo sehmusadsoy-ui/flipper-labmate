@@ -369,6 +369,25 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   historical pre-fix D=52 result, or imply all conceivable UART workloads
   are zero-drop guaranteed; much longer or different loads are not tested.
 
+### 2026-10-14 — External I2C/1-Wire hardware availability, operator report
+
+- [ ] Operator reports no external 3.3 V I2C OLED/sensor module and
+  no DS18B20 temperature sensor available for physical acceptance.
+  I3 (positive real ACK), ACK-device part of I8, W2 (actual DS18B20
+  reading and CRC), and W3 (STOP during real sensor conversion) remain
+  **BLOCKED BY FIXTURE / NOT TESTED**, not PASS and not firmware FAIL.
+  Empty-bus I2C scan and no-sensor 1-Wire screen passes do not satisfy
+  the positive-peripheral requirements.
+- [ ] Existing ESP32-S2 could potentially act as an independent I2C
+  slave test peer, but do not count this as a tested peripheral:
+  physical pin routing, external I2C pull-ups to 3.3 V, safe power
+  isolation and board firmware still need separate verification.
+  Arduino-ESP32 exposes Wire slave mode; that alone is not proof
+  of a working Flipper/ESP32 electrical I2C fixture.
+- [ ] Continue no-new-hardware Threshold Alerts, resource lifecycle,
+  app exit/reopen and non-destructive persistence regressions.
+  Do not manufacture simulated hardware ACK/CRC evidence.
+
 ## Stable release boundary
 
 Only after **all required** software, matched-firmware and safe physical acceptance gates are reported and verified may a revised `v1.8` Stable asset be considered. Historical source `v1.8` tag provenance must remain immutable; document exact old and replacement source/FAP SHA256, review release asset updates explicitly, then redownload and independently verify the remote asset. No v1.8.1 or v1.9 feature work until the original v1.8 completion decision is satisfied.
