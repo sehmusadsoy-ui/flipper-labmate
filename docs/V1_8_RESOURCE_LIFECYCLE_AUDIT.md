@@ -1,0 +1,87 @@
+# LabMate v1.8 — Resource Ownership and Exit Audit
+
+**Status:** 2026-10-15 source review + regression guard; **NOT a Stable approval**.
+**Development branch:** `dev/v1.8-completion`, Draft PR #13.
+**Installed device baseline:** pinned Momentum
+`d3f89dfe2ef6b01839201598e9be1590cba80322` +
+earlier UARTFIX `labmate.fap` SHA-256
+`eaadc85aba2c8a78074dc97935dc6d71de982582054f8addbeea227428b4f0cf`.
+
+## Audited owner map
+
+| Resource | Production source / entry | Stop and release | Evidence / unresolved scope |
+| --- | --- | --- | --- |
+| PC1 IRQ frequency / pulse / button | `labmate_capture_core.c`, `labmate_frequency_capture.c`, `labmate_pulse_capture.c`, `labmate_button_capture.c` | `labmate_capture_stop_all` detaches active IRQ; input exits release configured GPIO | Local exclusivity and UI transitions physically tested without signal; actual calibrated input pulses/button bounce remain open |
+| PB3 TIM2 frequency and Event Counter | `labmate_frequency_tim2.c`, `labmate_event_counter.c` | TIM2 counter/channel disabled, bus disabled, PB3 reset to analog | STOP/RESUME/time control physically PASS; no demonstrated **firmware-global** TIM2 leasing or calibrated edge accuracy |
+| PA7 TIM1 PWM | `labmate_generator.c`, `labmate_resource_policy.c` | `labmate_generator_stop`; monitor excludes PA7 while PWM is active | Physical RUN/BACK/STOP, app exit cleanup, Logger/UART coexistence PASS; frequency/duty waveform accuracy remains open |
+| USART 13/14 | `labmate_uart.c` | serial async RX stop/deinit/control release + expansion restore + stream free | Physical ESP32-S2 UARTFIX ST3 115200: R=20543,D=0,E=0,TX PASS; does not prove every traffic pattern or unrelated firmware service behavior |
+| PC0/PC1 external I2C3 | `labmate_i2c_runtime.c`, `labmate_i2c_momentum.c` | stop-request + bounded worker JOIN, local lease release; patched firmware external bus mutex | No-device NONE, STOP/BACK/reopen PASS. Real address ACK, real external mutex contention and fault-injection fixtures unavailable |
+| PA4 1-Wire | `labmate_onewire_hw.c` | host stop/free + local lease release; explicit conversion cancel on BACK | No-sensor NONE and PWM BUSY refusal PASS; true DS18B20 CRC/temperature and concurrent firmware-service ownership untested |
+| MicroSD logger / history / profiles | `labmate_logger_storage.c`, `labmate_history.c`, `labmate_profile_storage.c` | sync/close handles; history read and confirmed delete; dual CRC profile files | Actual CSV receive + Windows 8-row audit + same-file device/PC MD5 PASS; S3 save/load/delete/reboot PASS, old S1/S2 retained. Power-loss/corrupt-SD restore tests open |
+
+## Specific exit hardening (source change, physical retest pending)
+
+Prior `src/labmate.c` called shared capture teardown at final app shutdown
+only when `labmate_screen_uses_gpio(app->screen)` was true. Existing UI
+routes normally stop capture before returning to the menu, but if a future
+route leaves a capture active while exiting from MENU, this conditional
+would skip the final shared release.
+
+Development source now **always** calls `labmate_capture_stop_all(app)`
+on exit. It snapshots `capture_pin_index` before that call (STOP clears
+the identity), then releases the previously armed pin. It also releases
+the selected GPIO for GPIO-using screens, avoiding a duplicate release.
+The previous `labmate_event_counter_stop` / `labmate_button_capture_stop`
+redundant final calls were removed, since `stop_all` already invokes both.
+
+`scripts/check_v18_coordinator.py` and the legacy
+`scripts/check_v16_boundaries.py` now assert the unconditional STOP and
+pre-STOP capture pin snapshot, preventing the old screen-dependent
+teardown from being silently restored.
+
+**Evidence classification:** reviewed code + CI when green are
+SOURCE PASS only. Previous physical passes apply to the **older
+installed** UARTFIX FAP until the changed source is rebuilt into a new
+exact matched FAP, verified and installed by the operator, followed by
+the required focused no-external-peripheral exit regression.
+Do **not** reuse the earlier pinned UARTFIX installer/hashes for the
+new artifact and do **not** flash a new firmware: the patched Momentum
+DFU must remain exact and checksummed if this is a FAP-only update.
+
+## Firmware-wide ownership gap: explicitly not closed
+
+`LabMateCommOwner` and `LabMateCaptureOwner` guard **this app's**
+resources, not independent firmware services or other apps. The I2C3
+adapter uses an actual **firmware** external-I2C mutex, but direct
+TIM2/EXTI/PA4 configuration does **not** establish an equivalent
+firmware-wide GPIO/TIM2 ownership API. Disabling a timer or EXTI line
+from another active firmware user without such a contract would be
+unsafe. A truthful firmware-wide completion requires verified exported
+owners/leases and **actual competing service tests**, not additional
+application-local booleans.
+
+## Gate F4 OTG/5 V
+
+The pinned Momentum Power settings screen does **not** contain a
+`5V on GPIO` / `OTG Power` toggle. The operator therefore could
+not run the proposed menu-only test. The inspected LabMate driver code
+does not request OTG power, and 1-Wire expressly requires no auto 5 V;
+this is a limited source observation, **not a physical voltage
+measurement**. F4 remains NOT TESTED. Do not enable 5 V to test this.
+
+## Remaining release blockers
+
+- Real known-safe I2C peripheral ACK (I3, ACK portion of I8), real
+  DS18B20 CRC/temperature (W2) and conversion cancellation (W3)
+  are **blocked by absent safe fixtures**.
+- Real TIM2/capture edge accuracy, PWM frequency/duty, button-bounce
+  characteristics and threshold-latch triggering are **not** proved
+  by no-wire UI tests. Original historical hardware results are
+  separate evidence for different firmware/FAP combinations.
+- Firmware-global resource exclusion, recovery from SD failures and a
+  rehearsed verified firmware/profile backup restore remain OPEN.
+- The updated FAP source must pass native CI and exact patched firmware
+  + FAP APPCHK/DFU identity verification, **then** new operator
+  physical acceptance before any Stable publication.
+
+No changes to `main`, the original `v1.8` tag or Stable release assets.
