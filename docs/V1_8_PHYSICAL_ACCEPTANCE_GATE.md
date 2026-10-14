@@ -6,8 +6,10 @@ This checklist deliberately separates compiled source from actual Flipper hardwa
 
 ## Gate 0 — Before any device firmware change
 
-- [ ] Obtain the operator's *explicit* approval for installing a **non-Stable custom firmware**. A CI pass is **not** permission to flash.
-- [ ] Prepare an independently tested way to restore the known working Stable Momentum firmware and historical v1.8/v1.7 LabMate. Back up relevant microSD application records and Profiles S1–S3 first.
+- [x] Operator explicitly approved a **temporary, non-Stable custom firmware trial** in the project chat on **2026-10-14**. Approval is not evidence that a backup, installation or physical test occurred.
+- [ ] Using qFlipper, create and retain an **internal-settings backup** (Advanced Controls → Backup). This does **not** include saved microSD files.
+- [ ] Separately copy relevant **microSD data** to a PC location, including `/ext/apps_data/labmate/` (Profiles S1–S3, Logs/CSV, if present) and preferably a complete microSD backup; inspect the copied files before firmware changes.
+- [ ] Prepare an independently tested way to restore the known working Stable Momentum firmware and historical v1.8/v1.7 LabMate. Keep its official updater package and the known-Stable `labmate.fap` available and verifiable. No automatic restore/erase.
 - [ ] Identify the exact test build `LabMate commit`, pinned `Momentum base commit`, patched HAL diff hash, `firmware.dfu` SHA256 and `labmate.fap` SHA256 from a **single** CI run's `PROVENANCE.txt` and `SHA256SUMS.txt`; verify both files with SHA256 *again* after retrieval.
 - [ ] Review the patch's scope and firmware startup/recovery behavior separately. No tested ROM compatibility, rollback or hardware coexistence is implied by CI compilation.
 - [ ] Keep the test pair separate from the existing GitHub Stable Release. No background install, USB transfer, firmware flash, automatic publish or tag mutation.
