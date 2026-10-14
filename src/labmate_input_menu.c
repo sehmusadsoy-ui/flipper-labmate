@@ -132,6 +132,13 @@ void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                         labmate_uart_reenter(&app->uart);
                         break;
 
+                    case LabMateToolOneWire:
+                        /* No pin configuration until explicit OK on sensor page. */
+                        labmate_onewire_hw_stop(&app->thermometer);
+                        labmate_onewire_hw_init(&app->thermometer);
+                        app->screen = LabMateScreenOneWire;
+                        break;
+
                     case LabMateToolAbout:
                         app->screen = LabMateScreenAbout;
                         app->about_page = 0U;
