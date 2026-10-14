@@ -388,6 +388,19 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   app exit/reopen and non-destructive persistence regressions.
   Do not manufacture simulated hardware ACK/CRC evidence.
 
+### 2026-10-14 — Threshold Alerts control and no-input regression: physical PASS
+
+- [x] Operator reported `THRESHOLD PASS` following the exact
+  no-external-GPIO procedure: `OUTPUT → Threshold Alerts` in OFF,
+  LEFT/RIGHT cycles FREQUENCY, PULSE DUTY, EDGE COUNT and BUTTON SETTLE,
+  UP/DOWN adjust each LIMIT, OK ARM shows WAITING FOR INPUT without
+  externally valid samples, armed source/limit editing is locked,
+  OK OFF, BACK and re-entry preserve the last source and limit.
+  No unwanted alarm, freeze or configuration loss reported.
+- [ ] Real live threshold crossing, latched alert, ACK, hysteresis /
+  event timing, and valid-sample response remain **NOT TESTED**.
+  No-pulse UI acceptance cannot verify sensor/alert triggering.
+
 ## Stable release boundary
 
 Only after **all required** software, matched-firmware and safe physical acceptance gates are reported and verified may a revised `v1.8` Stable asset be considered. Historical source `v1.8` tag provenance must remain immutable; document exact old and replacement source/FAP SHA256, review release asset updates explicitly, then redownload and independently verify the remote asset. No v1.8.1 or v1.9 feature work until the original v1.8 completion decision is satisfied.
