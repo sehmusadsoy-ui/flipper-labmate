@@ -45,6 +45,7 @@ on:
       - "scripts/install-v17-from-github.ps1"
       - "scripts/test-v17-installer-mock.ps1"
       - "scripts/verify-v18-matched-pair.ps1"
+      - "scripts/prepare-v18-dev-test.ps1"
       - "scripts/test-v18-pair-verify-mock.ps1"
       - "scripts/install-from-github.ps1"
       - "application.fam"
@@ -379,6 +380,20 @@ jobs:
           $ErrorActionPreference = 'Stop'
           & ./scripts/test-v18-pair-verify-mock.ps1
           if ($LASTEXITCODE -ne 0) { throw 'Development-pair preflight mock failed' }
+
+      - name: Refuse unverified missing v1.8 development candidate (offline-only)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $fixture = Join-Path $env:RUNNER_TEMP 'LabMate-Empty-Test-Bundle'
+          New-Item -ItemType Directory -Path $fixture -Force | Out-Null
+          & ./scripts/prepare-v18-dev-test.ps1 -VerifyOnly -Directory $fixture
+          if ($LASTEXITCODE -eq 0) { throw 'Empty firmware/FAP download was accepted.' }
+          $text = Get-Content -Raw ./scripts/prepare-v18-dev-test.ps1
+          foreach($forbidden in @('selfupdate.py', 'flash_usb', 'runfap.py')) {
+            if ($text.Contains($forbidden)) { throw "Preparation script unexpectedly installs: $forbidden" }
+          }
+          Write-Host 'One-command PowerShell download/verify-only negative gate PASS; NO USB.'
 
   publish_v17_stable:
     name: Finalize verified v1.7 draft as Stable
