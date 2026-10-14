@@ -35,6 +35,8 @@ HEADER_INSERT = HEADER_NEEDLE + """
  * @note Must be paired with furi_hal_i2c_release(&furi_hal_i2c_handle_external).
  */
 bool furi_hal_i2c_external_acquire_timeout(uint32_t timeout_ms);
+/* FAPs compiled against this SDK automatically activate the safe driver. */
+#define FURI_HAL_I2C_HAS_EXTERNAL_ACQUIRE_TIMEOUT 1
 """
 
 SOURCE_NEEDLE = "void furi_hal_i2c_release(const FuriHalI2cBusHandle* handle) {"
