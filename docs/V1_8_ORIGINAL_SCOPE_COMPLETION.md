@@ -74,9 +74,14 @@ and About's final position. Do not move About into COMM.
   claim to a **conditional real HAL ACK transport**. On stock Momentum
   the feature fails closed with `FW API` and never acquires bus locks.
   SDK/native source tests PASS; genuine firmware runtime still pending.
-- [ ] Compile verified modified Momentum firmware/SDK with the new
-  exported bounded bus-acquire symbol; then build matching FAP and
-  test peripheral ownership/Profiles/CSV regressions on real device.
+- [x] Compile the exact patched Momentum firmware and matching real
+  integrated LabMate FAP in an ephemeral CI checkout: [Actions 38577944741](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38577944741),
+  source `531a2e376beed1eb72ed08f6d9261213c8a24dac`, both `./fbt firmware_all`
+  and `./fbt fap_labmate` PASS; FAP SHA256
+  `f7e8cf33c4dce0cf7afac724a5d645edbb7263f29cbf7eab4add089bf3cc7db8`.
+  This is SDK build/link evidence only, not firmware runtime or bus safety.
+- [ ] Test actual firmware-wide owner coordination, failed-acquire, STOP/BACK
+  and peripheral recovery plus existing Profiles/CSV on physical hardware.
 - [ ] A firmware-wide lock claim requires a real exported HAL
   owner/lock contract or verified firmware change. App-local flags
   alone never guarantee global ownership.
@@ -110,11 +115,18 @@ and About's final position. Do not move About into COMM.
   Host fake HAL tested missing-API refusal, encoded ACK on 0x3C,
   STOP before acquire, BUSY and release. Runtime guards cover
   dedicated worker, release and status. **Not physical scanning.**
-- [ ] **Compile full patched Momentum firmware and matching FAP**
-  (source patch applicability alone is insufficient); validate
-  firmware-wide mutex ownership, no deadlock, bus transfer timeouts,
-  genuine STOP/BACK and resource release. On-device verification is
-  a separate operator-approved gate.
+- [x] **Full patched Momentum firmware AND matching integrated FAP
+  compiled** in [CI 38577944741](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38577944741).
+  Exact production LabMate and new firmware HAL export link under the
+  same patched source; generated FAP SHA256
+  `f7e8cf33c4dce0cf7afac724a5d645edbb7263f29cbf7eab4add089bf3cc7db8`.
+  First [CI 38576263608](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38576263608)
+  had a real `-Werror=redundant-decls` app compile failure, fixed in
+  `e33213309240fdb8c9134de84625a987ee5e8bed`. **This PASS is not
+  firmware flashing, physical I2C or independent runtime validation.**
+- [ ] **Physical owner, contention and STOP/BACK still NOT VERIFIED:**
+  demonstrate no deadlock under real bus contention, I2C transfer
+  timeouts, actual STOP/BACK/release and peripheral recovery.
 - [ ] Physical known-safe **3.3V** hardware scan (device/no-device)
   and transition regressions later. No fake FAP, fake hit or
   future-unverified global mutex shortcut.
