@@ -62,9 +62,19 @@ advancement to v1.9 before actual v1.8 Stable publication.
   Event Counter and Records entries present; R6 no I²C or 1-Wire
   placeholder. **This is actual Flipper UI/control evidence, not
   independently captured transaction data or full legacy regression.**
-- [ ] **C4:** Device smoke: UART RUN, receive/explicit transmit,
-  STOP/BACK and re-entry remain responsive; retest UART 115200
-  against the earlier known-good setup when available.
+- [x] **C4 — UART basic functionality PASS (operator-reported Test 18-R2,
+  4/4), 2026-10-14:** 115200 RX `ESP32_READY`; explicit Flipper TX
+  `AT` followed by ESP32 reply `ESP32_OK` (as indicated by operator's
+  R2-2 PASS); STOP→RUN returns to receiving; BACK→re-entry responsive.
+  **Important: ST2 peer currently installed. `AT` is also the explicit
+  stress trigger**: ST2 sends `ESP32_OK` plus `STRESS_ARMED`, then
+  begins a bounded burst approximately 1.2 s later (max 20,480
+  payload bytes or 2.5 s); a further `AT` during an active test may
+  reply `STRESS_BUSY`. The operator additionally clarified that
+  sending AT triggers the stress test. This is **not** evidence of a
+  new independent burst byte count or physical queue overflow:
+  no fresh R/D/E values or `BURST_END` evidence were submitted for
+  this RC1. Basic external RX/TX and UI resource recovery passed.
 - [ ] **C5:** Regression smoke: PWM starts/stops; Counter
   STOP/RESUME is sane; Profiles and existing CSV History open;
   no unexpected deleted data or resource conflict.
@@ -83,9 +93,41 @@ An earlier PowerShell transcript ended `LABMATE v1.8 RC1 USB INSTALL
 COMMAND PASS` but did not include the transfer transcript; do not
 claim independently verified USB bytes/port or file contents from
 that final line alone. The physical RC1 label is user-reported PASS.
-No fresh external UART traffic, PWM output validation, Counter
-STOP/RESUME, Profile storage or History record recheck has yet been
-reported for this RC1. Stable publication remains blocked by C4/C5/C6.
+Test 18-R2 external UART 4/4 PASS was subsequently reported;
+see below. PWM output validation, Counter STOP/RESUME, Profile storage
+and History record rechecks are still pending for this RC1.
+Stable publication remains blocked by C5/C6.
+
+## Test 18-R2 — external UART, 4/4 PASS (operator report 2026-10-14)
+
+Operator report: `R2-1=PASS; R2-2=PASS; R2-3=PASS; R2-4=PASS`.
+- R2-1: 115200 baud/RUN, external `ESP32_READY` received.
+- R2-2: UART TX editor transmitted `AT` and `ESP32_OK` was
+  observed, according to user-submitted PASS for that criterion.
+- R2-3: STOP→RUN recovered live UART receive.
+- R2-4: BACK→re-enter UART worked without a lock-up.
+
+**Important operator clarification after the PASS report:**
+> "tx den at gönderice stres testi açılıyor bu arada"
+
+This is **the existing installed ESP32 ST2 stress peer behavior**, not a
+new LabMate feature or a defect by itself. The checked-in firmware
+`tests/esp32_s2_wrover_uart_stress_115200/esp32_s2_wrover_uart_stress_115200.ino`
+explicitly uses `AT\r\n` to reply `ESP32_OK\r\nSTRESS_ARMED\r\n`,
+and ~1200 ms later `BURST_BEGIN`, a bounded stream of at most
+20,480 bytes or 2500 ms, and `BURST_END`. Repeating `AT` while
+not idle yields `STRESS_BUSY`; no unprompted stress tests run.
+This clarifies that the recent R2-2 was **both conditional UART
+reply and stress trigger**; do not classify it as a reply-only
+test. No new measured stress-byte total or R/D/E snapshots for this
+RC1 were submitted; do not claim an RC1 physical DROP test.
+The historical ST2 result (2026-10-13) remains a separate,
+previous-device-build observation (R=20,569 then 41,281, D=0 E=0)
+and should not be conflated with this RC1 pass.
+
+**Current device acceptance:** R1 6/6 + R2 4/4 functional items PASS
+(operator-reported). C5 current RC1 regressions and final C6 Stable
+source/binary/device acceptance still outstanding.
 
 ## Removing old demonstrations (not required for build)
 
