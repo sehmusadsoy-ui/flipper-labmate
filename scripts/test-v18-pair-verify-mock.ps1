@@ -24,6 +24,25 @@ try {
 
     & ./scripts/verify-v18-matched-pair.ps1 -PairDirectory $root -ExpectedSourceSha $source
     if ($LASTEXITCODE -ne 0) { throw 'Verifier rejected matching intact pair.' }
+    & ./scripts/verify-v18-matched-pair.ps1 -PairDirectory $root -ExpectedSourceSha $source -RequireUpdater
+    if ($LASTEXITCODE -eq 0) { throw 'Missing mandatory updater was accepted.' }
+
+    # These dummy bytes test only SHA256 metadata validation. Actual .tgz
+    # format/embedded DFU safety is independently validated in Python CI.
+    $fakeTgz = Join-Path $root 'firmware-update.tgz'
+    [IO.File]::WriteAllBytes($fakeTgz, [byte[]](1,3,5,7,9))
+    $updaterHash = (Get-FileHash -LiteralPath $fakeTgz -Algorithm SHA256).Hash.ToLowerInvariant()
+    $manifestPath = Join-Path $root 'SHA256SUMS.txt'
+    $validManifest = [IO.File]::ReadAllText($manifestPath)
+    [IO.File]::AppendAllText($manifestPath,
+        "$updaterHash  firmware-update.tgz" + [Environment]::NewLine)
+    & ./scripts/verify-v18-matched-pair.ps1 -PairDirectory $root -ExpectedSourceSha $source -RequireUpdater
+    if ($LASTEXITCODE -ne 0) { throw 'Matching three-file preflight rejected.' }
+    [IO.File]::WriteAllBytes($fakeTgz, [byte[]](1,3,5,7,8))
+    & ./scripts/verify-v18-matched-pair.ps1 -PairDirectory $root -ExpectedSourceSha $source -RequireUpdater
+    if ($LASTEXITCODE -eq 0) { throw 'Tampered updater was accepted.' }
+    Remove-Item -LiteralPath $fakeTgz -Force
+    [IO.File]::WriteAllText($manifestPath, $validManifest)
 
     & ./scripts/verify-v18-matched-pair.ps1 -PairDirectory $root -ExpectedSourceSha ('c' * 40)
     if ($LASTEXITCODE -eq 0) { throw 'Wrong expected source SHA was accepted.' }
