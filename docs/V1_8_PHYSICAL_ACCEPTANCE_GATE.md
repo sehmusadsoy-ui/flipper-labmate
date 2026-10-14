@@ -310,19 +310,17 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   the **new firmware/FAP pair** remain OPEN. Earlier ESP32 tests
   on prior images do not substitute for this regression.
 
-### 2026-10-14 — UART ESP32-S2 new full-firmware stress: **NOT PASS (byte drop)**
+### 2026-10-14 — UART ESP32-S2 stress: **UARTFIX ST3 PHYSICAL PASS** (initial D=52 retained as historical failure)
 
 - [x] **Positive link and TX evidence:** operator's actual ESP32-S2
   115200 8N1 trial on the matching firmware/FAP reports
   `ESP32_READY=yes; R=20621; D=52; E=0; TX A/T=yes`.
   RX is active, two explicit TX commands produced expected replies,
   and UART framing/noise error counter stayed zero.
-- [ ] **No-loss RX stress acceptance is OPEN / this run FAILED
-  the D=0 threshold.** The `D=52` counter means 52 received bytes
-  could not be queued by the UART ISR in this session; do not call
-  overall stress PASS or use earlier `D=0` from an older image to
-  override this finding. No conclusion about root cause or physical
-  fix until updated build and matched-device rerun.
+- [x] **Initial run FAILURE documented historically, before the fix:**
+  `D=52` means the original 256-byte UART ISR RX queue overflowed during
+  the reported trial. This initial run is not a PASS; see ST3 physical
+  retest result below for the independently reported zero-loss outcome.
 - [x] Source-only mitigation committed on `dev/v1.8-completion`:
   original 256-byte UART queue increased to 1024 bytes, consumer
   cap raised from 4x64 to 16x64 bytes per event-loop pass, ISR drop
@@ -360,9 +358,16 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   preserve the previous development FAP. This confirms USB installer exit
   status and app-launch request; it is **not yet independent proof** that
   Flipper visibly launched the new app. No firmware flash was requested.
-- [ ] **Actual post-install Flipper screen confirmation and fresh ESP32
-  115200 stress test with D=0** remain OPEN. Source and installation
-  changes alone cannot close the existing D=52 device regression.
+- [x] **UARTFIX ST3 operator real-device physical PASS, 2026-10-14:**
+  `APP=yes; READY=yes; R=20543; D=0; E=0; TX=yes; STOP/BACK=yes`
+  on the installed UARTFIX 1024-byte-queue FAP and ESP32-S2 115200 peer.
+  Operator confirms app actually opened, ESP32_READY, 20543 RX bytes,
+  **zero UART queue drops**, zero UART errors, TX responses, STOP/BACK
+  and successful re-entry per the immediately preceding ST3 procedure.
+  Thus the **bounded ESP32-S2 UART 115200 stress and lifecycle acceptance
+  gate is PASS** for this matched firmware/FAP pair. Do not erase the
+  historical pre-fix D=52 result, or imply all conceivable UART workloads
+  are zero-drop guaranteed; much longer or different loads are not tested.
 
 ## Stable release boundary
 
