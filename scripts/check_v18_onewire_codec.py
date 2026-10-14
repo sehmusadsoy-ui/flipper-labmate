@@ -40,10 +40,25 @@ for required in (
 ):
     assert required in tests, required
 
-# The planned sensor feature is not attached to app coordinator/menus.
-production = "".join((root / "src" / name).read_text() for name in (
-    "labmate.c", "labmate_navigation.h", "labmate_input_menu.c", "labmate_view.c"
-))
-assert "LabMateToolOneWire" not in production
-assert "labmate_onewire_ds18b20_decode(" not in production
-print("1-Wire DS18B20 pure codec isolation / unconfirmed-reading safety PASS")
+# The decoder stays pure even after adding a real hardware-backed app.
+hw = (root / "src/labmate_onewire_hw.c").read_text()
+input_src = (root / "src/labmate_input_onewire.c").read_text()
+menu = (root / "src/labmate_navigation.c").read_text()
+for required in (
+    "onewire_host_alloc(&gpio_ext_pa4)", "onewire_host_start(s->host);",
+    "onewire_host_reset(s->host)", "onewire_host_write(s->host, LABMATE_1W_CONVERT)",
+    "onewire_host_read_bytes(s->host, bytes, sizeof(bytes))",
+    "labmate_onewire_ds18b20_decode(bytes, sizeof(bytes), true, &temp)",
+    "onewire_host_stop(s->host)", "onewire_host_free(s->host)",
+    "labmate_comm_local_release(s->owner, LabMateCommOneWirePa4)",
+):
+    assert required in hw, required
+for forbidden in ("power_enable_otg(", "gpio_ibutton", "gpio_ext_pb14",
+                  "furi_hal_power_enable_otg"):
+    assert forbidden not in hw, f"Forbidden automatic power/shared pin: {forbidden}"
+assert "event.key == InputKeyOk" in input_src
+assert "event.key == InputKeyBack" in input_src
+assert "labmate_onewire_hw_stop(&app->thermometer);" in input_src
+assert '"1-Wire Temp"' in menu
+assert "LabMateToolOneWire" in (root / "src/labmate_navigation.h").read_text()
+print("1-Wire DS18B20 real PA4 reader wiring, stop and codec isolation PASS (SDK/host only)")
