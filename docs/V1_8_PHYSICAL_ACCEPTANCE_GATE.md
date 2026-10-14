@@ -347,11 +347,15 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   LabMate DEV FAP is backed up and SHA-correct, SDK USB tooling exists
   and operator manually confirms YUKLE. Only installs
   `/ext/apps/Tools/labmate.fap`; it does NOT flash firmware.
-- [ ] Real Windows preflight CI
-  [38637386364](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38637386364)
-  and **physical install/new ESP32 traffic with D=0** must pass
-  before lifting the UART acceptance blocker. Do not claim the
-  1024-byte source change already resolved the physical 52-byte drop.
+- [x] Real [Windows preflight CI 38637386364](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38637386364)
+  **SUCCESS**: Windows downloaded the exact real paired artifact,
+  verified all pinned source/hashes/manifest, passed repeat-stage,
+  rejected a deliberately tampered FAP and rejected `-Apply`
+  with missing prior DEV FAP backup **before any USB call**.
+  No Flipper or hardware device was modified by CI.
+- [ ] **Operator install and physical ESP32 traffic with D=0** remain
+  OPEN before lifting the UART acceptance blocker. Source queue
+  increase alone is not proof of no-loss physical UART performance.
 
 ## Stable release boundary
 
