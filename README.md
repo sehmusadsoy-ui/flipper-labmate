@@ -7,46 +7,36 @@
 ![Platform](https://img.shields.io/badge/platform-Flipper%20Zero-orange)
 ![Firmware](https://img.shields.io/badge/firmware-Momentum-blueviolet)
 
-**Current Stable: [LabMate v1.7](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7)** (published 2026-10-12, PWM Studio naming correction applied in place).
-**Current downloadable FAP SHA256:** `A0B305E5FD8D71C85C51480EE06A8B7E5EBD5BEE0E82935B0ED3B7E74E7EBCEA`.
-**Device-tested FAP source:** `0aeb0ca7ceba092c8adb6e44add0a2212cae1a74` (CI 38290044094, 2/2 PASS, on-device naming test 4/4 PASS).
-The original `v1.7` tag stays pinned to `d0e1bc6a95b257841533f0aa8745e3a79bbc8dcd`; the newer FAP is an explicitly recorded post-tag UI-name correction, not a new version.
+**Current Stable: [LabMate v1.8 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8)** (published 2026-10-14; UART Terminal and Counter STOP/RESUME, with all existing v1.7 instruments retained).
+**Verified v1.8 FAP SHA256:** `119c44bb854030a73a60fa205d38770bf77f048bb166ab379a03135c1de5f3b0`.
+**Exact tagged source:** `02b05639364d6dd71f5eb70456eca379c59218cb`; Momentum CI [38546662091](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38546662091) and post-merge identical-FAP build [38548200859](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38548200859) PASS. **Real Flipper acceptance: 19/19 user-reported PASS** (RC1 15/15 plus final v1.8 binary 4/4). GitHub Release asset digest was verified after publication.
 
-**[Download v1.7 labmate.fap](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/download/v1.7/labmate.fap)** ·
-[SHA256SUMS.txt](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/download/v1.7/SHA256SUMS.txt) ·
-[Stable release notes](docs/releases/RELEASE_NOTES_v1.7.md) ·
-[Installation guide](docs/V1_7_INSTALL_GUIDE.md) ·
-[Roadmap](ROADMAP.md) ·
-[Deferred hardware / compatibility tests](docs/DEFERRED_HARDWARE_TESTS.md)
+**[Download v1.8 labmate.fap](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/download/v1.8/labmate.fap)** ·
+[SHA256SUMS.txt](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/download/v1.8/SHA256SUMS.txt) ·
+[v1.8 Release notes](docs/releases/RELEASE_NOTES_v1.8.md) ·
+[Acceptance record](docs/V1_8_STABLE_CANDIDATE.md) ·
+[Roadmap](ROADMAP.md)
 
-Previous [v1.6.1 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1)
-and [v1.7 RC1](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7-rc1)
-tags/assets are preserved. The refactored candidate passed 36/36 operator-
-reported device checks; the exact final v1.7 FAP passed a separate
-4/4 on-device smoke test. Functional loopback is not independent calibration.
+Previous [v1.7 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7), [v1.6.1 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1) and older published releases remain preserved for rollback. No change was made to their tags or binaries. Real hardware observations do not constitute independent electrical or timing calibration.
 
 > [!IMPORTANT]
 > **3.3 V GPIO ONLY.** Never connect unknown voltage, 5 V, automotive,
 > mains or other high-voltage signals directly to Flipper Zero GPIO.
 > Use only verified, compatible digital signals and safe equipment.
 
-## v1.8 Stable — device accepted, GitHub publication pending
+## v1.8 Stable — published 2026-10-14
 
 The old ~1,200-line coordinator refactor has **passed R1–R10 device
 regression** (user-reported) and was merged to `main` in
 [PR #5](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/5).
 The app now has focused capture, input, GUI and deferred-SD modules.
-**Final v1.8 FAP is compiled and physically accepted; GitHub release
-publication is a distinct pending step.** This is the real, normal
-`labmate.fap` with the final on-device `v1.8` label. Exact compiled
-source `02b05639364d6dd71f5eb70456eca379c59218cb` from
-[CI 38546662091](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38546662091),
-FAP SHA256 `119c44bb854030a73a60fa205d38770bf77f048bb166ab379a03135c1de5f3b0`.
-Operator-reported physical acceptance: **RC1 15/15 PASS plus exact final
-v1.8 FAP 4/4 PASS**, including UART RX/STOP, PWM, Counter, Profile S1
-and old Log History. The GitHub Stable release/tag **must not be called
-published until it actually exists**. [Evidence](docs/V1_8_STABLE_CANDIDATE.md)
-· [prepared v1.8 release notes](docs/releases/RELEASE_NOTES_v1.8.md).
+**The final, physically accepted `v1.8` `labmate.fap` is published** in the
+[official GitHub Release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8).
+Tag `v1.8` is pinned to exact compiled source `02b05639364d6dd71f5eb70456eca379c59218cb`;
+CI/host/USB verified and the user reported **19/19 physical functional
+PASS** including UART receive/STOP, PWM, Counter, saved Profile S1 and
+historical CSV Log History. [Acceptance evidence](docs/V1_8_STABLE_CANDIDATE.md)
+· [v1.8 release notes](docs/releases/RELEASE_NOTES_v1.8.md).
 Counter STOP/RESUME also passed C1–C8 real-device regressions and
 merged in [PR #6](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/6).
 **UART Terminal development milestone merged into `main` in [PR #7](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/7)**:
@@ -65,7 +55,8 @@ remain explicitly outside the verified baseline. After operator review,
 v1.8 release scope because firmware-wide bus/pin ownership could not
 be verified safely. Neither is presented as a functioning tool or
 claimed PASS. Historical research PRs #8/#9 are closed unmerged, and
-v1.9 remains PAUSED until v1.8 Stable is actually published.
+the sequential Stable gate for v1.9 is now OPEN; implementation of
+v1.9 has not yet started or been merged.
 No demo FAPs are required or included in v1.8.
 [Refactor test record](docs/V1_8_DEV_NOTES.md) ·
 [UART acceptance plan](docs/V1_8_UART_PLAN.md) ·
@@ -88,7 +79,7 @@ The top level is intentionally short; development resources live in grouped fold
 | [`dist/`](dist/) / [`screenshots/`](screenshots/) | Historical build examples and UI screenshots |
 
 The app manifest [`application.fam`](application.fam) remains at the root and builds
-`src/*.c`. The binary is distributed from the official [v1.7 release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7);
+`src/*.c`. The current binary is distributed from the official [v1.8 Stable release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8);
 moving source folders does **not** modify any previously published tag or release asset.
 
 ## What's new in v1.7 Stable
@@ -175,7 +166,7 @@ test coverage, limitations and detailed outcomes.
 - **Profiles:** UP/DOWN slot, LEFT/RIGHT LOAD/SAVE/DELETE,
   OK selects and confirms destructive actions, BACK cancels.
 
-## Install v1.7 Stable
+## Install previous v1.7 Stable (rollback)
 
 Download the published `labmate.fap` and `SHA256SUMS.txt`
 from the [v1.7 Stable release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7),
