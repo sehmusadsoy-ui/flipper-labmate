@@ -38,7 +38,7 @@ enum {
 #define MAX_CLAIMS 32
 
 typedef struct {
-    uint32_t token;
+    uint64_t handle;
     uint64_t mask;
 } Claim;
 
@@ -46,6 +46,7 @@ typedef struct {
     pthread_mutex_t guard; /* HOST ONLY: firmware needs its own atomic primitive */
     Claim claims[MAX_CLAIMS];
     uint64_t used;
+    uint64_t last_handle; /* never reused within this map lifetime */
 } LeaseMap;
 
 static bool lease_init(LeaseMap* m) {
@@ -57,36 +58,35 @@ static void lease_destroy(LeaseMap* m) {
     (void)pthread_mutex_destroy(&m->guard);
 }
 
-/* All-or-nothing, non-reentrant acquisition. Each token has one mask.
- * Callers must claim BEFORE changing GPIO/clock/EXTI configuration.
- * Return false without touching the resource or partially claiming bits. */
-static bool lease_claim(LeaseMap* m, uint32_t token, uint64_t mask) {
-    if(token == 0U || mask == 0U || (mask & ~VALID_MASK)) return false;
+/* Return a new opaque nonzero lease handle, or zero on refusal.
+ * Mint handles under the same lock as reservation; never recycle them.
+ * Exhaustion FAILS CLOSED instead of wrapping into a stale handle.
+ * Always claim BEFORE changing any GPIO/clock/EXTI registers. */
+static uint64_t lease_claim(LeaseMap* m, uint64_t mask) {
+    if(mask == 0U || (mask & ~VALID_MASK)) return 0U;
     if(pthread_mutex_lock(&m->guard) != 0) abort();
-    bool granted = false;
+    uint64_t granted = 0U;
     int free_slot = -1;
-    bool token_exists = false;
     for(size_t i = 0; i < MAX_CLAIMS; i++) {
-        if(m->claims[i].token == token) token_exists = true;
-        if(free_slot < 0 && m->claims[i].token == 0U) free_slot = (int)i;
+        if(free_slot < 0 && m->claims[i].handle == 0U) free_slot = (int)i;
     }
-    if(!token_exists && free_slot >= 0 && !(m->used & mask)) {
-        m->claims[free_slot] = (Claim){.token = token, .mask = mask};
+    if(free_slot >= 0 && !(m->used & mask) && m->last_handle != UINT64_MAX) {
+        granted = ++m->last_handle;
+        m->claims[free_slot] = (Claim){.handle = granted, .mask = mask};
         m->used |= mask;
-        granted = true;
     }
     if(pthread_mutex_unlock(&m->guard) != 0) abort();
     return granted;
 }
 
-/* Wrong owner and partial/extra mask must not free another device's pin.
- * Token lifetime/uniqueness is the caller's obligation in this prototype. */
-static bool lease_release(LeaseMap* m, uint32_t token, uint64_t mask) {
-    if(token == 0U || mask == 0U || (mask & ~VALID_MASK)) return false;
+/* Only an exact, active owner handle may release its exact mask.
+ * An obsolete handle cannot release a later lease on the same pin. */
+static bool lease_release(LeaseMap* m, uint64_t handle, uint64_t mask) {
+    if(handle == 0U || mask == 0U || (mask & ~VALID_MASK)) return false;
     if(pthread_mutex_lock(&m->guard) != 0) abort();
     bool released = false;
     for(size_t i = 0; i < MAX_CLAIMS; i++) {
-        if(m->claims[i].token == token && m->claims[i].mask == mask) {
+        if(m->claims[i].handle == handle && m->claims[i].mask == mask) {
             m->used &= ~mask;
             m->claims[i] = (Claim){0};
             released = true;
@@ -106,54 +106,70 @@ static bool lease_release(LeaseMap* m, uint32_t token, uint64_t mask) {
 
 static void test_foreign_owner_refusal(void) {
     LeaseMap m; REQUIRE(lease_init(&m));
-    REQUIRE(lease_claim(&m, 100, COUNT_PB3)); /* unrelated firmware user */
+    uint64_t foreign = lease_claim(&m, COUNT_PB3);
+    REQUIRE(foreign != 0U); /* unrelated firmware service */
     const uint64_t before = m.used;
-    REQUIRE(!lease_claim(&m, 1, COUNT_PB3)); /* LabMate: fail closed */
+    REQUIRE(lease_claim(&m, COUNT_PB3) == 0U); /* LabMate fail closed */
     REQUIRE(m.used == before);
-    REQUIRE(!lease_release(&m, 1, COUNT_PB3));
+    REQUIRE(!lease_release(&m, foreign + 1U, COUNT_PB3));
     REQUIRE(m.used == before);
-    REQUIRE(lease_release(&m, 100, COUNT_PB3));
-    REQUIRE(lease_claim(&m, 1, COUNT_PB3));
-    REQUIRE(lease_release(&m, 1, COUNT_PB3));
+    REQUIRE(lease_release(&m, foreign, COUNT_PB3));
+    uint64_t ours = lease_claim(&m, COUNT_PB3);
+    REQUIRE(ours != 0U && ours != foreign);
+    REQUIRE(!lease_release(&m, foreign, COUNT_PB3)); /* stale owner */
+    REQUIRE(m.used == COUNT_PB3);
+    REQUIRE(lease_release(&m, ours, COUNT_PB3));
     REQUIRE(m.used == 0U);
     lease_destroy(&m);
 }
 
 static void test_alias_conflicts_and_nonconflicts(void) {
     LeaseMap m; REQUIRE(lease_init(&m));
-    REQUIRE(lease_claim(&m, 1, PWM_PA7));
-    REQUIRE(lease_claim(&m, 2, COUNT_PB3)); /* disjoint timer/pin */
-    REQUIRE(lease_claim(&m, 3, BUTTON_PC1));
-    REQUIRE(!lease_claim(&m, 4, PULSE_PC1)); /* same EXTI line / PC1 */
-    REQUIRE(!lease_claim(&m, 5, I2C3_EXT));  /* I2C shares PC1 */
-    REQUIRE(lease_claim(&m, 6, ONEWIRE_PA4));
-    REQUIRE(lease_release(&m, 3, BUTTON_PC1));
-    REQUIRE(lease_claim(&m, 5, I2C3_EXT));
-    REQUIRE(!lease_claim(&m, 7, PULSE_PC0)); /* I2C owns PC0 */
-    REQUIRE(lease_release(&m, 5, I2C3_EXT));
-    REQUIRE(lease_claim(&m, 7, PULSE_PC0));
-    REQUIRE(lease_release(&m, 7, PULSE_PC0));
-    REQUIRE(lease_release(&m, 6, ONEWIRE_PA4));
-    REQUIRE(lease_release(&m, 2, COUNT_PB3));
-    REQUIRE(lease_release(&m, 1, PWM_PA7));
+    uint64_t pwm = lease_claim(&m, PWM_PA7);
+    uint64_t counter = lease_claim(&m, COUNT_PB3);
+    uint64_t button = lease_claim(&m, BUTTON_PC1);
+    REQUIRE(pwm && counter && button); /* disjoint timer/pin claims */
+    REQUIRE(lease_claim(&m, PULSE_PC1) == 0U); /* same EXTI line / pin */
+    REQUIRE(lease_claim(&m, I2C3_EXT) == 0U);  /* I2C also uses PC1 */
+    uint64_t one_wire = lease_claim(&m, ONEWIRE_PA4);
+    REQUIRE(one_wire);
+    REQUIRE(lease_release(&m, button, BUTTON_PC1));
+    uint64_t i2c = lease_claim(&m, I2C3_EXT);
+    REQUIRE(i2c);
+    REQUIRE(lease_claim(&m, PULSE_PC0) == 0U); /* I2C uses PC0 */
+    REQUIRE(lease_release(&m, i2c, I2C3_EXT));
+    uint64_t pulse = lease_claim(&m, PULSE_PC0);
+    REQUIRE(pulse);
+    REQUIRE(lease_release(&m, pulse, PULSE_PC0));
+    REQUIRE(lease_release(&m, one_wire, ONEWIRE_PA4));
+    REQUIRE(lease_release(&m, counter, COUNT_PB3));
+    REQUIRE(lease_release(&m, pwm, PWM_PA7));
     REQUIRE(m.used == 0U);
     lease_destroy(&m);
 }
 
-static void test_no_partial_or_foreign_release(void) {
+static void test_invalid_wrong_and_stale_release(void) {
     LeaseMap m; REQUIRE(lease_init(&m));
-    REQUIRE(!lease_claim(&m, 10, 0U));
-    REQUIRE(!lease_claim(&m, 10, BIT(30)));
-    REQUIRE(!lease_claim(&m, 0, PWM_PA7));
+    REQUIRE(lease_claim(&m, 0U) == 0U);
+    REQUIRE(lease_claim(&m, BIT(30)) == 0U);
     REQUIRE(m.used == 0U);
-    REQUIRE(lease_claim(&m, 10, PWM_PA7));
-    REQUIRE(!lease_claim(&m, 10, COUNT_PB3)); /* token not reusable */
-    REQUIRE(!lease_release(&m, 11, PWM_PA7));
-    REQUIRE(!lease_release(&m, 10, BIT(RES_PA7))); /* partial */
-    REQUIRE(!lease_release(&m, 10, PWM_PA7 | BIT(RES_PB3)));
+    uint64_t first = lease_claim(&m, PWM_PA7);
+    REQUIRE(first != 0U);
+    REQUIRE(lease_claim(&m, PWM_PA7) == 0U);
+    REQUIRE(!lease_release(&m, first + 100U, PWM_PA7));
+    REQUIRE(!lease_release(&m, first, BIT(RES_PA7)));
+    REQUIRE(!lease_release(&m, first, PWM_PA7 | BIT(RES_PB3)));
     REQUIRE(m.used == PWM_PA7);
-    REQUIRE(lease_release(&m, 10, PWM_PA7));
-    REQUIRE(!lease_release(&m, 10, PWM_PA7)); /* stale second release */
+    REQUIRE(lease_release(&m, first, PWM_PA7));
+    REQUIRE(!lease_release(&m, first, PWM_PA7));
+    uint64_t second = lease_claim(&m, PWM_PA7);
+    REQUIRE(second != 0U && second != first);
+    REQUIRE(!lease_release(&m, first, PWM_PA7)); /* stale handle */
+    REQUIRE(m.used == PWM_PA7);
+    REQUIRE(lease_release(&m, second, PWM_PA7));
+    REQUIRE(m.used == 0U);
+    m.last_handle = UINT64_MAX; /* simulate exhaustion */
+    REQUIRE(lease_claim(&m, COUNT_PB3) == 0U);
     REQUIRE(m.used == 0U);
     lease_destroy(&m);
 }
@@ -162,16 +178,15 @@ static void test_no_partial_or_foreign_release(void) {
 typedef struct {
     LeaseMap* map;
     pthread_barrier_t* barrier;
-    int number;
-    bool granted;
+    uint64_t granted;
 } Worker;
 
 static void* race_claim(void* context) {
     Worker* w = context;
     int rc = pthread_barrier_wait(w->barrier);
     if(rc != 0 && rc != PTHREAD_BARRIER_SERIAL_THREAD) abort();
-    w->granted = lease_claim(w->map, (uint32_t)w->number, COUNT_PB3);
-    return NULL; /* winner deliberately holds until main releases */
+    w->granted = lease_claim(w->map, COUNT_PB3);
+    return NULL; /* winner holds until main releases */
 }
 
 static void test_concurrent_claims(void) {
@@ -181,20 +196,20 @@ static void test_concurrent_claims(void) {
     Worker workers[WORKERS] = {0};
     pthread_t ids[WORKERS];
     for(int i = 0; i < WORKERS; i++) {
-        workers[i] = (Worker){.map = &m, .barrier = &barrier, .number = i + 1};
+        workers[i] = (Worker){.map = &m, .barrier = &barrier};
         REQUIRE(pthread_create(&ids[i], NULL, race_claim, &workers[i]) == 0);
     }
     int rc = pthread_barrier_wait(&barrier);
     REQUIRE(rc == 0 || rc == PTHREAD_BARRIER_SERIAL_THREAD);
     int winners = 0;
-    uint32_t owner = 0U;
+    uint64_t handle = 0U;
     for(int i = 0; i < WORKERS; i++) {
         REQUIRE(pthread_join(ids[i], NULL) == 0);
-        if(workers[i].granted) { ++winners; owner = (uint32_t)workers[i].number; }
+        if(workers[i].granted) { ++winners; handle = workers[i].granted; }
     }
-    REQUIRE(winners == 1); /* never double-owner when contested */
+    REQUIRE(winners == 1);
     REQUIRE(m.used == COUNT_PB3);
-    REQUIRE(lease_release(&m, owner, COUNT_PB3));
+    REQUIRE(lease_release(&m, handle, COUNT_PB3));
     REQUIRE(m.used == 0U);
     REQUIRE(pthread_barrier_destroy(&barrier) == 0);
     lease_destroy(&m);
@@ -203,9 +218,9 @@ static void test_concurrent_claims(void) {
 int main(void) {
     test_foreign_owner_refusal();
     test_alias_conflicts_and_nonconflicts();
-    test_no_partial_or_foreign_release();
+    test_invalid_wrong_and_stale_release();
     for(int run = 0; run < 25; run++) test_concurrent_claims();
-    puts("HOST LEASE MODEL PASS: all-or-nothing, owner-safe, alias-safe, contested 24-thread test x25");
+    puts("HOST LEASE MODEL PASS: atomic all-or-nothing, stale-handle-safe, alias-safe, 24-thread contest x25");
     puts("FIRMWARE-GLOBAL OWNERSHIP: NOT IMPLEMENTED / NOT HARDWARE VERIFIED");
     return 0;
 }
