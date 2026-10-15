@@ -63,9 +63,13 @@ jobs:
           FBT_GIT_SUBMODULE_SHALLOW: "1"
         run: |
           set -euo pipefail
-          ./fbt firmware_all fap_labmate
+          ./fbt firmware_all fap_labmate fap_js_gpio
           test -s build/f7-firmware-C/firmware.dfu
           test -s build/f7-firmware-C/.extapps/labmate.fap
+          mapfile -t jsbins < <(find build -type f \( -name 'js_gpio.fal' -o -name 'js_gpio.fap' \) -print)
+          test "${#jsbins[@]}" -ge 1
+          for jsfile in "${jsbins[@]}"; do test -s "$jsfile"; sha256sum "$jsfile"; done
+          echo "Native JS GPIO plugin compiled, not just firmware and LabMate."
           readelf -Ws build/f7-firmware-C/firmware.elf | awk '
             $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
             $8=="furi_hal_resource_lease_try_acquire" {claim=1}
