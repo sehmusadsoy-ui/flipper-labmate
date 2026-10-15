@@ -25,6 +25,8 @@ typedef enum {
 typedef struct {
     OneWireHost* host;
     LabMateCommOwner* owner;
+    uint32_t firmware_lease_handle; /* PA4 pin claimed before OneWireHost alloc */
+    bool firmware_release_fault; /* sticky failed release, never retry or reset */
     LabMateOneWireHwStatus status;
     LabMateOneWireDecodeStatus decode_status;
     uint32_t start_tick;
