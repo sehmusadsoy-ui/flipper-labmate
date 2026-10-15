@@ -99,7 +99,7 @@ CI builds and separately approved device tests.
 
 | Gate | Scope | Status |
 | --- | --- | --- |
-| E11.0 | Source contract audit + contested host lease prototype | PENDING CI until exact workflow PASS |
+| E11.0 | Source contract audit + contested host lease prototype | **HOST CI PASS**, [run 38747593373](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38747593373), source SHA `bdbcc5676072bfc6b0a455de191f17fc10a43c51` |
 | E11.1 | Actual patched firmware atomically enforces leases across all relevant HAL/service paths | **NOT IMPLEMENTED** |
 | E11.2 | Matched firmware+FAP builds/APPCHK, API/ABI, failure-path and no-register-mutation tests | **NOT TESTED** |
 | E11.3 | Operator-approved on-device competing-service safety tests, rollback verified | **NOT TESTED** |
@@ -109,3 +109,19 @@ CI builds and separately approved device tests.
 Do not mark v1.8 complete based solely on host lease simulations.
 The canonical `ROADMAP.md` and
 `docs/MASTER_ROADMAP_V2_ADDENDUM.md` remain authoritative.
+
+## E11.0 observed CI evidence (2026-10-15)
+
+At the exact source commit `bdbcc5676072bfc6b0a455de191f17fc10a43c51`,
+GitHub Actions [run 38747593373](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38747593373)
+completed **SUCCESS**. Its one job passed all steps, including:
+
+- `E11 PINNED-SOURCE AUDIT PASS: source hazard assumptions confirmed.`
+- `HOST LEASE MODEL PASS: all-or-nothing, owner-safe, alias-safe, contested 24-thread test x25`
+- `FIRMWARE-GLOBAL OWNERSHIP: NOT IMPLEMENTED / NOT HARDWARE VERIFIED`
+
+This is **E11.0 host-model/source-audit PASS**, NOT E11.1 firmware-side
+implementation, NOT a new FAP, and NOT a device PASS. The host
+prototype currently takes numeric tokens from callers; firmware-safe
+unique versioned owner handles and stale-token invalidation remain
+mandatory design work before HAL integration.
