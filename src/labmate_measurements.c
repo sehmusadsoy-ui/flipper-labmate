@@ -478,8 +478,12 @@ void measurement_update(LabMateApp* app) {
         return;
     }
 
-    /* GPIO Monitor retains its simple state/edge polling path. */
-    bool current = labmate_monitor_gpio_read(app->gpio_index);
+    /* A busy/unowned pin must never be sampled or counted as logic LOW.
+     * Other tools have no reason to poll a GPIO Monitor lease.
+     */
+    if(app->screen != LabMateScreenGpio) return;
+    bool current = false;
+    if(!labmate_monitor_gpio_read(app, app->gpio_index, &current)) return;
     if(current != app->gpio_previous_state) {
         app->edges++;
         app->gpio_previous_state = current;
