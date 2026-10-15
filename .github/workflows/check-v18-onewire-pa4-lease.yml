@@ -1,0 +1,95 @@
+name: v1.8 E11 PA4 OneWire production lease gate (NO DEVICE)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - "src/labmate_onewire_hw.c"
+      - "src/labmate_onewire_hw.h"
+      - "tests/test_onewire_hw.c"
+      - "tests/onewire_host_stubs/**"
+      - ".github/workflows/check-v18-onewire-pa4-lease.yml"
+      - "scripts/patch_momentum_resource_lease.py"
+      - "scripts/patch_momentum_i2c_timeout.py"
+      - "scripts/patch_momentum_gpio_tryadd.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pa4:
+    name: Real OneWireHost C lease/denial and paired patched firmware FAP
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Checkout LabMate development source
+        uses: actions/checkout@v4
+        with:
+          path: labmate
+          persist-credentials: false
+
+      - name: Run native actual OneWire PA4 matched and missing API tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd labmate
+          python3 scripts/check_v18_onewire_codec.py
+          for variant in present missing; do
+            flags=""
+            if [ "$variant" = "missing" ]; then flags="-DTEST_NO_LEASE"; fi
+            cc -std=c11 -Wall -Wextra -Werror -pedantic $flags               -Itests/onewire_host_stubs -Isrc -x c               src/labmate_comm_resource.c src/labmate_onewire_ds18b20.c               src/labmate_onewire_hw.c tests/test_onewire_hw.c               -o "/tmp/labmate-pa4-$variant"
+            "/tmp/labmate-pa4-$variant"
+          done
+          echo "HOST ONLY: fake OneWireHost, NO physical DS18B20 acceptance."
+
+      - name: Checkout exact pinned Momentum firmware
+        uses: actions/checkout@v4
+        with:
+          repository: Next-Flip/Momentum-Firmware
+          ref: d3f89dfe2ef6b01839201598e9be1590cba80322
+          path: momentum-src
+          persist-credentials: false
+
+      - name: Apply source-only firmware API patches to ephemeral checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 labmate/scripts/patch_momentum_i2c_timeout.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_resource_lease.py momentum-src --allow-timed-i2c --apply
+          python3 labmate/scripts/patch_momentum_gpio_tryadd.py momentum-src --allow-prepatched --apply
+          git -C momentum-src diff --check
+
+      - name: Stage exactly one integrated LabMate app
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p momentum-src/applications_user/labmate/src
+          cp labmate/application.fam labmate/labmate_10px.png momentum-src/applications_user/labmate/
+          cp labmate/src/*.c labmate/src/*.h momentum-src/applications_user/labmate/src/
+
+      - name: Build paired real patched Momentum and FAP APPCHK and export ABI
+        shell: bash
+        working-directory: momentum-src
+        timeout-minutes: 40
+        env:
+          FBT_GIT_SUBMODULE_SHALLOW: "1"
+        run: |
+          set -euo pipefail
+          ./fbt firmware_all fap_labmate
+          test -s build/f7-firmware-C/firmware.dfu
+          test -s build/f7-firmware-C/.extapps/labmate.fap
+          readelf -Ws build/f7-firmware-C/firmware.elf | awk '
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_resource_lease_try_acquire" {claim=1}
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_resource_lease_release" {release=1}
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_gpio_try_add_int_callback" {gpio=1}
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_i2c_external_acquire_timeout" {i2c=1}
+            END {exit !(claim && release && gpio && i2c)}
+          '
+          sha256sum build/f7-firmware-C/firmware.dfu build/f7-firmware-C/.extapps/labmate.fap
+          echo "PA4 ONE-WIRE MATCHED REAL FIRMWARE+FAP PASS (CI ONLY)."
+          echo "NO DEVICE/USB/FLASH. NO NATIVE MOMENTUM SERVICE MIGRATION."
