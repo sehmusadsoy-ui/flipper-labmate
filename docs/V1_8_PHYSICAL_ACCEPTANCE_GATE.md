@@ -813,13 +813,30 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   proof, independent baud timing calibration, unrestricted sustained
   reliability or simultaneous third-party USART resource contention.
   No device peer firmware change was reported or requested.
-- [ ] **Other EXITFIX device regressions remain OPEN:** Profiles
-  save/load stability and CSV/history preservation/integrity on the
-  new FAP; firmware-service resource contention and safe positive
+- [x] **EXITFIX E9 — non-destructive Profiles / Log History
+  read-only UI preservation and app reopen: OPERATOR PHYSICAL PASS,
+  2026-10-15.** With the same installed EXITFIX FAP SHA256
+  `7a76f626f34a65059d9536fa2cd52b2639f4d1038a9b5c69291fa28d5e4f63be`,
+  operator inspected RECORDS > Profiles S1 and S2 without executing
+  SAVE, LOAD or DELETE; opened an existing CSV through RECORDS >
+  Log History in normal view mode; exited and reopened the app.
+  Verbatim result:
+  `EXITFIX E9: S1=yes; S2=yes; HISTORY=yes; CSV OPEN=yes; REOPEN=yes; ERROR=no`.
+  This proves on-screen presence/readability for checked entries and
+  safe read-only navigation, **not** byte-for-byte SD data parity,
+  CRC verification of both profile copies or all CSV rows.
+- [ ] **EXITFIX E10 — read-only device-to-host file integrity
+  snapshot / comparison remains OPEN** pending operator Windows
+  PowerShell output. Preserve the prior October 14 LabMate-only SD
+  backup and compare matching paths by SHA256; new log files may
+  legitimately exist and must not be falsely marked corruption.
+- [ ] **Other EXITFIX device regressions remain OPEN:** Profile
+  SAVE/LOAD/DELETE behavior on the new FAP (without risking existing
+  slots); firmware-service resource contention and safe positive
   I2C/DS18B20 measurement fixtures; hardware-calibrated PWM/TIM2
   measurements; full restore rehearsal and exceptional stale-capture
   exit path. Earlier UARTFIX physical PASS does not automatically
-  transfer to EXITFIX; E1–E8 only cover their explicitly recorded
+  transfer to EXITFIX; E1–E9 only cover their explicitly recorded
   workflows. Ordinary BACK cleanup does not demonstrate exceptional
   stale-capture exit branch dynamically executed.
 
