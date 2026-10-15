@@ -989,8 +989,19 @@ denial, STOP-before-claim, STOP-after-HAL-acquire, full
 [Dedicated E11 I2C3 CI run 38812503680](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38812503680)
 has a **host job SUCCESS** at code SHA
 `362a06e3df6f98ac66480a3836d60c2a4aabd0dd`.
-The separate full firmware/FAP job must not be marked
-successful until its final result is known.
+The matched pinned Momentum firmware/FAP build job has now also
+completed **SUCCESS**; native host job and full firmware job both
+passed for exact code SHA
+`362a06e3df6f98ac66480a3836d60c2a4aabd0dd`.
+The full build verified `firmware_all fap_labmate`, `APPCHK`
+and exported timed I2C+lease API. Exact **CI-only, never
+deployed** matched firmware DFU SHA256:
+`fa25f61010a3106b61a78443cee39eaa47cf4b5e822c2b88ccf742663c14e848`.
+Exact **paired I2C E11 FAP** SHA256:
+`d5841525da19f906a4663bd223c7630446100e9be42782842dbf6c52edd51cdc`.
+Never use a FAP from another CI run with this firmware without a new
+explicit fingerprint check. The full firmware build establishes no
+firmware-global mandatory owner coverage or physical I2C acceptance.
 
 **Pinned native Momentum source review:** 
 `targets/f7/furi_hal/furi_hal_serial_control.c` already
