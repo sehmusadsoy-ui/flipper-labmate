@@ -163,7 +163,7 @@ def patch_source(original: str) -> str:
     return out
 
 def git(root: Path, *args: str) -> str:
-    return subprocess.check_output(["git", "-C", str(root), *args], text=True).strip()
+    return subprocess.check_output(["git", "-C", str(root), *args], text=True).rstrip("\\r\\n")
 
 def main() -> int:
     ap = argparse.ArgumentParser()
