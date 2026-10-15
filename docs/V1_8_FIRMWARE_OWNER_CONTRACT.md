@@ -1238,3 +1238,72 @@ bypass them. JS GPIO code may still be invoked through
 unsupported direct-register scripts. Real-device competing
 service tests and rollback/restore evidence remain OPEN.
 No Stable, main, USB or SD mutation.
+
+## E11.1k — Native Momentum PulseReader TIM2/DMA/DMAMUX migration (2026-10-16)
+
+**Scope and why needed:** Upstream native
+`lib/pulse_reader/pulse_reader.c` directly enables/disables
+TIM2, configures DMA1 channels 4/5, DMAMUX request generator 0
+and the selected GPIO/EXTI input **without consulting other
+tools**. Previously, both `pulse_reader_start()` and
+`pulse_reader_stop()` could alter another tool's capture
+configuration, including when a capture start was refused
+by the surrounding app. This is separate from LabMate's own
+TIM2 Counter and Pulse Analyzer.
+
+New exact-Momentum, source-only script
+`scripts/patch_momentum_native_pulse_reader_lease.py`
+requires the approved already-patched upstream tree (timed I2C3,
+atomic resource lease, nonasserting GPIO try-add, native PWM and
+native JS GPIO), and refuses unexpected Git changes. It
+extends the firmware's resource bitmask with DMA1 CH4,
+DMA1 CH5, DMAMUX request generator 0, plus EXTI3/6/7
+aliases, and allows **eight composite pulse-reader masks**:
+PC0, PC1, PC3, PB2, PB3, PA4, PA6 and PA7. Every mask
+includes TIM2+both DMA channels+DMAMUX0, that physical pin,
+and its matching EXTI line. GPIO Monitor, Counter, LabMate
+OneWire/I2C and cooperating native services overlap the
+correct mask bits, so only one succeeds. Two different
+pins using the same EXTI line (e.g. PC3 and PB3) also
+conflict via EXTI3.
+
+The native reader claims before *any* timer/DMA/DMAMUX/GPIO
+register write. A denied claim, unsupported nonconnector
+pin, TIM2 already-enabled bus, or DMA4/5 already active
+returns with **zero writes**; the legacy API is `void`
+and cannot display BUSY itself. Public samples/receive
+return zero/NO_EDGE for a capture that did not begin.
+Second START does not restart or steal hardware. STOP
+only changes DMA, timer and GPIO while the exact
+reader's firmware lease is still owned, then
+releases the lease; duplicate STOP has no effects.
+If another native service unexpectedly disabled TIM2,
+STOP refuses unsafe further writes and marks the handle
+fault-sticky. If exact release fails, no new capture is
+permitted. During `free()`, a fault-sticky reader
+intentionally retains potentially still-live DMA
+buffers to avoid a DMA use-after-free; reboot/explicit
+service recovery is required rather than a fake cleanup.
+
+**Important limits:** noncanonical GPIO pointers do not
+start a capture on the patched reader. This is a deliberate
+*new compatibility restriction* to be accepted/revised
+before Stable; external third-party PulseReader callers
+could rely on different pins. Independent native users
+that directly write TIM2/DMA/DMAMUX/EXTI registers still
+bypass E11, and a read-before-write DMA/timer preflight
+cannot atomically defeat such a bypass. This is NOT
+firmware-wide mandatory ownership, a proven 64 MHz
+capture, or a device regression PASS.
+
+Dedicated native actual-C host and real patched Momentum
+firmware/FAP gate:
+[CI PulseReader run 38825473487](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38825473487);
+full MNTM-012 updater/archive review with PulseReader
+integration:
+[CI full updater 38825473376](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38825473376).
+These latest runs are independent and must complete SUCCESS
+before CI/build PASS is recorded. Existing full updater
+[38824900121 SUCCESS](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38824900121)
+validates the **previous native JS/PWM** code, not the
+new native PulseReader patch. No device/USB/Stable mutation.
