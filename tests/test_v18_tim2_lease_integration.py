@@ -172,7 +172,10 @@ def test_callers() -> None:
             "    }"
         )
         assert required in content, f"missing failure handling: {path}"
-        assert content.index(required) < content.index("app->capture_owner ="), path
+        start_name = "labmate_frequency_high_start" if "frequency_capture" in path else "labmate_event_counter_start"
+        start = content.index("void " + start_name + "(")
+        remainder = content[start:]
+        assert remainder.index(required) < remainder.index("app->capture_owner ="), path
     assert "bool labmate_frequency_tim2_configure(void);" in HEADER.read_text()
 
 
