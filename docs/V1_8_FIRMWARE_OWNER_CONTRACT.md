@@ -754,3 +754,41 @@ native pin-mode writers; mark the Monitor's **global GPIO ownership
 as OPEN** until supported by CI and separately authorized hardware
 verification. The PA7 app-local exclusion does not address the
 other seven pins or foreign noncooperative services.
+
+### E11.1e PWM plus Monitor PA7 combined CI evidence (2026-10-15)
+
+[Combined real firmware/FAP run 38806928654](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38806928654)
+**SUCCESS** at exact source SHA
+`2cc12665d5acf90922a15b15efcbfdad11c685dd`.
+The actual production `labmate_generator.c` compiled/executed
+under strict host mocks in both old SDK and lease-enabled modes.
+The actual `labmate_monitor_gpio.c` also compiled/executed against
+instrumented GPIO stubs, confirming that a denied, running or
+unresolved PWM lease prevents PA7 input/analog reconfiguration.
+The TIM2 driver and common capture STOP host tests still passed.
+Real exact pinned patched Momentum firmware and **one integrated**
+LabMate FAP compiled; `APPCHK` and ELF exported-API checks passed.
+
+**CI-only firmware DFU SHA256:**
+`7c51915d81317e3be6661b46c54fe171deb71e1045f214ad6f72310766771611`.
+**CI-only matched FAP SHA256:**
+`96785b757ed4b254f80aafa5c7e63cc9f57f701a48803c492c0a1331e05e4849`.
+These replace neither the currently installed firmware/FAP nor
+the public v1.8 Stable binaries.
+
+The normal LabMate source checks (including updated boundary
+guards checking PA7 BUSY/failure exclusion) and standard
+Momentum SDK FAP compile, plus mocked Windows installer passed in
+[CI 38806991034](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38806991034)
+at exact SHA `8435cbd7c817187c04ee5a6a81e418048e352221`.
+This latter SHA adds a **static guard adjustment**, not further
+production driver modifications.
+
+**Release gate:** E11.1e local PWM lease and limited Monitor PA7
+exclusion are HOST + FIRMWARE BUILD PASS ONLY. Legacy Momentum
+HAL/service TIM1 and GPIO callers still bypass the lease,
+Monitor's other seven pins are not firmware-claimed, and
+device contention/correct measurement tests have not occurred.
+E11.1 mandatory global ownership, E10 historical CSV integrity,
+and operator-approved physical acceptance remain OPEN.
+No firmware/FAP upload or Stable action performed.
