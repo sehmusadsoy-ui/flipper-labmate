@@ -7,6 +7,19 @@
 `7a76f626f34a65059d9536fa2cd52b2639f4d1038a9b5c69291fa28d5e4f63be`.
 **Approval state:** NO new firmware/FAP/USB install; NO v1.8 Stable approval.
 
+**E10 operator clarification (2026-10-16):** The user reports
+personally deleting Log History/CSV entries the previous day.
+The absence of `log_0041.csv`–`log_0049.csv` is consistent
+with intentional deletion, although no deletion log matches
+each ID independently. Do **not** treat this as demonstrated
+app data loss or a pending release gate. Keep old snapshots
+and backups read-only; only investigate if a *new* unexplained
+disappearance occurs. Any earlier E10 "OPEN/unknown reason"
+phrasing in dated historical sections below records the
+status *before* this clarification and is superseded here.
+Firmware-wide E11 is a separate unresolved gate.
+
+
 ## Why application-local ownership is insufficient
 
 `LabMateCaptureOwner` and `LabMateCommOwner` reject overlaps **inside
@@ -200,7 +213,7 @@ failure, or any real Flipper behavior. Those are **OPEN**.
 | E11.1 | Actual patched firmware atomically enforces leases across all relevant HAL/service paths | **NOT IMPLEMENTED** |
 | E11.2 | Matched firmware+FAP builds/APPCHK, API/ABI, failure-path and no-register-mutation tests | **NOT TESTED** |
 | E11.3 | Operator-approved on-device competing-service safety tests, rollback verified | **NOT TESTED** |
-| E10 | Existing-file preservation; nine historical logs absent with unknown reason | **OPEN**, do not restore automatically |
+| E10 | Nine historical logs absent; operator now reports manual Log History deletions | **NOT A SUSPECTED APP-LOSS BLOCKER**; precise file-by-file deletion causality unverified; preserve backups |
 
 **Release decision:** E11 is a v1.8 gate, not a v1.9 replacement.
 Do not mark v1.8 complete based solely on host lease simulations.
