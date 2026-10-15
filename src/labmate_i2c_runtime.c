@@ -16,6 +16,7 @@ struct LabMateI2cRuntime {
     LabMateI2cControl model;
     bool finished;
     bool stop_requested;
+    bool firmware_release_fault; /* sticky; preserve local owner */
     LabMateI2cRuntimeStatus status;
 };
 
@@ -38,11 +39,18 @@ static int32_t labmate_i2c_runtime_worker(void* context) {
     };
     const LabMateI2cSessionOps ops = labmate_i2c_momentum_ops(&bridge);
     (void)labmate_i2c_session_execute(&model, &ops);
+    if(bridge.release_fault) {
+        /* A firmware-release failure must not advertise valid results,
+         * successful CANCELLED or free the local COMM owner.
+         */
+        model.state = LabMateI2cControlFailed;
+    }
     /* The worker never acquires the LabMate UI mutex. Model publishing and
      * STOP flag checks use only this separate runtime mutex.
      */
     furi_mutex_acquire(s->mutex, FuriWaitForever);
     s->model = model;
+    if(bridge.release_fault) s->firmware_release_fault = true;
     s->finished = true;
     furi_mutex_release(s->mutex);
     return 0;
@@ -68,7 +76,7 @@ static void labmate_i2c_runtime_reap(LabMateI2cRuntime* s) {
     furi_thread_join(s->worker);
     furi_thread_free(s->worker);
     s->worker = NULL;
-    if(s->owner) {
+    if(s->owner && !s->firmware_release_fault) {
         (void)labmate_comm_local_release(s->owner, LabMateCommI2c3);
         s->owner = NULL;
     }
@@ -95,7 +103,10 @@ bool labmate_i2c_runtime_start(
     LabMateI2cRuntime* s, LabMateCommOwner* owner, LabMateCommBusy busy) {
     if(!s || !owner) return false;
     labmate_i2c_runtime_poll(s);
-    if(s->worker) return false;
+    if(s->worker || s->firmware_release_fault) {
+        s->status = LabMateI2cRuntimeFailed;
+        return false;
+    }
     if(!labmate_i2c_momentum_available()) {
         s->status = LabMateI2cRuntimeApiMissing;
         return false;
