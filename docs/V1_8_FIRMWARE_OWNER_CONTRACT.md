@@ -1322,3 +1322,38 @@ before CI/build PASS is recorded. Existing full updater
 [38824900121 SUCCESS](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38824900121)
 validates the **previous native JS/PWM** code, not the
 new native PulseReader patch. No device/USB/Stable mutation.
+### E11.1k verified host/build checkpoint and firmware primitive alias tests
+
+Latest fully completed implementation gate before adding the
+separate firmware primitive regression:
+[CI run 38825675992](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38825675992)
+**SUCCESS**, exact source SHA
+`84179d64a98517d4fcd77e6015f94488f02a8e75`.
+This compiled and executed the actual full native
+`pulse_reader.c` with instrumented HAL stubs (all eight connector
+pins, TIM2/DMA BUSY, canonical GPIO clone, nonconnector compatibility,
+idempotent STOP, foreign bus disable and sticky firmware faults)
+and built the exact pinned patched Momentum firmware plus a
+single `labmate.fap` and `js_gpio.fal` with APPCHK.
+
+CI-only SHA256:
+- firmware.dfu: `683d0055ffa2d4d67586a5b5fad4ce14a18afa24561b5d195ccdf4d1abc27968`;
+- labmate.fap: `42029b4db1d11b2ee5d5ea45074f5de87d3b3f1c3b263c9bfa5f971a4ecc0bbc`;
+- js_gpio.fal: `7169afbc1ea729a671820dfe1ee09c8180ace9518b6a70dfa0c6cc9caa0cb7b0`.
+
+**Next independent host regression:** Added
+`tests/test_v18_native_pulse_lease_firmware.py` to compile and
+execute the **actual firmware `furi_hal_resource_lease_*` C
+implementation** extracted from the exact patched source tree,
+not a mocked lease counter. Tests all eight pulse masks, PC3/PB3
+EXTI3 alias, TIM2/Counter, I2C/OneWire GPIO and
+nonconnector-core conflicts, stale/wrong-mask releases,
+and rejection of unsupported partial/union masks.
+Dedicated CI
+[38825956177](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38825956177)
+and review-only full MNTM-012 update
+[38825962530](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38825962530)
+must reach independently completed SUCCESS for this latest
+test-only source SHA to be marked PASS. No physical hardware
+calibration, no release approval, no device modification.
+
