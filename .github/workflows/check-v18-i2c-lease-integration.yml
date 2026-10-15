@@ -1,0 +1,98 @@
+name: v1.8 E11 I2C3 PC0 PC1 resource lease (NO DEVICE)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - "src/labmate_i2c_momentum.c"
+      - "src/labmate_i2c_momentum.h"
+      - "src/labmate_i2c_runtime.c"
+      - "tests/test_i2c_momentum_hal.c"
+      - "tests/i2c_hal_stubs/**"
+      - "scripts/check_v18_i2c_runtime.py"
+      - ".github/workflows/check-v18-i2c-lease-integration.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real_i2c_adapter_host:
+    name: Compile actual production adapter with three SDK configurations
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Run real source boundary + three native SDK harnesses
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/check_v18_i2c_runtime.py
+          for flavor in stock timed-only paired; do
+            flags=""
+            if [ "$flavor" = timed-only ]; then
+              flags="-DLABMATE_MOMENTUM_TIMED_I2C_API=1"
+            fi
+            if [ "$flavor" = paired ]; then
+              flags="-DLABMATE_MOMENTUM_TIMED_I2C_API=1 -DLABMATE_TEST_LEASE_API=1"
+            fi
+            cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc -Itests/i2c_hal_stubs $flags \
+              src/labmate_i2c_scan.c src/labmate_i2c_control.c \
+              src/labmate_i2c_session.c src/labmate_i2c_momentum.c \
+              tests/test_i2c_momentum_hal.c -o "/tmp/e11-i2c-$flavor"
+            "/tmp/e11-i2c-$flavor"
+          done
+          echo "E11 I2C3 HOST CONTRACT PASS: not a physical bus test."
+
+  paired_firmware:
+    name: Build matched pinned Momentum and single real LabMate FAP
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    needs: real_i2c_adapter_host
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: labmate
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: Next-Flip/Momentum-Firmware
+          ref: d3f89dfe2ef6b01839201598e9be1590cba80322
+          path: momentum-src
+          persist-credentials: false
+      - name: Source-only pinned firmware patch and app staging
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 labmate/scripts/patch_momentum_i2c_timeout.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_resource_lease.py momentum-src --allow-timed-i2c --apply
+          python3 labmate/scripts/patch_momentum_gpio_tryadd.py momentum-src --allow-prepatched --apply
+          git -C momentum-src diff --check
+          mkdir -p momentum-src/applications_user/labmate/src
+          cp labmate/application.fam labmate/labmate_10px.png momentum-src/applications_user/labmate/
+          cp labmate/src/*.c labmate/src/*.h momentum-src/applications_user/labmate/src/
+      - name: Build real firmware and FAP, verify ABI and APPCHK
+        shell: bash
+        working-directory: momentum-src
+        timeout-minutes: 40
+        env:
+          FBT_GIT_SUBMODULE_SHALLOW: "1"
+        run: |
+          set -euo pipefail
+          ./fbt firmware_all fap_labmate
+          test -s build/f7-firmware-C/firmware.dfu
+          test -s build/f7-firmware-C/.extapps/labmate.fap
+          readelf -Ws build/f7-firmware-C/firmware.elf | awk '
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_resource_lease_try_acquire" {claim=1}
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_resource_lease_release" {release=1}
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_i2c_external_acquire_timeout" {i2c=1}
+            END {exit !(claim && release && i2c)}
+          '
+          sha256sum build/f7-firmware-C/firmware.dfu build/f7-firmware-C/.extapps/labmate.fap
+          echo "E11 I2C3 PIN-LEASE PAIRED BUILD + APPCHK PASS (CI ONLY)."
+          echo "NO FLASH, NO INSTALL, NO STABLE, NO LEGACY SERVICE COOPERATION."
