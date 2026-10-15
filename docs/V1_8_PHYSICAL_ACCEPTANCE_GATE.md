@@ -978,12 +978,35 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   stale-handle refusal, mismatched/partial release refusal,
   unique opaque handle minting and fail-closed exhaustion. This
   is host-only, not a firmware ABI or physical hardware test.
-- [ ] **E11.1 real firmware-global exclusive ownership is
-  NOT IMPLEMENTED.** The prototype uses host pthread primitives,
-  not Momentum kernel/HAL locks. Legacy/independent firmware
-  services do not consult it. Generation-safe handles are now
-  modelled in the host test but are NOT implemented in firmware;
-  all HAL call-site integration remains required. Real on-device
+- [x] **E11.1a dormant firmware-resident resource-lease API:
+  REAL FIRMWARE CI COMPILE / EXPORTED ABI PASS (NO DEVICE).**
+  Experimental pinned-Momentum source patch
+  `scripts/patch_momentum_resource_lease.py` adds resource
+  claim/release primitives inside the firmware and exports two
+  stable-ABI symbols. An initial preflight failure was traced to
+  git porcelain whitespace truncation and corrected. CI
+  [run 38749893972](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38749893972)
+  and later
+  [run 38750321416](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38750321416)
+  completed SUCCESS, with combined patched timed-I2C API,
+  real Momentum firmware + LabMate FAP compile, APPCHK and ELF
+  export checks. **No firmware/FAP USB installation** was made
+  and new firmware's SHA does not inherit the installed pinned
+  DFU digest. Legacy HAL/service owners do NOT consult this
+  dormant API. An actual global exclusion guarantee is NOT PASS.
+- [x] **E11.1b pinned firmware source owner inventory: CI PASS.**
+  [Run 38750419882](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38750419882)
+  verified 9 source files referencing TIM1, 6 TIM2, and 9
+  EXTI callback-add (including HAL definitions). RFID, IR,
+  Sub-GHz, PWM, input and other services require a common
+  owner migration. This is a **source completeness inventory**,
+  not a competing-service physical stress test.
+- [ ] **E11.1 real firmware-global exclusive ownership remains
+  NOT IMPLEMENTED.** The resource API is still opt-in and
+  legacy/independent firmware services do not consult it.
+  All relevant HAL/service paths, alias rules, robust failure
+  rollback and crash lifecycle must be integrated and tested
+  before global safety can be claimed. Real on-device
   conflict tests are not authorized or performed.
 - [ ] **E11.2 matched patched firmware+FAP build, ABI and physical
   acceptance OPEN.** Current EXITFIX FAP is unchanged;
