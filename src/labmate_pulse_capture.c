@@ -162,6 +162,7 @@ void labmate_pulse_capture_stop(LabMateApp* app) {
         labmate_pulse_lease_mask = 0U;
     } else {
         /* Lost release: retain the handle and reject any later restart. */
+        app->capture_release_fault = true;
         app->capture_blocked = true;
     }
 #else
@@ -196,6 +197,8 @@ void labmate_pulse_capture_start(LabMateApp* app) {
         if(furi_hal_resource_lease_release(handle, mask)) {
             labmate_pulse_lease_handle = 0U;
             labmate_pulse_lease_mask = 0U;
+        } else {
+            app->capture_release_fault = true;
         }
         app->capture_blocked = true;
         return;
