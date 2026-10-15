@@ -7,6 +7,40 @@
 earlier UARTFIX `labmate.fap` SHA-256
 `eaadc85aba2c8a78074dc97935dc6d71de982582054f8addbeea227428b4f0cf`.
 
+## Update: current deployed EXITFIX / actual Flipper checks (2026-10-15)
+
+The initial owner map below describes **earlier UARTFIX** observations
+and a source audit *before* the new EXITFIX was physically deployed.
+Its historical FAP baseline remains preserved for traceability.
+
+- Current device installation: patched Momentum source
+  `d3f89dfe2ef6b01839201598e9be1590cba80322`, matched
+  **EXITFIX** `labmate.fap` SHA256
+  `7a76f626f34a65059d9536fa2cd52b2639f4d1038a9b5c69291fa28d5e4f63be`.
+  USB COM7 single-FAP transfer and requested launch PASS; the
+  firmware was not reflashed.
+- On-device operator-reported **EXITFIX E1–E9 PASS**, each only for
+  the specifically recorded workflow: Button Analyzer, TIM2 counter,
+  PWM/Logger coexistence, PWM active app EXIT + STOP on relaunch,
+  I2C empty-bus and PWM BUSY/recovery, 1-Wire no-sensor and PWM
+  BUSY/recovery, UART run/baud lifecycle, actual ESP32-S2 115200
+  UART RX/TX (R=20699, D=0, E=0), and Profiles/History read-only UI.
+  See [the physical acceptance ledger](V1_8_PHYSICAL_ACCEPTANCE_GATE.md).
+- **E10.2 profile CRC32 PASS**, original/new S1/S2 contents preserved.
+  **E10.4 CSV structure PASS**: 8/8 present files, 42 rows, expected
+  header and 9 columns. **Full E10 is OPEN**: current SD list directly
+  confirms old logs 0041–0049 absent, but the operator cannot recall
+  whether they deleted them. All nine remain in the Oct 14 PC
+  backup; neither corrupt data nor intentional deletion has been
+  demonstrated. No auto-restore or further mutation.
+- Normal physical cleanup and local BUSY results do not supply a
+  firmware-global TIM1/TIM2/EXTI/PA4 lease API, prove positive
+  I2C/DS18B20 devices, exercise an abnormal stale-capture exit
+  path or replace electrical waveform verification. Those remain
+  explicit v1.8 release gates.
+- No merge, tag/release replacement, or v1.9 feature implementation
+  is authorized by these device passes alone.
+
 ## Audited owner map
 
 | Resource | Production source / entry | Stop and release | Evidence / unresolved scope |
