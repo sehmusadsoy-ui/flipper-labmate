@@ -1172,9 +1172,18 @@ have a distinct code SHA
 [different native JS CI run 38820120699](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38820120699)
 as well as
 [full updater review 38820120854](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38820120854).
-Do not mark these latest checks PASS without their completed
-GitHub result, and do not reuse previous DFU fingerprints
-after any native firmware change.
+The dedicated **latest** native JS code/firmware run
+38820120699 is **SUCCESS** at that exact source SHA.
+It passes the updated EXTI-before-mode-change source guard,
+actual extracted C pin claim helper, exact patched full firmware,
+the integrated FAP, APPCHK and all required ABI symbols.
+CI-only DFU SHA256:
+`0925b3b7d22debc4db01d217871cb87e9fd2ee6b823741d5c0940ca83e09c2f9`;
+paired FAP SHA256:
+`d5841525da19f906a4663bd223c7630446100e9be42782842dbf6c52edd51cdc`.
+The separate full updater review 38820120854 still needs its
+own final result; do not substitute this source/FAP build for
+the independently reviewed full installer/archive/restore gate.
 
 **Remaining E11 global gaps:** generic native
 `furi_hal_gpio_init_ex()` and direct register modifications
