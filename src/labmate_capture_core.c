@@ -17,7 +17,8 @@ const GpioPin* const labmate_gpio_pins[GPIO_COUNT] = {
  * UI/mode switching still calls capture_stop_all() before changing pins.
  */
 bool labmate_capture_can_start(LabMateApp* app, LabMateCaptureOwner requested) {
-    const bool allowed = !app->counter_active && !app->button_active &&
+    const bool allowed = !app->capture_release_fault &&
+        !app->counter_active && !app->button_active &&
         labmate_capture_can_acquire(
         app->capture_owner,
         requested,
