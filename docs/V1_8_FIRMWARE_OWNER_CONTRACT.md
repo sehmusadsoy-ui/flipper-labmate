@@ -958,3 +958,54 @@ remain uncoordinated. The follow-on static OneWire source-order
 checker change SHA `56fb9c60245e1d3853eef7358e7df7d8cc10e262`
 is source-only; passing run 38808937140 is tied specifically
 to the earlier SHA above.
+
+## E11.1h — I2C3 PC0/PC1 shared lease and bounded HAL mutex
+
+**Change:** The actual `src/labmate_i2c_momentum.c` adapter now
+requires *both* the exported
+`FURI_HAL_I2C_HAS_EXTERNAL_ACQUIRE_TIMEOUT` API and the
+firmware E11 `FURI_HAL_RESOURCE_LEASE_API_V1`. A stock SDK
+or a timed-only SDK cannot initiate a hardware transaction.
+
+The `FURI_HAL_LEASE_I2C3_EXT` claim is obtained **before**
+the 50 ms external I2C HAL mutex acquisition. This mask
+contains I2C3 + both PC0 and PC1; a cooperative Monitor or
+IRQ lease on either physical pin rejects the claim without
+touching HAL. A busy HAL mutex returns BUSY and releases
+only the previously acquired firmware lease. No probe is
+possible unless the adapter still holds its matching lease.
+On a successful scan or STOP-after-acquire the worker
+releases the HAL mutex **before** its own firmware lease.
+A failed firmware release leaves its handle held and marks
+a sticky `release_fault`: the runtime reports FAILED instead
+of successful results, retains the local communication owner,
+and refuses subsequent START. No stock/unbounded HAL fallback.
+
+**Actual-C host evidence:** three native configurations —
+stock SDK, timed-only SDK, matching timed+lease SDK —
+plus wrong-order probe rejection, busy pin claim, HAL mutex
+denial, STOP-before-claim, STOP-after-HAL-acquire, full
+112-address ACK-model scan, and failed release.
+[Dedicated E11 I2C3 CI run 38812503680](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38812503680)
+has a **host job SUCCESS** at code SHA
+`362a06e3df6f98ac66480a3836d60c2a4aabd0dd`.
+The separate full firmware/FAP job must not be marked
+successful until its final result is known.
+
+**Pinned native Momentum source review:** 
+`targets/f7/furi_hal/furi_hal_serial_control.c` already
+uses a centralized serial-control queue and serial
+`handle->in_use` guard, and LabMate UART explicitly obtains
+its handle via `furi_hal_serial_control_acquire`. That is
+real native UART ownership among participating clients,
+unlike direct TIM1 and GPIO paths. Unrelated drivers that
+write registers without serial control can still bypass it;
+do not treat this as all-hardware ownership. Pinned
+`targets/f7/furi_hal/furi_hal_pwm.c` calls
+`furi_hal_gpio_init_ex(PA7)` then TIM1 bus enable
+without consulting an E11 claim; native GPIO init and EXTI
+callback paths similarly do not recognize these leases.
+**E11 global protection remains OPEN** pending chosen
+mandatory interception/cooperative-service strategy and
+actual physical conflict/restore acceptance. No electrical
+test, deployment, new Stable, USB install or firmware flash.
