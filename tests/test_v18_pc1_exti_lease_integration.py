@@ -28,6 +28,7 @@ PRELUDE = r"""
 #include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stddef.h>
 #define GPIO_COUNT 8
 #define LL_EXTI_LINE_1 2U
 #define GpioModeAnalog 0
@@ -49,7 +50,7 @@ typedef struct {
     uint32_t frequency_irq_last_tick, frequency_irq_edges;
 } LabMateApp;
 static GpioPin pc1 = {1};
-static const GpioPin* labmate_gpio_pins[GPIO_COUNT] = {NULL, &pc1};
+const GpioPin* labmate_gpio_pins[GPIO_COUNT] = {NULL, &pc1};
 static unsigned gpio_mutations, exti_mutations, irq_mutations;
 static unsigned try_add_attempts, lease_attempts, lease_releases;
 static bool lease_available, callback_available, release_succeeds = true;
@@ -59,6 +60,7 @@ static bool labmate_capture_can_start(LabMateApp* app, LabMateCaptureOwner expec
         app->capture_owner == LabMateCaptureNone && !app->frequency_irq_active &&
         app->gpio_index == 1U;
 }
+#ifdef TEST_APIS
 static LabMateCaptureOwner labmate_capture_owner_after_stop(
     LabMateCaptureOwner owner, LabMateCaptureOwner stopping) {
     return owner == stopping ? LabMateCaptureNone : owner;
@@ -92,6 +94,7 @@ static void labmate_capture_exti_clear(uint32_t line, bool rising) {
 #define furi_hal_gpio_enable_int_callback(...) (++irq_mutations)
 #define furi_hal_gpio_remove_int_callback(...) (++irq_mutations)
 static uint32_t labmate_frequency_pc1_lease;
+#endif
 """
 
 TESTS = r"""
