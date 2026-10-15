@@ -916,3 +916,32 @@ E11 remains OPEN until native service migration, mandatory
 arbitration and physical conflict/device acceptance. E10
 missing historical CSV IDs remain OPEN. No device, USB,
 Stable or `main` changes.
+
+### E11.1g exact combined OneWire + firmware success (2026-10-15)
+
+[Dedicated run 38808937140](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38808937140)
+**SUCCESS**, source SHA
+`ae6764074fddad014b8e538c4218024579a7c6f2`.
+Both *actual production* OneWire PA4 C native harness
+variants passed: experimental lease-enabled SDK and unmatched
+old SDK (zero OneWireHost/pin writes). The harness validated
+CRC, DS18B20 +85°C suppression, 800-ms conversion, rollover,
+STOP cleanup, claimed pin before host allocation, lease
+conflict, retained local/firmware owner on failed release and
+no repeated release. Real pinned patched Momentum
+`firmware_all fap_labmate`, `APPCHK`, ABI exports all passed.
+
+Exact **CI-only** experimental firmware DFU SHA256:
+`fa25f61010a3106b61a78443cee39eaa47cf4b5e822c2b88ccf742663c14e848`.
+Exact paired **CI-only** FAP SHA256:
+`1f795ff23533c3f9f03c063d231a032fa6ce88c37edb3f43e687a513cedee9bc`.
+This pair is distinct from earlier Monitor/PWM experimental binaries:
+**never mix different commit output pairs**, and no approval to
+flash or install any of them was granted.
+
+All host/device assertions here are against a fake OneWireHost,
+not a real connected sensor, and legacy firmware services
+remain uncoordinated. The follow-on static OneWire source-order
+checker change SHA `56fb9c60245e1d3853eef7358e7df7d8cc10e262`
+is source-only; passing run 38808937140 is tied specifically
+to the earlier SHA above.
