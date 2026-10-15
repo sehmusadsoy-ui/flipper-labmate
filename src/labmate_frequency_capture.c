@@ -92,7 +92,10 @@ void labmate_frequency_high_start(LabMateApp* app) {
     }
 
     /* Configure PB3/TIM2 with the counter stopped until ownership is published. */
-    labmate_frequency_tim2_configure();
+    if(!labmate_frequency_tim2_configure()) {
+        app->capture_blocked = true;
+        return;
+    }
 
     app->frequency_hw_last_count = 0;
     app->frequency_hw_last_poll_count = 0;
