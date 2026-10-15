@@ -7,10 +7,27 @@
 
 /* Pulse Analyzer uses BOTH edges and the CPU cycle counter.
  * ISR only captures timestamps; all arithmetic stays in the app thread.
- * Like other GPIO tools, it is intended for 3.3V digital signals only.
+ * E11 experimental ownership applies to PC0, PC1, PB2, PA4 individually.
+ * A stock SDK must fail closed, not fall back to assert-based callbacks.
  */
+#if defined(FURI_HAL_RESOURCE_LEASE_API_V1) && defined(FURI_HAL_GPIO_HAS_TRY_ADD_INT_CALLBACK)
+static uint32_t labmate_pulse_lease_handle;
+static uint32_t labmate_pulse_lease_mask;
+
+static uint32_t labmate_pulse_mask_for_pin(uint8_t index) {
+    switch(index) {
+    case 0U: return FURI_HAL_LEASE_IRQ_PC0;
+    case 1U: return FURI_HAL_LEASE_IRQ_PC1;
+    case 3U: return FURI_HAL_LEASE_IRQ_PB2;
+    case 5U: return FURI_HAL_LEASE_IRQ_PA4;
+    default: return 0U;
+    }
+}
+
 static void pulse_gpio_callback(void* context) {
     LabMateApp* app = context;
+    /* Try-add briefly enables EXTI before the application publishes owner. */
+    if(!app->pulse_irq_active || app->capture_owner != LabMateCapturePulse) return;
     /* Keep IRQ capture tied to the registered pin, not UI navigation. */
     const GpioPin* pin = labmate_gpio_pins[app->capture_pin_index];
     const uint32_t cycle = DWT->CYCCNT;
@@ -118,40 +135,82 @@ static void pulse_gpio_callback(void* context) {
     app->pulse_irq_edges++;
 }
 
+#endif /* matching firmware experimental GPIO/lease ABI */
+
 void labmate_pulse_capture_stop(LabMateApp* app) {
     if(!app->pulse_irq_active) return;
+#if defined(FURI_HAL_RESOURCE_LEASE_API_V1) && defined(FURI_HAL_GPIO_HAS_TRY_ADD_INT_CALLBACK)
+    if(labmate_pulse_lease_handle == 0U || labmate_pulse_lease_mask == 0U) {
+        app->capture_blocked = true;
+        return; /* not our pin/callback; never reset foreign peripherals */
+    }
     const GpioPin* pin = labmate_gpio_pins[app->capture_pin_index];
     furi_hal_gpio_disable_int_callback(pin);
     furi_hal_gpio_remove_int_callback(pin);
-
-    /* Release both EXTI edge triggers as well as the callback. Merely
-     * removing an interrupt callback leaves the rising/falling trigger
-     * configuration behind on this firmware version.
-     */
+    /* Only an owned EXTI line may have its rising/falling triggers cleared. */
     labmate_capture_exti_clear((uint32_t)pin->pin, true);
+    furi_hal_gpio_init_simple(pin, GpioModeAnalog);
     app->pulse_irq_active = false;
     if(app->capture_owner == LabMateCapturePulse) {
         app->capture_owner = labmate_capture_owner_after_stop(
             app->capture_owner, LabMateCapturePulse);
         app->capture_pin_index = GPIO_COUNT;
     }
+    if(furi_hal_resource_lease_release(
+           labmate_pulse_lease_handle, labmate_pulse_lease_mask)) {
+        labmate_pulse_lease_handle = 0U;
+        labmate_pulse_lease_mask = 0U;
+    } else {
+        /* Lost release: retain the handle and reject any later restart. */
+        app->capture_blocked = true;
+    }
+#else
+    app->capture_blocked = true;
+#endif
 }
 
 void labmate_pulse_capture_start(LabMateApp* app) {
     if(app->pulse_irq_active ||
        !labmate_capture_can_start(app, LabMateCapturePulse)) return;
+#if defined(FURI_HAL_RESOURCE_LEASE_API_V1) && defined(FURI_HAL_GPIO_HAS_TRY_ADD_INT_CALLBACK)
+    if(labmate_pulse_lease_handle != 0U || labmate_pulse_lease_mask != 0U) {
+        app->capture_blocked = true;
+        return;
+    }
+    const uint32_t mask = labmate_pulse_mask_for_pin(app->gpio_index);
+    if(mask == 0U) {
+        app->capture_blocked = true;
+        return;
+    }
     const GpioPin* pin = labmate_gpio_pins[app->gpio_index];
-
+    const uint32_t handle = furi_hal_resource_lease_try_acquire(mask);
+    if(handle == 0U) {
+        app->capture_blocked = true;
+        return; /* no GPIO or EXTI mutations on denied owner */
+    }
+    labmate_pulse_lease_handle = handle;
+    labmate_pulse_lease_mask = mask;
+    /* If any uncoordinated service already occupies the EXTI callback
+     * slot, do NOT configure or reset its GPIO. */
+    if(!furi_hal_gpio_try_add_int_callback(pin, pulse_gpio_callback, app)) {
+        if(furi_hal_resource_lease_release(handle, mask)) {
+            labmate_pulse_lease_handle = 0U;
+            labmate_pulse_lease_mask = 0U;
+        }
+        app->capture_blocked = true;
+        return;
+    }
+    furi_hal_gpio_disable_int_callback(pin);
     app->pulse_irq_seen = false;
     app->pulse_irq_high_valid = false;
     app->pulse_irq_low_valid = false;
-    app->pulse_irq_high_cycles = 0;
-    app->pulse_irq_low_cycles = 0;
-    app->pulse_irq_edges = 0;
-    app->pulse_irq_high_sum = 0;
-    app->pulse_irq_low_sum = 0;
-    app->pulse_irq_high_samples = 0;
-    app->pulse_irq_low_samples = 0;
+    app->pulse_irq_high_cycles = 0U;
+    app->pulse_irq_low_cycles = 0U;
+    app->pulse_irq_edges = 0U;
+    app->pulse_irq_high_sum = 0U;
+    app->pulse_irq_low_sum = 0U;
+    app->pulse_irq_high_samples = 0U;
+    app->pulse_irq_low_samples = 0U;
     app->pulse_irq_wide_window = false;
 
     furi_hal_gpio_init(
@@ -160,12 +219,11 @@ void labmate_pulse_capture_start(LabMateApp* app) {
     app->pulse_irq_last_cycle = DWT->CYCCNT;
     app->pulse_irq_tick_cycle = app->pulse_irq_last_cycle;
     app->pulse_irq_last_tick = furi_get_tick();
-
-    /* Publish pin identity before callback activation. */
     app->capture_pin_index = app->gpio_index;
-    furi_hal_gpio_add_int_callback(pin, pulse_gpio_callback, app);
-    furi_hal_gpio_enable_int_callback(pin);
-    app->pulse_irq_active = true;
     app->capture_owner = LabMateCapturePulse;
+    app->pulse_irq_active = true;
+    furi_hal_gpio_enable_int_callback(pin);
+#else
+    app->capture_blocked = true;
+#endif
 }
-
