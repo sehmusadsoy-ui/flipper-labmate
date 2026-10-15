@@ -868,12 +868,33 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
     `1a314e5336b05f101602888884fd544c850543f5b4d35bec5df4f1d9464a4f94`.
   The monotonic CSV sequence is compatible with intentional history
   deletion and new Logger sessions but **does not prove deletion
-  intent**. Profile difference may be legitimate generation updates,
-  but 32-byte lengths alone do **not** establish valid CRC or
-  preserved S1/S2 values. Next step: inspect both original and
-  current redundant copies locally using the actual `LBP1`
-  codec fields/CRC32 and compare slots; request confirmation of
-  deleted CSV IDs. No SD changes authorized.
+  intent**. Profile changes are separately evaluated in E10.2
+  below; request confirmation of deleted CSV IDs. No SD changes
+  authorized.
+- [x] **EXITFIX E10.2 — local read-only four-copy profile LBP1
+  header/CRC32/slot validation: OPERATOR PASS, 2026-10-15.**
+  User executed the field and CRC32 validation for the previously
+  frozen October 14 backup and October 15 current-device snapshot
+  without USB write or SD modification. Reported:
+  * OLD `profiles_a.bin`: CRC32 PASS, generation=83;
+    S1=F4/P1/G0/L0, S2=F4/P1/G0/L0, S3=F4/P1/G11/L0.
+  * OLD `profiles_b.bin`: CRC32 PASS, generation=84;
+    S1=F4/P1/G0/L0, S2=F4/P1/G0/L0, S3=EMPTY.
+  * NEW `profiles_a.bin`: CRC32 PASS, generation=89;
+    S1=F4/P1/G0/L0, S2=F4/P1/G0/L0, S3=F4/P1/G6/L0.
+  * NEW `profiles_b.bin`: CRC32 PASS, generation=90;
+    S1=F4/P1/G0/L0, S2=F4/P1/G0/L0, S3=EMPTY.
+  Thus both versions' copies decode correctly under the actual
+  32-byte LBP1 generation+CRC format, S1/S2 contents are unchanged
+  in all four copies, and current B generation 90 is newer than
+  A generation 89, with a consistent newest-view S3=EMPTY.
+  Changed profile SHA256 values are explained by actual changed
+  generation/S3 fields (not arbitrary corruption). This is
+  **PROFILE INTEGRITY PASS**, but is not full E10 PASS:
+  `log_0041.csv` through `log_0049.csv` remain absent from
+  the October 15 snapshot. Confirm operator deletion history before
+  treating them as intentionally removed; original October 14 backup
+  stays preserved.
 - [ ] **Other EXITFIX device regressions remain OPEN:** Profile
   SAVE/LOAD/DELETE behavior on the new FAP (without risking existing
   slots); firmware-service resource contention and safe positive
