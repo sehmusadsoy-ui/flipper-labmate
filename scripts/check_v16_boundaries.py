@@ -494,8 +494,10 @@ expect("FURI_CRITICAL_ENTER()" in EXTI_CAPTURE
 expect("LL_EXTI_Disable" not in MAIN and "LL_EXTI_ClearFlag" not in MAIN
        and FREQ_CAPTURE.count("labmate_capture_exti_clear(") == 2
        and PULSE_CAPTURE.count("labmate_capture_exti_clear(") == 1
-       and FREQ_CAPTURE.index("furi_hal_gpio_try_add_int_callback(")
-       < FREQ_CAPTURE.index("labmate_capture_exti_clear("),
+       and FREQ_CAPTURE.split("void labmate_frequency_low_start(", 1)[1].index(
+           "furi_hal_gpio_try_add_int_callback(")
+       < FREQ_CAPTURE.split("void labmate_frequency_low_start(", 1)[1].index(
+           "labmate_capture_exti_clear("),
        "PC1 STOP/pre-arm and Pulse STOP must use common EXTI cleanup,"
        " only AFTER a successful callback claim")
 
