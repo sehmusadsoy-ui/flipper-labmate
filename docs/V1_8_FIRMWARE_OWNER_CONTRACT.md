@@ -323,3 +323,37 @@ fail-closed handle generation exhaustion. **This tests C source logic
 on a host, not the STM32's interrupt primitives or other services.**
 It does not prove an app can safely use TIM1/TIM2 while native
 firmware drivers bypass the lease API. No device was changed.
+
+### E11.1c — Nonasserting EXTI callback registration (EXPERIMENTAL)
+
+To avoid calling pinned Momentum's assertion-only EXTI registration
+when a callback is already present, DEV includes:
+
+- [`scripts/patch_momentum_gpio_tryadd.py`](../scripts/patch_momentum_gpio_tryadd.py)
+  — exact pinned-source, **read-only by default**, adds
+  `furi_hal_gpio_try_add_int_callback(gpio, cb, ctx)` to
+  `furi_hal_gpio.c/.h` and the firmware API symbol table.
+  The function atomically tests the existing HAL callback slot;
+  if occupied, it returns `false` without replacing the existing
+  callback, context or enabling the interrupt.
+- [`tests/test_v18_gpio_tryadd_source.py`](../tests/test_v18_gpio_tryadd_source.py)
+  — compiles the **exact patched firmware C function body** on the
+  host with mutex-backed critical-section and EXTI-enable stubs.
+  Tests no-op invalid args, same shared EXTI line denial, preserved
+  prior callback and 24 concurrent attempts ×25 rounds.
+- [`check-v18-gpio-tryadd.yml`](../.github/workflows/check-v18-gpio-tryadd.yml)
+  — separate CI workflow that applies the verified I²C, dormant
+  resource lease and new GPIO callback API patches **only to
+  ephemeral Momentum source**, then builds firmware + integrated
+  LabMate FAP and checks ELF symbols.
+
+**Scope limitation:** this *does not* claim GPIO pin ownership,
+verify alternate-function or pin mode state, or protect any legacy
+service that invokes the old assertion-based callback API.
+In particular, calling it *after* reconfiguring a pin would still
+be unsafe if a foreign service owns that pin. LabMate has **not
+been migrated to use it**. It is a dormant ABI piece, not
+a verified firmware-global conflict solution. No firmware or FAP
+has been installed on the operator's Flipper.
+
+CI evidence/status: **PENDING** until the exact run is inspected.
