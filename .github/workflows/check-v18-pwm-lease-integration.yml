@@ -5,9 +5,12 @@ on:
     branches: [dev/v1.8-completion]
     paths:
       - "src/labmate_generator.c"
+      - "src/labmate_monitor_gpio.c"
+      - "src/labmate_capture_session.c"
       - "src/labmate_internal.h"
       - "src/labmate_ui_screens.c"
       - "tests/test_v18_pwm_lease_integration.py"
+      - "tests/test_v18_monitor_pa7_protection.py"
       - ".github/workflows/check-v18-pwm-lease-integration.yml"
       - "scripts/patch_momentum_resource_lease.py"
       - "scripts/patch_momentum_gpio_tryadd.py"
@@ -34,6 +37,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 labmate/tests/test_v18_pwm_lease_integration.py
+          python3 labmate/tests/test_v18_monitor_pa7_protection.py
           python3 labmate/tests/test_v18_tim2_lease_integration.py
           python3 labmate/tests/test_v18_capture_release_fault.py
           echo "HOST TEST ONLY: no real hardware or legacy-service conflict tested."
