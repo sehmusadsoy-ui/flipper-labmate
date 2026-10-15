@@ -150,6 +150,7 @@ void labmate_frequency_low_stop(LabMateApp* app) {
         labmate_frequency_pc1_lease = 0U;
     } else {
         /* Never reuse a released pin with an unresolved firmware handle. */
+        app->capture_release_fault = true;
         app->capture_blocked = true;
     }
 #else
@@ -186,6 +187,7 @@ void labmate_frequency_low_start(LabMateApp* app) {
             labmate_frequency_pc1_lease = 0U;
         }
         /* Failed release retains handle and denies subsequent starts. */
+        if(labmate_frequency_pc1_lease != 0U) app->capture_release_fault = true;
         app->capture_blocked = true;
         return;
     }
