@@ -49,9 +49,13 @@ static LabMateI2cProbeResult
     labmate_i2c_momentum_probe(void* ctx, uint8_t address, uint32_t timeout_ms) {
     if(!ctx || address < 0x10U || address > 0xEEU || (address & 1U))
         return LabMateI2cProbeError;
-#ifdef LABMATE_MOMENTUM_TIMED_I2C_API
-    /* This is an actual read-only HAL transaction; NACK and an individual
-     * transfer timeout both yield NOACK, never a fabricated device. */
+#if defined(LABMATE_MOMENTUM_TIMED_I2C_API) && \
+    defined(FURI_HAL_RESOURCE_LEASE_API_V1)
+    const LabMateI2cMomentum* bridge = ctx;
+    if(!bridge->lease_handle || bridge->release_fault)
+        return LabMateI2cProbeError;
+    /* Only the worker holding its pin+bus lease may issue HAL probes.
+     * NACK and HAL transfer timeout both yield NOACK, not a fake ACK. */
     return furi_hal_i2c_is_device_ready(
                &furi_hal_i2c_handle_external, address, timeout_ms) ?
         LabMateI2cProbeAck : LabMateI2cProbeNoAck;
