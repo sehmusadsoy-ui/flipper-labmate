@@ -53,6 +53,13 @@ for required in (
     "labmate_comm_local_release(s->owner, LabMateCommOneWirePa4)",
 ):
     assert required in hw, required
+assert ("furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_ONEWIRE_PA4)" in hw
+        and hw.index("furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_ONEWIRE_PA4)") <
+            hw.index("onewire_host_alloc(&gpio_ext_pa4)")
+        and "if(s->firmware_release_fault) return;" in hw
+        and "s->firmware_lease_handle != 0U" in hw
+        and "s->firmware_release_fault = true;" in hw), (
+    "1-Wire MUST claim firmware PA4 before allocation and retain failed release")
 for forbidden in ("power_enable_otg(", "gpio_ibutton", "gpio_ext_pb14",
                   "furi_hal_power_enable_otg"):
     assert forbidden not in hw, f"Forbidden automatic power/shared pin: {forbidden}"
