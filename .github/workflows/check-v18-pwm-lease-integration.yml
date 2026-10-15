@@ -1,0 +1,90 @@
+name: v1.8 E11.1e TIM1 PA7 PWM production lease gate (NO DEVICE)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - "src/labmate_generator.c"
+      - "src/labmate_internal.h"
+      - "src/labmate_ui_screens.c"
+      - "tests/test_v18_pwm_lease_integration.py"
+      - ".github/workflows/check-v18-pwm-lease-integration.yml"
+      - "scripts/patch_momentum_resource_lease.py"
+      - "scripts/patch_momentum_gpio_tryadd.py"
+      - "scripts/patch_momentum_i2c_timeout.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pwm:
+    name: Actual TIM1 PA7 PWM host-denial and matched firmware FAP compile
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Checkout DEV LabMate
+        uses: actions/checkout@v4
+        with:
+          path: labmate
+          persist-credentials: false
+
+      - name: Compile and execute real production PWM C denial tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 labmate/tests/test_v18_pwm_lease_integration.py
+          python3 labmate/tests/test_v18_tim2_lease_integration.py
+          python3 labmate/tests/test_v18_capture_release_fault.py
+          echo "HOST TEST ONLY: no real hardware or legacy-service conflict tested."
+
+      - name: Checkout exact pinned Momentum firmware
+        uses: actions/checkout@v4
+        with:
+          repository: Next-Flip/Momentum-Firmware
+          ref: d3f89dfe2ef6b01839201598e9be1590cba80322
+          path: momentum-src
+          persist-credentials: false
+
+      - name: Apply reviewed API patches only to ephemeral firmware checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 labmate/scripts/patch_momentum_i2c_timeout.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_resource_lease.py momentum-src --allow-timed-i2c --apply
+          python3 labmate/scripts/patch_momentum_gpio_tryadd.py momentum-src --allow-prepatched --apply
+          git -C momentum-src diff --check
+
+      - name: Stage one integrated LabMate production app
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p momentum-src/applications_user/labmate/src
+          cp labmate/application.fam labmate/labmate_10px.png momentum-src/applications_user/labmate/
+          cp labmate/src/*.c labmate/src/*.h momentum-src/applications_user/labmate/src/
+
+      - name: Build paired firmware and FAP check APPCHK and exported ABI
+        shell: bash
+        working-directory: momentum-src
+        timeout-minutes: 40
+        env:
+          FBT_GIT_SUBMODULE_SHALLOW: "1"
+        run: |
+          set -euo pipefail
+          ./fbt firmware_all fap_labmate
+          test -s build/f7-firmware-C/firmware.dfu
+          test -s build/f7-firmware-C/.extapps/labmate.fap
+          readelf -Ws build/f7-firmware-C/firmware.elf | awk '
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_resource_lease_try_acquire" {claim=1}
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_resource_lease_release" {release=1}
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_gpio_try_add_int_callback" {gpio=1}
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_i2c_external_acquire_timeout" {i2c=1}
+            END {exit !(claim && release && gpio && i2c)}
+          '
+          sha256sum build/f7-firmware-C/firmware.dfu build/f7-firmware-C/.extapps/labmate.fap
+          echo "E11.1e PWM TIM1/PA7 MATCHED FIRMWARE+FAP BUILD PASS (CI ONLY)."
+          echo "GLOBAL LEGACY TIMER OWNERS STILL BYPASS LEASE. NO FLASH OR STABLE."
