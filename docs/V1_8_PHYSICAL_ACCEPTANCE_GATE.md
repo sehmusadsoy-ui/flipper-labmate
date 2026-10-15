@@ -772,11 +772,27 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   It does **not** verify positive peripheral ACK, electrical I2C
   transfer correctness, external firmware service contention or
   sensor hotplug.
-- [ ] **Other EXITFIX device regressions remain OPEN:** 1-Wire
-  no-sensor/PWM BUSY/recovery; UART external peer; Profiles and CSV
-  integrity; competing firmware services. Previous UARTFIX device
-  PASS does not transfer automatically to EXITFIX. Ordinary BACK
-  cleanup does not demonstrate the exceptional stale-capture exit
+- [x] **EXITFIX E6 — 1-Wire PA4 no-sensor, PWM BUSY, recovery,
+  BACK and app reopen: OPERATOR PHYSICAL PASS, 2026-10-15.**
+  With no external GPIO sensor/wiring, operator followed COMM >
+  1-Wire Temp and OK, observed NO SENSOR; BACK; OUTPUT > PWM Studio
+  RUN and BACK; 1-Wire Temp OK returned BUSY; BACK, PWM STOP;
+  1-Wire Temp OK again returned NO SENSOR (not BUSY); BACK,
+  close/reopen LabMate. Exact reported outcome:
+  `EXITFIX E6: NO SENSOR=yes; PWM BUSY=yes; AFTER STOP NONE=yes; BACK=yes; REOPEN=yes; ERROR=no`.
+  Tested with the single installed EXITFIX FAP SHA256
+  `7a76f626f34a65059d9536fa2cd52b2639f4d1038a9b5c69291fa28d5e4f63be`.
+  Evidence covers negative-path GPIO/owner safety and normal
+  inter-tool recovery, **not** a physical sensor detection,
+  temperature reading, real DS18B20 CRC validation or firmware-global
+  PA4 ownership.
+- [ ] **Other EXITFIX device regressions remain OPEN:** UART
+  external peer and meaningful RX/TX; Profiles/CSV integrity;
+  firmware-service resource contention and hardware-dependent
+  positive I2C/DS18B20 measurements. Earlier UARTFIX physical
+  PASS does not automatically transfer to EXITFIX; E1–E6 only
+  test their explicitly recorded workflows. Ordinary BACK
+  cleanup does not demonstrate exceptional stale-capture exit
   branch dynamically executed.
 
 ## Stable release boundary
