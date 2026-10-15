@@ -85,6 +85,9 @@ typedef struct {
     bool capture_blocked;
     /* Sticky firmware lease release failure; no new capture until app restart. */
     bool capture_release_fault;
+    bool monitor_active; /* true only after a successful GPIO pin-only lease */
+    bool monitor_blocked; /* missing/busy firmware lease, no sample */
+    bool monitor_release_fault; /* sticky: refuse reuse after failed release */
 
     bool gpio_state;
     bool gpio_previous_state;
