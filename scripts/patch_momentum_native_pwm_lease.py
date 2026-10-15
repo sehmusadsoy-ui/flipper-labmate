@@ -114,6 +114,10 @@ def patch_source(original: str) -> str:
             "if(channel == FuriHalPwmOutputIdTim1PA7) {\n        furi_hal_gpio_init_simple(",
             "if(channel == FuriHalPwmOutputIdTim1PA7) {\n"
             "        if(!native_pwm_tim1_pa7_handle || native_pwm_tim1_pa7_fault) return;\n"
+            "        if(!furi_hal_bus_is_enabled(FuriHalBusTIM1)) {\n"
+            "            native_pwm_tim1_pa7_fault = true;\n"
+            "            return; /* unexpected clock disable: hold lease */\n"
+            "        }\n"
             "        furi_hal_gpio_init_simple(",
         ),
         (
@@ -126,6 +130,10 @@ def patch_source(original: str) -> str:
             "else if(channel == FuriHalPwmOutputIdLptim2PA4) {\n        furi_hal_gpio_init_simple(",
             "else if(channel == FuriHalPwmOutputIdLptim2PA4) {\n"
             "        if(!native_pwm_lptim2_pa4_handle || native_pwm_lptim2_pa4_fault) return;\n"
+            "        if(!furi_hal_bus_is_enabled(FuriHalBusLPTIM2)) {\n"
+            "            native_pwm_lptim2_pa4_fault = true;\n"
+            "            return; /* unexpected clock disable: hold lease */\n"
+            "        }\n"
             "        furi_hal_gpio_init_simple(",
         ),
         (
