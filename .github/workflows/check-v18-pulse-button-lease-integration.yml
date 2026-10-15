@@ -10,6 +10,7 @@ on:
       - "src/labmate_capture_session.c"
       - "src/labmate_internal.h"
       - "tests/test_v18_pulse_button_exti_integration.py"
+      - "tests/test_v18_capture_release_fault.py"
       - ".github/workflows/check-v18-pulse-button-lease-integration.yml"
       - "scripts/patch_momentum_resource_lease.py"
       - "scripts/patch_momentum_gpio_tryadd.py"
@@ -36,6 +37,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 labmate/tests/test_v18_pulse_button_exti_integration.py
+          python3 labmate/tests/test_v18_capture_release_fault.py
           python3 labmate/tests/test_v18_pc1_exti_lease_integration.py
           python3 labmate/tests/test_v18_tim2_lease_integration.py
           echo "HOST ONLY: no real STM32 IRQ or competing firmware service validation."
