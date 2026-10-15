@@ -9,6 +9,10 @@ on:
       - "tests/test_v18_full_update_bundle.py"
       - "scripts/check_v18_full_vs_mntm012.py"
       - "scripts/patch_momentum_i2c_timeout.py"
+      - "scripts/patch_momentum_resource_lease.py"
+      - "scripts/patch_momentum_gpio_tryadd.py"
+      - "scripts/patch_momentum_native_pwm_lease.py"
+      - "tests/test_v18_native_pwm_lease.py"
       # Any production LabMate change requires a new exact matching
       # patched-Momentum FAP build before physical acceptance/release.
       - "src/**"
@@ -69,8 +73,13 @@ jobs:
           done
           python3 labmate/scripts/patch_momentum_i2c_timeout.py momentum-src
           python3 labmate/scripts/patch_momentum_i2c_timeout.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_resource_lease.py momentum-src --allow-timed-i2c --apply
+          python3 labmate/scripts/patch_momentum_gpio_tryadd.py momentum-src --allow-prepatched --apply
+          python3 labmate/scripts/patch_momentum_native_pwm_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_pwm_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_pwm_lease.py momentum-src
           git -C momentum-src diff --check
-          echo "SOURCE SETTINGS MATCH; still not physical flash evidence."
+          echo "E11 NATIVE PWM/RESOURCES + FULL MNTM012 SOURCE MATCH; no physical flash."
 
       - name: Stage single genuine LabMate app
         shell: bash
@@ -91,16 +100,21 @@ jobs:
           # No flash_usb, selfupdate.py, runfap.py, or release.
           ./fbt copro_dist updater_package fap_labmate
           test -s build/f7-firmware-C/firmware.dfu
-          # FAP-only UART changes must pair with the already installed
-          # unchanged custom firmware image; refuse mismatch rather than
-          # asking the operator to reflash a different firmware.
-          echo 'e69f717df28f2ff5a417a69ac212f242cf2725a48ce8c4e31296ceb4a0157ec0  build/f7-firmware-C/firmware.dfu' | sha256sum -c
+          # E11 native-service firmware changes make the historical
+          # installed DFU hash obsolete for THIS uninstalled candidate.
+          # Verify the newly built exact pair and emit its independent
+          # checksums; never permit a FAP-only deploy against old DFU.
           test -s build/f7-firmware-C/.extapps/labmate.fap
           readelf -Ws build/f7-firmware-C/firmware.elf | awk '
             $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
-            $8=="furi_hal_i2c_external_acquire_timeout" {found=1}
-            END {exit !found}
+            $8=="furi_hal_i2c_external_acquire_timeout" {i2c=1}
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_resource_lease_try_acquire" {claim=1}
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_resource_lease_release" {release=1}
+            END {exit !(i2c && claim && release)}
           '
+          sha256sum build/f7-firmware-C/firmware.dfu build/f7-firmware-C/.extapps/labmate.fap
           mapfile -t tgzs < <(find dist -type f -name '*.tgz' -print)
           test "${#tgzs[@]}" -eq 1
           python3 ../labmate/scripts/check_v18_full_update_bundle.py \
@@ -138,6 +152,7 @@ jobs:
             sha256sum -c SHA256SUMS.txt
           )
           printf 'LabMate commit: %s\n' "$(git -C labmate rev-parse HEAD)" > dev-full-candidate/PROVENANCE.txt
+          printf 'E11 firmware diff SHA256: %s\n' "$(git -C momentum-src diff -- targets/f7/furi_hal targets/furi_hal_include targets/f7/api_symbols.csv | sha256sum | cut -d ' ' -f 1)" >> dev-full-candidate/PROVENANCE.txt
           printf 'Momentum base: %s\n' "$(git -C momentum-src rev-parse HEAD)" >> dev-full-candidate/PROVENANCE.txt
           printf 'Installed Momentum012 source: %s\n' "$(git -C momentum-012 rev-parse HEAD)" >> dev-full-candidate/PROVENANCE.txt
           printf 'Actions run: %s\n' "$GITHUB_RUN_ID" >> dev-full-candidate/PROVENANCE.txt
