@@ -75,6 +75,7 @@ const GpioPin* labmate_gpio_pins[GPIO_COUNT]={
 unsigned gpio_writes, gpio_reads, callback_writes, callback_attempts;
 unsigned exti_writes, lease_attempts, lease_releases, button_inits, button_resumes;
 uint32_t current_mask, expected_mask;
+unsigned claim_gpio_writes, claim_exti_writes;
 bool lease_available, callback_available, release_succeeds=true;
 static bool labmate_capture_can_start(LabMateApp* app, LabMateCaptureOwner requested) {
     if(app->capture_release_fault || app->capture_owner!=LabMateCaptureNone) return false;
@@ -101,6 +102,8 @@ static uint32_t furi_hal_resource_lease_try_acquire(uint32_t mask) {
     lease_attempts++;
     if(!lease_available) return 0U;
     current_mask=mask;
+    claim_gpio_writes=gpio_writes;
+    claim_exti_writes=exti_writes;
     return 99U;
 }
 static bool furi_hal_resource_lease_release(uint32_t handle, uint32_t mask) {
@@ -109,12 +112,15 @@ static bool furi_hal_resource_lease_release(uint32_t handle, uint32_t mask) {
     if(release_succeeds) current_mask=0U;
     return release_succeeds;
 }
+#ifdef MODE_PULSE
 static void pulse_gpio_callback(void* ctx) {(void)ctx;}
+#else
 static void labmate_button_irq(void* ctx) {(void)ctx;}
+#endif
 static bool furi_hal_gpio_try_add_int_callback(
     const GpioPin* pin, void(*cb)(void*), void* context) {
     assert(pin && cb && context && current_mask==expected_mask);
-    assert(gpio_writes==0U && exti_writes==0U);
+    assert(gpio_writes==claim_gpio_writes && exti_writes==claim_exti_writes);
     callback_attempts++;
     if(!callback_available) return false;
     callback_writes++; /* nonasserting callback registration enables IT */
@@ -129,6 +135,7 @@ static void labmate_capture_exti_clear(uint32_t line, bool rising) {
 #define furi_hal_gpio_enable_int_callback(p) ((void)(p),++callback_writes)
 #define furi_hal_gpio_disable_int_callback(p) ((void)(p),++callback_writes)
 #define furi_hal_gpio_remove_int_callback(p) ((void)(p),++callback_writes)
+#ifdef MODE_BUTTON
 static void labmate_button_state_init(ButtonState* st, bool b) {
     assert(st && b);
     button_inits++;
@@ -140,7 +147,8 @@ static void labmate_button_state_resume(ButtonState* st, bool b) {
 static void labmate_button_snapshot(ButtonState* st, ButtonStats* stats) {
     assert(st && stats);
 }
-#endif
+#endif /* MODE_BUTTON */
+#endif /* TEST_APIS */
 '''
 
 TEST = r'''
