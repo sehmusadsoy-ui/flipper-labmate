@@ -725,3 +725,32 @@ other GPIO Monitor pins; a foreign legacy service that never uses
 the E11 lease API; timer/interrupt owner recovery across crashes.
 Preventing PA7 reconfiguration after an observed PWM denial
 is useful local safety, **not** a firmware-wide GPIO lease.
+
+### E11.1e Monitor eight-pin owner review (design, NOT implemented)
+
+The actual pin mapping in `src/labmate_capture_core.c` and
+`src/labmate_monitor_gpio.c` is:
+
+| Monitor index | Pin | Related subsystem / conflict alias | Monitor firmware pin lease |
+| --- | --- | --- | --- |
+| 0 | PC0 | EXTI0 / external I2C3 | **NONE** |
+| 1 | PC1 | EXTI1 / LOW Frequency / Button / I2C3 | **NONE** |
+| 2 | PC3 | EXTI3 line number also used by onboard OK key | **NONE** |
+| 3 | PB2 | EXTI2 / Pulse Analyzer | **NONE** |
+| 4 | PB3 | TIM2 frequency/counter and shared EXTI3 line number | **NONE** |
+| 5 | PA4 | EXTI4 / external 1-Wire sensor | **NONE** |
+| 6 | PA6 | EXTI6 line number also used by onboard DOWN key | **NONE** |
+| 7 | PA7 | TIM1 PWM; app-local RUN/BUSY/release-fault exclusion now added | **NONE** |
+
+Existing firmware E11 API composite masks cannot be reused
+as a general passive GPIO Monitor pin owner without reviewing
+and defining valid single-pin masks, aliases, and pin-only
+lifecycle. In particular, claiming an EXTI callback is not
+appropriate for a passive polling Monitor, and merely calling
+`furi_hal_gpio_read()` after silently skipping required pin-mode
+configuration may produce invalid readings. A proper implementation
+must add a pinned-versioned firmware pin contract and migrate
+native pin-mode writers; mark the Monitor's **global GPIO ownership
+as OPEN** until supported by CI and separately authorized hardware
+verification. The PA7 app-local exclusion does not address the
+other seven pins or foreign noncooperative services.
