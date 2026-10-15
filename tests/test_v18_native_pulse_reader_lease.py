@@ -157,7 +157,12 @@ int main(void) {
     /* Another service disabled TIM2 unexpectedly: STOP cannot
      * assert or reconfigure GPIO; hold old handle sticky instead.
      */
+    /* Isolate the next fault case as if firmware rebooted. A real
+     * sticky fault remains unsafe until a complete device reset.
+     */
     deny_release=false;
+    used=0U;next_handle=0U;
+    memset(handles,0,sizeof handles);memset(masks,0,sizeof masks);
     PulseReader* s2=pulse_reader_alloc(&gpio_ext_pc0,8U);
     pulse_reader_start(s2);
     CHECK(bus_on);
@@ -197,9 +202,14 @@ def main() -> None:
     )
     consts=macros-funcs
     d={"LL_DMA_CHANNEL_4":4, "LL_DMA_CHANNEL_5":5}
+    for i in range(16):
+        d[f"LL_GPIO_PIN_{i}"]=1<<i
     mock_def+="\n"+"\n".join(f"#define {k} {d.get(k,1)}" for k in sorted(consts))
     mock_def+="\n#define LL_DMA_IsEnabledChannel(d,c) mock_dma_is_enabled(c)\n"
     mock_def+="#define LL_DMA_GetDataLength(d,c) mock_dma_length()\n"
+    mock_def+="\n" + "\n".join(
+        f"#define LL_DMAMUX_REQ_GEN_EXTI_LINE{i} {i}U" for i in range(16))
+    mock_def+="\n"
     # Include exact primitive mask definitions by extracting the source
     # header's E11 declarations, preserving bit alias and conflict semantics.
     lease_start=hdr.index("enum {\n    FuriHalLeaseTim1")
