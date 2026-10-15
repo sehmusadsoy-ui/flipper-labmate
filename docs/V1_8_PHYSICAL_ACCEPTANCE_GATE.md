@@ -1001,6 +1001,16 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   Sub-GHz, PWM, input and other services require a common
   owner migration. This is a **source completeness inventory**,
   not a competing-service physical stress test.
+- [x] **E11.1a exact patched firmware C lease runtime — HOST CI PASS.**
+  [Run 38751054638](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38751054638)
+  at `da9e8d84206c3c0f080b3ebea01ec2afb2c1321e`
+  completed SUCCESS. The test extracts the ACTUAL dormant
+  firmware lease claim/release C bodies into a pthread-backed
+  host harness and validates alias conflicts, wrong/stale/partial
+  release, 24-thread ×25 contention and generation exhaustion.
+  This proves only host execution of the exact code: no real
+  firmware HAL/IRQ/owner interposition or physical device
+  verification. No new FAP/DFU installed.
 - [ ] **E11.1 real firmware-global exclusive ownership remains
   NOT IMPLEMENTED.** The resource API is still opt-in and
   legacy/independent firmware services do not consult it.
