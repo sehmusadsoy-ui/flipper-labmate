@@ -43,7 +43,7 @@ PRELUDE = r"""
 typedef struct { unsigned pin; } GpioPin;
 typedef enum { LabMateCaptureNone, LabMateCaptureFrequencyLow } LabMateCaptureOwner;
 typedef struct {
-    bool frequency_irq_active, frequency_irq_new_period, capture_blocked;
+    bool frequency_irq_active, frequency_irq_new_period, capture_blocked, capture_release_fault;
     unsigned gpio_index, capture_pin_index;
     LabMateCaptureOwner capture_owner;
     uint32_t frequency_irq_last_cycle, frequency_irq_period_cycles;
