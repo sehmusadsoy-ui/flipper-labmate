@@ -926,6 +926,26 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   past device history. E10 full preservation gate remains OPEN.
   Avoid altering microSD or restoring these files without a
   separately documented plan and user approval.
+- [x] **EXITFIX E10.4 — 8 current CSV files, read-only
+  header/9-column row STRUCTURE: OPERATOR PASS, 2026-10-15.**
+  Operator checked the eight previously snapshotted local CSV
+  files (`log_0050.csv`–`log_0057.csv`) using exact expected
+  header
+  `elapsed_ms,source,pin,valid,frequency_hz,high_us,low_us,period_us,duty_pct`
+  and nine comma-separated fields per nonblank data row.
+  User-reported results:
+  `0050` ROWS=10, `0051` ROWS=9, `0052` ROWS=0,
+  `0053` ROWS=5, `0054` ROWS=5, `0055` ROWS=0,
+  `0056` ROWS=8, `0057` ROWS=5. All eight
+  `HEADER=True`, `BAD_ROWS=0`, `STATUS=PASS`.
+  Totals: **8/8 files, 42 data rows, zero row field-count errors**.
+  This is CSV **STRUCTURE PASS** only, not numeric semantics,
+  measurement accuracy, line-by-line SD checksum or proof of
+  historical deletion authorization. Header-only files 0052/0055
+  do not by themselves indicate corruption. Full E10 remains
+  **OPEN** because older `log_0041.csv`–`log_0049.csv`
+  are confirmed absent on-device with deletion cause UNKNOWN.
+  Keep both historical and current snapshots untouched.
 - [ ] **Other EXITFIX device regressions remain OPEN:** Profile
   SAVE/LOAD/DELETE behavior on the new FAP (without risking existing
   slots); firmware-service resource contention and safe positive
