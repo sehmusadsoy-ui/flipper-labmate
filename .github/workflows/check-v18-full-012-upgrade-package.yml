@@ -152,9 +152,14 @@ jobs:
           mkdir -p dev-full-candidate
           cp momentum-src/build/f7-firmware-C/.extapps/labmate.fap dev-full-candidate/labmate.fap
           cp momentum-src/build/f7-firmware-C/firmware.dfu dev-full-candidate/firmware.dfu
-          mapfile -t jsbins < <(find momentum-src/build -type f \( -name 'js_gpio.fal' -o -name 'js_gpio.fap' \) -print)
-          test "${#jsbins[@]}" -eq 1
-          cp "${jsbins[0]}" dev-full-candidate/js_gpio.module
+          # FBT intentionally duplicates JS plugin in .extapps and SD
+          # resources; exact duplicates are expected, NOT two candidates.
+          JS_PRIMARY="momentum-src/build/f7-firmware-C/.extapps/js_gpio.fal"
+          JS_RESOURCE="momentum-src/build/f7-firmware-C/resources/apps_data/js_app/plugins/js_gpio.fal"
+          test -s "$JS_PRIMARY"
+          test -s "$JS_RESOURCE"
+          cmp "$JS_PRIMARY" "$JS_RESOURCE"
+          cp "$JS_PRIMARY" dev-full-candidate/js_gpio.module
           mapfile -t tgzs < <(find momentum-src/dist -type f -name '*.tgz' -print)
           test "${#tgzs[@]}" -eq 1
           cp "${tgzs[0]}" dev-full-candidate/firmware-full-update.tgz
