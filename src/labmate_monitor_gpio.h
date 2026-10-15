@@ -6,4 +6,5 @@
  */
 void labmate_monitor_gpio_activate(LabMateApp* app);
 void labmate_monitor_gpio_release(LabMateApp* app, uint8_t index);
-bool labmate_monitor_gpio_read(uint8_t index);
+/* A missing lease is not an electrical LOW; report sample validity. */
+bool labmate_monitor_gpio_read(LabMateApp* app, uint8_t index, bool* level);
