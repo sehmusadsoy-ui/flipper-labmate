@@ -14,3 +14,5 @@ void labmate_frequency_tim2_enable(void);
 void labmate_frequency_tim2_disable(void);
 uint32_t labmate_frequency_tim2_read(void);
 void labmate_frequency_tim2_shutdown(void);
+/* After shutdown, true means failed release left a nonreusable TIM2 lease. */
+bool labmate_frequency_tim2_lease_pending(void);
