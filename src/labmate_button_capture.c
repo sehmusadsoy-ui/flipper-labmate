@@ -66,6 +66,8 @@ void labmate_button_capture_start(LabMateApp* app) {
         if(furi_hal_resource_lease_release(
                labmate_button_lease_handle, FURI_HAL_LEASE_IRQ_PC1)) {
             labmate_button_lease_handle = 0U;
+        } else {
+            app->capture_release_fault = true;
         }
         app->capture_blocked = true;
         return;
@@ -141,6 +143,7 @@ void labmate_button_capture_stop(LabMateApp* app) {
            labmate_button_lease_handle, FURI_HAL_LEASE_IRQ_PC1)) {
         labmate_button_lease_handle = 0U;
     } else {
+        app->capture_release_fault = true;
         app->capture_blocked = true; /* retain failed-release lease */
     }
 #else
