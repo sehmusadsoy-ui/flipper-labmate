@@ -41,6 +41,10 @@ enum {
     FuriHalLeaseExti7 = (1U << 21),
 };
 #define FURI_HAL_LEASE_PULSE_CORE (FuriHalLeaseTim2 | FuriHalLeaseDma1Ch4 | FuriHalLeaseDma1Ch5 | FuriHalLeaseDmamuxReq0)
+/* Nonconnector pins keep the historical native reader capability.
+ * CORE owns timer/DMA only: their GPIO/EXTI paths remain unarbitrated.
+ */
+#define FURI_HAL_LEASE_PULSE_NONCONNECTOR FURI_HAL_LEASE_PULSE_CORE
 #define FURI_HAL_LEASE_PULSE_PC0 (FURI_HAL_LEASE_PULSE_CORE | FuriHalLeasePc0 | FuriHalLeaseExti0)
 #define FURI_HAL_LEASE_PULSE_PC1 (FURI_HAL_LEASE_PULSE_CORE | FuriHalLeasePc1 | FuriHalLeaseExti1)
 #define FURI_HAL_LEASE_PULSE_PC3 (FURI_HAL_LEASE_PULSE_CORE | FuriHalLeasePc3 | FuriHalLeaseExti3)
@@ -51,7 +55,8 @@ enum {
 #define FURI_HAL_LEASE_PULSE_PA7 (FURI_HAL_LEASE_PULSE_CORE | FuriHalLeasePa7 | FuriHalLeaseExti7)
 
 """
-SOURCE_ALLOW="""           mask == FURI_HAL_LEASE_PULSE_PC0 ||
+SOURCE_ALLOW="""           mask == FURI_HAL_LEASE_PULSE_NONCONNECTOR ||
+           mask == FURI_HAL_LEASE_PULSE_PC0 ||
            mask == FURI_HAL_LEASE_PULSE_PC1 ||
            mask == FURI_HAL_LEASE_PULSE_PC3 ||
            mask == FURI_HAL_LEASE_PULSE_PB2 ||
@@ -62,15 +67,27 @@ SOURCE_ALLOW="""           mask == FURI_HAL_LEASE_PULSE_PC0 ||
 """
 PULSE_HELPER="""/* LabMate E11 native PulseReader single composite-resource claim. */
 static uint32_t pulse_reader_e11_mask(const GpioPin* gpio) {
-    if(gpio == &gpio_ext_pc0) return FURI_HAL_LEASE_PULSE_PC0;
-    if(gpio == &gpio_ext_pc1) return FURI_HAL_LEASE_PULSE_PC1;
-    if(gpio == &gpio_ext_pc3) return FURI_HAL_LEASE_PULSE_PC3;
-    if(gpio == &gpio_ext_pb2) return FURI_HAL_LEASE_PULSE_PB2;
-    if(gpio == &gpio_ext_pb3) return FURI_HAL_LEASE_PULSE_PB3;
-    if(gpio == &gpio_ext_pa4) return FURI_HAL_LEASE_PULSE_PA4;
-    if(gpio == &gpio_ext_pa6) return FURI_HAL_LEASE_PULSE_PA6;
-    if(gpio == &gpio_ext_pa7) return FURI_HAL_LEASE_PULSE_PA7;
-    return 0U; /* Unsupported physical pin: no DMA/timer write. */
+    if(!gpio) return 0U;
+    if(gpio == &gpio_ext_pc0 || (gpio->port == gpio_ext_pc0.port &&
+       gpio->pin == gpio_ext_pc0.pin)) return FURI_HAL_LEASE_PULSE_PC0;
+    if(gpio == &gpio_ext_pc1 || (gpio->port == gpio_ext_pc1.port &&
+       gpio->pin == gpio_ext_pc1.pin)) return FURI_HAL_LEASE_PULSE_PC1;
+    if(gpio == &gpio_ext_pc3 || (gpio->port == gpio_ext_pc3.port &&
+       gpio->pin == gpio_ext_pc3.pin)) return FURI_HAL_LEASE_PULSE_PC3;
+    if(gpio == &gpio_ext_pb2 || (gpio->port == gpio_ext_pb2.port &&
+       gpio->pin == gpio_ext_pb2.pin)) return FURI_HAL_LEASE_PULSE_PB2;
+    if(gpio == &gpio_ext_pb3 || (gpio->port == gpio_ext_pb3.port &&
+       gpio->pin == gpio_ext_pb3.pin)) return FURI_HAL_LEASE_PULSE_PB3;
+    if(gpio == &gpio_ext_pa4 || (gpio->port == gpio_ext_pa4.port &&
+       gpio->pin == gpio_ext_pa4.pin)) return FURI_HAL_LEASE_PULSE_PA4;
+    if(gpio == &gpio_ext_pa6 || (gpio->port == gpio_ext_pa6.port &&
+       gpio->pin == gpio_ext_pa6.pin)) return FURI_HAL_LEASE_PULSE_PA6;
+    if(gpio == &gpio_ext_pa7 || (gpio->port == gpio_ext_pa7.port &&
+       gpio->pin == gpio_ext_pa7.pin)) return FURI_HAL_LEASE_PULSE_PA7;
+    /* Other native GPIOs still use the legacy reader. Claim shared
+     * TIM2/DMA/DMAMUX resources, but cannot promise pin/EXTI isolation.
+     */
+    return FURI_HAL_LEASE_PULSE_NONCONNECTOR;
 }
 
 """
