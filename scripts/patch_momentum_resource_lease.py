@@ -160,7 +160,10 @@ def main() -> int:
         head = git(root, "rev-parse", "HEAD")
         if head != EXPECTED_HEAD:
             raise ValueError(f"Momentum HEAD must be exact: {head}")
-        dirty_lines = git(root, "status", "--porcelain").splitlines()
+        dirty_lines = subprocess.check_output(
+            ["git", "-C", str(root), "status", "--porcelain"],
+            text=True,
+        ).splitlines()  # preserve git porcelain leading status column
         dirty = set()
         for line in dirty_lines:
             if not line:
