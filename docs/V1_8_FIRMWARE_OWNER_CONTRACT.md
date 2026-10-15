@@ -356,4 +356,25 @@ been migrated to use it**. It is a dormant ABI piece, not
 a verified firmware-global conflict solution. No firmware or FAP
 has been installed on the operator's Flipper.
 
-CI evidence/status: **PENDING** until the exact run is inspected.
+CI evidence/status: **HOST + PINNED FIRMWARE BUILD CI PASS**, not
+physical/hardware global-ownership PASS. [GitHub Actions
+run 38794546759](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38794546759)
+at exact source commit `e3b0f3504a534d62f1d9c092ba949fbe2d7e8769`
+concluded SUCCESS: actual source body compiled with host
+contention stubs, exact three-API-patch firmware source
+preflight completed, real firmware + integrated FAP built
+and `APPCHK` passed, then exported ELF symbols were confirmed.
+Actual CI logs printed
+`E11.1c EXACT FIRMWARE GPIO TRY-ADD C HOST TEST PASS`
+and
+`E11.1c ACTUAL FIRMWARE + FAP BUILD AND EXPORTED EXT IRQ API PASS`.
+
+**CI-only artifact fingerprints (not installed):**
+- Firmware DFU SHA256 `7c51915d81317e3be6661b46c54fe171deb71e1045f214ad6f72310766771611`.
+- LabMate FAP SHA256 `e7ecd22a7a45fa88017a76a07f553ff67c4b2157b0e4eef9feb73eb2f968ccaa`.
+
+These replace **neither** the installed matched DFU nor the installed
+EXITFIX FAP; reusing this FAP on the current firmware is unsafe.
+This function does not include pin lease acquisition, is not used
+by the existing LabMate capture drivers, and does not protect
+legacy firmware services. E11.1 integration remains OPEN.
