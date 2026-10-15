@@ -1205,6 +1205,31 @@ after a successful updated workflow; earlier run statuses
 remain historical host/firmware/FAP evidence.
 This is not a physical JS script acceptance test.
 
+**Native JS actual binary verification — SUCCESS (2026-10-16):**
+[CI run 38820514753](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38820514753),
+source SHA `e3e5f4266523ceaf34a9e79e988500784257641a`,
+explicitly compiled `fap_js_gpio` in addition to
+`firmware_all fap_labmate`. The workflow checked the
+nonempty `build/f7-firmware-C/.extapps/js_gpio.fal`
+and its independent APPCHK before reporting PASS.
+CI-only SHA256:
+
+- `js_gpio.fal` (real modified native service plugin):
+  `f6692b2596cfb0199a2b97b347365330319cd67dba54102bd7a128ce35d013a3`.
+- `firmware.dfu`:
+  `0925b3b7d22debc4db01d217871cb87e9fd2ee6b823741d5c0940ca83e09c2f9`.
+- `labmate.fap`:
+  `d5841525da19f906a4663bd223c7630446100e9be42782842dbf6c52edd51cdc`.
+
+This success **supersedes the earlier JS-build-evidence gap**
+but does NOT establish physical JS runtime acceptance, plugin
+placement in the on-device Momentum SD resources, firmware-global
+HAL interception, or safe installation. The full MNTM-012
+review-only workflow has been updated to build and separately
+archive the JS module with its SHA. That archive has independent
+CI and must be checked for final SUCCESS before package-level
+PASS can be recorded.
+
 **Remaining E11 global gaps:** generic native
 `furi_hal_gpio_init_ex()` and direct register modifications
 still do not consult claims; timer/EXTI/input/radio paths
