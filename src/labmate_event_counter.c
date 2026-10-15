@@ -58,6 +58,10 @@ void labmate_event_counter_stop(LabMateApp* app) {
         }
     }
     labmate_frequency_tim2_shutdown();
+    if(labmate_frequency_tim2_lease_pending()) {
+        app->capture_release_fault = true;
+        app->capture_blocked = true;
+    }
     app->counter_active = false;
     if(app->capture_owner == LabMateCaptureCounter) {
         app->capture_owner =
