@@ -603,3 +603,30 @@ includes the newer test in its host gate. Its full matched build
 should be recorded separately only once the exact run succeeds.
 No compiled firmware, experimental FAP or Stable asset has been
 installed or published.
+
+### Final combined source/host/firmware checkpoint for this E11.1d iteration
+
+[Combined run 38803350705](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38803350705)
+**SUCCESS** at exact tested source
+`6f3a67d91e4af2d8c26991d29b82bc5a154af93f`.
+The host job executed actual production Pulse/Button start/stop,
+shared STOP/can-start latch, PC1 Frequency and TIM2 C driver
+denial/cleanup tests with strict HAL stubs. Actual pinned,
+patched Momentum `firmware_all fap_labmate`, FAP `APPCHK`
+and four defined ABI/ELF export symbols **PASS**.
+CI-only experimental DFU SHA256:
+`7c51915d81317e3be6661b46c54fe171deb71e1045f214ad6f72310766771611`.
+CI-only experimental FAP SHA256:
+`3fe795d7f606154c0dfd32350c79405c831a573cfa5e250ff07f79ba0a714e76`.
+The current branch may contain **documentation-only** follow-up
+commits after this exact tested source; do not imply they received
+different hardware verification. The standalone, normal LabMate
+SDK/source test [run 38802958804](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38802958804)
+also succeeded on earlier exact source `975b8d4f2c2b3c09b059e0cc952c7f7a5f16535b`
+including the TIM2 release propagation code; subsequent changes
+until this combined checkpoint were Python host harness/workflow.
+
+This is **SOURCE + HOST TEST + REAL BUILD PASS**, not Flipper
+physical device acceptance or mandatory firmware-wide ownership.
+No new custom firmware/FAP has been installed, `main`, Stable and
+previous release assets are unchanged; PR #13 stays Draft.
