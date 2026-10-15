@@ -146,7 +146,7 @@ Function,+,furi_hal_resource_lease_try_acquire,uint32_t,uint32_t
 
 def git(root: Path, *args: str) -> str:
     return subprocess.check_output(
-        ["git", "-C", str(root), *args], text=True).strip()
+        ["git", "-C", str(root), *args], text=True).rstrip("\r\n")
 
 
 def main() -> int:
