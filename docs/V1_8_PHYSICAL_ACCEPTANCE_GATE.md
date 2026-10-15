@@ -892,9 +892,17 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   generation/S3 fields (not arbitrary corruption). This is
   **PROFILE INTEGRITY PASS**, but is not full E10 PASS:
   `log_0041.csv` through `log_0049.csv` remain absent from
-  the October 15 snapshot. Confirm operator deletion history before
-  treating them as intentionally removed; original October 14 backup
-  stays preserved.
+  the October 15 snapshot. When asked whether they had deliberately
+  deleted the files through Log History, **the operator replied
+  `Hatırlamıyorum` (I do not remember), 2026-10-15**. Therefore
+  deletion intent is UNKNOWN, not PASS, and there is no basis to
+  classify the absence as intentional or as confirmed data loss.
+  The original October 14 backup containing all nine files remains
+  preserved. Next nondestructive check: list the current on-device
+  `/ext/apps_data/labmate` directory directly over Flipper USB,
+  to distinguish a missing file in the received snapshot from one
+  currently absent on microSD. E10 remains OPEN; no restore, delete,
+  profile save, or Stable approval authorized.
 - [ ] **Other EXITFIX device regressions remain OPEN:** Profile
   SAVE/LOAD/DELETE behavior on the new FAP (without risking existing
   slots); firmware-service resource contention and safe positive
