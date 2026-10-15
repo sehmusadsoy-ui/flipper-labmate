@@ -203,6 +203,8 @@ typedef struct {
      */
     bool generator_running;
     bool generator_state;
+    bool generator_blocked; /* firmware TIM1 claim denied or ownership unresolved */
+    bool generator_release_fault; /* sticky failed lease release; no retry */
     uint8_t generator_freq_index; /* 0..14 presets, 15 = CUSTOM */
     uint8_t generator_duty_percent; /* 5..95; default 50 */
     uint32_t generator_custom_hz; /* committed custom frequency */
