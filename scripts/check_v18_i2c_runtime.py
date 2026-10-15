@@ -21,6 +21,14 @@ patch = read("scripts/patch_momentum_i2c_timeout.py")
 assert "FURI_HAL_I2C_HAS_EXTERNAL_ACQUIRE_TIMEOUT" in adapter
 assert "LABMATE_MOMENTUM_TIMED_I2C_API" in adapter
 assert "furi_hal_i2c_external_acquire_timeout(timeout_ms)" in adapter
+assert "FURI_HAL_RESOURCE_LEASE_API_V1" in adapter
+assert "furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_I2C3_EXT)" in adapter
+assert adapter.index("furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_I2C3_EXT)") < adapter.index("furi_hal_i2c_external_acquire_timeout(timeout_ms)")
+assert "furi_hal_resource_lease_release(" in adapter
+assert "bridge->release_fault = true;" in adapter
+assert "bridge.release_fault" in runtime
+assert "s->firmware_release_fault" in runtime
+
 assert "furi_hal_i2c_is_device_ready(" in adapter
 assert "furi_hal_i2c_release(&furi_hal_i2c_handle_external)" in adapter
 assert "furi_hal_i2c_acquire(" not in adapter
