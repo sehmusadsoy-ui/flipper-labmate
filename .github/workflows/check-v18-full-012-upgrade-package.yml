@@ -103,13 +103,17 @@ jobs:
         run: |
           set -euo pipefail
           # No flash_usb, selfupdate.py, runfap.py, or release.
-          ./fbt copro_dist updater_package fap_labmate
+          ./fbt copro_dist updater_package fap_labmate fap_js_gpio
           test -s build/f7-firmware-C/firmware.dfu
           # E11 native-service firmware changes make the historical
           # installed DFU hash obsolete for THIS uninstalled candidate.
           # Verify the newly built exact pair and emit its independent
           # checksums; never permit a FAP-only deploy against old DFU.
           test -s build/f7-firmware-C/.extapps/labmate.fap
+          mapfile -t jsbins < <(find build -type f \( -name 'js_gpio.fal' -o -name 'js_gpio.fap' \) -print)
+          test "${#jsbins[@]}" -ge 1
+          for jsfile in "${jsbins[@]}"; do test -s "$jsfile"; sha256sum "$jsfile"; done
+          echo "Native JS GPIO plugin binary built explicitly for full updater."
           readelf -Ws build/f7-firmware-C/firmware.elf | awk '
             $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
             $8=="furi_hal_i2c_external_acquire_timeout" {i2c=1}
