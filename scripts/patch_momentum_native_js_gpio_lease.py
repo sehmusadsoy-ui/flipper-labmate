@@ -82,6 +82,23 @@ def patch_source(s: str) -> str:
         """    JsGpioPinInst* manager_data = JS_GET_CONTEXT(mjs);
     if(!js_gpio_e11_claim(manager_data))
         JS_ERROR_AND_RETURN(mjs, MJS_BAD_ARGS_ERROR, "GPIO pin BUSY");
+    /* Register the interrupt callback BEFORE GPIO init changes the
+     * EXTI line mapping. Another native owner may be using the line
+     * even when the selected connector GPIO itself is unclaimed.
+     */
+    const bool is_interrupt = mode == GpioModeInterruptRise ||
+                              mode == GpioModeInterruptFall ||
+                              mode == GpioModeInterruptRiseFall;
+    if(is_interrupt && !manager_data->had_interrupt) {
+        if(!furi_hal_gpio_try_add_int_callback(
+               manager_data->pin, js_gpio_int_cb, manager_data->interrupt_semaphore))
+            JS_ERROR_AND_RETURN(mjs, MJS_BAD_ARGS_ERROR, "GPIO EXTI BUSY");
+        manager_data->had_interrupt = true;
+    } else if(!is_interrupt && manager_data->had_interrupt) {
+        furi_hal_gpio_disable_int_callback(manager_data->pin);
+        furi_hal_gpio_remove_int_callback(manager_data->pin);
+        manager_data->had_interrupt = false;
+    }
     furi_hal_gpio_init(manager_data->pin, mode, pull, GpioSpeedVeryHigh);
     manager_data->configured = true;""")
     s = replace_once(s,
