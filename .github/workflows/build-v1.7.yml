@@ -143,7 +143,7 @@ jobs:
           /tmp/labmate-i2c-bridge-stock
           # Patched firmware API contract: ACK comes from real HAL callback.
           cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc \
-            -Itests/i2c_hal_stubs -DLABMATE_MOMENTUM_TIMED_I2C_API=1 \
+            -Itests/i2c_hal_stubs -DLABMATE_MOMENTUM_TIMED_I2C_API=1 -DLABMATE_TEST_LEASE_API=1 \
             src/labmate_i2c_scan.c src/labmate_i2c_control.c \
             src/labmate_i2c_session.c src/labmate_i2c_momentum.c \
             tests/test_i2c_momentum_hal.c -o /tmp/labmate-i2c-bridge-timed
