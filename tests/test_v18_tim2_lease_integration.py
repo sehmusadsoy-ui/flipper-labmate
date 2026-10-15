@@ -91,6 +91,7 @@ bool furi_hal_resource_lease_release(uint32_t handle, uint32_t mask) {
 int main(void) {
     /* Rejection must not change GPIO, IRQ, counter or clock registers. */
     assert(!labmate_frequency_tim2_configure());
+    assert(!labmate_frequency_tim2_lease_pending());
     labmate_frequency_tim2_enable();
     labmate_frequency_tim2_disable();
     assert(labmate_frequency_tim2_read() == 0U);
@@ -100,6 +101,7 @@ int main(void) {
     assert(lease_attempts == 1);
     lease_available = true;
     assert(labmate_frequency_tim2_configure());
+    assert(labmate_frequency_tim2_lease_pending());
     assert(hw_writes > 0);
     int before = hw_writes;
     assert(!labmate_frequency_tim2_configure()); /* no double claim */
@@ -110,6 +112,7 @@ int main(void) {
     assert(hw_reads == 1);
     labmate_frequency_tim2_shutdown();
     assert(lease_releases == 1);
+    assert(!labmate_frequency_tim2_lease_pending());
     before = hw_writes;
     labmate_frequency_tim2_shutdown();
     labmate_frequency_tim2_disable();
@@ -120,6 +123,7 @@ int main(void) {
     assert(labmate_frequency_tim2_configure());
     labmate_frequency_tim2_shutdown();
     assert(lease_releases == 2);
+    assert(labmate_frequency_tim2_lease_pending());
     before = hw_writes;
     assert(!labmate_frequency_tim2_configure());
     labmate_frequency_tim2_shutdown();
@@ -176,7 +180,7 @@ def test_callers() -> None:
         start = content.index("void " + start_name + "(")
         remainder = content[start:]
         assert remainder.index(required) < remainder.index("app->capture_owner ="), path
-    assert "bool labmate_frequency_tim2_configure(void);" in HEADER.read_text()
+    for path in ("src/labmate_frequency_capture.c", "src/labmate_event_counter.c"):\n        assert "if(labmate_frequency_tim2_lease_pending()) {" in (ROOT/path).read_text()\n    assert "bool labmate_frequency_tim2_configure(void);" in HEADER.read_text()\n    assert "bool labmate_frequency_tim2_lease_pending(void);" in HEADER.read_text()
 
 
 if __name__ == "__main__":
