@@ -435,3 +435,52 @@ then shared firmware service adoption. A successful local PB3/TIM2
 claim is **not** evidence that legacy independent TIM2 users cannot
 bypass it. TIM2 hardware may still be reconfigured by a legacy service
 until the common firmware-wide contract is enforced.
+
+## E11.1d continuation — LOW PC1/EXTI1 opt-in driver, 2026-10-15
+
+**Development branch only; no operator installation or global-ownership claim.**
+Following the already accepted PB3/TIM2 driver stage, the actual
+`src/labmate_frequency_capture.c` LOW/PC1 acquisition path now requests
+`FURI_HAL_LEASE_IRQ_PC1` before any EXTI trigger or GPIO mode mutation.
+It then calls the nonasserting
+`furi_hal_gpio_try_add_int_callback()` **before** configuring the pin.
+A BUSY lease or occupied EXTI callback slot leaves the existing pin,
+interrupt configuration and callback untouched. Releasing a claimed
+lease after callback refusal is attempted exactly once. If release
+fails, the local handle remains blocked: never configure the GPIO
+on a later START while ownership is unresolved.
+
+On success, callback delivery is disabled while any stale falling
+trigger is cleared and the input is configured as rising-edge PC1.
+The ISR ignores any EXTI notification before the application has
+published its active owner. STOP disables and removes the registered
+callback, clears EXTI triggers, puts the owned pin in analog mode,
+and only then tries to release the precise handle. Repeat STOP/START
+and failed releases are fail-closed. The opt-in LOW capture deliberately
+does **not** start on an SDK missing either E11 experimental firmware
+API, rather than falling back to the old potentially asserting callback
+registration. Keep old firmware and new DEV FAP separate.
+
+Host tests `tests/test_v18_pc1_exti_lease_integration.py` compile
+the **actual production LOW start/stop C functions** in both SDK modes
+with instrumented HAL stubs; tests cover zero register/GPIO/IRQ
+writes on missing API, denied lease and occupied callback, plus
+success, STOP, duplicate calls and failed-release blocking.
+The ISR pre-activation guard is also checked in source, but the actual
+STM32 interrupt schedule and unrelated firmware services are **not**
+simulated by that test. This first migration does not yet protect
+GPIO Monitor, Pulse/other EXTI pins, Button Analyzer, PWM, 1-Wire,
+UART or I2C, or force legacy Momentum services to participate.
+
+Standard LabMate SDK/source + installer mock
+[CI 38800552296](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38800552296)
+**PASS** at code SHA `090a5b4f6223916912e4ec1d24d7f939c4d6f60e`.
+Matched pinned patched firmware+FAP CI is separately tracked by
+[workflow run 38800552304](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38800552304);
+do **not** call that particular firmware run PASS before it finishes
+successfully. Neither CI path flashes or installs anything.
+
+**Outstanding:** migrate all capture paths and firmware services at the
+actual resource-acquisition boundaries; coordinate existing I2C mutex;
+test callback and pin rollback with real firmware conflicts; complete
+separately authorized safe on-device tests. E11.1 global contract is OPEN.
