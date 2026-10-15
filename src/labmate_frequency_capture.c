@@ -9,8 +9,22 @@
 /* Preserve the LOW/PC1 ISR math, HIGH/PB3 ownership and stop ordering of
  * the verified v1.6.1 hardware behavior. No frequency estimation here.
  */
+/* DEV E11.1d: opt-in EXTI1/PC1 lease, never use legacy assert-add on
+ * a firmware without the matching lease + nonasserting callback ABI.
+ * Legacy Momentum HAL users remain outside this experimental protection.
+ */
+#if defined(FURI_HAL_RESOURCE_LEASE_API_V1) && defined(FURI_HAL_GPIO_HAS_TRY_ADD_INT_CALLBACK)
+static uint32_t labmate_frequency_pc1_lease;
+#endif
+
 static void frequency_gpio_callback(void* context) {
     LabMateApp* app = context;
+    /* TRY-ADD can briefly enable the shared EXTI line before start publishes
+     * application state. Ignore any pending/legacy edge during that window.
+     */
+    if(!app->frequency_irq_active ||
+       app->capture_owner != LabMateCaptureFrequencyLow) return;
+
 
     /*
      * High-resolution timestamp.
@@ -110,13 +124,17 @@ void labmate_frequency_high_start(LabMateApp* app) {
 }
 void labmate_frequency_low_stop(LabMateApp* app) {
     if(!app->frequency_irq_active) return;
-
-    /* Detach exactly the pin on which this callback was registered. */
-    const GpioPin* pin =
-        labmate_gpio_pins[app->capture_pin_index];
-
+#if defined(FURI_HAL_RESOURCE_LEASE_API_V1) && defined(FURI_HAL_GPIO_HAS_TRY_ADD_INT_CALLBACK)
+    /* Do not tear down a GPIO or callback without a matching owned lease. */
+    if(labmate_frequency_pc1_lease == 0U) {
+        app->capture_blocked = true;
+        return;
+    }
+    const GpioPin* pin = labmate_gpio_pins[app->capture_pin_index];
     furi_hal_gpio_disable_int_callback(pin);
     furi_hal_gpio_remove_int_callback(pin);
+    labmate_capture_exti_clear(LL_EXTI_LINE_1, true);
+    furi_hal_gpio_init_simple(pin, GpioModeAnalog);
 
     app->frequency_irq_active = false;
     if(app->capture_owner == LabMateCaptureFrequencyLow) {
@@ -124,6 +142,17 @@ void labmate_frequency_low_stop(LabMateApp* app) {
             app->capture_owner, LabMateCaptureFrequencyLow);
         app->capture_pin_index = GPIO_COUNT;
     }
+    if(furi_hal_resource_lease_release(
+           labmate_frequency_pc1_lease, FURI_HAL_LEASE_IRQ_PC1)) {
+        labmate_frequency_pc1_lease = 0U;
+    } else {
+        /* Never reuse a released pin with an unresolved firmware handle. */
+        app->capture_blocked = true;
+    }
+#else
+    /* A mismatched stock SDK can never have started this DEV capture. */
+    app->capture_blocked = true;
+#endif
 }
 
 void labmate_frequency_low_start(LabMateApp* app) {
@@ -131,38 +160,52 @@ void labmate_frequency_low_start(LabMateApp* app) {
        !labmate_capture_can_start(app, LabMateCaptureFrequencyLow)) {
         return;
     }
-    const GpioPin* pin =
-        labmate_gpio_pins[app->gpio_index];
+#if defined(FURI_HAL_RESOURCE_LEASE_API_V1) && defined(FURI_HAL_GPIO_HAS_TRY_ADD_INT_CALLBACK)
+    if(labmate_frequency_pc1_lease != 0U) {
+        app->capture_blocked = true;
+        return;
+    }
+    const GpioPin* pin = labmate_gpio_pins[app->gpio_index];
+    const uint32_t lease = furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_IRQ_PC1);
+    if(lease == 0U) {
+        /* Absolutely no GPIO pin/trigger/callback state touched on denial. */
+        app->capture_blocked = true;
+        return;
+    }
+    labmate_frequency_pc1_lease = lease;
+    /* Register BEFORE configuring GPIO. A foreign EXTI callback may exist
+     * even when it does not participate in the experimental lease table.
+     * TRY-ADD rejection must leave that owner's GPIO entirely untouched.
+     */
+    if(!furi_hal_gpio_try_add_int_callback(pin, frequency_gpio_callback, app)) {
+        if(furi_hal_resource_lease_release(
+               labmate_frequency_pc1_lease, FURI_HAL_LEASE_IRQ_PC1)) {
+            labmate_frequency_pc1_lease = 0U;
+        }
+        /* Failed release retains handle and denies subsequent starts. */
+        app->capture_blocked = true;
+        return;
+    }
 
-    app->frequency_irq_last_cycle = 0;
-    app->frequency_irq_period_cycles = 0;
-    app->frequency_irq_last_tick = 0;
-    app->frequency_irq_edges = 0;
-    app->frequency_irq_new_period = false;
-
-    /* Explicitly clear the old falling-edge trigger. Momentum's GPIO init
-     * enables rising interrupts but does not always clear falling triggers
-     * left by Pulse Analyzer's previous rise/fall EXTI configuration.
-     * Without this, a 1 kHz square wave may appear as 2 kHz here.
+    /* TRY-ADD enables the EXTI IT bit: stop delivery while configuring. */
+    furi_hal_gpio_disable_int_callback(pin);
+    /* Old falling-edge trigger from Pulse must be cleared after owning the
+     * callback and lease, never before checking them.
      */
     labmate_capture_exti_clear(LL_EXTI_LINE_1, false);
-
     furi_hal_gpio_init(
-        pin,
-        GpioModeInterruptRise,
-        GpioPullNo,
-        GpioSpeedVeryHigh);
+        pin, GpioModeInterruptRise, GpioPullNo, GpioSpeedVeryHigh);
 
-    /* Publish pin identity before enabling interrupts. */
+    app->frequency_irq_last_cycle = 0U;
+    app->frequency_irq_period_cycles = 0U;
+    app->frequency_irq_last_tick = 0U;
+    app->frequency_irq_edges = 0U;
+    app->frequency_irq_new_period = false;
     app->capture_pin_index = app->gpio_index;
-    furi_hal_gpio_add_int_callback(
-        pin,
-        frequency_gpio_callback,
-        app);
-
-    furi_hal_gpio_enable_int_callback(pin);
-
-    app->frequency_irq_active = true;
     app->capture_owner = LabMateCaptureFrequencyLow;
+    app->frequency_irq_active = true;
+    furi_hal_gpio_enable_int_callback(pin);
+#else
+    app->capture_blocked = true; /* fail closed: no mismatched HAL fallback */
+#endif
 }
-
