@@ -738,8 +738,11 @@ void draw_generator(Canvas* canvas, LabMateApp* app) {
     canvas_set_font(canvas, FontPrimary);
     canvas_draw_str(canvas, 2, 10, "PWM");
     ui_badge(canvas, 34, 1, 55, "OUT PA7", false);
-    ui_badge(canvas, 91, 1, 35, app->generator_running ? "RUN" : "STOP",
-             app->generator_running);
+    ui_badge(canvas, 91, 1, 35,
+             app->generator_release_fault ? "ERR" :
+                 app->generator_blocked ? "BUSY" :
+                     app->generator_running ? "RUN" : "STOP",
+             app->generator_running && !app->generator_blocked);
     canvas_draw_line(canvas, 0, 13, 127, 13);
 
     if(freq >= 1000U && (freq % 1000U) == 0U) {
