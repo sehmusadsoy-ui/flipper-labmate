@@ -1,0 +1,82 @@
+name: v1.8 E11 native Momentum PulseReader TIM2 and DMA ownership (NO DEVICE)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - "scripts/patch_momentum_native_pulse_reader_lease.py"
+      - "tests/test_v18_native_pulse_reader_lease.py"
+      - ".github/workflows/check-v18-native-pulse-reader-lease.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native_pulse:
+    name: Actual native PulseReader C resource denial and matched Momentum FAP build
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: labmate
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: Next-Flip/Momentum-Firmware
+          ref: d3f89dfe2ef6b01839201598e9be1590cba80322
+          path: momentum-src
+          persist-credentials: false
+      - name: Apply exact source-only prereq patches (NO FLASH)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 labmate/scripts/patch_momentum_i2c_timeout.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_resource_lease.py momentum-src --allow-timed-i2c --apply
+          python3 labmate/scripts/patch_momentum_gpio_tryadd.py momentum-src --allow-prepatched --apply
+          python3 labmate/scripts/patch_momentum_native_pwm_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_js_gpio_lease.py momentum-src --apply
+      - name: Exact TIM2 DMA4/5 DMAMUX EXTI PulseReader source claim gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 labmate/scripts/patch_momentum_native_pulse_reader_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_pulse_reader_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_pulse_reader_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_pwm_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_js_gpio_lease.py momentum-src
+          git -C momentum-src diff --check
+          echo "REAL PULSE C HOST PASS; NOT a physical DMA capture nor mandatory global interception."
+      - name: Stage only one LabMate application
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p momentum-src/applications_user/labmate/src
+          cp labmate/application.fam labmate/labmate_10px.png momentum-src/applications_user/labmate/
+          cp labmate/src/*.c labmate/src/*.h momentum-src/applications_user/labmate/src/
+      - name: Compile paired Momentum FAP and native JS plugin (NO DEVICE)
+        shell: bash
+        working-directory: momentum-src
+        timeout-minutes: 40
+        env:
+          FBT_GIT_SUBMODULE_SHALLOW: "1"
+        run: |
+          set -euo pipefail
+          ./fbt firmware_all fap_labmate fap_js_gpio
+          test -s build/f7-firmware-C/firmware.dfu
+          test -s build/f7-firmware-C/.extapps/labmate.fap
+          test -s build/f7-firmware-C/.extapps/js_gpio.fal
+          readelf -Ws build/f7-firmware-C/firmware.elf | awk '
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_resource_lease_try_acquire" {claim=1}
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_resource_lease_release" {release=1}
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_i2c_external_acquire_timeout" {i2c=1}
+            END {exit !(claim && release && i2c)}
+          '
+          sha256sum build/f7-firmware-C/firmware.dfu \
+            build/f7-firmware-C/.extapps/labmate.fap \
+            build/f7-firmware-C/.extapps/js_gpio.fal
+          echo "E11 NATIVE PULSE HOST AND PAIRED FIRMWARE/FAP BUILD PASS CI ONLY."
