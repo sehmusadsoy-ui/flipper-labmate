@@ -83,6 +83,8 @@ typedef struct {
     uint8_t capture_pin_index;
     /* Software-policy denial only; not low-level hardware fault detection. */
     bool capture_blocked;
+    /* Sticky firmware lease release failure; no new capture until app restart. */
+    bool capture_release_fault;
 
     bool gpio_state;
     bool gpio_previous_state;
