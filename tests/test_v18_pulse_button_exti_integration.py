@@ -85,9 +85,11 @@ static bool labmate_capture_can_start(LabMateApp* app, LabMateCaptureOwner reque
          app->gpio_index==3U || app->gpio_index==5U);
 }
 #ifdef TEST_APIS
+#ifdef MODE_PULSE
 static struct {uint32_t CYCCNT;} dwt_stub={123U};
 #define DWT (&dwt_stub)
 static uint32_t furi_get_tick(void) {return 456U;}
+#endif
 static bool furi_hal_gpio_read(const GpioPin* pin) {
     assert(pin!=NULL && lease_available);
     gpio_reads++;
