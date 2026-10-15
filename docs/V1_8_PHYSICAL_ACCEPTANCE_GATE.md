@@ -2,6 +2,20 @@
 
 **Branch:** `dev/v1.8-completion` · **PR:** #13 (Draft) · **Stable release:** unchanged `v1.8`.
 
+> **E10 update — operator clarification, 2026-10-16:** The operator now
+> confirms having manually deleted Log History/CSV entries around the
+> previous day. This provides a plausible, user-initiated explanation for
+> the nine older IDs (`log_0041.csv`–`log_0049.csv`) absent from the
+> current snapshot. No exact per-ID deletion journal or independent
+> causality proof exists, so **do not mark the nine historical files as
+> byte-for-byte preserved or recovered**. However, absence alone is
+> **no longer evidence of an application-caused loss** and E10 is
+> **not a release-blocking suspected data-loss defect**. Existing
+> backup/current snapshot must remain untouched; reopen investigation
+> only for a new unexplained disappearance or mismatched intact file.
+> Earlier E10 notes below are historical pre-clarification findings.
+
+
 This checklist deliberately separates compiled source from actual Flipper hardware evidence. Nothing below is a reported device PASS until the operator records a result from the exact checksummed firmware/FAP pair. The existing v1.8 Stable installation and all saved profiles/CSV files must remain intact while these gates are open.
 
 ## Gate 0 — Before any device firmware change
