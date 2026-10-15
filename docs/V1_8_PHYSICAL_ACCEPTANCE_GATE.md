@@ -786,11 +786,25 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   inter-tool recovery, **not** a physical sensor detection,
   temperature reading, real DS18B20 CRC validation or firmware-global
   PA4 ownership.
-- [ ] **Other EXITFIX device regressions remain OPEN:** UART
-  external peer and meaningful RX/TX; Profiles/CSV integrity;
+- [x] **EXITFIX E7 — UART Terminal no-peer baud / RUN/STOP /
+  BACK / reopen lifecycle: OPERATOR PHYSICAL PASS, 2026-10-15.**
+  Operator ran the prescribed no-external-device test on the
+  installed EXITFIX FAP SHA256
+  `7a76f626f34a65059d9536fa2cd52b2639f4d1038a9b5c69291fa28d5e4f63be`:
+  COMM > UART Terminal, STOP/115200 -> RUN ~5s -> STOP,
+  change 9600 -> RUN/STOP, return to 115200 -> RUN/STOP,
+  BACK, reenter UART -> RUN/STOP, exit app and reopen.
+  Exact reported result:
+  `EXITFIX E7: 115200=yes; 9600=yes; RECOVERY=yes; BACK=yes; REOPEN=yes; ERROR=no`.
+  This establishes local UART baud transition/resource lifecycle
+  and app reopen smoke **without a connected peer**. No actual RX,
+  TX, ESP32 READY, byte count/drop or error-rate metrics were
+  reported; those remain **NOT TESTED on EXITFIX**.
+- [ ] **Other EXITFIX device regressions remain OPEN:** actual ESP32-S2
+  external UART RX/TX, meaningful R/D/E; Profiles/CSV integrity;
   firmware-service resource contention and hardware-dependent
   positive I2C/DS18B20 measurements. Earlier UARTFIX physical
-  PASS does not automatically transfer to EXITFIX; E1–E6 only
+  PASS does not automatically transfer to EXITFIX; E1–E7 only
   test their explicitly recorded workflows. Ordinary BACK
   cleanup does not demonstrate exceptional stale-capture exit
   branch dynamically executed.
