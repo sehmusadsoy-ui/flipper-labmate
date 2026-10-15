@@ -1104,3 +1104,83 @@ crash-avoidance contract, **not recovery of a hijacked resource**,
 nor a guarantee against a concurrent bypassing-service race.
 The preceding 38816202945 PASS belongs to the earlier native
 PWM code; newer test/build results must have their own run SHA.
+
+## E11.1j — Native JavaScript GPIO joins shared external-pin claims (2026-10-16)
+
+The pinned Momentum
+`applications/system/js_app/modules/js_gpio.c` previously
+accepted any connector pin without checking its ownership. Merely
+calling `gpio.get(...)`, then closing the JS module would
+unconditionally reset that pin to analog during `js_gpio_destroy()`,
+even if the manager had never configured or read it. An independent
+LabMate capture, PWM or I2C session could thus lose its pin mode.
+This is a **real source-level cross-service interference path**.
+
+`scripts/patch_momentum_native_js_gpio_lease.py` now applies only
+after the exact approved E11 firmware primitive, GPIO try-add and
+native PWM changes, validating the pinned Momentum HEAD and a
+strict tracked-file allowlist. It patches the **actual native JS
+service** in ephemeral firmware source; nothing is installed.
+
+For the eight LabMate connector pins PC0, PC1, PC3, PB2, PB3,
+PA4, PA6 and PA7, the first native JS operation (init, read,
+write, analog read or interrupt) tries the corresponding firmware
+Monitor pin mask. `gpio.get()` alone no longer alters ownership.
+A refused claim reports JS `GPIO pin BUSY` **before GPIO writes**
+or IRQ registration. The lease stays owned for the JS module's
+lifetime, and a failed release leaves the firmware reservation
+held (not erroneously reopened). Other non-E11 pins retain their
+historical behavior, except module destruction no longer resets
+a pin merely because it was looked up.
+
+The JS interrupt registration now uses the exported, nonasserting
+`furi_hal_gpio_try_add_int_callback()` rather than assert-based
+callback replacement. When init selects an interrupt mode, it
+first reserves the callback slot **before reconfiguring the EXTI
+line**; a callback occupied by an independent native service is
+a JS BUSY result without pin-mode writes. Changing back to a
+non-interrupt mode removes the manager's own callback.
+
+Native JS PWM clients still use the common native Momentum PWM
+service; JS manager-side `pwm_owned` prevents a second JS pin
+manager from editing or STOPping PWM it did not start. A JS pin
+held in digital/monitor mode cannot simultaneously claim
+native PWM on the same PA4/PA7 physical pin. The native PWM
+void-return API cannot prove cross-process ownership against
+all direct-register callers, so this is a **conservative**
+cooperative contract, not a globally atomic cross-service
+PWM authorization protocol.
+
+**Evidence:** initial source/actual-helper host and matched firmware
++ single FAP build/APPCHK
+[run 38819977136](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38819977136)
+**SUCCESS**, SHA
+`c3bd44deb116a0fa8c6c8eb6d389b716d94ed623`.
+The actual extracted native JS pin-claim C helper was run against
+eight external pin masks, held-owner denial, PWM and old non-E11
+pins; full pinned patched Momentum firmware and one
+`labmate.fap` were compiled successfully. Exact CI-only
+DFU SHA256
+`0925b3b7d22debc4db01d217871cb87e9fd2ee6b823741d5c0940ca83e09c2f9`,
+paired FAP SHA256
+`d5841525da19f906a4663bd223c7630446100e9be42782842dbf6c52edd51cdc`.
+
+**Important revision:** the EXTI-before-GPIO-init check was added
+*after* the initial PASS above; it and its source-order check
+have a distinct code SHA
+`fd92d22da863ccd8dd01cf8af5fe2da9f5b08810` and
+[different native JS CI run 38820120699](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38820120699)
+as well as
+[full updater review 38820120854](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38820120854).
+Do not mark these latest checks PASS without their completed
+GitHub result, and do not reuse previous DFU fingerprints
+after any native firmware change.
+
+**Remaining E11 global gaps:** generic native
+`furi_hal_gpio_init_ex()` and direct register modifications
+still do not consult claims; timer/EXTI/input/radio paths
+other than the specifically migrated PWM/JS services can
+bypass them. JS GPIO code may still be invoked through
+unsupported direct-register scripts. Real-device competing
+service tests and rollback/restore evidence remain OPEN.
+No Stable, main, USB or SD mutation.
