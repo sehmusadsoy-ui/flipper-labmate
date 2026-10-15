@@ -84,3 +84,7 @@ void labmate_frequency_tim2_shutdown(void) {
     /* Release failure retains a blocking stale local handle, fail closed. */
 #endif
 }
+
+bool labmate_frequency_tim2_lease_pending(void) {
+    return labmate_tim2_lease_handle != 0U;
+}
