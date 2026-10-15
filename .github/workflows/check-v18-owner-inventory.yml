@@ -1,0 +1,40 @@
+name: v1.8 E11.1b pinned TIM/EXTI caller inventory (NO DEVICE)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - "scripts/check_v18_owner_inventory.py"
+      - ".github/workflows/check-v18-owner-inventory.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    name: Inventory pinned firmware TIM1, TIM2 and IRQ legacy users
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact LabMate DEV source
+        uses: actions/checkout@v4
+        with:
+          path: labmate
+          persist-credentials: false
+
+      - name: Checkout exact Momentum firmware revision
+        uses: actions/checkout@v4
+        with:
+          repository: Next-Flip/Momentum-Firmware
+          ref: d3f89dfe2ef6b01839201598e9be1590cba80322
+          path: momentum-src
+          persist-credentials: false
+
+      - name: Fail-closed owner source inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile labmate/scripts/check_v18_owner_inventory.py
+          python3 labmate/scripts/check_v18_owner_inventory.py momentum-src
+          echo "INVENTORY ONLY; no HAL lease integration, no firmware flash."
