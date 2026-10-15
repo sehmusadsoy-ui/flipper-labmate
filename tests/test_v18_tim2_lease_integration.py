@@ -180,7 +180,10 @@ def test_callers() -> None:
         start = content.index("void " + start_name + "(")
         remainder = content[start:]
         assert remainder.index(required) < remainder.index("app->capture_owner ="), path
-    for path in ("src/labmate_frequency_capture.c", "src/labmate_event_counter.c"):\n        assert "if(labmate_frequency_tim2_lease_pending()) {" in (ROOT/path).read_text()\n    assert "bool labmate_frequency_tim2_configure(void);" in HEADER.read_text()\n    assert "bool labmate_frequency_tim2_lease_pending(void);" in HEADER.read_text()
+    for path in ("src/labmate_frequency_capture.c", "src/labmate_event_counter.c"):
+        assert "if(labmate_frequency_tim2_lease_pending()) {" in (ROOT/path).read_text()
+    assert "bool labmate_frequency_tim2_configure(void);" in HEADER.read_text()
+    assert "bool labmate_frequency_tim2_lease_pending(void);" in HEADER.read_text()
 
 
 if __name__ == "__main__":
