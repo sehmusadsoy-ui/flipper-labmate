@@ -114,6 +114,10 @@ def patch(h: str,c: str,p: str) -> tuple[str,str,str]:
      * Only shut down if this PulseReader still owns the exact lease.
      */
     if(signal->capture_active) pulse_reader_stop(signal);
+    /* After a hijack or release failure a DMA target may remain live.
+     * Fail closed: leak its buffers rather than risk DMA use-after-free.
+     */
+    if(signal->firmware_lease_fault) return;
     free(signal->timer_buffer);
     free(signal->gpio_buffer);""")
     p=replace_one(p,
