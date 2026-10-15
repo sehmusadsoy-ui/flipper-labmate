@@ -378,3 +378,48 @@ EXITFIX FAP; reusing this FAP on the current firmware is unsafe.
 This function does not include pin lease acquisition, is not used
 by the existing LabMate capture drivers, and does not protect
 legacy firmware services. E11.1 integration remains OPEN.
+
+
+## E11.1d — PB3/TIM2 first production-driver integration (2026-10-15)
+
+**Experimental DEV only, NOT firmware-global safety or hardware approval.**
+`src/labmate_frequency_tim2.c/.h` now requires the actual
+`FURI_HAL_RESOURCE_LEASE_API_V1` firmware contract and atomically tries
+`FURI_HAL_LEASE_COUNTER_PB3` **before any** PB3 GPIO alternate-function,
+TIM2 clock/register, or interrupt-related writes. The driver returns a
+boolean acquisition result. A denied lease, already-active local lease,
+or an SDK lacking the lease API returns false without any hardware
+initialization. The latter is intentionally fail-closed: a FAP built
+from this experimental branch against unpatched/old Momentum will not
+start Frequency HIGH or Event Counter. **Do not install or mix a DEV
+FAP with existing installed firmware.**
+
+Both callers (`labmate_frequency_capture.c`,
+`labmate_event_counter.c`) preserve inactive capture state and mark
+`capture_blocked` when the driver refuses the claim. TIM2
+enable/disable/read/shutdown are guarded against a denied or absent
+claim. Normal shutdown tears down only the acquired driver and releases
+the exact handle/mask *after* hardware cleanup; a failed release
+retains the local handle as a fail-closed condition, preventing a
+second teardown or fresh configuration.
+
+`tests/test_v18_tim2_lease_integration.py` compiles the **actual
+production C driver** with instrumented host HAL macros in two modes:
+missing API and occupied lease (no HAL writes, reads or releases), plus
+successful claim/enable/read/stop/release, duplicate start/stop, and
+failed release. This host harness does **not** model an independent
+legacy HAL driver that bypasses the firmware lease or the real MCU
+clock/register behavior.
+
+`.github/workflows/check-v18-tim2-lease-integration.yml`
+tests that real C driver and builds the exact pinned patched Momentum
+firmware and one integrated LabMate FAP in CI, checking exported
+symbols. See that run for final CI status; **no USB/flash or Stable
+release is authorized**.
+
+**Remaining E11.1d:** actual EXTI callback/pin registration and failure
+rollback, GPIO Monitor, PWM TIM1/PA7, 1-Wire PA4, UART and I2C owners;
+then shared firmware service adoption. A successful local PB3/TIM2
+claim is **not** evidence that legacy independent TIM2 users cannot
+bypass it. TIM2 hardware may still be reconfigured by a legacy service
+until the common firmware-wide contract is enforced.
