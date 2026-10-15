@@ -745,12 +745,24 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   path, valid flags and checksum were NOT audited**. This does not
   measure PWM frequency/duty independently or prove force-exit
   cleanup while generator is *still* RUN.
-- [ ] **Other EXITFIX device regressions remain OPEN:** full app EXIT
-  while PWM still RUN (verify forced STOP on next launch), UART external
-  peer, I2C/1-Wire negative paths, Profiles/CSV integrity. Earlier
-  UARTFIX physical PASS is not automatically inherited by EXITFIX.
-  Normal BACK cleanup does not prove the abnormal stale-capture
-  exit branch executes.
+- [x] **EXITFIX E4 — full app EXIT while PWM RUN, automatic STOP
+  on relaunch: OPERATOR PHYSICAL PASS, 2026-10-15.**
+  On exact installed EXITFIX FAP SHA256
+  `7a76f626f34a65059d9536fa2cd52b2639f4d1038a9b5c69291fa28d5e4f63be`,
+  operator entered OUTPUT > PWM Studio, set RUN, returned to menu,
+  exited LabMate **without manually stopping PWM**, reopened LabMate
+  and observed PWM Studio STOP, then confirmed another RUN/STOP
+  cycle. Exact report:
+  `EXITFIX E4: EXIT_WHILE_RUN=yes; REOPEN=yes; AUTO_STOP=yes; RUN/STOP=yes; ERROR=no`.
+  Proves physical UI/state lifecycle and expected auto STOP after
+  full app exit. It does **not** independently electrically measure
+  PA7 OFF voltage, waveform accuracy, or firmware-global TIM1 lease.
+- [ ] **Other EXITFIX device regressions remain OPEN:** I2C/1-Wire
+  no-peripheral / local BUSY and STOP/BACK, UART external peer,
+  Profiles and CSV integrity, resource conflicts with external
+  firmware services. Earlier UARTFIX physical PASS is not
+  automatically inherited by EXITFIX. Normal BACK cleanup
+  does not prove abnormal stale-capture exit branch executes.
 
 ## Stable release boundary
 
