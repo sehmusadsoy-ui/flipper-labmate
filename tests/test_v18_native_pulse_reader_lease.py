@@ -141,6 +141,7 @@ int main(void) {
 
     /* Firmware release failure must retain the contested reservation. */
     s=pulse_reader_alloc(&gpio_ext_pb3,8U);
+    unsigned writes=0U;
     pulse_reader_start(s);
     deny_release=true;
     pulse_reader_stop(s);
