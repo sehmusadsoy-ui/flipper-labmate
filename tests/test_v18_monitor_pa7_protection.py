@@ -93,6 +93,7 @@ bool furi_hal_gpio_read(const GpioPin* pin) {
 }
 #include "labmate_monitor_gpio.c"
 int main(void) {
+    (void)masks; /* stock SDK retains mock mapping without leasing */
     LabMateApp app={.gpio_index=0U};
     bool level=false;
     /* Missing API or denied lease must not modify input, analog or read. */
