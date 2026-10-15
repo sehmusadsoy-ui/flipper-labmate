@@ -100,6 +100,48 @@ legacy drivers that bypass the lease.
 All these require real firmware integration, proper driver tests,
 CI builds and separately approved device tests.
 
+## E11.1a firmware API source stage (experimental, 2026-10-15)
+
+DEV now contains the **experimental firmware-source patch**
+[`scripts/patch_momentum_resource_lease.py`](../scripts/patch_momentum_resource_lease.py).
+It targets the **exact** Momentum commit and adds two functions to
+the **real** `furi_hal_resources.c/.h`, with matching API CSV entries:
+`furi_hal_resource_lease_try_acquire(uint32_t resources)` and
+`furi_hal_resource_lease_release(uint32_t handle, uint32_t resources)`.
+
+The implementation uses short `FURI_CRITICAL_ENTER/EXIT` critical
+sections; returns a monotonically minted nonzero opaque handle only
+if every requested resource is free and one table slot is available;
+rejects unsupported/noncanonical partial masks; rejects wrong/stale
+handles, mismatched masks and double release; and fails closed if
+the 32-bit handle counter is exhausted. The table itself does
+**not** configure GPIO, EXTI, timers, UART or power, so a failed claim
+has no device peripheral side effect.
+
+The patch is purposefully **DORMANT**:
+- The old HAL and other Momentum services **do not** call the new
+  functions, so this does **NOT** already provide cross-service
+  exclusion or a safe production driver interface.
+- Its 16-claim capacity and 32-bit handle lifetime are a bounded
+  development design; restart/crash ownership and legacy driver
+  interposition remain unsolved.
+- It edits only pinned **ephemeral CI firmware source** after an
+  explicit source check. It does not write to the operator's
+  `Momentum-Firmware` checkout, does not flash firmware and does
+  not replace the installed EXITFIX FAP.
+- The dedicated [E11.1a compile workflow](../.github/workflows/check-v18-firmware-lease-abi.yml)
+  applies the already-audited timed I2C patch plus this experimental
+  lease source, stages the current integrated LabMate and builds a
+  **matched firmware + FAP** in CI, verifying both exported ELF
+  symbols. This is build evidence only and publishes no install
+  package or release.
+
+**Acceptance distinction:** E11.1a is only a FIRST firmware-compiled
+API primitive when CI succeeds; E11.1 requires integration into
+all applicable callers, a documented firmware-wide ownership
+policy and tested fail-closed behaviors before being considered
+complete. No premature Stable approval.
+
 ## Evidence/status gates
 
 | Gate | Scope | Status |
