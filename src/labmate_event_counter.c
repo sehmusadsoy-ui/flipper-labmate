@@ -13,7 +13,10 @@ void labmate_event_counter_start(LabMateApp* app) {
 
     /* Each RUN starts a fresh hardware capture but resumes the same software
      * count/time until UP RESET or a new Counter tool entry. */
-    labmate_frequency_tim2_configure();
+    if(!labmate_frequency_tim2_configure()) {
+        app->capture_blocked = true;
+        return;
+    }
     app->counter_last_hw = 0U;
     app->counter_start_tick = furi_get_tick();
     app->counter_active = true;
