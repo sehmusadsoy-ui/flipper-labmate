@@ -1029,6 +1029,26 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   resolve the nine historical on-device-absent CSVs with unknown
   deletion history.
 
+- [x] **E11.1c — pinned firmware GPIO nonasserting EXTI callback
+  try-add API: HOST + REAL FIRMWARE/FAP BUILD CI PASS (NO DEVICE).**
+  [GitHub Actions run 38794546759](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38794546759)
+  at source commit `e3b0f3504a534d62f1d9c092ba949fbe2d7e8769`
+  finished SUCCESS. The actual firmware GPIO try-add C body
+  passed host tests for invalid input, busy EXTI callback refusal,
+  existing callback/context preservation and 24-thread ×25
+  contention. Exact pinned Momentum combined I2C + resource lease
+  + GPIO patch compiled actual firmware and integrated LabMate
+  FAP, passed `APPCHK` and exported-ELF symbol checks.
+  CI-only DFU SHA256 `7c51915d81317e3be6661b46c54fe171deb71e1045f214ad6f72310766771611`;
+  CI-only FAP SHA256 `e7ecd22a7a45fa88017a76a07f553ff67c4b2157b0e4eef9feb73eb2f968ccaa`.
+  These hashes are **NOT THE INSTALLED** firmware/FAP.
+  Crucial: the new callback API is dormant, does not own GPIO
+  pins, does not intercept old assertion-based callback calls
+  and is not used by current LabMate capture paths. **E11.1
+  firmware-global lease still NOT IMPLEMENTED**; CI success is
+  not device acceptance. No USB, DFU/FAP install or Stable
+  change occurred.
+
 ## Stable release boundary
 
 Only after **all required** software, matched-firmware and safe physical acceptance gates are reported and verified may a revised `v1.8` Stable asset be considered. Historical source `v1.8` tag provenance must remain immutable; document exact old and replacement source/FAP SHA256, review release asset updates explicitly, then redownload and independently verify the remote asset. No v1.8.1 or v1.9 feature work until the original v1.8 completion decision is satisfied.
