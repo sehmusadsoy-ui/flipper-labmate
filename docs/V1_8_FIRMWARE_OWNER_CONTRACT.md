@@ -1185,6 +1185,26 @@ The separate full updater review 38820120854 still needs its
 own final result; do not substitute this source/FAP build for
 the independently reviewed full installer/archive/restore gate.
 
+**Native JS plugin build distinction (2026-10-16 correction):**
+Momentum declares `js_gpio` as
+`FlipperAppType.PLUGIN` in
+`applications/system/js_app/application.fam`, not as a
+firmware-embedded C translation unit. Earlier E11.1j
+`firmware_all fap_labmate` CI runs compiled the central
+firmware and LabMate and executed an extracted JS helper;
+they **did not separately prove compilation of the
+modified `js_gpio.c` plugin**. The unchanged
+`firmware.dfu` SHA across that source change is expected
+and not evidence of the JS plugin's binary identity.
+Dedicated build gate has been strengthened to explicitly
+run `fap_js_gpio`, find the `js_gpio.fal` or `.fap`
+artifact, and hash it. Full MNTM-012 updater review
+likewise compiles and hashes this plugin explicitly.
+Only treat the native JS plugin as fully build-verified
+after a successful updated workflow; earlier run statuses
+remain historical host/firmware/FAP evidence.
+This is not a physical JS script acceptance test.
+
 **Remaining E11 global gaps:** generic native
 `furi_hal_gpio_init_ex()` and direct register modifications
 still do not consult claims; timer/EXTI/input/radio paths
