@@ -971,11 +971,19 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   `tests/v18_firmware_lease_proto.c`,
   `scripts/check_v18_lease_preconditions.py` and
   `.github/workflows/check-v18-firmware-lease-proto.yml`.
+- [x] **E11.0b host handle reuse/exhaustion hardening: CI PASS.**
+  New exact source SHA `f6e93a14e8f989d089fbe18e9e33628fd33abd1d`,
+  [run 38748481542](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38748481542)
+  SUCCESS. The 24-thread ×25 test still passes, along with
+  stale-handle refusal, mismatched/partial release refusal,
+  unique opaque handle minting and fail-closed exhaustion. This
+  is host-only, not a firmware ABI or physical hardware test.
 - [ ] **E11.1 real firmware-global exclusive ownership is
   NOT IMPLEMENTED.** The prototype uses host pthread primitives,
   not Momentum kernel/HAL locks. Legacy/independent firmware
-  services do not consult it. Unique generation-safe tokens and
-  all HAL call-site integration remain required. Real on-device
+  services do not consult it. Generation-safe handles are now
+  modelled in the host test but are NOT implemented in firmware;
+  all HAL call-site integration remains required. Real on-device
   conflict tests are not authorized or performed.
 - [ ] **E11.2 matched patched firmware+FAP build, ABI and physical
   acceptance OPEN.** Current EXITFIX FAP is unchanged;
