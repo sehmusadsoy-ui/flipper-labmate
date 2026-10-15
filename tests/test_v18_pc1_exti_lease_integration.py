@@ -54,13 +54,13 @@ const GpioPin* labmate_gpio_pins[GPIO_COUNT] = {NULL, &pc1};
 static unsigned gpio_mutations, exti_mutations, irq_mutations;
 static unsigned try_add_attempts, lease_attempts, lease_releases;
 bool lease_available, callback_available, release_succeeds = true;
-static void frequency_gpio_callback(void* ctx) {(void)ctx;}
 static bool labmate_capture_can_start(LabMateApp* app, LabMateCaptureOwner expected) {
     return expected == LabMateCaptureFrequencyLow &&
         app->capture_owner == LabMateCaptureNone && !app->frequency_irq_active &&
         app->gpio_index == 1U;
 }
 #ifdef TEST_APIS
+static void frequency_gpio_callback(void* ctx) {(void)ctx;}
 static LabMateCaptureOwner labmate_capture_owner_after_stop(
     LabMateCaptureOwner owner, LabMateCaptureOwner stopping) {
     return owner == stopping ? LabMateCaptureNone : owner;
