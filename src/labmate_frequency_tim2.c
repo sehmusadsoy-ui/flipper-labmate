@@ -5,7 +5,24 @@
 #include <furi_hal_bus.h>
 #include <stm32wbxx_ll_tim.h>
 
-void labmate_frequency_tim2_configure(void) {
+/* DEV E11.1d: claim the paired TIM2/PB3 lease before ANY peripheral write.
+ * This is not a firmware-wide guarantee until other Momentum owners
+ * participate in the same lease. A stock SDK must fail closed.
+ */
+static uint32_t labmate_tim2_lease_handle;
+static bool labmate_tim2_configured;
+
+
+bool labmate_frequency_tim2_configure(void) {
+    if(labmate_tim2_lease_handle || labmate_tim2_configured) return false;
+#if defined(FURI_HAL_RESOURCE_LEASE_API_V1)
+    const uint32_t lease = furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_COUNTER_PB3);
+    if(lease == 0U) return false; /* NO GPIO, clock, TIM or IRQ writes. */
+    labmate_tim2_lease_handle = lease;
+#else
+    /* Never silently fall back to unsafe direct HAL on an older SDK. */
+    return false;
+#endif
     /* Keep the v1.6.1 TIM2_CH2 / PB3 rising-edge external clock setup. */
     furi_hal_gpio_init_ex(
         &gpio_ext_pb3,
@@ -31,24 +48,39 @@ void labmate_frequency_tim2_configure(void) {
     LL_TIM_SetClockSource(TIM2, LL_TIM_CLOCKSOURCE_EXT_MODE1);
     LL_TIM_CC_EnableChannel(TIM2, LL_TIM_CHANNEL_CH2);
     LL_TIM_SetCounter(TIM2, 0);
+    labmate_tim2_configured = true;
+    return true;
 }
 
 /* Enable only after application state publishes the capture owner. */
 void labmate_frequency_tim2_enable(void) {
+    if(!labmate_tim2_configured) return;
     LL_TIM_EnableCounter(TIM2);
 }
 
 void labmate_frequency_tim2_disable(void) {
+    if(!labmate_tim2_configured) return;
     LL_TIM_DisableCounter(TIM2);
 }
 
 uint32_t labmate_frequency_tim2_read(void) {
+    if(!labmate_tim2_configured) return 0U;
     return LL_TIM_GetCounter(TIM2);
 }
 
 void labmate_frequency_tim2_shutdown(void) {
+    if(!labmate_tim2_configured || labmate_tim2_lease_handle == 0U) return;
+    /* Keep the lease throughout teardown; only the owner resets TIM2/PB3. */
     LL_TIM_DisableCounter(TIM2);
     LL_TIM_CC_DisableChannel(TIM2, LL_TIM_CHANNEL_CH2);
     furi_hal_bus_disable(FuriHalBusTIM2);
     furi_hal_gpio_init_simple(&gpio_ext_pb3, GpioModeAnalog);
+    labmate_tim2_configured = false;
+#if defined(FURI_HAL_RESOURCE_LEASE_API_V1)
+    if(furi_hal_resource_lease_release(
+           labmate_tim2_lease_handle, FURI_HAL_LEASE_COUNTER_PB3)) {
+        labmate_tim2_lease_handle = 0U;
+    }
+    /* Release failure retains a blocking stale local handle, fail closed. */
+#endif
 }
