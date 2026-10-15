@@ -167,6 +167,31 @@ CI did not stage/publish a user-installable update artifact. The
 experimental firmware API is dormant and the HAL-wide lease
 interposition is missing.
 
+### Stronger check: executing the real firmware lease C body (2026-10-15)
+
+[GitHub Actions run 38750321416](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38750321416)
+at exact source SHA `2311ffe183f32ccd2e563d1e314d3b9e1a5ef1b0`
+completed **SUCCESS**. The new
+[`tests/test_v18_firmware_lease_source.py`](../tests/test_v18_firmware_lease_source.py)
+extracts the **same C functions actually injected into
+`furi_hal_resources.c`**, substitutes host mutexes only for
+`FURI_CRITICAL_ENTER/EXIT`, then strictly compiles and executes
+those functions. CI logs confirm:
+
+- `E11.1a ACTUAL FIRMWARE LEASE C SOURCE HOST HARNESS PASS: alias, stale handle, 24 threads x25, exhaustion`
+- `E11.1a FIRMWARE SOURCE PATCH PASS`
+- real full firmware build, integrated `APPCHK`, and three
+  expected exported ELF symbols PASS.
+- Rebuilt experimental DFU and FAP SHA256 match the independent
+  previous CI build (shown above).
+
+This closes the risk of relying **only** on a different example
+model: the real firmware primitive's basic logic is now executed
+under contention in an injected host environment. This **does not**
+prove its FURI critical section semantics on device, HAL call-site
+integration, legacy service cooperation, recovery after process
+failure, or any real Flipper behavior. Those are **OPEN**.
+
 ## Evidence/status gates
 
 | Gate | Scope | Status |
