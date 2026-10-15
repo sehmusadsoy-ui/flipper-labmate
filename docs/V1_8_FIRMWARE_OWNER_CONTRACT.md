@@ -545,3 +545,28 @@ independent Momentum HAL/services (TIM1, TIM2, EXTI) to the same
 mandatory ownership agreement, firmware-wide stress/rollback tests
 and new physical acceptance. E10's historical missing CSV IDs
 remain an independent unresolved data-preservation issue.
+
+### Pulse/Button host + matched real build evidence
+
+[GitHub Actions run 38802540887](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38802540887)
+**SUCCESS** on exact development source
+`a71dfb657e72625f2ee2d77ec3db9f70ddade19c`.
+The job compiled and executed the real production Pulse/Button
+start/stop functions under strict HAL mocks: missing API, owner denied,
+occupied callback (zero GPIO/EXTI modifications), four Pulse pins,
+Button RESUME, repeated START/STOP, failed lease release. It also
+reran earlier LOW/PC1 and TIM2 host tests.
+Actual patched Momentum `firmware_all fap_labmate`, FAP `APPCHK`
+and exported ELF symbol checks **PASS**.
+The matching **CI-only**, never-installed DFU checksum is
+`7c51915d81317e3be6661b46c54fe171deb71e1045f214ad6f72310766771611`.
+The matching **CI-only**, never-installed FAP checksum is
+`836f2e0cfd03660322801c5f47a15c17ec3f599cc9dfa887bba77e0d9bea7b9b`.
+
+A subsequent hardening stage extends sticky failed-release propagation
+to the shared STOP coordinator and the remaining PB3/TIM2 caller
+paths (Frequency HIGH and Event Counter). Its exact code, tests and
+checksums must be evaluated separately; earlier CI success does
+not certify subsequent commits. No modified firmware/FAP has
+been installed on the physical Flipper. Neither release nor merge
+approval is inferred from any of these host/build tests.
