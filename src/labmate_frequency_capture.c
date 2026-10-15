@@ -4,6 +4,7 @@
 #include "labmate_frequency_tim2.h"
 #include "labmate_resource_policy.h"
 #include <furi_hal.h>
+#include <furi_hal_resources.h>
 #include <stm32wbxx_ll_exti.h>
 
 /* Preserve the LOW/PC1 ISR math, HIGH/PB3 ownership and stop ordering of
