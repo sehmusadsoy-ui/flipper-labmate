@@ -111,8 +111,16 @@ void labmate_input_gpio(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                     } else {
                         app->hold = !app->hold;
                         if(!app->hold) {
-                            app->gpio_state = labmate_monitor_gpio_read(app->gpio_index);
-                            app->gpio_previous_state = app->gpio_state;
+                            /* HOLD resume cannot treat an unowned GPIO
+                             * as a valid electrical LOW sample. */
+                            if(app->screen == LabMateScreenGpio) {
+                                bool level = false;
+                                if(labmate_monitor_gpio_read(
+                                       app, app->gpio_index, &level)) {
+                                    app->gpio_state = level;
+                                    app->gpio_previous_state = level;
+                                }
+                            }
                             measurement_reset(app);
                             if(app->screen == LabMateScreenFrequency &&
                                app->frequency_hw_active) {
