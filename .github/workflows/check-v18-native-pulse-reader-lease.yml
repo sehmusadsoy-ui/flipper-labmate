@@ -6,6 +6,7 @@ on:
     paths:
       - "scripts/patch_momentum_native_pulse_reader_lease.py"
       - "tests/test_v18_native_pulse_reader_lease.py"
+      - "tests/test_v18_native_pulse_lease_firmware.py"
       - ".github/workflows/check-v18-native-pulse-reader-lease.yml"
   workflow_dispatch:
 
@@ -44,6 +45,7 @@ jobs:
           python3 labmate/scripts/patch_momentum_native_pulse_reader_lease.py momentum-src
           python3 labmate/scripts/patch_momentum_native_pulse_reader_lease.py momentum-src --apply
           python3 labmate/tests/test_v18_native_pulse_reader_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_pulse_lease_firmware.py momentum-src
           python3 labmate/tests/test_v18_native_pwm_lease.py momentum-src
           python3 labmate/tests/test_v18_native_js_gpio_lease.py momentum-src
           git -C momentum-src diff --check
