@@ -53,8 +53,13 @@ def main() -> int:
     check("furi_hal_bus_enable(FuriHalBusTIM2)" in tim2 and
           "LL_TIM_Init(TIM2" in tim2,
           "LabMate direct TIM2 access changed")
-    check("furi_hal_gpio_add_int_callback(pin," in btn,
-          "LabMate EXTI callback install path changed")
+    check("furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_IRQ_PC1)" in btn
+          and "furi_hal_gpio_try_add_int_callback(pin, labmate_button_irq, app)" in btn
+          and "furi_hal_gpio_add_int_callback(" not in btn
+          and btn.index("furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_IRQ_PC1)")
+          < btn.index("furi_hal_gpio_try_add_int_callback(pin, labmate_button_irq, app)")
+          < btn.index("furi_hal_gpio_init(pin, GpioModeInterruptRiseFall"),
+          "LabMate Button EXTI lease/try-add ordering changed")
     check("furi_hal_pwm_start(" in gen,
           "LabMate hardware PWM driver path changed")
 
