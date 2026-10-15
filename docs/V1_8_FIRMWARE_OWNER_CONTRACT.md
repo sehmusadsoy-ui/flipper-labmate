@@ -1285,16 +1285,31 @@ intentionally retains potentially still-live DMA
 buffers to avoid a DMA use-after-free; reboot/explicit
 service recovery is required rather than a fake cleanup.
 
-**Important limits:** noncanonical GPIO pointers do not
-start a capture on the patched reader. This is a deliberate
-*new compatibility restriction* to be accepted/revised
-before Stable; external third-party PulseReader callers
-could rely on different pins. Independent native users
-that directly write TIM2/DMA/DMAMUX/EXTI registers still
-bypass E11, and a read-before-write DMA/timer preflight
+**Compatibility correction:** The source patch was strengthened
+after its first design to recognize both canonical external-pin
+pointers and equivalent port/pin descriptor copies (e.g. a
+third-party PB3 GpioPin). Nonconnector GPIO pins remain usable:
+they claim the `FURI_HAL_LEASE_PULSE_NONCONNECTOR`
+TIM2+DMA4/5+DMAMUX core mask to protect those shared resources
+without changing the legacy functional pin selection. Their
+own nonconnector **GPIO/EXTI are not lease-protected** — do
+not claim general pin/line safety for them. A pin pointer of
+NULL is denied before hardware access. Independent native
+users that directly write TIM2/DMA/DMAMUX/EXTI registers
+still bypass E11, and a read-before-write timer/DMA preflight
 cannot atomically defeat such a bypass. This is NOT
-firmware-wide mandatory ownership, a proven 64 MHz
-capture, or a device regression PASS.
+firmware-wide mandatory ownership, a proven 64 MHz capture
+or a device regression PASS.
+
+**DMA buffer safety follow-up:** When STOP detects an
+unexpected disabled timer bus or exact lease release failure,
+`pulse_reader_free()` now refuses to free DMA buffers that
+could still be referenced if a legacy owner re-enables
+the peripheral. It deliberately leaks RAM until firmware
+reset in a genuinely unrecoverable owner-fault path, rather
+than risking DMA use-after-free. Regression tests require
+this guard; the earlier successful E11 candidate SHA
+predates this code and does not prove it.
 
 Dedicated native actual-C host and real patched Momentum
 firmware/FAP gate:
