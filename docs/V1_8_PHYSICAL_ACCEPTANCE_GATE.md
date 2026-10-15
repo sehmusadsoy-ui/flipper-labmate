@@ -956,6 +956,38 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   workflows. Ordinary BACK cleanup does not demonstrate exceptional
   stale-capture exit branch dynamically executed.
 
+## 2026-10-15 — E11 firmware-global lease design (NO DEVICE CHANGE)
+
+- [x] **E11.0 source audit and host-only atomic lease model:
+  CI PASS.** GitHub Actions
+  [run 38747593373](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38747593373)
+  at source SHA `bdbcc5676072bfc6b0a455de191f17fc10a43c51`
+  completed SUCCESS. Actual job logs report
+  `E11 PINNED-SOURCE AUDIT PASS` against the installed Momentum
+  source SHA `d3f89dfe2ef6b01839201598e9be1590cba80322`,
+  and `HOST LEASE MODEL PASS` for all-or-nothing resource
+  acquisition/release, aliases and a 24-thread ×25 contention
+  model. Code:
+  `tests/v18_firmware_lease_proto.c`,
+  `scripts/check_v18_lease_preconditions.py` and
+  `.github/workflows/check-v18-firmware-lease-proto.yml`.
+- [ ] **E11.1 real firmware-global exclusive ownership is
+  NOT IMPLEMENTED.** The prototype uses host pthread primitives,
+  not Momentum kernel/HAL locks. Legacy/independent firmware
+  services do not consult it. Unique generation-safe tokens and
+  all HAL call-site integration remain required. Real on-device
+  conflict tests are not authorized or performed.
+- [ ] **E11.2 matched patched firmware+FAP build, ABI and physical
+  acceptance OPEN.** Current EXITFIX FAP is unchanged;
+  **no firmware flash, no new USB FAP installation**, and
+  previously reported E1–E9 acceptance remains specific to the
+  old checksummed EXITFIX. The new CI PASS is not a device pass.
+  See [firmware owner contract](V1_8_FIRMWARE_OWNER_CONTRACT.md).
+- [ ] **E10 full snapshot preservation remains OPEN.** E10.4
+  CSV structure 8/8 PASS and E10.2 profile CRC32 PASS do not
+  resolve the nine historical on-device-absent CSVs with unknown
+  deletion history.
+
 ## Stable release boundary
 
 Only after **all required** software, matched-firmware and safe physical acceptance gates are reported and verified may a revised `v1.8` Stable asset be considered. Historical source `v1.8` tag provenance must remain immutable; document exact old and replacement source/FAP SHA256, review release asset updates explicitly, then redownload and independently verify the remote asset. No v1.8.1 or v1.9 feature work until the original v1.8 completion decision is satisfied.
