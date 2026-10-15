@@ -792,3 +792,68 @@ device contention/correct measurement tests have not occurred.
 E11.1 mandatory global ownership, E10 historical CSV integrity,
 and operator-approved physical acceptance remain OPEN.
 No firmware/FAP upload or Stable action performed.
+
+## E11.1f — All-eight GPIO Monitor opt-in pin-only claims (2026-10-15)
+
+**Actual integrated DEV code; still not firmware-wide mandatory GPIO
+ownership.** The pinned Momentum resource-lease source patch now
+defines *eight exact single-pin masks* with shared pin bits:
+PC0, PC1, PC3, PB2, PB3, PA4, PA6, PA7. The first six
+overlap applicable existing EXTI/TIM2/I2C/1-Wire leases, PA7
+overlaps PWM TIM1, and PC3/PA6 have distinct non-EXTI bits.
+The firmware C implementation continues to enforce unique
+nonzero exact-mask handles under its critical section and
+refuses overlapping claims. No generic arbitrary bit claim is
+accepted and legacy GPIO HAL callers are **not** intercepted.
+
+`src/labmate_monitor_gpio.c` now requests the pin-only lease
+**before** changing any GPIO pin to input; only an acquired
+Monitor pin can be read as a valid level or configured back to
+analog. A different selected pin cannot release that owner.
+On a denied lease or unmatched stock SDK, the driver performs
+zero GPIO mode writes and zero pin reads; the Monitor's
+`monitor_blocked` status displays BUSY, not a synthetic
+LOW sample. Release failure retains a sticky handle and
+`monitor_release_fault`; no new pin is claimed.
+The app-thread measurement and HOLD-resume code now check
+whether a sample was actually acquired before recording logic
+level or edge counts. PA7 local exclusion when PWM RUN,
+BUSY, or release-fault remains.
+
+`tests/test_v18_monitor_pa7_protection.py` now instruments
+the **actual** production Monitor C file in stock/matched SDK
+modes: all 8 pin masks; occupied pin; successful sample; wrong
+pin STOP; duplicate START; STOP/release; sticky release
+fault; and no pin writes on a denied/missing lease.
+`tests/test_v18_firmware_lease_primitive.py` additionally
+extracts and executes the **exact patched firmware C source**
+to validate all eight pin aliases against TIM1, TIM2, EXTI,
+I2C3, OneWire, incorrect releases and 24-thread ownership
+races. Host mocks do not simulate independent legacy GPIO
+services or real electrical signals.
+
+Evidence:
+- [E11.1e combined Monitor/PWM full pinned Momentum/FAP build,
+  CI 38808169801](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38808169801):
+  **SUCCESS**, code SHA `97b4a562ce761064d1033ceeaeac104c0b2536a2`.
+- [E11 firmware lease actual-C mutex/concurrent alias host
+  CI 38808426053](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38808426053):
+  **SUCCESS**, SHA `c25328931fde966d9b9567701c27ec5ecca2fa86`.
+- Standard SDK Source CI for subsequent static boundary change
+  `7de7d5412b9dbe50f81730f7e76c3473265621ee`
+  has a separate run
+  [38808259776](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38808259776);
+  do not claim SUCCESS until concluded.
+
+**Unfinished global E11:** the pinned native Momentum GPIO,
+input, TIM1, TIM2 and EXTI users still do not honor these
+voluntary pin-only claims, so some existing services can modify
+a claimed pin; mandatory interception/caller migration and
+physical conflict acceptance remain OPEN. PC3/PA6 are only
+separate GPIO bits; their shared-number EXTI pin multiplexing
+is **not** globally safe merely because they have masks.
+Stock firmware lacks exported API; DEV app must fail closed
+rather than attempting unsafe GPIO writes. Never install this
+FAP without its exact separately-approved matching firmware.
+Original Stable, `main`, historical tags and SD backup data
+are untouched.
