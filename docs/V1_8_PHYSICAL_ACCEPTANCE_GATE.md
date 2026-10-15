@@ -718,12 +718,23 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   lifecycle smoke PASS; it does **not** establish external button
   bounce accuracy, firmware-wide resource leasing, or whether the
   exceptional stale-capture forced-exit guard was dynamically reached.
-- [ ] **Other EXITFIX device regressions still OPEN:** Event Counter
-  TIM2 STOP/restart; PWM/Logger cleanup and coexistence; UART external
-  peer and I2C/1-Wire negative paths; Profiles and CSV preservation.
-  Historical UARTFIX physical PASS does not transfer automatically
-  to the new EXITFIX artifact. A normal BACK cleanup regression does
-  not prove the fixed abnormal stale-capture exit branch executes.
+- [x] **EXITFIX E2 — Event Counter TIM2 RUN/STOP/RESUME,
+  exit and reopen: OPERATOR PHYSICAL PASS, 2026-10-15.**
+  On the installed EXITFIX FAP (SHA256
+  `7a76f626f34a65059d9536fa2cd52b2639f4d1038a9b5c69291fa28d5e4f63be`),
+  the operator performed the instructed no-external-signal workflow:
+  MEASURE > Event Counter; OK RUN, wait ~5 s, OK STOP,
+  OK RESUME, wait ~5 s, OK STOP, BACK, full LabMate exit,
+  reopen and another RUN/STOP. Report:
+  `EXITFIX E2: RUN/STOP=yes; RESUME=yes; EXIT=yes; REOPEN=yes; ERROR=no`.
+  Establishes real TIM2 counter control / normal resource transition
+  smoke and reopen PASS, **not** calibrated input pulse counting,
+  firmware-wide TIM2 lease exclusivity or abnormal forced-exit behavior.
+- [ ] **Other EXITFIX device regressions remain OPEN:** PWM/Logger
+  cleanup and coexistence; UART external peer; I2C/1-Wire negative
+  paths; Profiles and CSV preservation. Earlier UARTFIX physical
+  PASS is not automatically inherited by EXITFIX. Normal BACK
+  cleanup does not prove the abnormal stale-capture exit branch executes.
 
 ## Stable release boundary
 
