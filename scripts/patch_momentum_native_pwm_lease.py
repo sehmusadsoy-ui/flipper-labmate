@@ -25,7 +25,7 @@ EXPECTED_DIRTY = {
     "targets/f7/furi_hal/furi_hal_gpio.c",
     "targets/f7/api_symbols.csv",
 }
-MARKER = "/* LabMate E11 native PWM lease owner: scoped to PWM HAL service. */"
+MARKER = "/* LabMate E11 native PWM lease owner: scoped to PWM HAL service."
 
 HELPER = """/* LabMate E11 native PWM lease owner: scoped to PWM HAL service.
  * Legacy direct TIM1/LPTIM2 GPIO/register users remain outside this gate.
