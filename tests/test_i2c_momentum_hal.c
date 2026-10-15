@@ -84,6 +84,12 @@ int main(void) {
         .stop_requested=is_stopping,
     };
     LabMateI2cSessionOps ops=labmate_i2c_momentum_ops(&bridge);
+    /* Deliberately violate the transport order: must never probe pins
+     * without a matching prior firmware lease and acquired HAL mutex.
+     */
+    assert(ops.probe(ops.context,0x78U,LABMATE_I2C_PROBE_TIMEOUT_MS)==
+           LabMateI2cProbeError);
+    assert(probes==0U);
 #if defined(LABMATE_MOMENTUM_TIMED_I2C_API) && defined(LABMATE_TEST_LEASE_API)
     assert(labmate_i2c_momentum_available());
     clear_counts();
