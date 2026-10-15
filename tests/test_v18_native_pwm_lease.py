@@ -223,6 +223,7 @@ void furi_hal_pwm_set_params(FuriHalPwmOutputId,uint32_t,uint8_t);
         exe=tmp/"test"
         subprocess.run(
             ["cc","-std=c11","-Wall","-Wextra","-Werror","-pedantic",
+             "-Wno-unused-variable", # fake LL macros discard register arguments
              "-I",str(tmp),str(source),str(tmp/"host.c"),"-o",str(exe)],
             check=True,
         )
