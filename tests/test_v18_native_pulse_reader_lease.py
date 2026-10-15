@@ -126,11 +126,34 @@ int main(void) {
     pulse_reader_start(s);
     CHECK(!write_total() && used==0U);
     dma5_busy=false;
+    /* Preserve historical arbitrary GPIO support: nonconnector pins
+     * still reserve TIM2/DMA/DMAMUX core, though their GPIO/EXTI are not
+     * protected by the eight connector-specific E11 masks.
+     */
     const GpioPin internal={&port_a,1U<<8};
-    PulseReader* unsupported=pulse_reader_alloc(&internal,8U);
-    pulse_reader_start(unsupported);
-    CHECK(!write_total() && used==0U);
-    pulse_reader_free(unsupported);
+    PulseReader* other=pulse_reader_alloc(&internal,8U);
+    reset_metrics();
+    pulse_reader_start(other);
+    CHECK(bus_on && used==FURI_HAL_LEASE_PULSE_NONCONNECTOR &&
+          write_total()>0U);
+    pulse_reader_stop(other);
+    CHECK(!bus_on && used==0U);
+    pulse_reader_free(other);
+    /* An external client may construct an equivalent GPIO descriptor
+     * instead of using the canonical &gpio_ext_pb3 pointer.
+     */
+    const GpioPin clone_pb3={&port_b,1U<<3};
+    PulseReader* alias=pulse_reader_alloc(&clone_pb3,8U);
+    uint32_t monitor=furi_hal_resource_lease_try_acquire(FuriHalLeasePb3);
+    CHECK(monitor);
+    reset_metrics();
+    pulse_reader_start(alias);
+    CHECK(write_total()==0U && used==FuriHalLeasePb3);
+    CHECK(furi_hal_resource_lease_release(monitor,FuriHalLeasePb3));
+    pulse_reader_start(alias);
+    CHECK(bus_on && (used & FURI_HAL_LEASE_PULSE_PB3)==FURI_HAL_LEASE_PULSE_PB3);
+    pulse_reader_stop(alias);pulse_reader_free(alias);
+    CHECK(!bus_on && used==0U);
 
     /* Repeated starts and close must not tear down a foreign owner. */
     pulse_reader_start(s);
@@ -189,6 +212,8 @@ def main() -> None:
     assert "FURI_HAL_LEASE_PULSE_CORE" in hdr
     assert "mask == FURI_HAL_LEASE_PULSE_PB3" in lease
     assert "if(!signal || !signal->capture_active" in pulse
+    assert "if(signal->firmware_lease_fault) return;" in pulse
+    assert "FURI_HAL_LEASE_PULSE_NONCONNECTOR" in hdr
     assert "if(!furi_hal_bus_is_enabled(FuriHalBusTIM2))" in pulse
     # Compile the real original+patched source, not a reimplemented model.
     macros=set(re.findall(r"\bLL_[A-Z][A-Z0-9_]+\b",pulse))
