@@ -826,10 +826,24 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   safe read-only navigation, **not** byte-for-byte SD data parity,
   CRC verification of both profile copies or all CSV rows.
 - [ ] **EXITFIX E10 — read-only device-to-host file integrity
-  snapshot / comparison remains OPEN** pending operator Windows
-  PowerShell output. Preserve the prior October 14 LabMate-only SD
-  backup and compare matching paths by SHA256; new log files may
-  legitimately exist and must not be falsely marked corruption.
+  comparison: DIFFERENCES FOUND, NOT PASS (2026-10-15).**
+  Operator ran the Windows read-only snapshot/comparison and
+  provided these final counts: prior 2026-10-14 local backup
+  `BACKUP_FILES=14`; newly received/snapshotted
+  `DEVICE_FILES=10`; `SHA256_MATCHED=3`;
+  `MISSING=9`; `CHANGED=2`; `NEW_FILES=5`.
+  Windows snapshot path:
+  `C:\\Users\\sehmu\\Downloads\\LabMate-E10-20261015-162921-232cfc`.
+  The script printed `EXITFIX E10 DIFFERENCES FOUND - REVIEW REQUIRED`.
+  The operator supplied only the final count segment, **not the full
+  USB transfer log or a per-relative-path difference inventory**.
+  This is not evidence of corrupt profiles, nor proof of a complete
+  byte-for-byte current-device comparison. Old log deletions, new
+  logger CSV entries or profile generation updates could be legitimate
+  but must be confirmed from filenames/path/size/hash data. **Do
+  not write to microSD, restore/delete files, change profiles or
+  promote E10 to PASS** pending the non-mutating local manifest diff.
+  Preserve both old backup and current snapshot unchanged.
 - [ ] **Other EXITFIX device regressions remain OPEN:** Profile
   SAVE/LOAD/DELETE behavior on the new FAP (without risking existing
   slots); firmware-service resource contention and safe positive
