@@ -8,6 +8,7 @@
  * Build: cc -std=c11 -Wall -Wextra -Werror -pthread
  *        tests/v18_firmware_lease_proto.c -o /tmp/labmate-lease-proto
  */
+#define _POSIX_C_SOURCE 200809L
 #include <pthread.h>
 #include <stdint.h>
 #include <stdbool.h>
