@@ -82,6 +82,32 @@ Do **not** reuse the earlier pinned UARTFIX installer/hashes for the
 new artifact and do **not** flash a new firmware: the patched Momentum
 DFU must remain exact and checksummed if this is a FAP-only update.
 
+## E11 preliminary pinned-firmware contract inspection (2026-10-15)
+
+Read-only source inspection of
+`Next-Flip/Momentum-Firmware@d3f89dfe2ef6b01839201598e9be1590cba80322`
+against the exact production driver files yields specific risks:
+
+| Driver / pinned firmware interface | What the source actually guarantees | Blocker / required fix |
+| --- | --- | --- |
+| `labmate_frequency_tim2.c` / `furi_hal_bus_enable(FuriHalBusTIM2)` | The HAL bus enable implementation **asserts** its peripheral clock was disabled (`furi_check`) before enabling; there is a boolean `furi_hal_bus_is_enabled` status query | Checking a momentary status is **not an atomic lease**; the direct TIM2 LL register configuration and shutdown can disrupt other users. Cannot claim firmware-wide exclusivity |
+| `labmate_generator.c` / `furi_hal_pwm_start(Tim1PA7)` | Patched Momentum `furi_hal_pwm_start` directly configures PA7 and calls bus-enable for TIM1, also depending on a disabled-clock precondition | LabMate's local `generator_running` cannot exclude independent PWM/TIM1 owners; a concurrent owner can cause assertion or reconfiguration |
+| `labmate_button_capture.c` / `furi_hal_gpio_add_int_callback` | Pinned `furi_hal_gpio.c` uses `furi_check(gpio_interrupt[pin_num].callback == NULL)` before callback installation; enable/remove touch the shared EXTI line | This is an **asserting API**, not a recoverable try-acquire; shared line use or an unrelated preinstalled callback is a potential crash/ownership conflict |
+| `labmate_monitor_gpio.c` / `furi_hal_gpio_init_simple` | A GPIO setup/reset operation changes pin function | The app-local pin index/owner is not a globally coordinated owner/lease, so it can reconfigure a pin used by a different service |
+
+These are **SOURCE-REVIEW findings**, not observed device failures.
+E1–E9 physical PASS establishes only the noncompeting conditions
+actually tested. Do **not** attempt deliberate concurrent timer/
+interrupt-service conflicts on the user's Flipper just to provoke
+an assertion. Before any new firmware/FAP implementation, select
+and test an actual exported arbiter or design a separately versioned
+firmware-side ownership contract and fail-closed caller; ensure that
+claim and release are atomic and that failed claims leave all
+HAL registers, GPIO pins, EXTI and existing owners untouched.
+`furi_hal_bus_is_enabled` alone is insufficient. No approved safe
+patch is claimed at this stage; further design/CI and fresh device
+acceptance are required.
+
 ## Firmware-wide ownership gap: explicitly not closed
 
 `LabMateCommOwner` and `LabMateCaptureOwner` guard **this app's**
