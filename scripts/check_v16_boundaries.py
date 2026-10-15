@@ -635,16 +635,21 @@ expect("void threshold_update_from_measurement(LabMateApp* app)" in ALERT_BRIDGE
 # A background TIM1 PWM output owns PA7. The GPIO Monitor must not
 # reconfigure that pin (including on entry with a stale PA7 selection).
 expect(
-    "labmate_monitor_entry_pin(app->gpio_index, app->generator_running)" in MONITOR_GPIO,
-    "GPIO Monitor entry must respect background PA7 ownership",
+    "const bool pa7_reserved =" in MONITOR_GPIO and
+    MONITOR_GPIO.count("app->generator_running || app->generator_blocked ||") == 2 and
+    MONITOR_GPIO.count("app->generator_release_fault;") == 2 and
+    "labmate_monitor_entry_pin(app->gpio_index, pa7_reserved)" in MONITOR_GPIO,
+    "GPIO Monitor entry must respect RUN, denied lease and failed PA7 release",
 )
 expect(
-    "labmate_monitor_next_pin(app->gpio_index, direction, app->generator_running)" in MAIN,
-    "GPIO Monitor navigation must skip reserved PA7",
+    "labmate_monitor_next_pin(" in MAIN and
+    "app->generator_running || app->generator_blocked ||" in MAIN and
+    "app->generator_release_fault);" in MAIN,
+    "GPIO Monitor navigation must skip PA7 on RUN, BUSY or release fault",
 )
 expect(
-    "labmate_monitor_pin_allowed(index, app->generator_running)" in MONITOR_GPIO,
-    "GPIO release must not reconfigure a reserved PA7 PWM output",
+    "labmate_monitor_pin_allowed(index, pa7_reserved)" in MONITOR_GPIO,
+    "GPIO release must not reconfigure a RUN/BUSY/stale PA7 PWM output",
 )
 expect(
     "void labmate_monitor_gpio_release(LabMateApp* app, uint8_t index)" in MONITOR_GPIO,
