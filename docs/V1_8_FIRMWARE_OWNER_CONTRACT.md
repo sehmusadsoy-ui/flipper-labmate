@@ -142,6 +142,31 @@ all applicable callers, a documented firmware-wide ownership
 policy and tested fail-closed behaviors before being considered
 complete. No premature Stable approval.
 
+### First real firmware compilation result (CI ONLY, 2026-10-15)
+
+GitHub Actions [run 38749785393](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38749785393)
+at source SHA `642496f0323423033b8115a1bbefe9f467588bd6`
+completed **SUCCESS**. Verified actual logs include a successful
+integrated `APPCHK` and
+`REAL FIRMWARE + MATCHED FAP BUILD & EXPORTED ABI PASS (CI ONLY)`.
+ELF global function checks found both experimental lease functions and
+the existing bounded external-I2C API. Ephemeral, **non-deployable**
+build identities logged:
+
+- Experimental compiled `firmware.dfu` SHA256:
+  `89593215d9425be1a83f44830495e7303b728752f0ef08dd713bfab35b743c8f`
+- Matched experimental `labmate.fap` SHA256:
+  `759ab30b970c4ccc10fd30004c38eb5087e409b99510eac89ef5b9ec7e88caf9`
+- Current actual installed firmware DFU reference SHA256 remains:
+  `e69f717df28f2ff5a417a69ac212f242cf2725a48ce8c4e31296ceb4a0157ec0`
+
+**The new DFU hash differs from the installed firmware.** These
+experimental files **MUST NOT** be used for a FAP-only USB update,
+mixed with existing installed firmware, flashed or promoted to Stable.
+CI did not stage/publish a user-installable update artifact. The
+experimental firmware API is dormant and the HAL-wide lease
+interposition is missing.
+
 ## Evidence/status gates
 
 | Gate | Scope | Status |
