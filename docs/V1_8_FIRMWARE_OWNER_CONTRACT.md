@@ -570,3 +570,36 @@ checksums must be evaluated separately; earlier CI success does
 not certify subsequent commits. No modified firmware/FAP has
 been installed on the physical Flipper. Neither release nor merge
 approval is inferred from any of these host/build tests.
+
+### Shared capture STOP + PB3/TIM2 release fault hardening
+
+A subsequent DEV change adds `capture_release_fault` to the
+actual LabMate app state. When a firmware lease release fails, the
+affected LOW Frequency, Pulse, Button, HIGH Frequency or Event
+Counter path latches the condition and the common
+`labmate_capture_stop_all()` does **not** clear the denial.
+`labmate_capture_can_start()` rejects any further capture until
+a fresh app instance; a failed-release handle remains reserved and
+is not silently reused. `labmate_frequency_tim2_lease_pending()`
+exposes the driver's post-shutdown unresolved TIM2 owner to its
+two callers (HIGH Frequency and Counter). This does **not**
+recover lost firmware resources across unrelated services or
+guarantee automatic crash cleanup.
+
+[Exact source `31e8f77d` TIM2 CI 38803046030](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38803046030)
+**SUCCESS**: actual TIM2 C driver host tests (missing API,
+conflict, STOP, failed-release retention), matched pinned Momentum
+firmware + single LabMate FAP compilation and APPCHK, ABI export
+checks all PASS. CI-only patched DFU SHA256:
+`7c51915d81317e3be6661b46c54fe171deb71e1045f214ad6f72310766771611`.
+CI-only FAP SHA256:
+`3fe795d7f606154c0dfd32350c79405c831a573cfa5e250ff07f79ba0a714e76`.
+
+Additional host test `tests/test_v18_capture_release_fault.py`
+executes the **actual** shared STOP and acquisition C bodies and
+checks sticky denial through repeated STOP and reattempted capture.
+The [combined Pulse/Button workflow](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/workflows/check-v18-pulse-button-lease-integration.yml)
+includes the newer test in its host gate. Its full matched build
+should be recorded separately only once the exact run succeeds.
+No compiled firmware, experimental FAP or Stable asset has been
+installed or published.
