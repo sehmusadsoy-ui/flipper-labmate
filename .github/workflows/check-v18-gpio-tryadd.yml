@@ -1,0 +1,102 @@
+name: v1.8 E11.1c nonasserting EXTI try-add firmware API (NO DEVICE)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - "scripts/patch_momentum_gpio_tryadd.py"
+      - "tests/test_v18_gpio_tryadd_source.py"
+      - ".github/workflows/check-v18-gpio-tryadd.yml"
+      - "scripts/patch_momentum_resource_lease.py"
+      - "scripts/patch_momentum_i2c_timeout.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  e11c:
+    name: Test actual EXTI try-add source and compile pinned firmware and FAP (NO FLASH)
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Checkout LabMate DEV
+        uses: actions/checkout@v4
+        with:
+          path: labmate
+          persist-credentials: false
+
+      - name: Checkout pinned Momentum
+        uses: actions/checkout@v4
+        with:
+          repository: Next-Flip/Momentum-Firmware
+          ref: d3f89dfe2ef6b01839201598e9be1590cba80322
+          path: momentum-src
+          persist-credentials: false
+
+      - name: Execute original GPIO try-add C body in host contention harness
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile labmate/scripts/patch_momentum_gpio_tryadd.py \
+            labmate/tests/test_v18_gpio_tryadd_source.py
+          python3 labmate/tests/test_v18_gpio_tryadd_source.py
+          python3 labmate/scripts/patch_momentum_gpio_tryadd.py momentum-src
+          echo "HOST TEST PASS is NOT physical MCU/EXTI safety validation."
+
+      - name: Apply exact combined source patches to ephemeral CI checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C momentum-src rev-parse HEAD)" = \
+            "d3f89dfe2ef6b01839201598e9be1590cba80322"
+          python3 labmate/scripts/patch_momentum_i2c_timeout.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_resource_lease.py \
+            momentum-src --allow-timed-i2c --apply
+          python3 labmate/scripts/patch_momentum_gpio_tryadd.py \
+            momentum-src --allow-prepatched
+          python3 labmate/scripts/patch_momentum_gpio_tryadd.py \
+            momentum-src --allow-prepatched --apply
+          git -C momentum-src diff --check
+          test "$(git -C momentum-src diff --name-only | wc -l)" -eq 7
+          grep -q 'Function,+,furi_hal_gpio_try_add_int_callback,_Bool,' \
+            momentum-src/targets/f7/api_symbols.csv
+          echo "ONLY CI SOURCE PATCHED; NO DEVICE OR RELEASE CHANGE."
+
+      - name: Stage current production LabMate into exact patched SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p momentum-src/applications_user/labmate/src
+          cp labmate/application.fam labmate/labmate_10px.png \
+            momentum-src/applications_user/labmate/
+          cp labmate/src/*.c labmate/src/*.h \
+            momentum-src/applications_user/labmate/src/
+
+      - name: Compile real firmware and integrated FAP, check exports
+        shell: bash
+        working-directory: momentum-src
+        timeout-minutes: 40
+        env:
+          FBT_GIT_SUBMODULE_SHALLOW: "1"
+        run: |
+          set -euo pipefail
+          ./fbt firmware_all fap_labmate
+          test -s build/f7-firmware-C/firmware.dfu
+          test -s build/f7-firmware-C/.extapps/labmate.fap
+          readelf -Ws build/f7-firmware-C/firmware.elf | awk '
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_gpio_try_add_int_callback" {gpio=1}
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_resource_lease_try_acquire" {claim=1}
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_resource_lease_release" {release=1}
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_i2c_external_acquire_timeout" {i2c=1}
+            END {exit !(gpio && claim && release && i2c)}
+          '
+          sha256sum build/f7-firmware-C/firmware.dfu \
+            build/f7-firmware-C/.extapps/labmate.fap
+          echo "E11.1c ACTUAL FIRMWARE + FAP BUILD AND EXPORTED EXT IRQ API PASS."
+          echo "NOT DEPLOYABLE: LEGACY HAL/SERVICES ARE NOT LEASE-COORDINATED."
+          echo "NO FLASH / USB INSTALL / STABLE RELEASE."
