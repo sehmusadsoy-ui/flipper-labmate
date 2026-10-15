@@ -1,12 +1,14 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 
 /* PB3 -> TIM2_CH2 external-clock rising-edge counter.
  * The caller must already own LabMateCaptureFrequencyHigh. All hardware
  * configuration and reset is performed here, not from the UI or app loop.
  */
-void labmate_frequency_tim2_configure(void);
+/* False => no peripheral mutation; unsupported firmware fails closed. */
+bool labmate_frequency_tim2_configure(void);
 void labmate_frequency_tim2_enable(void);
 /* Freeze count without releasing PB3 ownership; used for final snapshot. */
 void labmate_frequency_tim2_disable(void);
