@@ -88,11 +88,11 @@ static void labmate_capture_exti_clear(uint32_t line, bool rising) {
     (void)rising;
     exti_mutations++;
 }
-#define furi_hal_gpio_init(...) (++gpio_mutations)
-#define furi_hal_gpio_init_simple(...) (++gpio_mutations)
-#define furi_hal_gpio_disable_int_callback(...) (++irq_mutations)
-#define furi_hal_gpio_enable_int_callback(...) (++irq_mutations)
-#define furi_hal_gpio_remove_int_callback(...) (++irq_mutations)
+#define furi_hal_gpio_init(p, ...) ((void)(p), ++gpio_mutations)
+#define furi_hal_gpio_init_simple(p, ...) ((void)(p), ++gpio_mutations)
+#define furi_hal_gpio_disable_int_callback(p) ((void)(p), ++irq_mutations)
+#define furi_hal_gpio_enable_int_callback(p) ((void)(p), ++irq_mutations)
+#define furi_hal_gpio_remove_int_callback(p) ((void)(p), ++irq_mutations)
 static uint32_t labmate_frequency_pc1_lease;
 #endif
 """
