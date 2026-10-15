@@ -48,6 +48,8 @@ enum {
     FuriHalLeasePa4 = (1U << 11),
     FuriHalLeaseUsart1 = (1U << 12),
     FuriHalLeaseI2c3 = (1U << 13),
+    FuriHalLeasePc3 = (1U << 14),
+    FuriHalLeasePa6 = (1U << 15),
 };
 #define FURI_HAL_LEASE_PWM_PA7 (FuriHalLeaseTim1 | FuriHalLeasePa7)
 #define FURI_HAL_LEASE_COUNTER_PB3 (FuriHalLeaseTim2 | FuriHalLeasePb3)
@@ -58,6 +60,19 @@ enum {
 #define FURI_HAL_LEASE_ONEWIRE_PA4 (FuriHalLeasePa4)
 #define FURI_HAL_LEASE_I2C3_EXT (FuriHalLeaseI2c3 | FuriHalLeasePc0 | FuriHalLeasePc1)
 #define FURI_HAL_LEASE_USART1 (FuriHalLeaseUsart1)
+/* Passive GPIO Monitor pin-only claims. They overlap relevant TIM1/TIM2,
+ * EXTI, I2C and OneWire composite leases on the same physical pin.
+ * PC3 and PA6 have their own bit, not the onboard button EXTI alias:
+ * those legacy input/EXTI services still require mandatory integration.
+ */
+#define FURI_HAL_LEASE_MONITOR_PC0 (FuriHalLeasePc0)
+#define FURI_HAL_LEASE_MONITOR_PC1 (FuriHalLeasePc1)
+#define FURI_HAL_LEASE_MONITOR_PC3 (FuriHalLeasePc3)
+#define FURI_HAL_LEASE_MONITOR_PB2 (FuriHalLeasePb2)
+#define FURI_HAL_LEASE_MONITOR_PB3 (FuriHalLeasePb3)
+#define FURI_HAL_LEASE_MONITOR_PA4 (FuriHalLeasePa4)
+#define FURI_HAL_LEASE_MONITOR_PA6 (FuriHalLeasePa6)
+#define FURI_HAL_LEASE_MONITOR_PA7 (FuriHalLeasePa7)
 
 /* Returns unique nonzero handle after an atomic claim, zero on BUSY/error.
  * No register or pin state is changed by claim/release. Each handle is
@@ -95,7 +110,15 @@ static bool furi_hal_lease_mask_allowed(uint32_t mask) {
            mask == FURI_HAL_LEASE_IRQ_PA4 ||
            mask == FURI_HAL_LEASE_ONEWIRE_PA4 ||
            mask == FURI_HAL_LEASE_I2C3_EXT ||
-           mask == FURI_HAL_LEASE_USART1;
+           mask == FURI_HAL_LEASE_USART1 ||
+           mask == FURI_HAL_LEASE_MONITOR_PC0 ||
+           mask == FURI_HAL_LEASE_MONITOR_PC1 ||
+           mask == FURI_HAL_LEASE_MONITOR_PC3 ||
+           mask == FURI_HAL_LEASE_MONITOR_PB2 ||
+           mask == FURI_HAL_LEASE_MONITOR_PB3 ||
+           mask == FURI_HAL_LEASE_MONITOR_PA4 ||
+           mask == FURI_HAL_LEASE_MONITOR_PA6 ||
+           mask == FURI_HAL_LEASE_MONITOR_PA7;
 }
 
 uint32_t furi_hal_resource_lease_try_acquire(uint32_t resources) {
