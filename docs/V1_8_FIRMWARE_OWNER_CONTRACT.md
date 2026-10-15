@@ -630,3 +630,63 @@ This is **SOURCE + HOST TEST + REAL BUILD PASS**, not Flipper
 physical device acceptance or mandatory firmware-wide ownership.
 No new custom firmware/FAP has been installed, `main`, Stable and
 previous release assets are unchanged; PR #13 stays Draft.
+
+## E11.1e — LabMate TIM1/PA7 PWM opt-in lease (development stage, 2026-10-15)
+
+**DEV SOURCE integration, NOT mandatory firmware-global ownership.**
+The actual `src/labmate_generator.c` now requests exactly
+`FURI_HAL_LEASE_PWM_PA7` through the versioned firmware-owned
+atomic API **before** calling `furi_hal_pwm_start()`, whose
+implementation would otherwise change PA7 alternate-function and
+TIM1 peripheral state. If firmware lacks the matching SDK/API or
+a different cooperative caller holds the lease, START refuses
+without ANY `furi_hal_pwm_start/stop/set_params` call.
+An accepted owner may retune frequency/duty in-place only while
+the lease is retained. STOP invokes the PWM HAL while still holding
+its handle and then attempts an exact-mask release. A failed
+release holds the opaque handle and latches a permanent local
+`generator_release_fault`, preventing unsafe subsequent START
+attempts and duplicate STOP. The on-screen badge reports BUSY
+for a refusal and ERR for a failed release.
+
+`tests/test_v18_pwm_lease_integration.py` compiles the **actual
+production generator source** with HAL instrumentation in the
+stock SDK and matched patched firmware API modes. The tests
+check no peripheral writes on missing/busy claim; proper order
+on START, frequency/duty retune, STOP then release; repeated
+START/STOP; and refusal to reuse a failed release. The
+dedicated [E11.1e workflow](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/workflows/check-v18-pwm-lease-integration.yml)
+then builds exactly one matched patched Momentum firmware plus
+LabMate FAP and checks `APPCHK` and exported symbols. Individual
+run results and checksum evidence must be recorded separately.
+
+**CRITICAL:** the existing Momentum firmware PWM and other TIM1
+drivers still use legacy HAL entry points and may bypass the opt-in
+lease entirely. The existing firmware lease table does NOT intercept
+those calls; `furi_hal_pwm_start()` returns void and may assert
+or race if a bypassing service configures TIM1. This stage has
+not made on-device TIM1/PWM conflicts safe. Only migrate and
+hardware-test against a separately approved complete firmware
+owner integration; never install a FAP built for an SDK with
+new exports on the old firmware.
+
+### GPIO Monitor remains a separate E11.1e blocker
+
+`src/labmate_monitor_gpio.c` still uses
+`furi_hal_gpio_init_simple()` for both activation (input) and
+release (analog). Its application-local PA7-while-PWM-running
+policy does **not** detect independent firmware pin owners
+and does not acquire a firmware pin lease. The present
+experimental firmware mask table lacks generic single-pin
+claims for all eight GPIO Monitor pins. Treat this as
+**NOT PROTECTED / NOT TESTED**, not PASS. It requires review
+of pin aliases and firmware services (especially PC3/PA6
+shared-number EXTI concerns), a fail-closed pin claim before
+a pin mode change, ownership-aware release and a dedicated
+no-mutation-on-conflict host + matched-firmware build.
+Avoid changing the tested Monitor UX blindly without a
+supported lease contract.
+
+No changes are authorized to the operator's hardware,
+historical CSV files, original v1.8 source tag, Stable
+release assets or `main`; PR #13 remains Draft.
