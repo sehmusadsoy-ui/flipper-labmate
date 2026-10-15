@@ -210,8 +210,8 @@ failure, or any real Flipper behavior. Those are **OPEN**.
 | Gate | Scope | Status |
 | --- | --- | --- |
 | E11.0 | Source contract audit + contested host lease prototype | **HOST CI PASS (hardened)**, [run 38748481542](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38748481542), source SHA `f6e93a14e8f989d089fbe18e9e33628fd33abd1d` |
-| E11.1 | Actual patched firmware atomically enforces leases across all relevant HAL/service paths | **NOT IMPLEMENTED** |
-| E11.2 | Matched firmware+FAP builds/APPCHK, API/ABI, failure-path and no-register-mutation tests | **NOT TESTED** |
+| E11.1 | Actual firmware ownership across relevant HAL/service paths | **PARTIAL** — LabMate claim integration + native Momentum PWM paths migrated; other independent GPIO/EXTI/TIM services still bypass |
+| E11.2 | Matched firmware+FAP builds/APPCHK, API/ABI, failure-path and no-register-mutation tests | **SELECTED CI PASS** — multiple exact-source paired builds and native PWM actual-C denial tests; not a universal firmware/device PASS |
 | E11.3 | Operator-approved on-device competing-service safety tests, rollback verified | **NOT TESTED** |
 | E10 | Nine historical logs absent; operator now reports manual Log History deletions | **NOT A SUSPECTED APP-LOSS BLOCKER**; precise file-by-file deletion causality unverified; preserve backups |
 
