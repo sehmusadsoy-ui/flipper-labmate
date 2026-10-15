@@ -82,16 +82,21 @@ Expected HOST tests:
 - EXTI/PC1 vs another PC1 consumer, I2C3 vs PC0/PC1, PWM TIM1/PA7
   vs unrelated TIM2/PB3: alias conflicts fail and disjoint ownership
   can coexist.
-- Invalid/empty masks, owner-token reuse, mismatched/partial/foreign
-  release and double release never silently clear ownership.
+- Invalid/empty masks, mismatched/partial/foreign release, double
+  release, **stale handle after resource reacquisition** and exhaustion
+  never silently clear another owner's resource.
 - **24 simultaneous acquisition threads ×25 rounds** race for
   one TIM2/PB3 lease: exactly one owner wins each round.
 - Model never reconfigures hardware; no expected PIN/GPIO
   or firmware-side effects are inferred from a successful host run.
 
-This model does not yet solve stable unique token generation,
-resource-manager recovery after process crashes, supported firmware
-ABI packaging, or protecting legacy drivers that bypass the lease.
+The updated HOST model now issues monotonically increasing opaque
+handles under the same lock as the claim; a stale handle cannot
+release a newly acquired resource, and 64-bit exhaustion fails
+closed rather than wrapping. The **real firmware implementation**
+still must solve handle uniqueness across service lifetimes, crash
+recovery and reboots, supported ABI packaging, and protection against
+legacy drivers that bypass the lease.
 All these require real firmware integration, proper driver tests,
 CI builds and separately approved device tests.
 
@@ -99,7 +104,7 @@ CI builds and separately approved device tests.
 
 | Gate | Scope | Status |
 | --- | --- | --- |
-| E11.0 | Source contract audit + contested host lease prototype | **HOST CI PASS**, [run 38747593373](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38747593373), source SHA `bdbcc5676072bfc6b0a455de191f17fc10a43c51` |
+| E11.0 | Source contract audit + contested host lease prototype | **HOST CI PASS (hardened)**, [run 38748481542](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38748481542), source SHA `f6e93a14e8f989d089fbe18e9e33628fd33abd1d` |
 | E11.1 | Actual patched firmware atomically enforces leases across all relevant HAL/service paths | **NOT IMPLEMENTED** |
 | E11.2 | Matched firmware+FAP builds/APPCHK, API/ABI, failure-path and no-register-mutation tests | **NOT TESTED** |
 | E11.3 | Operator-approved on-device competing-service safety tests, rollback verified | **NOT TESTED** |
@@ -122,6 +127,22 @@ completed **SUCCESS**. Its one job passed all steps, including:
 
 This is **E11.0 host-model/source-audit PASS**, NOT E11.1 firmware-side
 implementation, NOT a new FAP, and NOT a device PASS. The host
-prototype currently takes numeric tokens from callers; firmware-safe
-unique versioned owner handles and stale-token invalidation remain
-mandatory design work before HAL integration.
+initial prototype used caller-provided numeric tokens; the
+subsequent hardened prototype creates unique nonreused opaque handles
+atomically, fails closed on exhaustion and rejects stale release.
+Actual firmware integration, crash handling and service-by-service
+interposition remain **NOT IMPLEMENTED**.
+
+### E11.0b hardened handle regression PASS (2026-10-15)
+
+GitHub Actions [run 38748481542](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38748481542)
+completed **SUCCESS** at exact prototype commit
+`f6e93a14e8f989d089fbe18e9e33628fd33abd1d`.
+The actual CI job logs contain:
+
+- `E11 PINNED-SOURCE AUDIT PASS`
+- `HOST LEASE MODEL PASS: atomic all-or-nothing, stale-handle-safe, alias-safe, 24-thread contest x25`
+- `FIRMWARE-GLOBAL OWNERSHIP: NOT IMPLEMENTED / NOT HARDWARE VERIFIED`
+
+This is a *replacement* host-model evidence snapshot, not a new
+firmware/FAP artifact or an on-device result.
