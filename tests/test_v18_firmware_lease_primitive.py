@@ -91,6 +91,51 @@ static void test_alias_and_capacity(void) {
     REQUIRE(furi_hal_resource_lease_release(pwm, FURI_HAL_LEASE_PWM_PA7));
 }
 
+static void test_all_monitor_pin_claims(void) {
+    const uint32_t pin_masks[8] = {
+        FURI_HAL_LEASE_MONITOR_PC0,
+        FURI_HAL_LEASE_MONITOR_PC1,
+        FURI_HAL_LEASE_MONITOR_PC3,
+        FURI_HAL_LEASE_MONITOR_PB2,
+        FURI_HAL_LEASE_MONITOR_PB3,
+        FURI_HAL_LEASE_MONITOR_PA4,
+        FURI_HAL_LEASE_MONITOR_PA6,
+        FURI_HAL_LEASE_MONITOR_PA7,
+    };
+    uint32_t handles[8] = {0};
+    for(size_t i=0U;i<8U;++i) {
+        REQUIRE(pin_masks[i]!=0U);
+        for(size_t j=0U;j<i;++j) REQUIRE(pin_masks[i]!=pin_masks[j]);
+        handles[i]=furi_hal_resource_lease_try_acquire(pin_masks[i]);
+        REQUIRE(handles[i]!=0U);
+        REQUIRE(furi_hal_resource_lease_try_acquire(pin_masks[i])==0U);
+    }
+    /* A passive GPIO owner excludes active signal-generation/capture users
+     * of that physical pin even when the EXTI / TIM mask is different.
+     */
+    REQUIRE(furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_PWM_PA7)==0U);
+    REQUIRE(furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_COUNTER_PB3)==0U);
+    REQUIRE(furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_IRQ_PC0)==0U);
+    REQUIRE(furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_IRQ_PC1)==0U);
+    REQUIRE(furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_IRQ_PB2)==0U);
+    REQUIRE(furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_IRQ_PA4)==0U);
+    REQUIRE(furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_ONEWIRE_PA4)==0U);
+    REQUIRE(furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_I2C3_EXT)==0U);
+    for(size_t i=0U;i<8U;++i) {
+        REQUIRE(!furi_hal_resource_lease_release(handles[i],FURI_HAL_LEASE_PWM_PA7));
+        REQUIRE(furi_hal_resource_lease_release(handles[i],pin_masks[i]));
+        REQUIRE(!furi_hal_resource_lease_release(handles[i],pin_masks[i]));
+    }
+    uint32_t pwm=furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_PWM_PA7);
+    REQUIRE(pwm!=0U);
+    REQUIRE(furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_MONITOR_PA7)==0U);
+    REQUIRE(furi_hal_resource_lease_release(pwm,FURI_HAL_LEASE_PWM_PA7));
+    uint32_t button=furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_IRQ_PC1);
+    REQUIRE(button!=0U);
+    REQUIRE(furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_MONITOR_PC1)==0U);
+    REQUIRE(furi_hal_resource_lease_release(button,FURI_HAL_LEASE_IRQ_PC1));
+}
+
 #define NTHREADS 24
 typedef struct { pthread_barrier_t* barrier; uint32_t granted; } Worker;
 static void* compete(void* opaque) {
@@ -135,6 +180,7 @@ static void test_generation_exhaustion(void) {
 int main(void) {
     test_masks_and_stale_handles();
     test_alias_and_capacity();
+    test_all_monitor_pin_claims();
     test_real_source_race();
     test_generation_exhaustion();
     puts("E11.1a ACTUAL FIRMWARE LEASE C SOURCE HOST TEST PASS");
