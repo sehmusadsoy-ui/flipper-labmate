@@ -757,12 +757,27 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   Proves physical UI/state lifecycle and expected auto STOP after
   full app exit. It does **not** independently electrically measure
   PA7 OFF voltage, waveform accuracy, or firmware-global TIM1 lease.
-- [ ] **Other EXITFIX device regressions remain OPEN:** I2C/1-Wire
-  no-peripheral / local BUSY and STOP/BACK, UART external peer,
-  Profiles and CSV integrity, resource conflicts with external
-  firmware services. Earlier UARTFIX physical PASS is not
-  automatically inherited by EXITFIX. Normal BACK cleanup
-  does not prove abnormal stale-capture exit branch executes.
+- [x] **EXITFIX E5 — I2C Explorer empty-bus scan, PWM BUSY,
+  recovery and BACK: OPERATOR PHYSICAL PASS, 2026-10-15.**
+  With external GPIO wiring absent, operator followed COMM > I2C
+  Explorer OK on the empty bus (NONE/no devices), BACK; OUTPUT >
+  PWM Studio RUN, BACK to menu; I2C Explorer OK reports BUSY;
+  BACK, PWM STOP; reenter I2C Explorer and scan normally, BACK.
+  Exact report:
+  `EXITFIX E5: I2C NONE=yes; PWM BUSY=yes; AFTER STOP SCAN=yes; BACK=yes; ERROR=no`.
+  FAP was the installed EXITFIX SHA256
+  `7a76f626f34a65059d9536fa2cd52b2639f4d1038a9b5c69291fa28d5e4f63be`.
+  Establishes real local PWM-vs-I2C exclusion, negative empty-bus
+  scan and post-STOP recovery on this tested firmware/FAP pair.
+  It does **not** verify positive peripheral ACK, electrical I2C
+  transfer correctness, external firmware service contention or
+  sensor hotplug.
+- [ ] **Other EXITFIX device regressions remain OPEN:** 1-Wire
+  no-sensor/PWM BUSY/recovery; UART external peer; Profiles and CSV
+  integrity; competing firmware services. Previous UARTFIX device
+  PASS does not transfer automatically to EXITFIX. Ordinary BACK
+  cleanup does not demonstrate the exceptional stale-capture exit
+  branch dynamically executed.
 
 ## Stable release boundary
 
