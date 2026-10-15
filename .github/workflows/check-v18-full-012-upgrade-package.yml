@@ -152,16 +152,20 @@ jobs:
           mkdir -p dev-full-candidate
           cp momentum-src/build/f7-firmware-C/.extapps/labmate.fap dev-full-candidate/labmate.fap
           cp momentum-src/build/f7-firmware-C/firmware.dfu dev-full-candidate/firmware.dfu
+          mapfile -t jsbins < <(find momentum-src/build -type f \( -name 'js_gpio.fal' -o -name 'js_gpio.fap' \) -print)
+          test "${#jsbins[@]}" -eq 1
+          cp "${jsbins[0]}" dev-full-candidate/js_gpio.module
           mapfile -t tgzs < <(find momentum-src/dist -type f -name '*.tgz' -print)
           test "${#tgzs[@]}" -eq 1
           cp "${tgzs[0]}" dev-full-candidate/firmware-full-update.tgz
           (
             cd dev-full-candidate
-            sha256sum labmate.fap firmware.dfu firmware-full-update.tgz > SHA256SUMS.txt
+            sha256sum labmate.fap js_gpio.module firmware.dfu firmware-full-update.tgz > SHA256SUMS.txt
             sha256sum -c SHA256SUMS.txt
           )
           printf 'LabMate commit: %s\n' "$(git -C labmate rev-parse HEAD)" > dev-full-candidate/PROVENANCE.txt
           printf 'E11 firmware diff SHA256: %s\n' "$(git -C momentum-src diff -- targets/f7/furi_hal targets/furi_hal_include targets/f7/api_symbols.csv | sha256sum | cut -d ' ' -f 1)" >> dev-full-candidate/PROVENANCE.txt
+          printf 'Native JS GPIO plugin source: applications/system/js_app/modules/js_gpio.c (E11 patched)\n' >> dev-full-candidate/PROVENANCE.txt
           printf 'Momentum base: %s\n' "$(git -C momentum-src rev-parse HEAD)" >> dev-full-candidate/PROVENANCE.txt
           printf 'Installed Momentum012 source: %s\n' "$(git -C momentum-012 rev-parse HEAD)" >> dev-full-candidate/PROVENANCE.txt
           printf 'Actions run: %s\n' "$GITHUB_RUN_ID" >> dev-full-candidate/PROVENANCE.txt
