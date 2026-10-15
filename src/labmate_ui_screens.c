@@ -383,7 +383,11 @@ void draw_gpio(Canvas* canvas, LabMateApp* app) {
     /* Compact instrument header, consistent with Frequency and Pulse screens. */
     ui_draw_header(canvas, "GPIO");
     ui_badge(canvas, 35, 1, 34, labmate_gpio_names[app->gpio_index], false);
-    ui_badge(canvas, 91, 1, 35, app->hold ? "HOLD" : "LIVE", !app->hold);
+    ui_badge(canvas, 91, 1, 35,
+             app->monitor_release_fault ? "ERR" :
+                 app->monitor_blocked ? "BUSY" :
+                     app->hold ? "HOLD" : "LIVE",
+             !app->hold && !app->monitor_blocked);
 
     /* Separate the live logic level from the transition counter. */
     canvas_set_font(canvas, FontSecondary);
