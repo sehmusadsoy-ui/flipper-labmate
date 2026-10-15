@@ -469,7 +469,7 @@ expect((ROOT / "tests/test_pwm_settings.c.inc").is_file()
 # dedicated modules. Exclusive capture ownership still belongs to the app.
 for fn in ("configure", "enable", "read", "shutdown"):
     name = f"labmate_frequency_tim2_{fn}"
-    expect(len(re.findall(rf"(?m)^(?:void|uint32_t)\s+{name}\s*\(", TIM2_CAPTURE)) == 1,
+    expect(len(re.findall(rf"(?m)^(?:void|uint32_t|bool)\s+{name}\s*\(", TIM2_CAPTURE)) == 1,
            f"TIM2 driver missing exactly one {name} implementation")
     expect(f"{name}(void);" in TIM2_CAPTURE_H,
            f"TIM2 driver header missing {name}")
