@@ -475,10 +475,19 @@ UART or I2C, or force legacy Momentum services to participate.
 Standard LabMate SDK/source + installer mock
 [CI 38800552296](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38800552296)
 **PASS** at code SHA `090a5b4f6223916912e4ec1d24d7f939c4d6f60e`.
-Matched pinned patched firmware+FAP CI is separately tracked by
-[workflow run 38800552304](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38800552304);
-do **not** call that particular firmware run PASS before it finishes
-successfully. Neither CI path flashes or installs anything.
+Matched pinned patched firmware + integrated FAP
+[CI 38800552304](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38800552304)
+also **SUCCESS** at the same exact code SHA
+`090a5b4f6223916912e4ec1d24d7f939c4d6f60e`.
+The job built actual `firmware_all fap_labmate`, ran `APPCHK`,
+and confirmed the lease/acquire, lease/release, GPIO try-add and
+timed external I2C symbols were global/defined in firmware ELF.
+CI-only DFU SHA256:
+`7c51915d81317e3be6661b46c54fe171deb71e1045f214ad6f72310766771611`.
+Matched CI-only FAP SHA256:
+`0a46cb2097a2cec4561009387bc1cab3244da68edf5ddb93dbf2ef917ad4a44b`.
+**These are experimental build files, not installed assets.** Neither
+CI path flashed, uploaded to USB or modified any Stable release.
 
 **Outstanding:** migrate all capture paths and firmware services at the
 actual resource-acquisition boundaries; coordinate existing I2C mutex;
