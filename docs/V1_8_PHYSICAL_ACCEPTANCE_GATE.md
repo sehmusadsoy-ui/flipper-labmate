@@ -844,6 +844,36 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   not write to microSD, restore/delete files, change profiles or
   promote E10 to PASS** pending the non-mutating local manifest diff.
   Preserve both old backup and current snapshot unchanged.
+- [ ] **EXITFIX E10.1 — per-file differential manifest REVIEWED,
+  still NOT a full-integrity PASS (2026-10-15).** User read-only
+  local folder comparison identified precise membership:
+  * `MISSING` from current snapshot: `log_0041.csv`
+    (159 bytes), `log_0042.csv` (159), `log_0043.csv` (75),
+    `log_0044.csv` (179), `log_0045.csv` (205),
+    `log_0046.csv` (215), `log_0047.csv` (215),
+    `log_0048.csv` (205), `log_0049.csv` (215).
+  * `MATCH` by SHA256: `log_0050.csv`, `log_0051.csv`,
+    `log_0052.csv`.
+  * `NEW`: `log_0053.csv` (205), `log_0054.csv` (205),
+    `log_0055.csv` (75), `log_0056.csv` (283),
+    `log_0057.csv` (205).
+  * `CHANGED` both 32-byte redundant profile files:
+    `profiles_a.bin`: old SHA256
+    `9a1cc3c471642a5b6270c835b4aba52198598b0649e325e4cdd82af65b2ef9e6`,
+    new SHA256
+    `aa5d55084534671dc2db8643d3bc5eb0362648485f8c8b2bf198ba6f0b9b6e57`;
+    `profiles_b.bin`: old SHA256
+    `3989f1cb14d8da28eb19a46f3f0adad3b5f70c82c179780c18dae61a70b857a2`,
+    new SHA256
+    `1a314e5336b05f101602888884fd544c850543f5b4d35bec5df4f1d9464a4f94`.
+  The monotonic CSV sequence is compatible with intentional history
+  deletion and new Logger sessions but **does not prove deletion
+  intent**. Profile difference may be legitimate generation updates,
+  but 32-byte lengths alone do **not** establish valid CRC or
+  preserved S1/S2 values. Next step: inspect both original and
+  current redundant copies locally using the actual `LBP1`
+  codec fields/CRC32 and compare slots; request confirmation of
+  deleted CSV IDs. No SD changes authorized.
 - [ ] **Other EXITFIX device regressions remain OPEN:** Profile
   SAVE/LOAD/DELETE behavior on the new FAP (without risking existing
   slots); firmware-service resource contention and safe positive
