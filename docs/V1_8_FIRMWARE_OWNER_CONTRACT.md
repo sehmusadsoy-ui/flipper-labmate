@@ -301,3 +301,25 @@ interrupt removal, GPIO reconfiguration or other-owner disruption**.
 Avoid a deliberate on-device conflict/crash test. The remaining
 E11.1 firmware integration and E11.3 physical safety approval
 remain **NOT IMPLEMENTED / NOT TESTED**.
+
+### E11.1a actual firmware primitive runtime CI (2026-10-15)
+
+[Run 38751054638](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38751054638)
+at SHA `da9e8d84206c3c0f080b3ebea01ec2afb2c1321e`
+completed **SUCCESS**. `tests/test_v18_firmware_lease_primitive.py`
+extracts the **exact C function bodies** from
+`scripts/patch_momentum_resource_lease.py` (not a second invented
+claim/release implementation), substitutes a host pthread mutex for
+Furi critical sections, compiles with GCC strict warnings and
+executes behavior tests. Actual job log:
+
+`E11.1a ACTUAL FIRMWARE LEASE C SOURCE HOST TEST PASS`
+
+Verified host scenarios include rejected incomplete mask, busy
+same-resource conflict, independent nonintersecting mask use,
+wrong/partial/stale/double release, I2C vs PC1, 1-Wire vs IRQ PA4,
+24 competing threads ×25 iterations with exactly one winner, and
+fail-closed handle generation exhaustion. **This tests C source logic
+on a host, not the STM32's interrupt primitives or other services.**
+It does not prove an app can safely use TIM1/TIM2 while native
+firmware drivers bypass the lease API. No device was changed.
