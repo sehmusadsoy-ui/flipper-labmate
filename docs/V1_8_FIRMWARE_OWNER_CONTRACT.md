@@ -493,3 +493,55 @@ CI path flashed, uploaded to USB or modified any Stable release.
 actual resource-acquisition boundaries; coordinate existing I2C mutex;
 test callback and pin rollback with real firmware conflicts; complete
 separately authorized safe on-device tests. E11.1 global contract is OPEN.
+
+## E11.1d continuation — Pulse Analyzer and Button Analyzer EXTI integration (2026-10-15)
+
+**Experimental DEV driver code only; not a global lease or physical PASS.**
+
+The four production Pulse Analyzer IRQ inputs PC0, PC1, PB2, PA4
+now request the matching firmware `FURI_HAL_LEASE_IRQ_*` mask before
+touching the GPIO or EXTI registers. The actual selected pin and mask
+are retained throughout the session. The Button Analyzer likewise
+acquires the exact PC1/EXTI1 mask before its pull-up/pin configuration.
+Both register through the nonasserting firmware
+`furi_hal_gpio_try_add_int_callback()` **before** pin
+configuration, reject an occupied callback without pin mutation,
+disable the callback while preparing the pin, guard ISR delivery
+before owner publication and clean up only the owned callback and
+pin on STOP. The Button STOP/RESUME measurement state is preserved.
+
+Old or unmatched Momentum SDKs cause these experimental capture
+paths to fail closed rather than silently using the assertion-based
+legacy GPIO callback API. Any denied lease leaves existing GPIO,
+callback, EXTI and measurement state unchanged. The claim API remains
+opt-in; a competing legacy service can still bypass it.
+
+The shared capture coordinator now has a sticky
+`capture_release_fault` flag. A failed-release path retains its
+original handle and prevents new capture starts; a generic STOP
+cannot clear the fault and incorrectly advertise safe reuse.
+
+The host harness `tests/test_v18_pulse_button_exti_integration.py`
+compiles/exercises the **actual production** start/stop C functions
+in both SDK modes. Instrumented stubs check missing SDK, denied
+lease, occupied callback, no mutation before acquisition, all four
+Pulse pins, Button RESUME, double start/stop, STOP cleanup and
+release failure. It does not execute STM32 IRQ timing, observe
+registers on a Flipper, or model an uncoordinated legacy service.
+
+The paired firmware/FAP
+[dedicated CI workflow](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/workflows/check-v18-pulse-button-lease-integration.yml)
+uses an ephemeral pinned Momentum checkout with the timed-I2C,
+resource lease and nonasserting try-add source patches. Requiring
+`firmware_all fap_labmate`, APPCHK and global ABI symbols is only
+a build/export gate. Keep exact source/FAP SHA and final CI status
+tied to the specific successful run; never treat queued or
+in-progress CI as PASS. No hardware image or Stable asset is
+modified. Original v1.8 Stable remains published unchanged.
+
+**Outstanding E11.1:** GPIO Monitor, PWM TIM1/PA7, 1-Wire PA4,
+UART, I2C cross-service coordination; migration of all applicable
+independent Momentum HAL/services (TIM1, TIM2, EXTI) to the same
+mandatory ownership agreement, firmware-wide stress/rollback tests
+and new physical acceptance. E10's historical missing CSV IDs
+remain an independent unresolved data-preservation issue.
