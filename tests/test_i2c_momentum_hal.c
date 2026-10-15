@@ -142,6 +142,7 @@ int main(void) {
     puts("E11 I2C ACTUAL ADAPTER HOST PASS: PC0/PC1 lease, BUSY, STOP, stale fault.");
     puts("NO GPIO/physical fixture tests; firmware legacy owners still bypass.");
 #else
+    (void)clear_counts; /* compiled but intentionally not run in old SDK */
     assert(!labmate_i2c_momentum_available());
     labmate_i2c_control_reset(&control);
     assert(!labmate_i2c_session_execute(&control,&ops));
