@@ -730,11 +730,27 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   Establishes real TIM2 counter control / normal resource transition
   smoke and reopen PASS, **not** calibrated input pulse counting,
   firmware-wide TIM2 lease exclusivity or abnormal forced-exit behavior.
-- [ ] **Other EXITFIX device regressions remain OPEN:** PWM/Logger
-  cleanup and coexistence; UART external peer; I2C/1-Wire negative
-  paths; Profiles and CSV preservation. Earlier UARTFIX physical
-  PASS is not automatically inherited by EXITFIX. Normal BACK
-  cleanup does not prove the abnormal stale-capture exit branch executes.
+- [x] **EXITFIX E3 — PWM Studio RUN persistence, Logger START/STOP,
+  PWM STOP, full exit/reopen: OPERATOR PHYSICAL PASS, 2026-10-15.**
+  With no external GPIO wiring, operator followed OUTPUT > PWM Studio
+  OK RUN, BACK (PWM remains active), RECORDS > Data Logger
+  FREQ PC1 LOW START ~5 s and STOP, BACK, reenter PWM Studio and
+  observe still RUN, OK STOP, full app EXIT, REOPEN and confirm STOP.
+  Exact report:
+  `EXITFIX E3: PWM RUN=yes; LOGGER START/STOP=yes; PWM PERSIST=yes; PWM STOP=yes; REOPEN=yes; ERROR=no`.
+  Confirms the selected tool transitions, permitted app-local PWM +
+  Logger coexistence and normal file START/STOP UI on the new FAP
+  SHA256 `7a76f626f34a65059d9536fa2cd52b2639f4d1038a9b5c69291fa28d5e4f63be`.
+  Test can create one additional no-signal CSV; **its content,
+  path, valid flags and checksum were NOT audited**. This does not
+  measure PWM frequency/duty independently or prove force-exit
+  cleanup while generator is *still* RUN.
+- [ ] **Other EXITFIX device regressions remain OPEN:** full app EXIT
+  while PWM still RUN (verify forced STOP on next launch), UART external
+  peer, I2C/1-Wire negative paths, Profiles/CSV integrity. Earlier
+  UARTFIX physical PASS is not automatically inherited by EXITFIX.
+  Normal BACK cleanup does not prove the abnormal stale-capture
+  exit branch executes.
 
 ## Stable release boundary
 
