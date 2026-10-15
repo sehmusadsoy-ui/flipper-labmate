@@ -11,7 +11,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-MARKER = "/* LabMate E11 native PWM lease owner: scoped to PWM HAL service. */"
+MARKER = "/* LabMate E11 native PWM lease owner: scoped to PWM HAL service."
 
 HOST = r'''
 #include "mock_hal.h"
