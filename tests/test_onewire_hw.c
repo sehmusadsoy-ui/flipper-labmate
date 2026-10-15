@@ -15,11 +15,34 @@ static uint32_t tick_now;
 static uint32_t allocs, starts, stops, frees, resets, reads, writes;
 static uint8_t sent[8], scratch[9];
 static bool present_start, present_read;
+static bool firmware_lease_available=true, firmware_release_succeeds=true;
+static bool pin_leased;
+static unsigned fw_claims, fw_releases;
+uint32_t furi_hal_resource_lease_try_acquire(uint32_t mask) {
+    assert(mask == (1U << 11));
+    fw_claims++;
+    if(!firmware_lease_available) return 0U;
+    assert(!pin_leased);
+    pin_leased=true;
+    return 777U;
+}
+bool furi_hal_resource_lease_release(uint32_t handle, uint32_t mask) {
+    assert(handle==777U && mask==(1U<<11));
+    assert(!fake_host.started); /* host STOP before pin-lease release */
+    fw_releases++;
+    if(!firmware_release_succeeds) return false;
+    pin_leased=false;
+    return true;
+}
+
 
 uint32_t furi_get_tick(void) { return tick_now; }
 uint32_t furi_kernel_get_tick_frequency(void) { return 1000U; }
 OneWireHost* onewire_host_alloc(const GpioPin* pin) {
     assert(pin == &gpio_ext_pa4);
+#ifndef TEST_NO_LEASE
+    assert(pin_leased && "OneWireHost must not allocate before firmware lease");
+#endif
     allocs++;
     return &fake_host;
 }
@@ -52,7 +75,10 @@ void onewire_host_read_bytes(OneWireHost* h, uint8_t* data, uint16_t count) {
 }
 
 static void fixture(void) {
-    assert(!fake_host.started);
+    assert(!fake_host.started && !pin_leased);
+    firmware_lease_available=true;
+    firmware_release_succeeds=true;
+    fw_claims=fw_releases=0U;
     tick_now=0U;
     allocs=starts=stops=frees=resets=reads=writes=0U;
     present_start=present_read=true;
@@ -68,6 +94,24 @@ int main(void) {
     LabMateCommBusy clear={0};
     LabMateOneWireHw s;
     labmate_onewire_hw_init(&s);
+
+#ifdef TEST_NO_LEASE
+    fixture();
+    assert(!labmate_onewire_hw_start(&s,&owner,clear));
+    assert(s.status==LabMateOneWireHwBusy && owner==LabMateCommNone);
+    assert(allocs==0U && starts==0U && stops==0U && frees==0U);
+    assert(fw_claims==0U && fw_releases==0U);
+    labmate_onewire_hw_stop(&s);
+    assert(allocs==0U && !pin_leased);
+    puts("1-Wire old-SDK FAIL-CLOSED PASS: zero host/PA4 writes.");
+    return 0;
+#else
+    fixture();
+    firmware_lease_available=false;
+    assert(!labmate_onewire_hw_start(&s,&owner,clear));
+    assert(s.status==LabMateOneWireHwBusy && owner==LabMateCommNone);
+    assert(fw_claims==1U && fw_releases==0U);
+    assert(allocs==0U && starts==0U && !pin_leased);
 
     fixture();
     present_start=false;
@@ -145,6 +189,22 @@ int main(void) {
     assert(s.status==LabMateOneWireHwMeasured && s.has_temperature);
     assert(owner==LabMateCommNone && stops==1 && frees==1);
 
+    fixture();
+    labmate_onewire_hw_init(&s);
+    assert(labmate_onewire_hw_start(&s,&owner,clear));
+    firmware_release_succeeds=false;
+    labmate_onewire_hw_stop(&s);
+    assert(s.firmware_release_fault && s.firmware_lease_handle==777U);
+    assert(s.status==LabMateOneWireHwBusy && !s.has_temperature);
+    assert(owner==LabMateCommOneWirePa4 && s.owner==&owner);
+    assert(!fake_host.started && fw_releases==1U && pin_leased);
+    unsigned alloc_before=allocs;
+    assert(!labmate_onewire_hw_start(&s,&owner,clear));
+    labmate_onewire_hw_stop(&s);
+    assert(allocs==alloc_before && fw_releases==1U);
+
     puts("Direct PA4 OneWireHost driver native START/STOP/CRC/85C/BUSY/wrap PASS (FAKE HAL)");
+    puts("PA4 firmware claim rejection, owner retention, failed-release safety PASS.");
     return 0;
+#endif
 }
