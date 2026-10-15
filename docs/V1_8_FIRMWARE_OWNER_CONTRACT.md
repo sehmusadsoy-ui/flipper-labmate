@@ -414,8 +414,20 @@ clock/register behavior.
 `.github/workflows/check-v18-tim2-lease-integration.yml`
 tests that real C driver and builds the exact pinned patched Momentum
 firmware and one integrated LabMate FAP in CI, checking exported
-symbols. See that run for final CI status; **no USB/flash or Stable
-release is authorized**.
+symbols. [E11.1d run 38796545033](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38796545033)
+**SUCCESS** at exact tested source `b006fa9c75c18612a10a30edb84cee6bab00cb7d`:
+real production C host failure-path tests PASS; matching patched
+`firmware_all fap_labmate`, exported-symbol check and FAP `APPCHK`
+PASS. Experimental DFU SHA256
+`7c51915d81317e3be6661b46c54fe171deb71e1045f214ad6f72310766771611`;
+experimental integrated FAP SHA256
+`a4b7ff8f44120a09c625abd624d23e3121c59edaaeea5c2cacd3aeffcd3bc174`.
+Original source-boundary script was updated for boolean configure;
+normal LabMate source CI
+[run 38796737125](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38796737125)
+**PASS** on `0a4aa3fbe143335307e652a69fdc6cb61b897ce0`.
+**Neither binary is deployment-approved**; no USB/flash or Stable
+release is authorized.
 
 **Remaining E11.1d:** actual EXTI callback/pin registration and failure
 rollback, GPIO Monitor, PWM TIM1/PA7, 1-Wire PA4, UART and I2C owners;
