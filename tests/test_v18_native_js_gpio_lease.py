@@ -116,6 +116,12 @@ def main() -> None:
     assert "js_gpio_e11_claim" in helper
     assert "calloc(1U, sizeof(JsGpioPinInst))" in src, "manager bookkeeping must be zeroed"
     assert "furi_hal_gpio_try_add_int_callback" in src
+    # Native JS init must first refuse a foreign EXTI callback, before
+    # reconfiguring the SYSCFG EXTI line or any GPIO register.
+    init=src[src.index("static void js_gpio_init("):src.index("static void js_gpio_write(")]
+    assert init.index("furi_hal_gpio_try_add_int_callback(") < init.index("furi_hal_gpio_init(manager_data->pin, mode")
+    assert "GPIO EXTI BUSY" in init
+    assert "furi_hal_gpio_remove_int_callback(manager_data->pin);" in init
     assert "JS_ERROR_AND_RETURN(mjs, MJS_BAD_ARGS_ERROR, \"GPIO pin BUSY\")" in src
     assert "if(manager_data->configured && (!mask || manager_data->lease_handle))" in src
     assert "if(manager_data->pwm_owned)" in src
