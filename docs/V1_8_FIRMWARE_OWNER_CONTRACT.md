@@ -1020,3 +1020,70 @@ callback paths similarly do not recognize these leases.
 mandatory interception/cooperative-service strategy and
 actual physical conflict/restore acceptance. No electrical
 test, deployment, new Stable, USB install or firmware flash.
+
+## E11.1i — Native Momentum PWM service now joins lease contract (2026-10-16)
+
+**Original v1.6 promise:** peripheral safety must coordinate outside
+LabMate too. Merely adding an opt-in firmware lease table to LabMate
+did not constrain native Momentum services. This stage migrates the
+actual upstream native `furi_hal_pwm.c` paths, not another LabMate FAP.
+
+The exact pinned 2026-08-18 Momentum source
+`d3f89dfe2ef6b01839201598e9be1590cba80322`
+is modified *only in an ephemeral CI checkout* by
+`scripts/patch_momentum_native_pwm_lease.py`, after the existing
+bounded I2C3, E11 firmware lease and GPIO try-add patches. The
+source-patch preflight checks pinned commit, an exact allowlist of
+previous changes and the supported mask definitions. It has a
+read-only mode and no install or USB effects.
+
+Actual native `furi_hal_pwm_start` now requests a shared firmware
+lease **before** changing GPIO or enabling timer clocks:
+`FURI_HAL_LEASE_PWM_PA7` protects TIM1+PA7 and
+`FURI_HAL_LEASE_MONITOR_PA4` protects the PA4 pin on the native
+LPTIM2 output. The PA4 mask intentionally has **no LPTIM2 timer bit**
+in E11 v1 experimental schema; it is **pin-only arbitration**.
+Denied leases or already enabled native buses cause a no-register-write
+return (the old `void` start API cannot signal BUSY). Native
+`set_params`/STOP refuse operations without the relevant
+service-held lease. STOP cleans GPIO/bus **while still holding its
+lease**, then releases the exact firmware handle. Failure to release
+is sticky: retains the opaque handle and disables further
+starts/set-params/stop cleanup rather than falsely surrendering
+ownership. `is_running` reports this native service's own
+successfully claimed active timer, not merely an unrelated TIM1
+bus clock that may belong to another tool.
+
+**Evidence:** dedicated
+[run 38816202945](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38816202945)
+**SUCCESS** at exactly LabMate source SHA
+`382827d62618e7b07f392c2c88888b3098327fef`.
+`tests/test_v18_native_pwm_lease.py` compiled and executed the
+**actual patched Momentum `furi_hal_pwm.c`** against fake HAL:
+native PA7 denied by Monitor, successful TIM1 claim excludes
+LabMate/Monitor and allows only its own set_params/STOP, unrelated
+legacy-enabled timer bus refused, PA4 denied by OneWire,
+successful native LPTIM2/PA4 excludes OneWire/Monitor, and
+failed release remains sticky without a second hardware write.
+It also built `firmware_all fap_labmate` with `APPCHK` and
+exported APIs. This **does not** prove physical output or
+firmware-global arbitration.
+
+Exact **CI-only paired firmware.dfu SHA256**:
+`0b66de611dbbdaa5e360deeaedab50c23314fd15fef878f4d14b6b72847031d0`.
+Exact **CI-only paired labmate.fap SHA256**:
+`d5841525da19f906a4663bd223c7630446100e9be42782842dbf6c52edd51cdc`.
+These two refer to this specific successful run and are
+**not an install approval**. The FAP bytes may match another
+non-PWM CI build, but its firmware image will NOT: never
+use an old firmware fingerprint merely because FAP hashes match.
+
+**Remaining limitations:** other direct Momentum
+`furi_hal_bus_enable(TIM1/TIM2)` callers and GPIO/EXTI services
+still bypass opt-in lease claims; the native PWM public API
+has no per-external-client owner parameter, so this patch
+does not provide full cross-caller isolation when native
+clients themselves race. The already-installed firmware
+does not contain this native-PWM migration. Full-system
+device stress and safe rollback acceptance are still OPEN.
+The archived hardware-dependent tests remain DEFERRED, not PASS.
