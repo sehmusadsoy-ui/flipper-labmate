@@ -636,10 +636,12 @@ expect("void threshold_update_from_measurement(LabMateApp* app)" in ALERT_BRIDGE
 # reconfigure that pin (including on entry with a stale PA7 selection).
 expect(
     "const bool pa7_reserved =" in MONITOR_GPIO and
-    MONITOR_GPIO.count("app->generator_running || app->generator_blocked ||") == 2 and
-    MONITOR_GPIO.count("app->generator_release_fault;") == 2 and
-    "labmate_monitor_entry_pin(app->gpio_index, pa7_reserved)" in MONITOR_GPIO,
-    "GPIO Monitor entry must respect RUN, denied lease and failed PA7 release",
+    "app->generator_running || app->generator_blocked ||" in MONITOR_GPIO and
+    "app->generator_release_fault;" in MONITOR_GPIO and
+    "labmate_monitor_entry_pin(app->gpio_index, pa7_reserved)" in MONITOR_GPIO and
+    MONITOR_GPIO.index("furi_hal_resource_lease_try_acquire(mask)") <
+    MONITOR_GPIO.index("furi_hal_gpio_init_simple(pin, GpioModeInput)"),
+    "Monitor pin-only lease required before GPIO configuration and PA7 exclusion",
 )
 expect(
     "labmate_monitor_next_pin(" in MAIN and
@@ -648,8 +650,11 @@ expect(
     "GPIO Monitor navigation must skip PA7 on RUN, BUSY or release fault",
 )
 expect(
-    "labmate_monitor_pin_allowed(index, pa7_reserved)" in MONITOR_GPIO,
-    "GPIO release must not reconfigure a RUN/BUSY/stale PA7 PWM output",
+    "index != labmate_monitor_lease_index" in MONITOR_GPIO and
+    "if(labmate_monitor_lease_handle == 0U) return;" in MONITOR_GPIO and
+    "furi_hal_resource_lease_release(" in MONITOR_GPIO and
+    "app->monitor_release_fault = true;" in MONITOR_GPIO,
+    "Monitor RELEASE must only clear its owned GPIO and retain failed leases",
 )
 expect(
     "void labmate_monitor_gpio_release(LabMateApp* app, uint8_t index)" in MONITOR_GPIO,
@@ -659,7 +664,9 @@ expect("furi_hal_gpio_read(" not in MAIN and
        "furi_hal_gpio_init_simple(" not in MAIN and
        "labmate_monitor_gpio_activate(app)" in MAIN and
        "labmate_monitor_gpio_release(app" in MAIN and
-       "labmate_monitor_gpio_read(app->gpio_index)" in MAIN,
+       "labmate_monitor_gpio_read(" in MAIN and
+       "bool current = false;" in MEASUREMENTS and
+       "labmate_monitor_gpio_read(app, app->gpio_index, &current)" in MEASUREMENTS,
        "GPIO polling/release operations must be delegated from app")
 for name in ("activate", "release", "read"):
     expect(f"labmate_monitor_gpio_{name}(" in MONITOR_GPIO and
