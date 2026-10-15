@@ -11,6 +11,8 @@
 typedef struct {
     void* stop_context;
     bool (*stop_requested)(void*);
+    uint32_t lease_handle; /* shared PC0+PC1+I2C3 claim during HAL ownership */
+    bool release_fault; /* sticky: failed firmware release is never ignored */
 } LabMateI2cMomentum;
 
 bool labmate_i2c_momentum_available(void);
