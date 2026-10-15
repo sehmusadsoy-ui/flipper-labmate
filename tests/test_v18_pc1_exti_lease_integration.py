@@ -53,7 +53,7 @@ static GpioPin pc1 = {1};
 const GpioPin* labmate_gpio_pins[GPIO_COUNT] = {NULL, &pc1};
 static unsigned gpio_mutations, exti_mutations, irq_mutations;
 static unsigned try_add_attempts, lease_attempts, lease_releases;
-static bool lease_available, callback_available, release_succeeds = true;
+bool lease_available, callback_available, release_succeeds = true;
 static void frequency_gpio_callback(void* ctx) {(void)ctx;}
 static bool labmate_capture_can_start(LabMateApp* app, LabMateCaptureOwner expected) {
     return expected == LabMateCaptureFrequencyLow &&
