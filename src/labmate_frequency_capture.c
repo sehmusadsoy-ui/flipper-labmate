@@ -18,6 +18,7 @@
 static uint32_t labmate_frequency_pc1_lease;
 #endif
 
+#if defined(FURI_HAL_RESOURCE_LEASE_API_V1) && defined(FURI_HAL_GPIO_HAS_TRY_ADD_INT_CALLBACK)
 static void frequency_gpio_callback(void* context) {
     LabMateApp* app = context;
     /* TRY-ADD can briefly enable the shared EXTI line before start publishes
@@ -79,6 +80,7 @@ static void frequency_gpio_callback(void* context) {
     app->frequency_irq_last_tick = furi_get_tick();
     app->frequency_irq_edges++;
 }
+#endif /* matched firmware EXTI/lease ABI */
 
 void labmate_frequency_high_stop(LabMateApp* app) {
     if(!app->frequency_hw_active) {
