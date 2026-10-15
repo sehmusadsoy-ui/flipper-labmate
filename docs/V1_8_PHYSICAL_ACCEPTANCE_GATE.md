@@ -800,14 +800,28 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   and app reopen smoke **without a connected peer**. No actual RX,
   TX, ESP32 READY, byte count/drop or error-rate metrics were
   reported; those remain **NOT TESTED on EXITFIX**.
-- [ ] **Other EXITFIX device regressions remain OPEN:** actual ESP32-S2
-  external UART RX/TX, meaningful R/D/E; Profiles/CSV integrity;
-  firmware-service resource contention and hardware-dependent
-  positive I2C/DS18B20 measurements. Earlier UARTFIX physical
-  PASS does not automatically transfer to EXITFIX; E1–E7 only
-  test their explicitly recorded workflows. Ordinary BACK
-  cleanup does not demonstrate exceptional stale-capture exit
-  branch dynamically executed.
+- [x] **EXITFIX E8 — external ESP32-S2 UART real RX/TX at
+  115200, operator physical PASS, 2026-10-15.** On the exact
+  installed EXITFIX FAP SHA256
+  `7a76f626f34a65059d9536fa2cd52b2639f4d1038a9b5c69291fa28d5e4f63be`,
+  operator used the previously known ESP32-S2 UART peer, checked
+  ESP32_READY, sent AT, observed working receive/response and
+  STOP/BACK, and reported counters:
+  `EXITFIX E8: READY=yes; TX=yes; RX=yes; R=20699; D=0; E=0; STOP/BACK=yes`.
+  This provides meaningful external peer traffic and zero reported
+  drop/error **over the observed test**, not a worst-case queue DROP
+  proof, independent baud timing calibration, unrestricted sustained
+  reliability or simultaneous third-party USART resource contention.
+  No device peer firmware change was reported or requested.
+- [ ] **Other EXITFIX device regressions remain OPEN:** Profiles
+  save/load stability and CSV/history preservation/integrity on the
+  new FAP; firmware-service resource contention and safe positive
+  I2C/DS18B20 measurement fixtures; hardware-calibrated PWM/TIM2
+  measurements; full restore rehearsal and exceptional stale-capture
+  exit path. Earlier UARTFIX physical PASS does not automatically
+  transfer to EXITFIX; E1–E8 only cover their explicitly recorded
+  workflows. Ordinary BACK cleanup does not demonstrate exceptional
+  stale-capture exit branch dynamically executed.
 
 ## Stable release boundary
 
