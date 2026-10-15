@@ -857,3 +857,62 @@ rather than attempting unsafe GPIO writes. Never install this
 FAP without its exact separately-approved matching firmware.
 Original Stable, `main`, historical tags and SD backup data
 are untouched.
+
+### E11.1f normal source/stock SDK checkpoint
+
+[Normal LabMate source + Windows installer mock CI
+38808259776](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38808259776):
+**SUCCESS** at exact code/static-guard SHA
+`7de7d5412b9dbe50f81730f7e76c3473265621ee`.
+This includes the eight-pin Monitor implementation, safe sample
+handling and strengthened static boundaries, and confirms the
+normal stock SDK source compile remains valid with the new
+conditional fail-closed GPIO path. This was not a real hardware
+GPIO capture test.
+
+## E11.1g — OneWire PA4 firmware lease before OneWireHost (DEV)
+
+The actual `src/labmate_onewire_hw.c` now keeps its original
+local LabMate communication-owner exclusion and additionally
+tries an exact firmware
+`FURI_HAL_LEASE_ONEWIRE_PA4` **before**
+`onewire_host_alloc(&gpio_ext_pa4)` or GPIO operations.
+An unpatched SDK, a busy firmware lease or a conflicting
+Pulse/Monitor PA4 cooperative owner refuses START without
+host allocations, pin writes or electrical resets. Successful
+operation holds the lease through the full 800-ms conversion
+wait, result polling and host STOP/FREE. Only then is the
+firmware handle released, followed by the local comm owner.
+If release fails, the opaque handle and local communication
+owner remain held, `firmware_release_fault` becomes sticky,
+and a repeated START/STOP cannot silently reconfigure PA4.
+The status is BUSY with no valid retained temperature.
+
+The existing **real production source** native harness
+`tests/test_onewire_hw.c` now includes firmware-claim mocks,
+denied-before-allocation checks, STOP before release and
+failed-release blocking. The special TEST_NO_LEASE mode checks
+old-SDK no-device-side-effects. Original 1-Wire CRC,
+DS18B20 decoding, +85°C suppression and rollover tests remain
+intact. This is a **fake OneWireHost**; it is **NOT**
+evidence of a physically connected DS18B20 or a positive
+temperature reading. External 3.3V VDD and DQ pull-up
+requirements are unchanged.
+
+[Dedicated OneWire PA4 source + host + matched firmware/FAP
+workflow](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/workflows/check-v18-onewire-pa4-lease.yml)
+runs both firmware-API and missing-API native harness modes,
+compiles the pinned patched Momentum firmware and one FAP,
+and verifies exported ELF ABI / APPCHK. Exact passing
+run/SHAs should be recorded only on success. Standard
+source/Windows mock CI
+[38808883732](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38808883732)
+**SUCCESS** on exact code SHA
+`6a9aff955c6186b834630ff21e7c6b91cb9a3fd3`.
+
+**Firmware-global limitation:** independent Momentum 1-Wire,
+GPIO and EXTI services still bypass this opt-in table.
+E11 remains OPEN until native service migration, mandatory
+arbitration and physical conflict/device acceptance. E10
+missing historical CSV IDs remain OPEN. No device, USB,
+Stable or `main` changes.
