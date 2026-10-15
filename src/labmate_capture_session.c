@@ -134,7 +134,10 @@ void labmate_gpio_change(
      * selectable while Signal Generator keeps its PWM output active.
      */
     app->gpio_index =
-        labmate_monitor_next_pin(app->gpio_index, direction, app->generator_running);
+        labmate_monitor_next_pin(
+            app->gpio_index, direction,
+            app->generator_running || app->generator_blocked ||
+                app->generator_release_fault);
     labmate_gpio_activate(app);
 }
 
