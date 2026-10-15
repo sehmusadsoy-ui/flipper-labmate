@@ -21,11 +21,26 @@ void labmate_onewire_hw_init(LabMateOneWireHw* s) {
 }
 
 static void labmate_onewire_hw_release(LabMateOneWireHw* s) {
+    /* A failed firmware release must never be treated as a free pin. */
+    if(s->firmware_release_fault) return;
     if(s->host) {
         onewire_host_stop(s->host);
         onewire_host_free(s->host);
         s->host = NULL;
     }
+#if defined(FURI_HAL_RESOURCE_LEASE_API_V1)
+    if(s->firmware_lease_handle != 0U) {
+        if(!furi_hal_resource_lease_release(
+               s->firmware_lease_handle, FURI_HAL_LEASE_ONEWIRE_PA4)) {
+            s->firmware_release_fault = true;
+            s->has_temperature = false;
+            s->status = LabMateOneWireHwBusy;
+            /* Retain BOTH firmware lease handle and local comm owner. */
+            return;
+        }
+        s->firmware_lease_handle = 0U;
+    }
+#endif
     if(s->owner) {
         (void)labmate_comm_local_release(s->owner, LabMateCommOneWirePa4);
         s->owner = NULL;
@@ -34,12 +49,35 @@ static void labmate_onewire_hw_release(LabMateOneWireHw* s) {
 
 bool labmate_onewire_hw_start(
     LabMateOneWireHw* s, LabMateCommOwner* owner, LabMateCommBusy busy) {
-    if(!s || !owner || s->host || s->owner) return false;
+    if(!s || !owner) return false;
+    if(s->firmware_release_fault || s->firmware_lease_handle != 0U ||
+       s->host || s->owner) {
+        s->status = LabMateOneWireHwBusy;
+        return false;
+    }
     if(!labmate_comm_local_claim(owner, LabMateCommOneWirePa4, busy)) {
         s->status = LabMateOneWireHwBusy;
         return false;
     }
     s->owner = owner;
+#if defined(FURI_HAL_RESOURCE_LEASE_API_V1)
+    /* Claim the PA4 pin before host ALLOC/START can configure the GPIO.
+     * Pulse IRQ/Monitor PA4 claim the same underlying bit and conflict.
+     */
+    const uint32_t lease =
+        furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_ONEWIRE_PA4);
+    if(lease == 0U) {
+        s->status = LabMateOneWireHwBusy;
+        labmate_onewire_hw_release(s); /* local owner only, no host writes */
+        return false;
+    }
+    s->firmware_lease_handle = lease;
+#else
+    /* Never silently enable OneWireHost on an older, unmatched SDK. */
+    s->status = LabMateOneWireHwBusy;
+    labmate_onewire_hw_release(s);
+    return false;
+#endif
     s->host = onewire_host_alloc(&gpio_ext_pa4);
     if(!s->host) {
         s->status = LabMateOneWireHwBusy;
