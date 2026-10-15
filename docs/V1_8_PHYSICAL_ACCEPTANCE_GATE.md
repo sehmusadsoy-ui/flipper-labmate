@@ -903,6 +903,29 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
   to distinguish a missing file in the received snapshot from one
   currently absent on microSD. E10 remains OPEN; no restore, delete,
   profile save, or Stable approval authorized.
+- [x] **EXITFIX E10.3 — direct, read-only current Flipper SD list:
+  DEVICE MEMBERSHIP CONFIRMED, 2026-10-15 (not E10 full PASS).**
+  Operator ran the pinned Momentum `scripts/storage.py` over USB
+  COM7 with `list "/ext/apps_data/labmate"`. The command returned
+  successfully with exactly ten directly listed files, consistent
+  with E10's independently received current-device snapshot:
+  `log_0050.csv` 346b, `log_0051.csv` 333b,
+  `log_0052.csv` 75b, `log_0053.csv` 205b,
+  `log_0054.csv` 205b, `log_0055.csv` 75b,
+  `log_0056.csv` 283b, `log_0057.csv` 205b,
+  `profiles_a.bin` 32b, `profiles_b.bin` 32b.
+  Thus `log_0041.csv` to `log_0049.csv` are **currently absent
+  on microSD**, not just omitted by the latest PC receive operation.
+  Those original files are still preserved in the 2026-10-14 backup.
+  The operator does not recall deleting them. This is an
+  **unresolved historical deletion/change**, NOT a proven EXITFIX
+  regression nor confirmed legitimate deletion. The source
+  `src/labmate_history.c` uses fixed single-file ID deletion and
+  `src/labmate_input_history.c` queues deletion only after explicit
+  DEL + confirmation OK, but the source design alone cannot explain
+  past device history. E10 full preservation gate remains OPEN.
+  Avoid altering microSD or restoring these files without a
+  separately documented plan and user approval.
 - [ ] **Other EXITFIX device regressions remain OPEN:** Profile
   SAVE/LOAD/DELETE behavior on the new FAP (without risking existing
   slots); firmware-service resource contention and safe positive
