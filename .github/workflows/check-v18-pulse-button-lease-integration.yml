@@ -1,0 +1,93 @@
+name: v1.8 E11.1d Pulse Button EXTI lease gate (NO DEVICE)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - "src/labmate_pulse_capture.c"
+      - "src/labmate_button_capture.c"
+      - "src/labmate_capture_core.c"
+      - "src/labmate_capture_session.c"
+      - "src/labmate_internal.h"
+      - "tests/test_v18_pulse_button_exti_integration.py"
+      - ".github/workflows/check-v18-pulse-button-lease-integration.yml"
+      - "scripts/patch_momentum_resource_lease.py"
+      - "scripts/patch_momentum_gpio_tryadd.py"
+      - "scripts/patch_momentum_i2c_timeout.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pulse-button:
+    name: Actual Pulse/Button C failure paths and matched firmware FAP
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Checkout development LabMate
+        uses: actions/checkout@v4
+        with:
+          path: labmate
+          persist-credentials: false
+
+      - name: Execute real production Pulse Button C host denial harness
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 labmate/tests/test_v18_pulse_button_exti_integration.py
+          python3 labmate/tests/test_v18_pc1_exti_lease_integration.py
+          python3 labmate/tests/test_v18_tim2_lease_integration.py
+          echo "HOST ONLY: no real STM32 IRQ or competing firmware service validation."
+
+      - name: Checkout pinned Momentum firmware
+        uses: actions/checkout@v4
+        with:
+          repository: Next-Flip/Momentum-Firmware
+          ref: d3f89dfe2ef6b01839201598e9be1590cba80322
+          path: momentum-src
+          persist-credentials: false
+
+      - name: Apply audited experimental firmware patches to CI only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 labmate/scripts/patch_momentum_i2c_timeout.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_resource_lease.py momentum-src --allow-timed-i2c --apply
+          python3 labmate/scripts/patch_momentum_gpio_tryadd.py momentum-src --allow-prepatched --apply
+          git -C momentum-src diff --check
+
+      - name: Stage the single integrated LabMate FAP
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p momentum-src/applications_user/labmate/src
+          cp labmate/application.fam labmate/labmate_10px.png momentum-src/applications_user/labmate/
+          cp labmate/src/*.c labmate/src/*.h momentum-src/applications_user/labmate/src/
+
+      - name: Full Momentum and production FAP compilation with API exports
+        shell: bash
+        working-directory: momentum-src
+        timeout-minutes: 40
+        env:
+          FBT_GIT_SUBMODULE_SHALLOW: "1"
+        run: |
+          set -euo pipefail
+          ./fbt firmware_all fap_labmate
+          test -s build/f7-firmware-C/firmware.dfu
+          test -s build/f7-firmware-C/.extapps/labmate.fap
+          readelf -Ws build/f7-firmware-C/firmware.elf | awk '
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_resource_lease_try_acquire" {claim=1}
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_resource_lease_release" {release=1}
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_gpio_try_add_int_callback" {gpio=1}
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_i2c_external_acquire_timeout" {i2c=1}
+            END {exit !(claim && release && gpio && i2c)}
+          '
+          sha256sum build/f7-firmware-C/firmware.dfu build/f7-firmware-C/.extapps/labmate.fap
+          echo "E11.1d PULSE BUTTON MATCHED FIRMWARE + FAP PASS (CI ONLY)."
+          echo "NO STABLE RELEASE, NO FIRMWARE FLASH, NO USB INSTALL."
+          echo "OTHER MOMENTUM OWNERS MAY STILL BYPASS THE LEASE."
