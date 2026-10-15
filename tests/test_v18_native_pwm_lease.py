@@ -144,6 +144,23 @@ int main(void){
     REQUIRE(!furi_hal_pwm_is_running(FuriHalPwmOutputIdLptim2PA4));
     REQUIRE(!furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_ONEWIRE_PA4));
     REQUIRE(lease_claims>0U && lease_releases>0U);
+
+    /* A legacy service may have disabled TIM1 without our consent.
+     * STOP must not assert inside furi_hal_bus_disable or mutate GPIO:
+     * instead retain the lease, disable future native PWM operations.
+     */
+    fail_release=false;
+    furi_hal_pwm_start(FuriHalPwmOutputIdTim1PA7,1000U,50U);
+    REQUIRE(tim1_on);
+    tim1_on=false; /* simulated noncooperating firmware bus takeover */
+    pins=gpio_changes;
+    writes=mock_ll_writes;
+    furi_hal_pwm_stop(FuriHalPwmOutputIdTim1PA7);
+    REQUIRE(gpio_changes==pins && mock_ll_writes==writes);
+    REQUIRE(used & FURI_HAL_LEASE_PWM_PA7);
+    furi_hal_pwm_start(FuriHalPwmOutputIdTim1PA7,1000U,50U);
+    furi_hal_pwm_stop(FuriHalPwmOutputIdTim1PA7);
+    REQUIRE(gpio_changes==pins && !furi_hal_pwm_is_running(FuriHalPwmOutputIdTim1PA7));
     puts("E11 NATIVE PWM REAL MOMENTUM C HOST PASS: TIM1/PA7 + LPTIM2/PA4.");
     puts("Source compiled against fake HAL; NOT physical device or global service arbitration.");
     return 0;
