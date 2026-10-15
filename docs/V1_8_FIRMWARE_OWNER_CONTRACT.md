@@ -690,3 +690,38 @@ supported lease contract.
 No changes are authorized to the operator's hardware,
 historical CSV files, original v1.8 source tag, Stable
 release assets or `main`; PR #13 remains Draft.
+
+### E11.1e initial PWM CI PASS and Monitor PA7 local hardening
+
+[PWM firmware+FAP run 38806523352](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38806523352)
+completed **SUCCESS** at exact source
+`dba797760bae38e2405baf21c163fb404e44ca79`.
+Its strict host test compiles the **actual** TIM1/PA7 generator
+C implementation in both old-SDK and lease-enabled modes,
+confirming no PWM HAL calls on denied/missing lease; START,
+live frequency/duty retuning, idempotent STOP, correct release
+ordering and failed-release restart refusal. Actual pinned patched
+Momentum `firmware_all fap_labmate`, `APPCHK` and four
+required firmware ELF function exports passed. CI-only DFU
+SHA256 `7c51915d81317e3be6661b46c54fe171deb71e1045f214ad6f72310766771611`.
+CI-only matching integrated LabMate FAP SHA256
+`baa913a4c9ce59930caed02095d7a87b094e4e693f1e9ac018231b16bf2a7d34`.
+**Not installed or release-approved.**
+
+A follow-on, still *application-local* guard prevents GPIO Monitor
+from choosing or reconfiguring PA7 when PWM is actively running,
+a firmware lease claim was denied (`generator_blocked`),
+or a PWM release failed (`generator_release_fault`). This also
+protects navigation and monitor release paths from clearing
+a GPIO that may belong to an active/stale PWM owner.
+`tests/test_v18_monitor_pa7_protection.py` instruments and
+executes the **actual** Monitor C file for these modes.
+[Dedicated combined run 38806928654](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38806928654)
+and the normal LabMate SDK/source CI must be checked for their
+independent final conclusions and exact SHAs.
+
+**Still not protected:** arbitrary firmware pin modes for all
+other GPIO Monitor pins; a foreign legacy service that never uses
+the E11 lease API; timer/interrupt owner recovery across crashes.
+Preventing PA7 reconfiguration after an observed PWM denial
+is useful local safety, **not** a firmware-wide GPIO lease.
