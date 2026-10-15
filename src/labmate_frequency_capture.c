@@ -88,6 +88,10 @@ void labmate_frequency_high_stop(LabMateApp* app) {
     }
 
     labmate_frequency_tim2_shutdown();
+    if(labmate_frequency_tim2_lease_pending()) {
+        app->capture_release_fault = true;
+        app->capture_blocked = true;
+    }
 
     app->frequency_hw_active = false;
     app->frequency_hw_gate_started = false;
