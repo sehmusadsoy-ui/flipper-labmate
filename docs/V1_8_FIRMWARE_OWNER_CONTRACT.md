@@ -1087,3 +1087,20 @@ clients themselves race. The already-installed firmware
 does not contain this native-PWM migration. Full-system
 device stress and safe rollback acceptance are still OPEN.
 The archived hardware-dependent tests remain DEFERRED, not PASS.
+
+### Native PWM STOP: unexpectedly disabled timer bus (follow-up hardening)
+
+A follow-up source patch guards both native PWM STOP paths
+against a TIM1/LPTIM2 clock already disabled by a *noncooperating*
+service. The native HAL bus-disable API normally asserts on an
+already-disabled peripheral; doing that inside STOP after an
+unrelated takeover could crash the firmware. The updated patch
+instead marks the native service fault-sticky, leaves its exact
+opaque lease held and returns before GPIO writes or HAL bus
+disable. Host regression simulates a legacy direct TIM1 bus
+disable and checks zero STOP GPIO/timer writes, retained
+firmware owner and no restart. This is a conservative
+crash-avoidance contract, **not recovery of a hijacked resource**,
+nor a guarantee against a concurrent bypassing-service race.
+The preceding 38816202945 PASS belongs to the earlier native
+PWM code; newer test/build results must have their own run SHA.
