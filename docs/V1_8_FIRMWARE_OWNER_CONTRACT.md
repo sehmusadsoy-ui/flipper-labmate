@@ -213,3 +213,66 @@ The actual CI job logs contain:
 
 This is a *replacement* host-model evidence snapshot, not a new
 firmware/FAP artifact or an on-device result.
+
+## E11.1a–E11.1b firmware build and full caller inventory (2026-10-15)
+
+### E11.1a: experimental firmware-resident primitive — COMPILE/ABI PASS ONLY
+
+The exact pinned Momentum checkout received an experimental,
+**dormant** firmware-resident claim/release API through
+`scripts/patch_momentum_resource_lease.py` in a **temporary CI**
+workspace. It uses short Furi critical sections, an atomic mask,
+non-reused 32-bit handles, fixed composite peripheral+GPIO masks,
+wrong/stale release refusal, and returns BUSY (handle 0) without
+mutating peripheral registers. It has **no LabMate callers and does
+not intercept existing Momentum HAL owners yet**.
+
+The initial CI preflight exposed a real script bug: parsing
+`git status --porcelain` with `.strip()` removed the leading
+status column and mistakenly truncated source paths; preflight
+correctly refused the patch. Commit
+`3172db615cc13fb57a31e142c988eeaf8d189f6b` fixed this by
+preserving the exact two-column porcelain format. The subsequently
+observed [run 38749893972](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38749893972)
+completed SUCCESS, as did prior run
+[38749785393](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38749785393).
+The exact workflow checks the original timed-I2C patch combined
+with the dormant resource-lease API, builds full firmware and the
+single integrated LabMate FAP, sees genuine `APPCHK`, and confirms
+both lease functions and timed-I2C export in `firmware.elf`.
+
+**This is not deployable as a FAP-only update.** Changing firmware
+exports/ABI requires a different firmware image from the installed
+one, a new full updater/rollback gate, all drivers integrated,
+operator approval and device retests. No such installation is
+approved or performed; the existing EXITFIX physical passes refer
+to the old matched firmware/FAP.
+
+### E11.1b: pinned original HAL owner inventory — SOURCE CI PASS
+
+[Run 38750419882](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38750419882)
+verified the exact known caller files using
+`scripts/check_v18_owner_inventory.py`. These file counts include
+HAL *definitions* where applicable and **are not counts of active
+simultaneous owners**.
+
+| Firmware symbol | Verified *.c/*.cpp source paths | Representative users / risk |
+| --- | ---: | --- |
+| `FuriHalBusTIM1` | 9 | PWM, iButton, NFC timer, RFID, infrared, speaker, signal reader, Sub-GHz external driver |
+| `FuriHalBusTIM2` | 6 | pulse reader, digital sequence, RFID, infrared, Sub-GHz |
+| `furi_hal_gpio_add_int_callback` | 9 | built-in input, NFC IRQ, one-wire slave, serial-control, JavaScript GPIO, external peripheral drivers |
+
+The inventory guard FAILS CLOSED if an expected pinned source caller
+appears or disappears, rather than treating an unreviewed HAL user
+as protected. TIM1/2/EXTI are widely shared with firmware services;
+blindly wrapping only LabMate would give a false guarantee.
+
+**Next required migration:** identify all live HAL/service ownership
+lifecycles; add an atomic claim at the actual resource-acquisition
+boundary and correct release only after each driver's stop/cleanup;
+ensure common GPIO/EXTI aliases and existing I2C mutex agree.
+Mock fail-to-acquire tests must demonstrate **no clock changes,
+interrupt removal, GPIO reconfiguration or other-owner disruption**.
+Avoid a deliberate on-device conflict/crash test. The remaining
+E11.1 firmware integration and E11.3 physical safety approval
+remain **NOT IMPLEMENTED / NOT TESTED**.
