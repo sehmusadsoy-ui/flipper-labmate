@@ -56,7 +56,7 @@ static bool e11_ext_rx_ready(void) {
     subghz_device_cc1101_ext->async_mirror_pin = pin;
 }""",
         """void subghz_device_cc1101_ext_set_async_mirror_pin(const GpioPin* pin) {
-    if(e11_ext_rx_owner || e11_ext_rx_fault) return;
+    if(!subghz_device_cc1101_ext || e11_ext_rx_owner || e11_ext_rx_fault) return;
     subghz_device_cc1101_ext->async_mirror_pin = pin;
 }""")
     s=one(s,
