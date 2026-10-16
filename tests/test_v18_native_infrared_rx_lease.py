@@ -50,7 +50,7 @@ static TIM_TypeDef tim2;
 #define FURI_CRITICAL_EXIT() ((void)0)
 #define READ_BIT(x,mask) ((x)&(mask))
 typedef struct { uint32_t Prescaler,CounterMode,Autoreload,ClockDivision; } LL_TIM_InitTypeDef;
-typedef struct {uint32_t x;uint32_t pin;} GpioPin;
+typedef struct {uint32_t port;uint32_t pin;} GpioPin;
 static const GpioPin gpio_infrared_rx={0,1};
 typedef void (*FuriHalInfraredRxCaptureCallback)(void*,bool,uint32_t);
 typedef void (*FuriHalInfraredRxTimeoutCallback)(void*);
