@@ -47,7 +47,7 @@ void furi_hal_gpio_init(const GpioPin*,int,int,int);
 #define LL_TIM_ClearFlag_UPDATE(...) (++hardware_writes)
 #define LL_TIM_SetPrescaler(...) (++hardware_writes)
 #define LL_TIM_SetCounterMode(...) (++hardware_writes)
-#define LL_TIM_SetAutoReload(...) (++hardware_writes)
+#define LL_TIM_SetAutoReload(timer, value) ((void)(timer),(void)(value),++hardware_writes)
 #define LL_TIM_DisableARRPreload(...) (++hardware_writes)
 #define LL_TIM_SetRepetitionCounter(...) (++hardware_writes)
 #define LL_TIM_SetClockDivision(...) (++hardware_writes)
