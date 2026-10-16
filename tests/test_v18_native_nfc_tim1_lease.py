@@ -210,6 +210,78 @@ int main(void) {
 }
 """
 
+
+NFC_RESUME_HOST = r"""
+/* Link the exact pinned NFC low-power resume C function beneath the
+ * exact patched timer source and instrument radio GPIO/oscillator.
+ */
+typedef int FuriHalNfcError;
+typedef int FuriHalSpiBusHandle;
+enum {
+    FuriHalNfcErrorNone=0,
+    FuriHalNfcErrorBusy=1,
+    FuriHalNfcErrorOscillator=2,
+};
+static const FuriHalSpiBusHandle furi_hal_spi_bus_handle_nfc=0;
+static int nfc_gpio_init_count,nfc_gpio_deinit_count;
+static int osc_count,register_count;
+static bool osc_fail;
+#define ST25R3916_REG_OP_CONTROL 1U
+#define ST25R3916_REG_OP_CONTROL_en_fd_mask 2U
+#define ST25R3916_REG_OP_CONTROL_en_fd_auto_efd 3U
+void furi_hal_nfc_init_gpio_isr(void) {
+    nfc_gpio_init_count++;
+    writes++;
+}
+void furi_hal_nfc_deinit_gpio_isr(void) {
+    nfc_gpio_deinit_count++;
+    writes++;
+}
+static FuriHalNfcError furi_hal_nfc_turn_on_osc(const FuriHalSpiBusHandle* h) {
+    (void)h;osc_count++;writes++;
+    return osc_fail?FuriHalNfcErrorOscillator:FuriHalNfcErrorNone;
+}
+static void st25r3916_change_reg_bits(
+    const FuriHalSpiBusHandle* h, uint32_t a,uint32_t b,uint32_t c) {
+    (void)h;(void)a;(void)b;(void)c;register_count++;writes++;
+}
+"""
+NFC_RESUME_MAIN = r"""
+int main(void) {
+    /* BUSY from cooperative PWM/iButton: even the NFC IRQ GPIO must
+     * never be initialized before a successful paired timer claim.
+     */
+    assert(furi_hal_nfc_low_power_mode_stop()==FuriHalNfcErrorBusy);
+    assert(writes==0 && nfc_gpio_init_count==0 && osc_count==0);
+    allow_claim=true;
+    clock1=true; /* already enabled by foreign native service */
+    assert(furi_hal_nfc_low_power_mode_stop()==FuriHalNfcErrorBusy);
+    assert(writes==0 && nfc_gpio_init_count==0 && osc_count==0);
+    clock1=false;
+    /* The oscillator failure must roll back BOTH owned timer IRQs
+     * and NFC GPIO IRQ, allowing a safe later resume.
+     */
+    osc_fail=true;
+    assert(furi_hal_nfc_low_power_mode_stop()==FuriHalNfcErrorOscillator);
+    assert(!nfc_e11_handle && !clock1 && !clock17);
+    assert(nfc_gpio_init_count==1 && nfc_gpio_deinit_count==1);
+    assert(!active_irqs && osc_count==1 && register_count==0);
+    osc_fail=false;
+    assert(furi_hal_nfc_low_power_mode_stop()==FuriHalNfcErrorNone);
+    assert(nfc_gpio_init_count==2 && nfc_gpio_deinit_count==1);
+    assert(osc_count==2 && register_count==1);
+    assert(clock1 && clock17 && nfc_e11_handle && active_irqs==2);
+    int w=writes;
+    assert(furi_hal_nfc_low_power_mode_stop()==FuriHalNfcErrorBusy);
+    assert(writes==w && osc_count==2 && nfc_gpio_init_count==2);
+    furi_hal_nfc_timers_deinit();
+    furi_hal_nfc_deinit_gpio_isr();
+    assert(!nfc_e11_handle && !clock1 && !clock17 && !active_irqs);
+    puts("E11 NFC REAL LOW-POWER RESUME C PASS: BUSY zero writes, oscillator rollback, reenter");
+    return 0;
+}
+"""
+
 LEASE_TEST = r"""
 #define REQUIRE(x) do{if(!(x)){fprintf(stderr,"E11 NFC MASK FAIL %d\n",__LINE__);exit(1);}}while(0)
 int main(void) {
@@ -270,6 +342,13 @@ def main() -> None:
             subprocess.run(["cc","-std=c11","-Wall","-Wextra","-Werror","-pedantic",
                             "-O0",*flag,"-I",str(tmp),str(tmp/"host.c"),"-o",str(exe)],check=True)
             subprocess.run([str(exe)],check=True)
+        # Compile and exercise the ACTUAL NFC low-power resume C function,
+        # not a hand-reimplemented mock of its BUSY/oscillator rollback.
+        resume_src=HOST[:HOST.index("int main(void) {")]+NFC_RESUME_HOST+resume+NFC_RESUME_MAIN
+        (tmp/"resume.c").write_text(resume_src)
+        subprocess.run(["cc","-std=c11","-Wall","-Wextra","-Werror","-pedantic",
+                        "-O0","-I",str(tmp),str(tmp/"resume.c"),"-o",str(exe)],check=True)
+        subprocess.run([str(exe)],check=True)
         pre=r"""
 #include <stdint.h>
 #include <stddef.h>
@@ -288,7 +367,7 @@ static pthread_mutex_t critical=PTHREAD_MUTEX_INITIALIZER;
         subprocess.run(["cc","-std=c11","-Wall","-Wextra","-Werror","-pedantic",
                         "-pthread",str(tmp/"lease.c"),"-o",str(exe)],check=True)
         subprocess.run([str(exe)],check=True)
-    print("E11 NFC REAL C HOST 3/3 + resource allocator PASS (NO DEVICE/FLASH)")
+    print("E11 NFC REAL C HOST 3/3 + native low-power resume + resource allocator PASS (NO DEVICE/FLASH)")
 
 if __name__=="__main__":
     main()
