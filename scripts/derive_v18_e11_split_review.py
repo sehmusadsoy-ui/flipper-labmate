@@ -30,6 +30,10 @@ WARNING = (
     "Derived from previously vetted #38966248325; embedded LabMate FAP is removed.\n"
     "The matched LabMate FAP remains a SEPARATE file, not part of updater resources.\n"
     "Independent firmware boot / data restore safety is NOT established.\n"
+    "REAL COM7 old /ext/Manifest lists apps/Tools/labmate.fap for old cleanup.\n"
+    "Updater removes OLD manifest file entries before unpacking NEW resources.\n"
+    "Split bundle omits NEW LabMate FAP: installed EXITFIX removal is in scope.\n"
+    "SPLIT AS EXITFIX-PRESERVING TRIAL REJECTED. DO NOT FLASH OR INSTALL.\n"
 )
 
 
