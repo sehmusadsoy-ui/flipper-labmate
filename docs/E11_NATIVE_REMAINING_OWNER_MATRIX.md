@@ -16,7 +16,7 @@ the remaining rows can be marked physical PASS. Existing Stable,
 | Native JavaScript GPIO / PulseReader / Monitor / capture | Selected external physical GPIO + EXTI, PulseReader TIM2+DMA/DMAMUX | actual native/production C host tests; not all firmware IRQ clients |
 | Native DigitalSequence | TIM2+DMA1 CH1/2 and 8 connector pin aliases; internal unknown pins only TIM2/DMA | `test_v18_native_digital_sequence_lease.py`, full updater |
 | Native iButton emulation | TIM1 and internal pin configuration only after successful claim, protocol Misc STOP ownership | `test_v18_native_ibutton_tim1_lease.py`, `test_v18_native_ibutton_protocol_lease.py`; full paired firmware CI #38888012694 PASS |
-| Native NFC FWT / Block-TX timers | Atomic TIM1+TIM17 composite lease, BUSY propagated from low-power resume, owned ISR/STOP and oscillator-failure rollback | `test_v18_native_nfc_tim1_lease.py` real NFC timer + low-power resume C host PASS #38890147922; matched firmware review separate; other NFC GPIO IRQ clients uncoordinated |
+| Native NFC FWT / Block-TX timers | Atomic TIM1+TIM17 composite lease, BUSY propagated from low-power resume, owned ISR/STOP and oscillator-failure rollback | `test_v18_native_nfc_tim1_lease.py` real NFC timer + low-power resume C host PASS #38890147922, full matched firmware/FAP/updater CI #38890148015 PASS; other NFC GPIO IRQ clients uncoordinated |
 
 The lease mutex covers **cooperating** clients atomically. Direct
 LL register writes in unrelated firmware components still bypass it;
