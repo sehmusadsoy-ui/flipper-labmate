@@ -44,7 +44,8 @@ and independent Momentum base for the library.
     $momentumSource = 'd3f89dfe2ef6b01839201598e9be1590cba80322'
     $work = Join-Path $env:TEMP ('LabMate-E11-SD-READONLY-' + [guid]::NewGuid().ToString('N'))
     $transport = Join-Path $work 'flipper'
-    New-Item -ItemType Directory -Path $transport -Force:$false | Out-Null
+    New-Item -ItemType Directory -Path $work | Out-Null
+    New-Item -ItemType Directory -Path $transport | Out-Null
 
     Invoke-WebRequest -UseBasicParsing -Uri (
         "https://raw.githubusercontent.com/sehmusadsoy-ui/flipper-labmate/$auditSource/scripts/audit_v18_e11_live_labmate_sd.py"
