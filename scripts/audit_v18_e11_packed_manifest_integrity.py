@@ -152,6 +152,12 @@ def check_consistency(
         raise ValueError("bad independent JS fingerprint")
     if expected_fap_sha256 is not None and not re.fullmatch(r"[a-f0-9]{64}",expected_fap_sha256):
         raise ValueError("bad independent FAP fingerprint")
+    # Check the actual embedded bytes, not merely the digest's syntax.
+    if expected_js_sha256 is not None and _archive_member_sha(resource_tar, JS_PATH) != expected_js_sha256:
+        raise ValueError("packed native JS GPIO SHA256 mismatch")
+    if should_include_fap and expected_fap_sha256 is not None and (
+            _archive_member_sha(resource_tar, FAP_PATH) != expected_fap_sha256):
+        raise ValueError("packed LabMate FAP SHA256 mismatch")
 
     if should_include_fap:
         if missing:
