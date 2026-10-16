@@ -84,7 +84,7 @@ static InfraredTimTx infrared_tim_tx;
 static FuriHalInfraredTxPin infrared_tx_output=FuriHalInfraredTxPinInternal;
 static const GpioPin* infrared_tx_pins[FuriHalInfraredTxPinMax]={
  &gpio_infrared_tx,&gpio_ext_pa7};
-static int writes,claims,releases,allocs,freed,waits;
+static int writes,claims,releases,allocs,allocated_ok,freed,waits;
 static bool claim_allowed,release_ok=true,tim1_clock,dma1,dma2,lose_clock;
 static int fail_malloc_on=0;
 static uint32_t last_claim_mask;
@@ -125,7 +125,9 @@ void furi_crash(void) {abort();}
 void* controlled_malloc(size_t n) {
  allocs++;
  if(fail_malloc_on && allocs==fail_malloc_on) return NULL;
- return malloc(n);
+ void* p=malloc(n);
+ if(p)allocated_ok++;
+ return p;
 }
 void controlled_free(void* p) {if(p)freed++;free(p);}
 #define malloc controlled_malloc
@@ -167,7 +169,7 @@ static void reset_test(void) {
  assert(infrared_tim_tx.buffer[0].polarity==NULL);
  assert(infrared_tim_tx.buffer[1].polarity==NULL);
  assert(infrared_tim_tx.stop_semaphore==NULL);
- writes=claims=releases=allocs=freed=waits=0;
+ writes=claims=releases=allocs=allocated_ok=freed=waits=0;
  tim1_clock=dma1=dma2=lose_clock=false;
  claim_allowed=false;release_ok=true;fail_malloc_on=0;
  last_claim_mask=0;stop_signaled=0;
@@ -199,7 +201,7 @@ int main(void) {
    reset_test();claim_allowed=true;fail_malloc_on=fail;
    assert(!furi_hal_infrared_async_tx_try_start(38000U,0.33f));
    assert(writes==0 && !infrared_e11_tx_handle && releases==1);
-   assert(freed==fail-1);
+   assert(allocs==4 && allocated_ok==3 && freed==allocated_ok);
    assert(!infrared_tim_tx.stop_semaphore);
  }
  /* Valid TX claim, START and normal semaphore STOP release. */
