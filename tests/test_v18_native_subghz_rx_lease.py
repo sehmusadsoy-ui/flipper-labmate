@@ -213,6 +213,15 @@ def main()->None:
     assert "mask == FURI_HAL_LEASE_NATIVE_SUBGHZ_RX_TIM2" in r
     helpers=s[s.index("/* E11 native SubGHz RX TIM2 cooperative owner. */"):
               s.index("int32_t furi_hal_subghz_get_rolling_counter_mult(void) {")]
+    # A subsequent separately-tested TX stage places its globals next to RX
+    # globals. The isolated genuine RX-C fixture must not compile unreferenced
+    # TX state, while the integrated firmware still compiles both unchanged.
+    tx_globals=("static uint32_t e11_subghz_tx_handle;\n"
+                "static uint32_t e11_subghz_tx_mask;\n"
+                "static bool e11_subghz_tx_fault;\n")
+    if "/* E11 native SubGHz TX TIM2/DMA2 lease owner. */" in s:
+        assert tx_globals in helpers
+        helpers=helpers.replace(tx_globals,"")
     native=s[s.index("volatile uint32_t furi_hal_subghz_capture_delta_duration = 0;"):
              s.index("typedef enum {\n    FuriHalSubGhzAsyncTxMiddlewareStateIdle")]
     assert native.index("furi_hal_resource_lease_try_acquire(") < native.index(
