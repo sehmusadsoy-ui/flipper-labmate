@@ -1759,3 +1759,35 @@ and E11 live GPIO/TIM/EXTI acceptance remain OPEN; original
 and split reviewed updater are **DO NOT FLASH**. Historical
 14-file + current 10-file (1791-byte) LabMate PC backups
 remain separately preserved.
+
+
+## 2026-10-17 — Actual external-SD top-level COM7 survey PASS; 57 non-LabMate data folders
+
+**Operator's real read-only Flipper `storage list` scope check**
+completed successfully with corrected opaque parser source
+`1da7dab93cfd72d94b243c3f5732ded9f8e26e5d`:
+
+- `/ext`: **27 directories + 1 top-level file**
+- `/ext/apps`: **14 directories + 0 top-level files**
+- `/ext/apps_data`: **LabMate present, 57 OTHER data
+  directories + 0 top-level files**
+- `non_labmate_content_potentially_outside_existing_snapshot: YES`
+- `whole_sd_inventory_completed: NO`
+- `whole_sd_snapshot_verified: NO`
+- `non_labmate_sd_files_backed_up: NO`
+- `restore_rehearsed: NO`
+- `E11_firmware_write_authorized: NO`
+- Final output:
+  `E11 SD SCOPE SURVEY COMPLETED - NO FLASH`.
+
+**Gate closed: read-only top-level OTHER-SD EXPOSURE SURVEY.**
+**Gate remains open: comprehensive full microSD backup with
+independent verification.** The two LabMate PC copies (14
+historical files and 10 current files) do NOT cover the 57 other
+app-data trees or the rest of 27 root directories. Their mere
+presence does not show corruption or data loss. No nested
+entries/files have yet been counted or copied by the new survey.
+No Flipper SD data or firmware was written by this check.
+**E11 firmware trial NO-GO** until recovery/data and separate
+trial authorization gates are satisfied. PR #13 still DRAFT,
+Stable/main and working EXITFIX unchanged.
