@@ -172,6 +172,15 @@ void furi_hal_infrared_async_tx_start""")
         "void furi_hal_infrared_async_tx_start(uint32_t freq, float duty_cycle) {",
         "bool furi_hal_infrared_async_tx_try_start(uint32_t freq, float duty_cycle) {")
     ir=change(ir,
+        """    furi_check(furi_hal_infrared_state == InfraredStateIdle);
+    furi_check(infrared_tim_tx.buffer[0].data == NULL);""",
+        """    /* Sticky failed release must deny a new start before the legacy
+     * state assertion. Otherwise a STOP-release fault would crash.
+     */
+    if(infrared_e11_tx_handle || infrared_e11_tx_fault) return false;
+    furi_check(furi_hal_infrared_state == InfraredStateIdle);
+    furi_check(infrared_tim_tx.buffer[0].data == NULL);""")
+    ir=change(ir,
         """    furi_check(infrared_tim_tx.buffer[1].polarity == NULL);
 
     size_t alloc_size_data""",
