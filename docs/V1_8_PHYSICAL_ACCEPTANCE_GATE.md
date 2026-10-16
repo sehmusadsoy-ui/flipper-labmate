@@ -1107,3 +1107,19 @@ compute its local SHA256; compare it to historical known candidates
 without assuming an abbreviated firmware commit authenticates FAP
 identity. Keep logs/profiles untouched; original hardware fixtures
 remain `DEFERRED / HARDWARE PENDING`.
+
+
+## 2026-10-17 — Installed FAP byte identity confirmed read-only
+
+**User-observed read-only COM7 copy / SHA256 MATCH: EXITFIX FAP.**
+The operator independently executed pinned Momentum `scripts/storage.py -p COM7 receive '/ext/apps/Tools/labmate.fap'` to a **new, local Windows Downloads audit folder**. It reported a completed 10/10-chunk, 100% download without a reported device-write operation. An independent subsequent Windows `Get-FileHash -Algorithm SHA256` reported:
+
+```
+7a76f626f34a65059d9536fa2cd52b2639f4d1038a9b5c69291fa28d5e4f63be
+```
+
+This exactly matches the previously audited **v1.8DEV EXITFIX** FAP built and installed on 2026-10-15, on which physical no-wire/peer lifecycle acceptance E1–E9 was already reported. The first USB read attempt failed locally because Python `colorlog` was not installed; operator installed `colorlog` and `pyserial` in Windows user Python and the subsequent device read succeeded. Do **not** infer hardware failure from that initial local Python import error, and do not re-run E1–E9 merely to identify the binary.
+
+**Identity distinctions:** this proves the copied on-device application's *bytes at the read-back time* match known EXITFIX. It does NOT prove any new E11 native firmware patch beyond the earlier observed `mntm-dev` `d3f89dfe` dirty base, and does **not** prove the newest full review FAP from CI #38966248325 (`2b31ec3fa9050580dc3c3ff80138578ed185d70811aa8124ebd2d00b8d981af0`) is installed. It isn't the hash of the copied FAP. Do not conflate historical on-device acceptance with the newly-built candidate's physical gate. Any physical test of the new matched pair still requires separately reviewed backup, recovery and user approval.
+
+The Windows copy was a new *local* audit file; no firmware update, on-device FAP replacement, microSD log/profile deletion, USB firmware write, main/Stable update or release modification occurred. Unique Flipper device identifiers are deliberately excluded from this report.
