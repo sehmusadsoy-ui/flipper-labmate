@@ -145,7 +145,7 @@ int main(void){
  CHECK(owner);
  CHECK(!furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_NATIVE_NFC_IRQ_PA2_EXTI2));
  CHECK(!furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_NATIVE_EXT_CC1101_RX));
- CHECK(!furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_NATIVE_EXT_CC1101_TX));
+ CHECK(!furi_hal_resource_lease_v2_try_acquire(FURI_HAL_LEASE_NATIVE_EXT_CC1101_TX));
  CHECK(!furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_JS_EXTI2));
  CHECK(!furi_hal_resource_lease_release(owner,FURI_HAL_LEASE_JS_EXTI2));
  CHECK(furi_hal_resource_lease_release(owner,FURI_HAL_LEASE_IRQ_PB2));
