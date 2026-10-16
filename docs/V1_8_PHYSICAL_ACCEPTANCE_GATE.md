@@ -1618,3 +1618,51 @@ runs actual COM7 PC-only snapshot command and returns its success
 report. **Full microSD backup, third-party plugins, restore rehearsal,
 E11 firmware and native resource physical tests all remain OPEN**.
 Full and split experimental packages **DO NOT FLASH**.
+
+
+## 2026-10-17 — Actual COM7 live 10-file readback snapshot verified (PC ONLY)
+
+**ACTUAL OPERATOR-REPORTED READ-ONLY DEVICE/PC SUCCESS** from
+`scripts/snapshot_v18_e11_live_labmate_sd.py` after the preceding
+14-old vs 10-live files **GAP** detection.
+
+```
+snapshot_files_verified: 10
+snapshot_file_bytes: 1791
+new_device_files_preserved: 5
+changed_device_files_preserved: 2
+historical_files_not_on_device: 9
+old_backup_preserved: YES
+flipper_files_modified: NO
+snapshot_full_microSD: NO
+restore_rehearsed: NO
+firmware_flash_authorized: NO
+LIVE LABMATE PC READBACK SNAPSHOT VERIFIED - NO FLASH / NO RESTORE
+CURRENT LABMATE SNAPSHOT VERIFIED - PC ONLY
+```
+
+The 10 current device files were read through read-only
+`storage read_chunks` into a **new PC-only directory**, checked
+against initial device file sizes and MD5 responses, SHA256
+recalculated after local disk write, and their source inventory
+rechecked to catch changes during transfer. Total copied bytes:
+**1,791**. The previous **14-file historical PC backup was not
+overwritten**. This preserves both the nine older files absent
+from the current device (in historical backup) and the **five
+new plus two modified on-device versions** (in new snapshot);
+the other three matched. The exact filenames are not in the
+counts-only terminal report; do NOT assert that the nine are
+specific `log_0041`–`log_0049` files without comparing private
+manifest locally. No source-data restoration was performed.
+
+**Acceptance classification: `CURRENT_LABMATE_DIRECTORY_PC_SNAPSHOT=PASS`
+for directory-limited readback + PC checksum verification.**
+`HISTORICAL_LABMATE_BACKUP_PRESERVED=YES`.
+It is **not a byte-for-byte whole-microSD backup, a live-device
+SHA256 proof, a tested restore, or a green firmware gate**.
+The current original/split E11 full updater review artifacts
+remain marked `DO NOT FLASH`; no real hardware E11 resource
+conflict/STOP/BACK acceptance and no main/Stable promotion.
+Next protective gate concerns user/custom data OUTSIDE
+`/ext/apps_data/labmate` potentially affected by the full
+Momentum update, and a reviewed recovery plan.
