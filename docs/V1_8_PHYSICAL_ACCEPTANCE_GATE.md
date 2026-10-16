@@ -1880,3 +1880,14 @@ experimental updater artifacts are still **DO NOT FLASH**.
 Firmware installation risk review, recovery procedure and separately
 authorized physical resource acceptance are **OPEN**. Keep
 Stable/main and the existing working EXITFIX unchanged.
+
+
+## 2026-10-17 — Recoverable official release ≠ exact current mntm-dev restoration
+
+An independent recorded-evidence [recovery identity assessment](V1_8_E11_FIRMWARE_RECOVERY_DECISION.md) has identified a **distinct firmware equivalence blocker**. Running firmware is reported as `mntm-dev` with `firmware.commit.dirty=true` (base `d3f89dfe`, API 87.1). The pinned offline rollback file is the **official** `mntm-012` updater, which is not an independently proven byte-for-byte restorable image of today's custom modified firmware. The previous EXITFIX FAP's readback hash is preserved, but the older stable FAP in the rollback kit is different, and backward app/firmware ABI compatibility after returning to official Momentum has not been tested.
+
+Flipper's [official firmware recovery guide](https://docs.flipper.net/zero/basics/firmware-update/firmware-recovery) describes qFlipper/USB DFU recovery and cautions that firmware **Repair can erase internal storage** (settings/paired devices), while microSD normally remains. The local internal settings archive is only checked/readable, not restored. No one has entered DFU or pressed Repair in this work; do not do so as an ordinary verification step.
+
+A new offline [13-case no-install recovery audit](../scripts/audit_v18_e11_recovery_readiness.py) returns `exact_prior_firmware_recovery: NOT_PROVEN`, `known_official_release_fallback: FILE_VERIFIED_BOOT_UNTESTED`, `preserved_current_exitfix_fap_identity: MATCH` and `firmware_trial_decision: NO_GO`. [Host CI #38981611042](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38981611042) and [pinned old/new package audit #38981663476](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38981663476) both **SUCCESS**. These are software/static risk-assessment successes, NOT on-device recovery acceptance.
+
+**Decision: exact prior firmware restore and any trial update remain OPEN/NO-GO.** This conclusion is independent of the user's low priority for non-LabMate SD files. Any actual recovery or update requires a separately approved and vetted procedure; current full and split E11 review packages still **DO NOT FLASH**. Stable/main and EXITFIX preserved.
