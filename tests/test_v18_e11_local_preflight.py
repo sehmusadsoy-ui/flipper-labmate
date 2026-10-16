@@ -109,7 +109,7 @@ class LocalE11Preflight(unittest.TestCase):
 
     def test_reject_tampered_settings_archive_digest(self):
         self.settings.write_bytes(b"not an archive")
-        with self.assertRaisesRegex(tarfile.TarError):
+        with self.assertRaises(tarfile.TarError):
             self.checked()
 
     def test_reject_unsafe_tar_traversal_even_with_recomputed_hash(self):
