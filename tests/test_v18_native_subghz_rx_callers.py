@@ -104,7 +104,13 @@ def main()->None:
     assert "typedef void (*SubGhzStartAsyncRx)(void* callback, void* context);" in types
     ccfunc=cc[cc.index("bool subghz_device_cc1101_int_interconnect_try_start_async_rx("):
               cc.index("static void subghz_device_cc1101_int_interconnect_start_async_rx(")]
-    devfunc=devices[devices.index("/* E11 cooperative SubGHz RX BUSY path;"): 
+    # After the E11 status bridge, the genuine device helper preceding
+    # this function owns the synchronous report state. Compile that exact
+    # original production C too; earlier RX-only stages still work.
+    start=("/* E11 matched radio plugin v1 RX status sidechannel; ABI unchanged. */"
+           if "/* E11 matched radio plugin v1 RX status sidechannel; ABI unchanged. */"
+           in devices else "/* E11 cooperative SubGHz RX BUSY path;")
+    devfunc=devices[devices.index(start):
                     devices.index("void subghz_devices_start_async_rx(")]
     appfunc=app[app.index("static uint32_t subghz_txrx_rx("):
                 app.index("static void subghz_txrx_idle(")]
