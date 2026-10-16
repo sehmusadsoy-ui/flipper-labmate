@@ -1170,3 +1170,44 @@ is historically pinned to *another* older source/DFU/FAP bundle
 **not the installer for the new #38966248325 candidate**. Do not bypass
 its SHA checks, alter the original files, or invoke it against the
 new package; no E11 update has been authorized merely by a 4/4 PASS.
+
+
+## 2026-10-17 — Backup preflight: partial PASS; settings archive path missing
+
+**Operator local PowerShell evidence: BACKUP PREFLIGHT INCOMPLETE, NOT PASS.**
+Two files in the recorded rollback folder were independently opened
+and matched the pinned SHA256 values:
+
+- Official prior `flipper-z-f7-update-mntm-012.tgz`: **SHA256 PASS**.
+- Original `labmate-v18-stable.fap`: **SHA256 PASS**.
+- Separately read-back current on-device `v1.8DEV EXITFIX` FAP:
+  SHA256 **PASS**, exact
+  `7a76f626f34a65059d9536fa2cd52b2639f4d1038a9b5c69291fa28d5e4f63be`.
+- Existing local LabMate folder copy: **14 readable, nonempty files**;
+  PowerShell `Get-FileHash -Algorithm SHA256` read each. This is
+  only file existence and local readability, not device-side source
+  hash equivalence or verified restore.
+- qFlipper settings backup expected at the historical
+  `Downloads/Uybelav-backup-20261014-201804.tgz` location:
+  **MISSING at that location / NOT VERIFIED**. The `Get-Item` command
+  returned `ItemNotFoundException`, and later `Get-FileHash`
+  returned `PathNotFound`. **No new archive was created.**
+
+The standalone PowerShell
+`Write-Host "SETTINGS BACKUP READABLE"` and
+`Write-Host "BACKUP PREFLIGHT PASS - NO DEVICE CHANGES"` calls were
+executed **after errors** and therefore have **no evidentiary value**.
+In interactive PowerShell, commands issued separately can still execute
+after a previous command throws. The failure must remain visible and
+the whole preflight **FAIL-CLOSED**.
+
+**Next action (local read-only):** search reasonable user-owned folders
+for a possibly moved/renamed original qFlipper settings `.tgz` archive.
+After locating a candidate, inspect *archive listing only*, do not
+extract it onto a device or overwrite anything. If no authentic
+usable settings backup is found, obtain a *new* independently verified
+qFlipper backup only with separate clear operator approval and without
+overwriting historical copies. **No firmware flash, FAP install, SD
+modification, release operation or Stable promotion is authorized** by
+partial backup PASS. A valid backup is still not proof that restore
+has been rehearsed.
