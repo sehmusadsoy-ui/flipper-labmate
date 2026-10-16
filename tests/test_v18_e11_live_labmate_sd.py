@@ -149,9 +149,9 @@ class TestE11LiveLabMateSD(unittest.TestCase):
 
     def test_exact_real_momentum_storage_cli_file_size_suffix(self):
         # Momentum pinned d3f89dfe: printf("\\t[F] %s %lub\\r\\n")
-        response = (b"\\t[F] log_0050.csv 116b\\r\\n"
-                    b"\\t[D] configs\\r\\n"
-                    b"\\t[F] log_0051.csv 0b\\r\\n")
+        response = (b"\t[F] log_0050.csv 116b\r\n"
+                    b"\t[D] configs\r\n"
+                    b"\t[F] log_0051.csv 0b\r\n")
         self.assertEqual(
             parse_listing(response),
             [("file", "log_0050.csv", 116),
