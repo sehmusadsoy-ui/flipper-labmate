@@ -10,6 +10,7 @@ import argparse
 from pathlib import Path
 import subprocess
 import tempfile
+from test_v18_native_infrared_rx_lease import STUB as NATIVE_RX_STUB, RUN as NATIVE_RX_RUN
 
 STUB=r"""
 #include <assert.h>
@@ -134,6 +135,7 @@ def main():
     assert "bool infrared_worker_rx_try_start(InfraredWorker* instance)" in hdr
     assert "bool furi_hal_infrared_async_rx_try_start(void)" in public
     assert "bool furi_hal_infrared_async_rx_try_start(void) {" in ir
+    assert "if(furi_hal_infrared_state != InfraredStateIdle) return false;" in ir
     assert "Function,+,infrared_worker_rx_try_start,_Bool,InfraredWorker*" in api
     assert "Function,+,furi_hal_infrared_async_rx_try_start,_Bool," in api
     p=worker.index("bool infrared_worker_rx_try_start(")
@@ -153,7 +155,22 @@ def main():
         subprocess.run(["cc","-std=c11","-Wall","-Wextra","-Werror","-pedantic",
                         "-O0",str(f),"-o",str(exe)],check=True)
         subprocess.run([str(exe)],check=True)
-    print("E11 RX actual worker C + status APIs PASS; no hardware used")
+        # Run the *actual* patched TIM2 driver C while the infrared
+        # HAL is in TX mode. Busy must not assert or mutate TIM2/GPIO.
+        e11=ir[ir.index("/* LabMate E11 native infrared TIM2 RX owner. */"):
+               ir.index("static const GpioPin* infrared_tx_pins")]
+        native=ir[ir.index("static void furi_hal_infrared_tim_rx_isr("):
+                  ir.index("void furi_hal_infrared_async_rx_set_capture_isr_callback(")]
+        testcase=NATIVE_RX_RUN.replace("int main(void) {", """int main(void) {
+    furi_hal_infrared_state=InfraredStateAsyncTx;
+    assert(!furi_hal_infrared_async_rx_try_start());
+    assert(acquires==0 && writes==0 && releases==0);
+    furi_hal_infrared_state=InfraredStateIdle;""",1)
+        f.write_text(NATIVE_RX_STUB+"\n"+e11+"\n"+native+"\n"+testcase)
+        subprocess.run(["cc","-std=c11","-Wall","-Wextra","-Werror","-pedantic",
+                        "-O0",str(f),"-o",str(exe)],check=True)
+        subprocess.run([str(exe)],check=True)
+    print("E11 RX native driver + worker actual C: HAL TX busy, thread unwind, STOP PASS")
 
 if __name__=="__main__":
     main()
