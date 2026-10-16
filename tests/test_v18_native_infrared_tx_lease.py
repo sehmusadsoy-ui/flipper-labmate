@@ -104,8 +104,9 @@ void furi_hal_bus_disable(int bus) {assert(bus==1&&tim1_clock);tim1_clock=false;
 bool is_dma_enabled(int bus,int channel) {
     assert(bus==2);return channel==1?dma1:dma2;
 }
-#define LL_DMA_IsEnabledChannel(bus,ch) is_dma_enabled((bus),(ch))
-#define LL_DMA_EnableChannel(bus,ch) ((void)(bus),(void)(ch),++writes)
+#define LL_DMA_IsEnabledChannel(...) is_dma_enabled(__VA_ARGS__)
+void enable_dma(int bus,int ch) {(void)bus;(void)ch;writes++;}
+#define LL_DMA_EnableChannel(...) enable_dma(__VA_ARGS__)
 #define LL_TIM_ClearFlag_UPDATE(x) ((void)(x),++writes)
 #define LL_TIM_GenerateEvent_UPDATE(x) ((void)(x),++writes)
 #define LL_TIM_EnableCounter(x) ((void)(x),++writes)
