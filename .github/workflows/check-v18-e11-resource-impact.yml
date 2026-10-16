@@ -71,10 +71,10 @@ jobs:
           python3 scripts/derive_v18_e11_split_review.py \
             --official-rollback "$RUNNER_TEMP/e11-risk/official-012.tgz" \
             --candidate "$RUNNER_TEMP/e11-risk/full" \
-            --output "$RUNNER_TEMP/e11-risk/split-review-only"
+            --output "$RUNNER_TEMP/e11-derived-split-review-only"
           python3 scripts/check_v18_full_vs_mntm012.py \
             "$RUNNER_TEMP/e11-risk/official-012.tgz" \
-            "$RUNNER_TEMP/e11-risk/split-review-only/firmware-full-update-SPLIT-REVIEW-DO-NOT-FLASH.tgz"
+            "$RUNNER_TEMP/e11-derived-split-review-only/firmware-full-update-SPLIT-REVIEW-DO-NOT-FLASH.tgz"
           echo 'FAP-excluded derivative has NO INSTALL AUTHORIZATION, no SDK rebuild and NO FLASH.'
       - name: Boundary declaration
         run: |
