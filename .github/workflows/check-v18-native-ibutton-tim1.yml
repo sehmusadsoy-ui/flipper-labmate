@@ -1,0 +1,56 @@
+name: v1.8 E11 native iButton TIM1 source denial (NO DEVICE)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - "scripts/patch_momentum_native_ibutton_tim1_lease.py"
+      - "tests/test_v18_native_ibutton_tim1_lease.py"
+      - "scripts/patch_momentum_resource_lease.py"
+      - "scripts/patch_momentum_native_digital_sequence_lease.py"
+      - ".github/workflows/check-v18-native-ibutton-tim1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native_ibutton:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout LabMate development branch
+        uses: actions/checkout@v4
+        with:
+          path: labmate
+          persist-credentials: false
+
+      - name: Checkout pinned Momentum source
+        uses: actions/checkout@v4
+        with:
+          repository: Next-Flip/Momentum-Firmware
+          ref: d3f89dfe2ef6b01839201598e9be1590cba80322
+          path: momentum-src
+          persist-credentials: false
+
+      - name: Apply exact prerequisite firmware source stages (NO FLASH)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 labmate/scripts/patch_momentum_i2c_timeout.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_resource_lease.py momentum-src --allow-timed-i2c --apply
+          python3 labmate/scripts/patch_momentum_gpio_tryadd.py momentum-src --allow-prepatched --apply
+          python3 labmate/scripts/patch_momentum_native_pwm_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_js_gpio_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_pulse_reader_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_digital_sequence_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_ibutton_tim1_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_ibutton_tim1_lease.py momentum-src --apply
+          git -C momentum-src diff --check
+
+      - name: Execute native iButton and actual firmware allocator C tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 labmate/tests/test_v18_native_ibutton_tim1_lease.py momentum-src
+          echo "E11 IBUTTON TIM1 REAL NATIVE C HOST PASS; NOT DEVICE/GLOBAL HAL PASS"
