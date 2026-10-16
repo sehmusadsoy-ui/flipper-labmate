@@ -74,6 +74,7 @@ on:
       - "tests/test_v18_native_imu_fifo_exti_lease.py"
       - "scripts/patch_momentum_native_js_gpio_callback_cleanup.py"
       - "tests/test_v18_native_js_gpio_callback_cleanup.py"
+      - "scripts/check_v18_e11_native_irq_callback_inventory.py"
       - "tests/test_v18_signal_reader_iso15693_route_audit.py"
       - "tests/test_v18_native_pulse_reader_lease.py"
       - "tests/test_v18_native_pulse_lease_firmware.py"
@@ -241,6 +242,7 @@ jobs:
           python3 labmate/scripts/patch_momentum_native_js_gpio_callback_cleanup.py momentum-src
           python3 labmate/scripts/patch_momentum_native_js_gpio_callback_cleanup.py momentum-src --apply
           python3 labmate/tests/test_v18_native_js_gpio_callback_cleanup.py momentum-src
+          python3 labmate/scripts/check_v18_e11_native_irq_callback_inventory.py momentum-src
           python3 labmate/tests/test_v18_signal_reader_iso15693_route_audit.py momentum-src
           python3 labmate/tests/test_v18_tim2_lease_integration.py
           python3 labmate/scripts/check_v18_native_legacy_tim2_contract.py momentum-src labmate
