@@ -115,6 +115,10 @@ void labmate_frequency_high_start(LabMateApp* app) {
     /* Configure PB3/TIM2 with the counter stopped until ownership is published. */
     if(!labmate_frequency_tim2_configure()) {
         app->capture_blocked = true;
+        /* BUSY if a legacy native timer is already active; ERR if the
+         * fresh lease could not be released and must remain reserved.
+         */
+        if(labmate_frequency_tim2_lease_pending()) app->capture_release_fault = true;
         return;
     }
 
