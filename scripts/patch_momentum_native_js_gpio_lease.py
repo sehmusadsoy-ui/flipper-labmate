@@ -44,6 +44,34 @@ static uint32_t js_gpio_e11_monitor_mask(const GpioPin* pin) {
  * manager cannot coexist with its generic pin claim. Never claim a pin
  * that a cooperating native PWM service already has running.
  */
+/* EXTI is keyed by line number, NOT by GPIO port. PC3/PB3 both
+ * configure EXTI3 and must not take over each other's capture.
+ */
+static uint32_t js_gpio_e11_exti_mask(const GpioPin* pin) {
+    if(pin == &gpio_ext_pc0) return FURI_HAL_LEASE_JS_EXTI0;
+    if(pin == &gpio_ext_pc1) return FURI_HAL_LEASE_JS_EXTI1;
+    if(pin == &gpio_ext_pc3) return FURI_HAL_LEASE_JS_EXTI3;
+    if(pin == &gpio_ext_pb2) return FURI_HAL_LEASE_JS_EXTI2;
+    if(pin == &gpio_ext_pb3) return FURI_HAL_LEASE_JS_EXTI3;
+    if(pin == &gpio_ext_pa4) return FURI_HAL_LEASE_JS_EXTI4;
+    if(pin == &gpio_ext_pa6) return FURI_HAL_LEASE_JS_EXTI6;
+    if(pin == &gpio_ext_pa7) return FURI_HAL_LEASE_JS_EXTI7;
+    return 0U;
+}
+
+static bool js_gpio_e11_claim_exti(JsGpioPinInst* data) {
+    const uint32_t mask = js_gpio_e11_exti_mask(data->pin);
+    if(!mask) return true; /* Non-E11 pins keep legacy semantics */
+    if(data->lease_fault || !data->lease_handle) return false;
+    if(data->exti_lease_handle) return data->exti_lease_mask == mask;
+    /* Claim only the EXTI bit: the pin has its own live lease. */
+    const uint32_t handle = furi_hal_resource_lease_try_acquire(mask);
+    if(!handle) return false;
+    data->exti_lease_handle = handle;
+    data->exti_lease_mask = mask;
+    return true;
+}
+
 static bool js_gpio_e11_claim(JsGpioPinInst* manager_data) {
     const uint32_t mask = js_gpio_e11_monitor_mask(manager_data->pin);
     if(!mask) return true;
@@ -70,6 +98,8 @@ def patch_source(s: str) -> str:
 } JsGpioPinInst;""", """    FuriHalAdcHandle* adc_handle;
     uint32_t lease_handle;
     uint32_t lease_mask;
+    uint32_t exti_lease_handle;
+    uint32_t exti_lease_mask;
     bool lease_fault;
     bool configured;
     bool pwm_owned;
@@ -89,6 +119,14 @@ def patch_source(s: str) -> str:
     const bool is_interrupt = mode == GpioModeInterruptRise ||
                               mode == GpioModeInterruptFall ||
                               mode == GpioModeInterruptRiseFall;
+    const bool uses_exti = is_interrupt || mode == GpioModeEventRise ||
+                           mode == GpioModeEventFall ||
+                           mode == GpioModeEventRiseFall;
+    if(uses_exti && !js_gpio_e11_claim_exti(manager_data))
+        JS_ERROR_AND_RETURN(mjs, MJS_BAD_ARGS_ERROR, "GPIO EXTI line BUSY");
+    /* Hold the separate EXTI handle until JS manager destruction,
+     * even if mode changes, to avoid teardown/upgrade races.
+     */
     if(is_interrupt && !manager_data->had_interrupt) {
         if(!furi_hal_gpio_try_add_int_callback(
                manager_data->pin, js_gpio_int_cb, manager_data->interrupt_semaphore))
@@ -128,6 +166,8 @@ def patch_source(s: str) -> str:
         """    JsGpioPinInst* manager_data = JS_GET_CONTEXT(mjs);
     if(!js_gpio_e11_claim(manager_data))
         JS_ERROR_AND_RETURN(mjs, MJS_BAD_ARGS_ERROR, "GPIO interrupt pin BUSY");
+    if(!js_gpio_e11_claim_exti(manager_data))
+        JS_ERROR_AND_RETURN(mjs, MJS_BAD_ARGS_ERROR, "GPIO EXTI line BUSY");
 
     // Existing callback-slot owners must not assert or be taken over.
     if(!manager_data->had_interrupt) {
@@ -209,7 +249,16 @@ def patch_source(s: str) -> str:
             if(manager_data->configured && (!mask || manager_data->lease_handle))
                 furi_hal_gpio_init(
                     manager_data->pin, GpioModeAnalog, GpioPullNo, GpioSpeedLow);
-            if(manager_data->lease_handle) {
+            if(manager_data->exti_lease_handle) {
+                if(!furi_hal_resource_lease_release(
+                       manager_data->exti_lease_handle, manager_data->exti_lease_mask)) {
+                    /* Do not release the physical pin after an EXTI fault. */
+                    manager_data->lease_fault = true;
+                } else {
+                    manager_data->exti_lease_handle = 0U;
+                }
+            }
+            if(manager_data->lease_handle && !manager_data->lease_fault) {
                 if(!furi_hal_resource_lease_release(
                        manager_data->lease_handle, manager_data->lease_mask)) {
                     /* Deliberately retain firmware reservation on error. */
@@ -240,7 +289,8 @@ def main() -> int:
         header=(root/"targets/f7/furi_hal/furi_hal_resources.h").read_text()
         gpio=(root/"targets/f7/furi_hal/furi_hal_gpio.h").read_text()
         pwm=(root/"targets/f7/furi_hal/furi_hal_pwm.c").read_text()
-        if "FURI_HAL_LEASE_MONITOR_PA7" not in header or (
+        if "FURI_HAL_LEASE_MONITOR_PA7" not in header or
+            "FURI_HAL_LEASE_JS_EXTI3" not in header or (
             "FURI_HAL_GPIO_HAS_TRY_ADD_INT_CALLBACK" not in gpio) or (
             "LabMate E11 native PWM lease owner:" not in pwm):
             raise ValueError("Missing prerequisite lease/native PWM/IRQ patches")
