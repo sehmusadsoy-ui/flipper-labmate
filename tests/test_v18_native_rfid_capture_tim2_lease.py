@@ -207,8 +207,11 @@ def main() -> None:
     assert "bool furi_hal_rfid_tim_read_capture_try_start(" in header
     assert "Function,+,furi_hal_rfid_tim_read_capture_try_start,_Bool," in api
     assert "mask == FURI_HAL_LEASE_NATIVE_RFID_CAPTURE_TIM2" in r
+    capture_end=("/* E11 native RFID emulate TIM2/DMA2 composite owner. */"
+                 if "/* E11 native RFID emulate TIM2/DMA2 composite owner. */" in s
+                 else "static void furi_hal_rfid_dma_isr(void* context)")
     source=s[s.index("/* E11 native RFID capture TIM2 owner. */"):
-             s.index("static void furi_hal_rfid_dma_isr(void* context)")]
+             s.index(capture_end)]
     assert source.index("furi_hal_resource_lease_try_acquire(") < source.index(
         "furi_hal_rfid->read_capture_callback = callback;")
     assert source.index("furi_hal_resource_lease_try_acquire(") < source.index(
