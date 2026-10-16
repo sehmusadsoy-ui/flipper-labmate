@@ -1,0 +1,117 @@
+# LabMate v1.8 — E11 real-device trial gate (NOT AUTHORIZED TO INSTALL)
+
+**Status:** Offline preflight PASS on 2026-10-17. **Physical trial NOT STARTED.**
+**Branch:** `dev/v1.8-completion` / draft PR #13. Stable `v1.8`, tag, release asset and `main` unchanged.
+
+## Immutable evidence before proposing a new firmware trial
+
+- Existing Flipper device via COM7 CLI: Flipper Zero, `mntm-dev`,
+  base short hash `d3f89dfe`, `firmware.commit.dirty=true`, firmware API
+  `87.1`, radio alive. This is *not* proof of an exact on-device E11
+  firmware-diff fingerprint.
+- Current installed FAP: on-device USB readback SHA256
+  `7a76f626f34a65059d9536fa2cd52b2639f4d1038a9b5c69291fa28d5e4f63be`,
+  the earlier **EXITFIX** binary, with independent historical E1–E9 physical
+  evidence. Do not transfer these PASSes to the new candidate.
+- New FULL no-flash matched CI #38966248325, source
+  `ba379f20fb29369501e1057f570a911f71ac83f8`,
+  CI verifier completed SUCCESS. Independent Windows ZIP contents
+  and exact local `preflight_v18_e11_local.py` full review:
+  **PASS** with all pinned provenance and four SHA256 values:
+
+  | File | SHA256 |
+  | --- | --- |
+  | labmate.fap | `2b31ec3fa9050580dc3c3ff80138578ed185d70811aa8124ebd2d00b8d981af0` |
+  | firmware.dfu | `88d12fee4edb4fa0ec042a1b526ddb41b8db36aeb9554c6a9a8aef1c37e4e1b0` |
+  | js_gpio.module | `fff2ab8ad8e5b320b669283fc611216da99e9cda4dc03428fcd8e8a130ecca0a` |
+  | firmware-full-update.tgz | `11ed3cdf4e99c9c7218973695d349cd946be97d21dfc59231113bde15e94c553` |
+
+- Independent native E11 firmware source patch fingerprint
+  `1b3851dfa4de1f62d33430c5a7a4cf563f68da4ebfa01fe332fe7984b7630d80`.
+  Its provenance alone does not prove the installed DFU.
+- Historical rollback official MNTM-012 update
+  `1d9e1e600c8680172ff6f6913ca0b12484e7d45adbc72a66552e534784c8c1a7`
+  and Stable FAP
+  `119c44bb854030a73a60fa205d38770bf77f048bb166ab379a03135c1de5f3b0`
+  SHA256 verified on Windows. Current EXITFIX FAP readback is preserved.
+- LabMate local microSD-folder copy: 14 files locally readable and
+  nonempty; this does **not** prove all live SD files are preserved
+  or that a restore would succeed.
+- qFlipper settings archive at operator's **Desktop** (not Downloads):
+  1,550 bytes, exactly 14 readable regular files and 1 directory,
+  path-safe TGZ validation and SHA256
+  `a0487ede35b8cec4cef505faf57363768fc1bc02d5d7c1dd3a8dcfa282c00ef2`.
+  Not a complete microSD image; restore has **not** been rehearsed.
+- User executed independently pinned source/script
+  `preflight_v18_e11_local.py`, successfully reporting:
+  `LOCAL E11 INPUT PREFLIGHT PASS - NO FLASH, NO DEVICE ACCEPTANCE`.
+  [CI host regression #38969669551](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38969669551)
+  completed SUCCESS.
+
+## Blockers before any physical device write
+
+1. **Separate explicit owner permission** for an experimental full Momentum
+   firmware trial, including the known full-updater radio/SD/option-byte
+   scope. Prior authorization for the 2026-10-14 older candidate is not
+   transferable to this new one.
+2. **Reviewed recovery plan:** how to enter device recovery/DFU, the verified
+   rollback updater + known-good FAP, independently held settings and
+   microSD copies, expected failure and power-loss handling. A structural
+   backup check is NOT a real restore rehearsal; do not claim recovery
+   guaranteed. A destructive restore rehearsal is not authorized.
+3. **Exact matched new-build trial procedure** deliberately separate from
+   the earlier installer. `scripts/install-v18-full012-dev-firmware.ps1`
+   pins three **different** older file SHA256s
+   (`5e3267...`, `e69f717...`, `9a276e6...`), and must not be run
+   against the latest artifact or made to skip its hash guards.
+   The current archive is literally labeled **DO NOT FLASH** and is
+   review evidence, not an installation approval. A proposed trial
+   needs a vetted, expressly approved candidate/procedure, with staging
+   read-only by default and separate firmware-then-FAP gates.
+4. **Device/provenance assessment:** reconcile current `mntm-dev`
+   dirty firmware with the new actual patched SDK and full updater.
+   Partial short-hash coincidence cannot replace binary/protocol verification.
+5. **Physical conditions:** disconnect external GPIO peripherals, ensure
+   adequate battery, stable USB and uninterrupted maintenance window;
+   do not interrupt full updater. These are requirements for a later
+   authorized operation, **not** an instruction to flash now.
+
+## Proposed physical acceptance plan (after a separately approved trial)
+
+This is a *test plan*, not claimed results. Record tested exact **firmware
+pair SHA256 + FAP SHA256**, device boot/firmware report and no regressions.
+Never claim real peripheral correctness from `NONE` on a disconnected bus.
+
+- **E11 baseline:** UI boot, one LabMate FAP, menu order
+  `MEASURE → OUTPUT → RECORDS → COMM → INFO` with INFO last;
+  verify return to menu, app EXIT/REOPEN and unexpected STOP/BACK cleanup.
+- **Resource denial/release/re-entry:** test PWM owner vs COMM
+  I2C and PA4 OneWire, normal stop + re-entry, UI BUSY, cancellation
+  and abort paths; never drive two output owners onto same pin.
+- **Counter, capture and button:** TIM1/TIM2 and EXTI STOP/RESUME
+  ownership and refusal/fallback; use no-signal smoke only where an
+  external 3.3 V generator is absent. External timing precision deferred.
+- **UART:** existing ESP32-S2 at 3.3 V with previously vetted wiring;
+  RX/TX count, DROP/ERROR, STOP/BACK with real peer if the accessory
+  is available. Historical EXITFIX UART result is not the new-pair result.
+- **Records:** read-only History/Profiles inspection first, and careful
+  app-owned CSV create/delete only with a separately recorded scope
+  and no risk to historical logs. Compare backups before/after.
+- **Firmware coexistence:** supported E11 owner paths and intended
+  conflict UI, background services after STOP/re-entry. Unsupported
+  legacy third-party plugin interactions remain explicitly unproven.
+- **Physical deferred exceptions:** real positive-ACK I2C device,
+  3.3 V DS18B20 + pull-up, calibrated PWM/pulse edges,
+  exceptional fault-injection/storage-power-loss recovery, and
+  actual successful rollback. Keep them on
+  [`DEFERRED_HARDWARE_TESTS.md`](DEFERRED_HARDWARE_TESTS.md) until equipment
+  and non-destructive test method exist.
+
+### Stop / fail-close conditions
+
+Any mismatch in exact source/build/backup/rollback assets, physical
+firmware version, device abnormal boot, radio recovery or SD trouble:
+**stop**, do not launch incompatible FAP, do not automatically
+flash or restore anything. Preserve logs and report exact failing stage
+before a separate recovery decision. Never overwrite the original
+Stable `v1.8` tag/assets or merge PR #13 based only on CI.
