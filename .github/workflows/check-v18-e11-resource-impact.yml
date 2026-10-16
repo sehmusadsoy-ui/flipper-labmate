@@ -40,6 +40,8 @@ jobs:
           set -euo pipefail
           python3 -m unittest discover -v -s tests -p test_v18_e11_resource_impact.py
           python3 -m unittest discover -v -s tests -p test_v18_e11_split_review.py
+          python3 -m unittest discover -v -s tests -p test_v18_e11_recovery_readiness.py
+          python3 scripts/audit_v18_e11_recovery_readiness.py
       - name: Fetch exact independently known official MNTM-012 rollback
         shell: bash
         run: |
