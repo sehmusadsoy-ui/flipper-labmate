@@ -78,7 +78,7 @@ def main():
     root=p.parse_args().root.resolve()
     src=(root/"applications/system/js_app/modules/js_gpio.c").read_text()
     gpio=(root/"targets/f7/furi_hal/furi_hal_gpio.c").read_text()
-    marker="/* E11 JS GPIO exact callback-and-semaphore owner cleanup. */"
+    marker="/* E11 JS GPIO exact callback-and-semaphore owner cleanup."
     assert src.count(marker)==1
     assert src.count("js_gpio_e11_try_remove_callback(manager_data)")==2
     assert "furi_hal_gpio_remove_int_callback(manager_data->pin);" not in src
