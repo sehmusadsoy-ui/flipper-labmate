@@ -1,6 +1,6 @@
 # LabMate v1.8 E11 — Installed old-resource Manifest cleanup gate
 
-**2026-10-17: Static source + simulated Flipper read tests PASS; live device check NOT RUN.**
+**2026-10-17 FINAL STATUS: Static tests PASS; LIVE COM7 READ-ONLY AUDIT PASS, SPLIT TRIAL REJECTED.**
 
 Momentum's updater source pinned at
 d3f89dfe2ef6b01839201598e9be1590cba80322 has been checked:
@@ -92,7 +92,7 @@ reported COM7 device, use this SINGLE PowerShell block:
 }
 ~~~
 
-**Not yet executed on the owner's real device.** Share the
+**Historical procedure note:** This command has now been executed on the owner's real device. Share the
 summary fields only; do not upload whole Manifest or other
 application paths. Do not run any updater after a PASS.
 
