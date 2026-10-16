@@ -518,3 +518,41 @@ decision), separately assessed recovery/rollback procedure and
 newly authorized trial-grade firmware/FAP pair. Successful
 LabMate folder backup and top-level SD survey do not satisfy
 these barriers. PR #13 DRAFT, Stable/main unchanged.
+
+
+## 2026-10-17 — Owner's low-priority non-LabMate data; optional no-reader USB precaution
+
+With real device evidence `/ext/apps_data` has 57 OTHER app-data
+directories outside the preserved 14 historical and 10 current
+LabMate PC backup files. **Owner has stated remaining card data is
+not important** and they have no microSD card reader. Do not turn
+buying a card reader or making a full card data snapshot into a
+technical dependency for **safe offline software development**.
+
+To offer an additional low-impact path, added optional USB
+[`backup_v18_e11_usb_sd_to_pc.py`](../scripts/backup_v18_e11_usb_sd_to_pc.py),
+documented in
+[`V1_8_E11_USB_SD_OPTIONAL_HANDOFF.md`](V1_8_E11_USB_SD_OPTIONAL_HANDOFF.md).
+Default mode prints an actual read-only full `/ext` inventory
+without copying. The independent `--copy` action writes exclusively
+to a new PC folder; after SHA256 readback it repeats all device MD5
+checks. The program refuses unrepresentable paths, unsafe
+filesystem names, transfer budget overruns and unexpected CLI
+responses, and never silently skips files and calls them backed up.
+
+Software: [Windows synthetic #38980845491](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38980845491)
+**SUCCESS** with 11 USB transfer/no-overwrite/fail-closed
+tests; [integrated regression #38980820652](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38980820652)
+**SUCCESS**. Real on-device complete USB inventory/copy has NOT
+run: actual full SD backup still NOT proven.
+
+**Decision logic:** The owner may explicitly accept a specific
+non-LabMate app-data loss risk (those data are low-priority)
+and continue device **trial planning**, independently of a full
+card backup, but that choice **cannot waive** verified firmware
+provenance, radio/option-byte security, rollback/boot recovery,
+separate new trial-package approval, or E11 source coexistence
+physical acceptance. Neither old FULL nor FAP-separated review
+archives are flash-authorized. PR stays draft and main/Stable
+remain unchanged. A complete SD backup may always be obtained
+later over USB or reader if the owner chooses.
