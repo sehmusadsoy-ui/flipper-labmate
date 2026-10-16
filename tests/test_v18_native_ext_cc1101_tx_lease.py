@@ -185,6 +185,11 @@ static void reset_case(void){
 static bool start(void){return subghz_device_cc1101_ext_start_async_tx(tx_cb,&instance);}
 int main(void){
  reset_case();
+ subghz_device_cc1101_ext=NULL;
+ subghz_device_cc1101_ext_set_async_mirror_pin(&gpio_ext_pa7);
+ subghz_device_cc1101_ext=&instance;
+ assert(instance.async_mirror_pin==NULL && !writes && !claims);
+ reset_case();
  assert(!start());
  subghz_device_cc1101_ext_stop_async_tx();
  subghz_device_cc1101_ext_async_tx_dma_isr(NULL);
