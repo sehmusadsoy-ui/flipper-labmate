@@ -100,12 +100,14 @@ from the later live view; the auditor can confirm a count mismatch but
 
 ## Verified software evidence
 
-- [Integrated host no-flash regression #38975922317](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38975922317)
-  completed SUCCESS, and covers the new mock CLI and drift cases.
-- [Native Windows mock SD model #38975922250](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38975922250)
-  completed SUCCESS: 16 tests (15 passed and 1 case-collision test
-  skipped because Windows NTFS cannot express distinct case-only names
-  in that default folder).
+- [Integrated host no-flash regression #38976222719](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38976222719)
+  completed SUCCESS, including mock CLI, finite deadlines, wrong-import
+  rejection and stale-history drift tests.
+- [Native Windows mock SD model #38976222692](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38976222692)
+  completed SUCCESS: **17 tests (16 passed, 1 skip)**. The skipped
+  case-collision fixture cannot express two distinct case-only
+  filenames on default Windows NTFS; collision detection runs on
+  case-sensitive CI as part of the integrated suite.
 - The first Windows attempt #38975686516 failed only because its
   case-collision fixture assumed a case-sensitive Windows filesystem;
   fixed with an explicit test-environment skip, **not** by ignoring
