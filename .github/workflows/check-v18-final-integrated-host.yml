@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/check-v18-final-integrated-host.yml"
       - "scripts/run_v18_final_host_regressions.sh"
+      - "scripts/verify_v18_full_review_pair.py"
       - "src/**"
       - "tests/**"
       - "scripts/check_v16_boundaries.py"
