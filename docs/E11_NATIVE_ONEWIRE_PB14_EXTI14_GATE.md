@@ -55,8 +55,7 @@ not rewritten substitutes. Cases cover:
   use-after-free); original firmware allocator refuses duplicate or
   wrong-mask claim release and preserves separate EXTI2 alias.
 
-The first combined full build [#38915167375](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38915167375) caught duplicate E11.1c TRY-ADD declarations and correctly FAILED. The patch was corrected to reuse the existing tested TRY-ADD; the follow-up [#38915550293](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38915550293) requires explicit SUCCESS before declaring this particular software
-build integrated. Host CI by itself does **not** approve it.
+The first combined full build [#38915167375](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38915167375) caught duplicate E11.1c TRY-ADD declarations and correctly FAILED. The patch was corrected to reuse the existing tested TRY-ADD; the follow-up [#38915550293](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38915550293) was verified **SUCCESS**, including full firmware, one integrated LabMate FAP, native JS GPIO and MNTM-012 updater/policy. This is a software build gate only, not hardware acceptance.
 
 ## Still OPEN
 
