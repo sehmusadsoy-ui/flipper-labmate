@@ -1928,3 +1928,37 @@ fallback firmware identity, custom firmware safety,
 FAP physical installation and full GPIO/TIM1/TIM2/EXTI E11
 real-device acceptance. Both updater artifacts STILL DO NOT FLASH;
 draft PR #13, installed EXITFIX and Stable unchanged.
+
+
+## 2026-10-17 — Actual old firmware resource Manifest: installed EXITFIX removal path FOUND
+
+The owner's **real COM7 read-only /ext/Manifest audit HAS NOW PASSED**:
+2,114 listed old resource files, 165 directories,
+2 metadata lines, 2,281 total records; specifically
+`old_cleanup_lists_installed_labmate_fap: YES`,
+`old_cleanup_labmate_data_files: 0`,
+`old_cleanup_non_labmate_apps_data_files: 156`,
+`old_cleanup_app_fap_files: 268`,
+`live_manifest_readback_md5_screen: MATCH`.
+Source material was read in memory, no manifest, app, firmware,
+GPIO or SD data was written.
+
+**Change gate state** from `OLD_RESOURCE_CLEANUP_TARGET_UNKNOWN`
+to `OLD_RESOURCE_CLEANUP_TARGETS_INSTALLED_EXITFIX=CONFIRMED`.
+The split derivative removing LabMate only from NEW resources
+does NOT protect the already installed EXITFIX; it may leave
+the device without LabMate after a resource-stage update.
+Mark `SPLIT_DERIVATIVE_AS_TRIAL_PACKAGE=REJECTED`,
+retain derivative *for forensic/offline review only*. The
+original full updater embeds new E11 LabMate and would likely
+replace EXITFIX if the corresponding resource stages succeed;
+it also remains DO NOT FLASH.
+
+This closes only the **old Manifest disclosure/cleanup-scope
+diagnostic**, not physical new firmware acceptance.
+`apps_data/labmate: 0` means no persistent LabMate paths
+are directly listed for old resource cleanup, not a guarantee
+against updater/runtime data loss. The separate 14 historical
+and 10 current LabMate PC files remain preserved. Exact
+dirty-firmware restoration, recovery procedure and E11
+GPIO/TIM1/TIM2/EXTI live tests still OPEN.
