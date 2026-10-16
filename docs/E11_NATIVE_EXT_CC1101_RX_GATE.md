@@ -65,3 +65,22 @@ leases and radio concurrency, SignalReader TIM16/DMAMUX, full hardware
 RF/receiver tests.
 
 **No flash, no Stable/main merge, no v1.9 or physical PASS.**
+
+
+## 2026-10-16 — External RX/TX follow-up status
+
+The older paragraph identifying **external TX DMA2 CH3/4/5** as
+unmigrated records a superseded development checkpoint.
+The native TX V2 source migration, ISR/STOP host fault test
+[#38924389450 — SUCCESS](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38924389450)
+and combined full matched firmware/FAP/updater
+[#38924489972 — SUCCESS](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38924489972)
+have since passed. Existing RX gate
+[#38924389500 — SUCCESS](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38924389500)
+was also rerun alongside TX.
+
+The previous external plugin `void` RX callback still **cannot
+report BUSY to every SubGHz higher-level worker**. Unsupported
+configurable G0 and debug pins, optional SPI/amp/LED GPIO ownership,
+legacy native IRQ and actual RF tests remain OPEN. No physical PASS,
+Stable release, merge, SD/USB access or firmware flash.
