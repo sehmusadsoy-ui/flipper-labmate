@@ -222,3 +222,70 @@ new exact-match install-and-post-boot procedure with stop rules,
 (d) obtain **new explicit operator authorization**. Real E11
 GPIO/TIM1/TIM2/EXTI physical acceptance and deferred hardware
 fixtures remain open and must not be described as PASS.
+
+
+## 2026-10-17 — Verified upgrade resource delta; coupled FAP is a NEW trial blocker
+
+**Full independently pinned public binary comparison on real packaged bytes:**
+[`#38972918375`](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38972918375)
+and follow-on
+[`#38973079012`](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38973079012)
+completed **SUCCESS**, using exact official MNTM-012 rollback hash
+`1d9e1e...` and actual E11 full CI artifact #38966248325.
+[`scripts/audit_v18_e11_resource_impact.py`](../scripts/audit_v18_e11_resource_impact.py)
+read both TGZs in memory without applying or writing resources to SD.
+
+**Static evidence:**
+
+| Field | Observed | Interpretation |
+| --- | ---: | --- |
+| Official previous update resource files | 2150 | Upstream baseline |
+| Current E11 update resource files | 2116 | Full app/plugin/resource set differs |
+| Newly added resource paths | 20 | File additions |
+| Removed resource paths | 54 | File removals |
+| Modified resource paths | 382 | Same path, different SHA256 |
+| Other changed `apps_data/` resource paths, excluding checked `js_gpio.fal` | 126 | **Bundled extension/plugin resources**, not proof that saved LabMate CSV data was modified |
+| New bundled `apps/Tools/labmate.fap` | **YES** | Binary is the exact independently SHA256-pinned new LabMate app |
+| Previous official MNTM-012 bundle contains that FAP | **NO** | It is introduced by the new E11 updater |
+| Bundled native `apps_data/js_app/plugins/js_gpio.fal` | **YES** | Matches independently SHA256-pinned matched plugin |
+| Update contains `apps_data/labmate/` | **NO** | No direct updater payload under LabMate's own persistent-data tree; **not** a guarantee that the overall update cannot affect SD |
+
+**Radio and option-byte comparison:** the new updater's radio
+**bytes** and six relevant update manifest fields (target, radio,
+radio version, OB reference, OB mask and OB write mask) matched the
+SHA256-pinned **official** MNTM-012 updater. It does **NOT**
+demonstrate that a full updater will write no option bytes or that
+a bootloader/SD migration cannot fail.
+
+**Critical new mismatch with proposed rollout procedure:** because
+the E11 `resources.tar.gz` includes
+`apps/Tools/labmate.fap`, a full resources update may place the **new
+FAP on microSD as part of the firmware operation**. Therefore earlier
+"install firmware, verify boot, *then* install the new FAP" wording is
+**not a guaranteed two-phase isolation boundary** for THIS artifact.
+Do not execute the old flash script, edit its hardcoded hashes, or
+silently remove the FAP from an already checksummed archive.
+
+**NO-GO remains in force**. A non-writing reference model
+`model_split_resources_without_labmate_fap` verifies that the exact
+bundled FAP path can be excluded *conceptually* while preserving the
+exact JS GPIO plugin and all other indexed resources. It writes **no
+new updater and makes no installation claim**. The real package is
+unchanged and still explicitly labeled `DO NOT FLASH`.
+
+**Engineering decision before asking for device update permission:**
+produce a **new, independently pinned candidate build** with one
+separately delivered matched `labmate.fap` and a firmware updater
+resource archive that excludes `apps/Tools/labmate.fap` but preserves
+the exact matched native `js_gpio.fal`. Independently verify its
+radio/option-byte policy, inner firmware DFU, all resource and app
+hashes, source/run provenance, archive safety and review-only
+designation, and confirm changed SD resource path scope. Original
+#38966248325 and the Windows staging folder are immutable **review
+evidence, not transferable installation packages**.
+
+Other changes to updater-supplied applications and plugins (including
+the 126 `apps_data/` paths) still require a separate compatibility
+review and physical post-boot checks. The stored user settings and
+LabMate data backups are readable but **restoration not rehearsed**.
+Neither model feasibility nor CI proves device safety.
