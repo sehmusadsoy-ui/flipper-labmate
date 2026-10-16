@@ -34,7 +34,7 @@ def patch(s):
         "static bool e11_ext_tx_fault;\n")
     s=one(s,
         """void subghz_device_cc1101_ext_set_async_mirror_pin(const GpioPin* pin) {
-    if(e11_ext_rx_owner || e11_ext_rx_fault) return;""",
+    if(!subghz_device_cc1101_ext || e11_ext_rx_owner || e11_ext_rx_fault) return;""",
         """void subghz_device_cc1101_ext_set_async_mirror_pin(const GpioPin* pin) {
     if(e11_ext_rx_owner || e11_ext_rx_fault ||
        e11_ext_tx_owner || e11_ext_tx_fault) return;""")
