@@ -52,7 +52,7 @@ def patch(h,r,s,pub,api):
     # Define the helper after the global SubGHz object and before its
     # first setter: the global type and object must be declared first.
     s=once(s,
-        '    .bypass_region = false,\\n};\\n\\nint32_t furi_hal_subghz_get_rolling_counter_mult',
+        '    .bypass_region = false,\n};\n\nint32_t furi_hal_subghz_get_rolling_counter_mult',
         '''    .bypass_region = false,
 };
 
