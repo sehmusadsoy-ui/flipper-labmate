@@ -27,13 +27,24 @@ without incorrectly claiming that iButton configures PA7.
 - These guarantees are limited to **cooperating** owner clients,
   not every source that writes TIM1 registers directly.
 
-**Critical scope boundary:** original iButton HAL `void` start
-cannot return BUSY to its existing protocol-group caller, and the
-protocol group configures its separate iButton output pin before
-calling this timer start. The pin functions and upper-level emulation
-state machine have NOT been migrated to the same atomic owner
-lifecycle. This is a remaining cross-service risk; do not call
-iButton end-to-end safe under contention based only on the lease patch.
+**Extended native Misc protocol integration (2026-10-16):**
+`scripts/patch_momentum_native_ibutton_protocol_lease.py` now adds
+boolean `furi_hal_ibutton_emulate_try_start_with_pin` and
+`furi_hal_ibutton_emulate_try_stop` interfaces. The native
+`lib/ibutton/protocols/misc/protocol_group_misc.c` obtains TIM1 before
+setting the internal iButton output pin and resets that pin only after
+a safely completed STOP. A BUSY start leaves all timer/IRQ/GPIO
+registers untouched; failed release retains a sticky owner token and
+blocks restart. Legacy HAL `void` start/stop wrappers remain
+ABI-compatible but, individually, **cannot** report denial to their
+other callers. Native protocol ISR and dictionary mutations remain
+guarded by the patched driver and protocol START/STOP lifecycle.
+
+**Remaining scope boundary:** only the native iButton Misc group,
+TIM1 and its own internal output pin are coordinated in this change.
+Native RFID/SubGHz/infrared/NFC drivers and independent direct
+register users are NOT protected. A source/host PASS cannot establish
+native/native concurrency or device safety.
 
 ## Tests / release boundary
 
@@ -85,3 +96,8 @@ required to mark firmware-wide v1.6 resource management **COMPLETE**.
 A full SDK/firmware compile and mocked runtime test are not evidence
 that all independent native services comply with E11, or that Flipper
 hardware tested/approved the new firmware. **Global E11 remains OPEN.**
+
+## Protocol-level CI evidence (2026-10-16)
+
+- [iButton protocol START/STOP and lease fault test CI #38887921754](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38887921754): **SUCCESS**, exercising actual patched native iButton C and the real Misc START/STOP C with host HAL instrumentation (denied BUSY without GPIO changes, legacy occupied TIM1, successful START/STOP, repeated START, sticky release failure and unexpected timer clock loss).
+- [Complete matching Momentum updater, FAP and JS plugin CI #38888012694](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38888012694): **running at time of documentation**; do not claim a successful paired binary until conclusion SUCCESS. No physical tests, USB/SD writes or firmware flash.
