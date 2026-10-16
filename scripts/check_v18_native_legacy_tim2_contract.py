@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """E11 legacy-native TIM2 risk contract; fail on changed pinned source footprint.
 
-Audit only: DigitalSequence, RFID read TIM1 and RFID capture TIM2 are
-reviewed cooperating native owners; RFID DMA/field and SubGHz
+Audit only: DigitalSequence, RFID read TIM1, capture TIM2 and DMA2
+emulate TIM2 are reviewed native stages; RFID field and SubGHz
 remain native/direct HAL bypasses. No silent void-start veto.
 This is a negative safety gate, NOT firmware-global arbitration.
 """
@@ -90,8 +90,10 @@ def main()->int:
                     "furi_hal_rfid_tim_read_stop(void)" not in src or
                     "/* E11 native RFID capture TIM2 owner. */" not in src or
                     "bool furi_hal_rfid_tim_read_capture_try_start(" not in src or
-                    src.count("furi_hal_resource_lease_try_acquire(")!=2):
-                    raise ValueError("RFID changes exceed reviewed READ TIM1 + CAPTURE TIM2 modes")
+                    "/* E11 native RFID emulate TIM2/DMA2 composite owner. */" not in src or
+                    "bool furi_hal_rfid_tim_emulate_dma_try_start(" not in src or
+                    src.count("furi_hal_resource_lease_try_acquire(")!=3):
+                    raise ValueError("RFID changes exceed READ/CAPTURE/EMULATE reviewed modes")
                 read=src[src.index("bool furi_hal_rfid_tim_read_try_start("):
                          src.index("static void furi_hal_rfid_tim_emulate(void)")]
                 if (read.index("furi_hal_resource_lease_try_acquire(") >
@@ -107,13 +109,33 @@ def main()->int:
                     "if(!e11_rfid_capture_ready()) return;" not in src or
                     "e11_rfid_capture_fault = true;" not in src):
                     raise ValueError("RFID CAPTURE TIM2 claim/IRQ/STOP guard missing")
+                emulate=src[src.index("bool furi_hal_rfid_tim_emulate_dma_try_start("):
+                            src.index("void furi_hal_rfid_set_read_period(uint32_t period) {")]
+                if (emulate.index("furi_hal_resource_lease_try_acquire(") >
+                    emulate.index("furi_hal_rfid_pins_emulate();") or
+                    emulate.index("furi_hal_resource_lease_try_acquire(") >
+                    emulate.index("furi_hal_rfid->dma_callback = callback;") or
+                    "LL_DMA_IsEnabledChannel(RFID_DMA_CH1_DEF)" not in emulate or
+                    "LL_DMA_IsEnabledChannel(RFID_DMA_CH2_DEF)" not in emulate or
+                    "if(!e11_rfid_emulate_ready()) return;" not in src or
+                    "e11_rfid_emulate_fault=true;" not in src):
+                    raise ValueError("RFID EMULATE TIM2/DMA2 claim/ISR/STOP guard missing")
+                # Source-compare the still-unmigrated field mode exactly
+                # against pinned Momentum, not a brittle signature list.
+                old=subprocess.check_output(
+                    ["git","-C",str(root),"show","HEAD:"+path],text=True)
+                field_start="void furi_hal_rfid_field_detect_start(void) {"
+                field_end="bool furi_hal_rfid_field_is_present(uint32_t* frequency) {"
+                if (src[src.index(field_start):src.index(field_end)] !=
+                    old[old.index(field_start):old.index(field_end)]):
+                    raise ValueError("Unreviewed RFID field detect mode changed")
                 if ("if(!e11_rfid_read_ready()) return;" not in src or
                     "e11_rfid_read_fault=true;" not in src or
                     "furi_hal_bus_enable(RFID_CAPTURE_TIM_BUS)" not in src or
                     "furi_hal_bus_enable(FURI_HAL_RFID_EMULATE_TIMER_BUS)" not in src or
                     "furi_hal_bus_enable(FURI_HAL_RFID_FIELD_COUNTER_TIMER_BUS)" not in src):
                     raise ValueError("RFID read guard or still-unmigrated modes changed")
-                print("E11 RFID READ TIM1 + CAPTURE TIM2 cooperative SOURCE VERIFIED; DMA/field UNCOORDINATED")
+                print("E11 RFID READ+CAPTURE+EMULATE native guards SOURCE VERIFIED; FIELD UNMIGRATED")
             else:
                 if "furi_hal_resource_lease_try_acquire(" in src:
                     raise ValueError(f"{role}: unreviewed native lease migration")
