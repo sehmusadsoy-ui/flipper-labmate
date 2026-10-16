@@ -116,14 +116,15 @@ generated automatically.
 }
 \`\`\`
 
-**This is a documentation template, not a ready-to-run command.**
-Pin \`sourceCode\` to the final tested commit before invoking and
-correct PowerShell continuation characters as appropriate.
-Do not guess the drive letter or run it against the Flipper
-virtual/COM device (requires a *physical* card reader). If a
-reader is unavailable, record full-card backup as **DEFERRED**.
-The tool should not be used on a card with suspected filesystem
-damage without first selecting an independent recovery procedure.
+**The PowerShell block is syntax-complete and source-pinned, but
+`E:\` is ONLY an illustrative drive letter.** It must be changed
+to the real Flipper card drive shown by Windows after the user
+has connected an SD reader and confirmed the correct contents.
+Do not run it blindly, guess the drive or invoke it against
+the Flipper virtual/COM device. If a reader is unavailable,
+record full-card backup as **DEFERRED**. The script must not
+be used on a physically failing/suspected damaged card without
+an independent recovery plan.
 
 ## Tested on synthetic filesystems, not on operator microSD
 
