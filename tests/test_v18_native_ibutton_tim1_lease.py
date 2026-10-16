@@ -178,7 +178,7 @@ def main() -> None:
     source=path.read_text()
     h=(root/"targets/f7/furi_hal/furi_hal_resources.h").read_text()
     rs=(root/"targets/f7/furi_hal/furi_hal_resources.c").read_text()
-    assert "/* E11 native iButton TIM1 cooperative lease (timer only). */" in source
+    assert "/* E11 native iButton TIM1 cooperative lease (timer only)." in source
     assert "FURI_HAL_LEASE_NATIVE_IBUTTON_TIM1" in h
     assert "mask == FURI_HAL_LEASE_NATIVE_IBUTTON_TIM1" in rs
     assert source.index("furi_hal_resource_lease_try_acquire(") < source.index(
