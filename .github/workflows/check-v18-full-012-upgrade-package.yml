@@ -375,10 +375,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 labmate/scripts/verify_v18_full_review_pair.py \\
-            dev-full-candidate \\
-            --expected-source "$GITHUB_SHA" \\
-            --expected-run "$GITHUB_RUN_ID"
+          python3 labmate/scripts/verify_v18_full_review_pair.py dev-full-candidate --expected-source "$GITHUB_SHA" --expected-run "$GITHUB_RUN_ID"
           echo "FULL PAIR READ-ONLY SHA256/PROVENANCE/UPDATER PASS; NO DEVICE ACTION."
 
       - name: Archive for review ONLY (not a release)
