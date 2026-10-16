@@ -64,6 +64,7 @@ on:
       - "tests/test_v18_extended_dma_lease.py"
       - "scripts/patch_momentum_native_iso15693_irq_restore_busy.py"
       - "tests/test_v18_native_iso15693_irq_restore_busy.py"
+      - "tests/test_v18_signal_reader_iso15693_route_audit.py"
       - "tests/test_v18_native_pulse_reader_lease.py"
       - "tests/test_v18_native_pulse_lease_firmware.py"
       - "tests/test_v18_tim2_lease_integration.py"
@@ -215,6 +216,7 @@ jobs:
           python3 labmate/scripts/patch_momentum_native_iso15693_irq_restore_busy.py momentum-src
           python3 labmate/scripts/patch_momentum_native_iso15693_irq_restore_busy.py momentum-src --apply
           python3 labmate/tests/test_v18_native_iso15693_irq_restore_busy.py momentum-src
+          python3 labmate/tests/test_v18_signal_reader_iso15693_route_audit.py momentum-src
           python3 labmate/tests/test_v18_tim2_lease_integration.py
           python3 labmate/scripts/check_v18_native_legacy_tim2_contract.py momentum-src labmate
           git -C momentum-src diff --check
