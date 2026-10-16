@@ -40,32 +40,19 @@ def patch(h:str,r:str,gh:str,gc:str,oh:str,oc:str,dallas:str,api:str):
         "           mask == FURI_HAL_LEASE_NATIVE_SUBGHZ_TX_MIRROR_PB3 ||\n",
         "           mask == FURI_HAL_LEASE_NATIVE_SUBGHZ_TX_MIRROR_PB3 ||\n"
         "           mask == FURI_HAL_LEASE_NATIVE_ONEWIRE_SLAVE_PB14_EXTI14 ||\n")
+    # The E11.1c GPIO atomic TRY-ADD already exists in the pinned
+    # predecessor stage. Reuse it rather than duplicate the SDK symbol.
+    if ("bool furi_hal_gpio_try_add_int_callback(" not in gh or
+        "/* Atomically refuse a full EXTI line" not in gc):
+        raise ValueError("Missing approved existing GPIO TRY-ADD predecessor")
     gh=once(gh,
-        "void furi_hal_gpio_add_int_callback(const GpioPin* gpio, GpioExtiCallback cb, void* ctx);",
-        "void furi_hal_gpio_add_int_callback(const GpioPin* gpio, GpioExtiCallback cb, void* ctx);\n"
-        "/* E11: atomically refuse an occupied EXTI slot without overwriting it. */\n"
-        "bool furi_hal_gpio_try_add_int_callback(const GpioPin* gpio, GpioExtiCallback cb, void* ctx);\n"
-        "/* E11: remove only the expected registered callback + matching ctx. */\n"
+        "bool furi_hal_gpio_try_add_int_callback(\n    const GpioPin* gpio, GpioExtiCallback cb, void* ctx);",
+        "bool furi_hal_gpio_try_add_int_callback(\n    const GpioPin* gpio, GpioExtiCallback cb, void* ctx);\n"
+        "/* E11: remove only the expected EXTI callback and matching context. */\n"
         "bool furi_hal_gpio_try_remove_int_callback(const GpioPin* gpio, GpioExtiCallback cb, void* ctx);")
     gc=once(gc,
         "void furi_hal_gpio_add_int_callback(const GpioPin* gpio, GpioExtiCallback cb, void* ctx) {",
-        """/* E11 compare-and-register, does not alter the existing strict legacy API. */
-bool furi_hal_gpio_try_add_int_callback(const GpioPin* gpio, GpioExtiCallback cb, void* ctx) {
-    if(!gpio || !cb) return false;
-    FURI_CRITICAL_ENTER();
-    const uint8_t pin_num=furi_hal_gpio_get_pin_num(gpio);
-    if(gpio_interrupt[pin_num].callback != NULL) {
-        FURI_CRITICAL_EXIT();
-        return false;
-    }
-    gpio_interrupt[pin_num].callback=cb;
-    gpio_interrupt[pin_num].context=ctx;
-    LL_EXTI_EnableIT_0_31(GET_EXTI_LINE(gpio->pin));
-    FURI_CRITICAL_EXIT();
-    return true;
-}
-
-/* E11 compare-and-remove: never disable somebody else's EXTI callback. */
+        """/* E11 compare-and-remove: never disable somebody else's EXTI callback. */
 bool furi_hal_gpio_try_remove_int_callback(const GpioPin* gpio, GpioExtiCallback cb, void* ctx) {
     if(!gpio || !cb) return false;
     FURI_CRITICAL_ENTER();
@@ -215,8 +202,7 @@ void onewire_slave_stop(OneWireSlave* bus) {
     }
 }""")
     api=once(api,
-        'Function,+,furi_hal_gpio_add_int_callback,void,"const GpioPin*, GpioExtiCallback, void*"\n',
-        'Function,+,furi_hal_gpio_add_int_callback,void,"const GpioPin*, GpioExtiCallback, void*"\n'
+        'Function,+,furi_hal_gpio_try_add_int_callback,_Bool,"const GpioPin*, GpioExtiCallback, void*"\n',
         'Function,+,furi_hal_gpio_try_add_int_callback,_Bool,"const GpioPin*, GpioExtiCallback, void*"\n'
         'Function,+,furi_hal_gpio_try_remove_int_callback,_Bool,"const GpioPin*, GpioExtiCallback, void*"\n')
     api=once(api,
