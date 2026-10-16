@@ -117,7 +117,7 @@ static void dma_deinit(int controller,int channel) {
 #define LL_TIM_SetCounterMode(...) (++writes)
 #define LL_TIM_SetClockDivision(...) (++writes)
 #define LL_TIM_SetPrescaler(...) (++writes)
-#define LL_TIM_SetAutoReload(...) (++writes)
+#define LL_TIM_SetAutoReload(t, reload) (((t)->ARR=(reload)),++writes)
 #define LL_TIM_SetClockSource(...) (++writes)
 #define LL_TIM_DisableARRPreload(...) (++writes)
 #define LL_TIM_OC_Init(...) ((void)(&TIM_OC_InitStruct),++writes)
