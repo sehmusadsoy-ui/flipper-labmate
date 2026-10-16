@@ -206,7 +206,7 @@ def main() -> int:
             raise ValueError("Missing exact firmware resource ABI anchor")
         resource_updated = resource.replace(
             "#define FURI_HAL_RESOURCE_LEASE_API_V1 1",
-            "#define FURI_HAL_RESOURCE_LEASE_API_V1 1\\n"
+            "#define FURI_HAL_RESOURCE_LEASE_API_V1 1\n"
             "#define FURI_HAL_PWM_NATIVE_LEASE_API_V1 1",
             1,
         )
