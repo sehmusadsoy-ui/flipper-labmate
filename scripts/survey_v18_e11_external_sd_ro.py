@@ -27,8 +27,8 @@ MAX_TOTAL_TOP_FILES = 4096
 # Unlike the LabMate BACKUP parser, this survey never follows/opens names.
 # Other apps can legitimately use spaces, extra dots and non-ASCII raw bytes.
 # Treat filenames as opaque bytes and print aggregate counts ONLY.
-OPAQUE_DIR = re.compile(rb"^\\[D\\] (.+)$")
-OPAQUE_FILE = re.compile(rb"^\\[F\\] (.+) ([0-9]{1,10})b$")
+OPAQUE_DIR = re.compile(rb"^\[D\] (.+)$")
+OPAQUE_FILE = re.compile(rb"^\[F\] (.+) ([0-9]{1,10})b$")
 MAX_NAME_BYTES = 255
 MAX_SCOPE_BYTES = 262144
 
@@ -37,7 +37,7 @@ def parse_scope_listing(raw: bytes) -> list[tuple[str, bytes, int]]:
     """Strict CLI line grammar; opaque names are NEVER converted to PC paths."""
     if not isinstance(raw, bytes) or len(raw) > MAX_SCOPE_BYTES:
         raise ValueError("unexpected type or size for SD listing")
-    lines = [line[1:] if line.startswith(b"\\t") else line
+    lines = [line[1:] if line.startswith(b"\t") else line
              for line in raw.splitlines() if line]
     if lines == [b"Empty"]:
         return []
@@ -60,7 +60,7 @@ def parse_scope_listing(raw: bytes) -> list[tuple[str, bytes, int]]:
         # Nonetheless refuse malformed path/separator/control and duplicates.
         if (not name or len(name) > MAX_NAME_BYTES or
                 name in (b".", b"..") or
-                b"/" in name or b"\\\\" in name or
+                b"/" in name or b"\\" in name or
                 any(c < 32 or c == 127 for c in name)):
             raise ValueError("malformed opaque SD top-level name")
         normalized = name.lower()  # ASCII case only; raw bytes kept private
