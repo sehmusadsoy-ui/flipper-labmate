@@ -76,6 +76,43 @@ jobs:
             "$RUNNER_TEMP/e11-risk/official-012.tgz" \
             "$RUNNER_TEMP/e11-derived-split-review-only/firmware-full-update-SPLIT-REVIEW-DO-NOT-FLASH.tgz"
           echo 'FAP-excluded derivative has NO INSTALL AUTHORIZATION, no SDK rebuild and NO FLASH.'
+      - name: Confirm new split TGZ checksum manifest and FAP-free resources
+        shell: bash
+        run: |
+          set -euo pipefail
+          stage="$RUNNER_TEMP/e11-derived-split-review-only"
+          (
+            cd "$stage"
+            sha256sum --check SHA256SUMS.txt
+            test -s labmate.fap
+            test -s js_gpio.module
+            grep -Fq 'DO NOT FLASH' READ_ME_FIRST.txt
+          )
+          python3 - "$stage" <<'PY'
+          from pathlib import Path
+          import sys
+          sys.path.insert(0, str(Path("scripts").resolve()))
+          from preflight_v18_e11_local import ARTIFACTS
+          from stage_v18_e11_review_only import inspect_updater
+          from audit_v18_e11_resource_impact import FAP_PATH, JS_PATH, inventory_resources
+          from derive_v18_e11_split_review import DERIVED_NAME
+          root = Path(sys.argv[1])
+          full = inspect_updater(root / DERIVED_NAME)
+          inv = inventory_resources(full["resources.tar.gz"])
+          assert FAP_PATH not in inv, "new updater STILL embeds LabMate FAP"
+          assert inv[JS_PATH] == ARTIFACTS["js_gpio.module"], "native JS not identical"
+          assert len(inv) == 2115, "unexpected resource inventory"
+          print("FAP REMOVED FROM DERIVED UPDATE; 2115 OTHER RESOURCES PRESERVED")
+          print("Independent LabMate FAP is a separately checked review file.")
+          print("DO NOT FLASH / NO ACTUAL DEVICE VALIDATION")
+          PY
+      - name: Archive distinctly marked split derivative for REVIEW ONLY
+        uses: actions/upload-artifact@v4
+        with:
+          name: v18E11-SPLIT-REVIEW-DO-NOT-FLASH
+          path: ${{ runner.temp }}/e11-derived-split-review-only/*
+          retention-days: 7
+          if-no-files-found: error
       - name: Boundary declaration
         run: |
           echo 'NO DEVICE ACCESS, NO USB, NO FLASH, NO FAP INSTALL, NO REPAIR, NO RESTORE, NO RELEASE.'
