@@ -565,3 +565,33 @@ later over USB or reader if the owner chooses.
 Flipper's [manufacturer recovery documentation](https://docs.flipper.net/zero/basics/firmware-update/firmware-recovery) describes qFlipper USB DFU recovery **as a recovery path, not a non-destructive preflight**. Its firmware Repair can erase internal storage; settings recovery from the saved qFlipper TGZ is not rehearsed. Never instruct immediate DFU/Repair to prove a future rollback.
 
 [Automated offline NO-GO audit](../scripts/audit_v18_e11_recovery_readiness.py) with 13 adversarial tests distinguishes these cases. [Host CI #38981611042](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38981611042) **SUCCESS**; [independently pinned update resource/radio/OB verification #38981663476](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38981663476) **SUCCESS**. The resulting label is `E11 OFFLINE RECOVERY EQUIVALENCE AUDIT PASS - TRIAL NO-GO`, **not** permission to flash. Device-level recovery equivalence and independent firmware install/boot consent remain OPEN, even though non-LabMate full-SD backup is optional given the operator's stated data priorities. PR #13 draft; original and split artifacts DO NOT FLASH.
+
+
+## 2026-10-17 — Old /ext/Manifest deletion during firmware update: source proof, live device pending
+
+**Additional independently verified updater hazard:** the pinned Momentum
+post-update worker restores internal backup, then removes old resource files
+listed by the CURRENT on-device /ext/Manifest BEFORE unpacking the NEW
+resources.tar.gz. Files are removed by old manifest paths, not by a
+compare of current byte hashes. Therefore our review-only updater
+derivative which removes the NEW bundled LabMate FAP does NOT alone
+guarantee survival of the ALREADY installed EXITFIX FAP. The old
+manifest may or may not list apps/Tools/labmate.fap; this cannot
+be inferred from official old release archives because the
+currently installed firmware is custom dirty mntm-dev.
+
+Added a narrowly scoped [read-only real-device old-resource
+manifest probe](V1_8_E11_LIVE_UPDATER_MANIFEST_HANDOFF.md) and
+[source/audited binary parser](../scripts/audit_v18_e11_installed_resource_manifest.py).
+It reads ONLY /ext/Manifest with storage md5 + read_chunks, verifies
+source-screen checksum before/after, reports ONLY counts and known
+LabMate flags and refuses to create install permission in all
+outcomes. **OPERATOR HAS NOT RUN THIS PROBE ON ACTUAL COM7 YET.**
+
+CI: [exact upstream source #38982495403](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38982495403)
+**SUCCESS** (10 static semantic tests and 11 manifest tests);
+[Windows simulated device #38982495374](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38982495374)
+**SUCCESS**; [full host suite #38982495377](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38982495377)
+**SUCCESS**. Source-level resource deletion is confirmed;
+actual old installed Manifest entries remain UNKNOWN. Keep E11
+firmware trial, stable merge and any FAP overwrite **NO-GO**.
