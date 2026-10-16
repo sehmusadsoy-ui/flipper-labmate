@@ -138,3 +138,50 @@ it were a full microSD clone.
 other-app/plugin compatibility, recovery/restore rehearsal,
 full updater authorization and actual E11 GPIO/TIM/EXTI physical tests.
 Stable/main untouched; PR #13 draft.
+
+
+## 2026-10-17 — Actual operator COM7 top-level SD scope survey PASS
+
+**Real, not simulated:** the operator executed the corrected source
+`1da7dab93cfd72d94b243c3f5732ded9f8e26e5d` via COM7 and pasted:
+
+```
+survey_scope: ONLY /ext, /ext/apps, /ext/apps_data TOP LEVEL
+ext_directories: 27
+ext_top_level_files: 1
+apps_directories: 14
+apps_top_level_files: 0
+apps_data_labmate_folder_present: YES
+apps_data_OTHER_directories: 57
+apps_data_top_level_files: 0
+non_labmate_content_potentially_outside_existing_snapshot: YES
+whole_sd_inventory_completed: NO
+whole_sd_snapshot_verified: NO
+non_labmate_sd_files_backed_up: NO
+restore_rehearsed: NO
+E11_firmware_write_authorized: NO
+E11 NON-LABMATE SD TOP-LEVEL SURVEY ONLY - NO FLASH
+E11 SD SCOPE SURVEY COMPLETED - NO FLASH
+```
+
+**Classification: top-level directory exposure SURVEY PASS, whole-SD
+backup still FAIL/OPEN.** The `/ext` root contains 27
+directories and one file. `/ext/apps` has 14 directories, no
+top-level files. `/ext/apps_data` contains LabMate plus **57 other
+application data directories**, no files at its top level. This is
+NOT a recursive count; file contents, sizes, custom application
+preservation and restore have NOT been checked.
+
+The existing PC-verified 14 historical + 10 current LabMate files
+do not protect the other 57 `apps_data` directories or remaining
+microSD content. Do not infer corruption/changes from the mere
+existence of other directories. Real Flipper device files were
+**NOT modified** by the read-only survey, and original and
+FAP-excluded firmware bundles remain **DO NOT FLASH**.
+
+**Next safeguarding step:** optional, separate computer-side
+full-root filesystem snapshot using a properly ejected microSD
+and dedicated reader, to a brand-new PC folder. Include hidden
+and nested content and verify source/destination bytes/hashes and
+the manifest. If no reader is available, mark full-SD backup
+DEFERRED rather than pretending this scope survey is enough.
