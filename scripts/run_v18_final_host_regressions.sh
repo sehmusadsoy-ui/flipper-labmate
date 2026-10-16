@@ -104,5 +104,6 @@ python3 -m unittest discover -v -s tests -p test_v18_e11_live_labmate_sd.py
 python3 -m unittest discover -v -s tests -p test_v18_e11_live_snapshot.py
 python3 -m unittest discover -v -s tests -p test_v18_e11_external_sd_ro.py
 python3 -m unittest discover -v -s tests -p test_v18_e11_full_sd_pc_copy.py
+python3 -m unittest discover -v -s tests -p test_v18_e11_usb_sd_backup.py
 echo "V1.8 FINAL INTEGRATED HOST SOFTWARE REGRESSION PASS"
 echo "NOT PROVEN: live peripherals, actual microSD durability, Excel, firmware boot or rollback."
