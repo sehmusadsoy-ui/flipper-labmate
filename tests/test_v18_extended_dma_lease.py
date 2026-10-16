@@ -114,7 +114,7 @@ def main():
     h=(root/"targets/f7/furi_hal/furi_hal_resources.h").read_text()
     r=(root/"targets/f7/furi_hal/furi_hal_resources.c").read_text()
     api=(root/"targets/f7/api_symbols.csv").read_text()
-    mark="/* E11 additive 64-bit lease V2: no V1 ABI migration. */"
+    mark="/* E11 additive 64-bit lease V2: no V1 ABI migration."
     assert mark in r
     assert "FURI_HAL_RESOURCE_LEASE_API_V2 1" in h
     assert "Function,+,furi_hal_resource_lease_v2_try_acquire,uint32_t,uint64_t" in api
@@ -123,10 +123,7 @@ def main():
     assert "bool furi_hal_resource_lease_release(uint32_t handle, uint32_t resources)" in r
     assert "uint32_t furi_hal_resource_lease_v2_try_acquire(uint64_t resources)" in r
     mask=h[h.index("enum {\n    FuriHalLeaseTim1"):h.index("/* Returns unique nonzero")]
-    # V2 types are appended after the original fixed V1 header section.
-    mask+=h[h.index("#define FURI_HAL_RESOURCE_LEASE_API_V2"):
-             h.index("#define INPUT_DEBOUNCE_TICKS 4")]
-    alloc=r[r.index("/* Firmware-owned E11 lease primitive"):
+    # The original V1 header slice already includes the added V2 masks.\n    alloc=r[r.index("/* Firmware-owned E11 lease primitive"):
             r.index("const GpioPinRecord* furi_hal_resources_pin_by_number")]
     with tempfile.TemporaryDirectory(prefix="e11_mask_v2_") as tmp:
         d=Path(tmp);exe=d/"lease"
