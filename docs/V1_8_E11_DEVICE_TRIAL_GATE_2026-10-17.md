@@ -431,3 +431,46 @@ with other programs (such as qFlipper) not holding COM7.
 Do not modify code to auto-copy, prune, clear, restore or flash.
 Even if the LabMate-only result is a size/MD5 screen match,
 other SD folders and updater resource changes remain open.
+
+
+## 2026-10-17 — Two independent LabMate PC data copies secured (firmware NO-GO)
+
+The operator completed a real **read-only Flipper `storage read_chunks`
+→ new PC folder** snapshot for every currently live file under
+`/ext/apps_data/labmate`. Terminal result:
+`snapshot_files_verified: 10`,
+`snapshot_file_bytes: 1791`,
+`new_device_files_preserved: 5`,
+`changed_device_files_preserved: 2`,
+`historical_files_not_on_device: 9`,
+`old_backup_preserved: YES`,
+`flipper_files_modified: NO`,
+with final
+`LIVE LABMATE PC READBACK SNAPSHOT VERIFIED - NO FLASH / NO RESTORE`.
+The new PC copy was length/MD5-screened against device, locally
+SHA256 verified from disk, and the live source re-inventoried after
+the copy. The earlier 14-file backup is preserved as a separate,
+unaltered historical state. This **closes the LabMate-own-folder
+current snapshot gate** but not the full-device SD gate.
+
+**Remaining mandatory release trial barriers:**
+1. Preserve or explicitly review current user/app/plugin data and
+   customized resources in the **rest of `/ext`**, including
+   `apps_data` other than LabMate, before an update whose official
+   resource delta is known to affect many plugin and app files.
+   A current 10-file LabMate folder snapshot is NOT a full SD copy.
+2. Independently review the recovery route and rollback
+   compatibility; a downloaded official updater, old FAP copy
+   and qFlipper settings-only TGZ do not demonstrate a
+   **successfully tested restore**.
+3. Exact split FAP-excluded derived updater is **REVIEW ONLY**;
+   no tested firmware boot, no owner flash authorization,
+   no verified installation sequence/compatibility acceptance.
+4. Live E11 GPIO/TIM1/TIM2/EXTI, button/PWM and STOP/BACK
+   denial/reacquisition verification on current/new hardware
+   remains open. Hardware fixtures explicitly marked DEFERRED
+   retain that state until present.
+
+**Decision: NO-GO for firmware flashing despite successful
+LabMate folder snapshot.** Do not reuse historical installer
+or merge PR #13 / touch Stable.
