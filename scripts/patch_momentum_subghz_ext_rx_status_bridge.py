@@ -74,24 +74,33 @@ bool subghz_devices_try_start_async_rx(""")
      * holding the critical section across plugin code. Otherwise a
      * second app thread could overwrite the status and fake success.
      */
-    FURI_CRITICAL_ENTER();
-    if(e11_rx_start_pending) {
+    /* Each critical macro declares a local saved mask. STM32/Furi
+     * requires distinct lexical scopes for separate critical entries.
+     */
+    {
+        FURI_CRITICAL_ENTER();
+        if(e11_rx_start_pending) {
+            FURI_CRITICAL_EXIT();
+            FURI_LOG_W("SubGhzDevices","Nested/concurrent external RX START refused");
+            return false;
+        }
+        e11_rx_start_pending=device;
+        e11_rx_start_reported=false;
+        e11_rx_start_result=false;
         FURI_CRITICAL_EXIT();
-        FURI_LOG_W("SubGhzDevices","Nested/concurrent external RX START refused");
-        return false;
     }
-    e11_rx_start_pending=device;
-    e11_rx_start_reported=false;
-    e11_rx_start_result=false;
-    FURI_CRITICAL_EXIT();
     device->interconnect->start_async_rx(callback, context);
-    FURI_CRITICAL_ENTER();
-    const bool valid=e11_rx_start_reported;
-    const bool accepted=e11_rx_start_result;
-    e11_rx_start_pending=NULL;
-    e11_rx_start_reported=false;
-    e11_rx_start_result=false;
-    FURI_CRITICAL_EXIT();
+    bool valid=false;
+    bool accepted=false;
+    {
+        FURI_CRITICAL_ENTER();
+        valid=e11_rx_start_reported;
+        accepted=e11_rx_start_result;
+        e11_rx_start_pending=NULL;
+        e11_rx_start_reported=false;
+        e11_rx_start_result=false;
+        FURI_CRITICAL_EXIT();
+    }
     if(valid) return accepted;
     if(device->name && strcmp(device->name,"cc1101_ext")==0) {
         FURI_LOG_W("SubGhzDevices","External CC1101 RX lacks E11 status; deny unknown start");
