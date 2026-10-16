@@ -80,6 +80,7 @@ class SDReaderPCCopyTests(unittest.TestCase):
         self.assertFalse(self.out.exists())
 
     def test_missing_flipper_root_refused(self):
+        (self.sd/"apps_data"/"labmate"/"log_0050.csv").unlink()
         (self.sd/"apps_data"/"labmate").rmdir()
         with self.assertRaisesRegex(ValueError, "not a recognized"):
             copy_and_verify_sd(self.sd,self.out)
