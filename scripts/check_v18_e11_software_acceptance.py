@@ -20,6 +20,12 @@ EVIDENCE={
         ("system", "furi_hal_gpio"),
     "scripts/check_v18_e11_direct_ll_boundary.py":
         ("LL_EXTI", "DIRECT_TIMERS", "DMA2"),
+    # Genuine original-C tests must also exercise mirror pin setter while
+    # an RX/TX lease or sticky fault is held; unsupported pins fail closed.
+    "tests/test_v18_native_ext_cc1101_rx_lease.py":
+        ("subghz_device_cc1101_ext_set_async_mirror_pin", "e11_ext_rx_fault"),
+    "tests/test_v18_native_ext_cc1101_tx_lease.py":
+        ("subghz_device_cc1101_ext_set_async_mirror_pin", "e11_ext_tx_fault"),
 }
 WORKFLOW_REQUIRED=(
     "patch_momentum_subghz_ext_rx_status_bridge.py",
@@ -30,6 +36,8 @@ WORKFLOW_REQUIRED=(
     "test_v18_native_imu_fifo_exti_lease.py",
     "test_v18_native_ext_cc1101_tx_lease.py",
     "test_v18_native_signal_reader_e11_lease.py",
+    "test_v18_native_ext_cc1101_rx_lease.py",
+    "test_v18_native_ext_cc1101_tx_lease.py",
 )
 
 def require(cond, reason):
@@ -68,6 +76,7 @@ def check(root:Path):
             "Direct LL audit must retain reserved infrastructure checks")
     print("E11 SOURCE-REVIEW ACCEPTANCE GUARD PASS")
     print("Pinned full native build and original-C host gates remain mandatory.")
+    print("External CC1101 RX/TX setter tests required; default-pin scope only.")
     print("External v1 third-party RX, optional pins, recovery and physical tests remain OPEN.")
     return 0
 
