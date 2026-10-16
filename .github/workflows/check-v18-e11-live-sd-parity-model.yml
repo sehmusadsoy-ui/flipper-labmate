@@ -50,6 +50,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "E11 full SD PC-only copy/verification model failed" }
           python -m unittest discover -v -s tests -p test_v18_e11_usb_sd_backup.py
           if ($LASTEXITCODE -ne 0) { throw "E11 USB full SD no-device copy verification model failed" }
+          python -m unittest discover -v -s tests -p test_v18_e11_installed_resource_manifest.py
+          if ($LASTEXITCODE -ne 0) { throw "E11 old resource cleanup /ext/Manifest live model failed" }
           Write-Host "FLIPPER LABMATE SD PARITY READ-ONLY MODEL PASS"
           Write-Host "HISTORICAL MISSING LOGS REMAIN AN UNRESOLVED DATA PARITY QUESTION"
           Write-Host "NO COM, USB, DEVICE WRITE, FLASH, FORMAT OR RESTORE"
