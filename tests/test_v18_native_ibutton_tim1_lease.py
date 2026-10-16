@@ -43,6 +43,7 @@ void furi_hal_bus_disable(int);
 void furi_hal_interrupt_set_isr(int, void (*)(void*), void*);
 void furi_hal_gpio_write(const GpioPin*,bool);
 void furi_hal_gpio_init(const GpioPin*,int,int,int);
+void furi_hal_ibutton_pin_configure(void);
 #define LL_TIM_IsActiveFlag_UPDATE(...) 1
 #define LL_TIM_ClearFlag_UPDATE(...) (++hardware_writes)
 #define LL_TIM_SetPrescaler(...) (++hardware_writes)
@@ -200,7 +201,7 @@ def main() -> None:
     assert "FURI_HAL_LEASE_NATIVE_IBUTTON_TIM1" in h
     assert "mask == FURI_HAL_LEASE_NATIVE_IBUTTON_TIM1" in rs
     assert source.index("furi_hal_resource_lease_try_acquire(") < source.index(
-        "furi_hal_ibutton->state = FuriHalIbuttonStateRunning;",source.index("void furi_hal_ibutton_emulate_start"))
+        "furi_hal_ibutton->state = FuriHalIbuttonStateRunning;",source.index("bool furi_hal_ibutton_emulate_try_start_with_pin"))
     with tempfile.TemporaryDirectory(prefix="labmate_e11_ibutton_") as td:
         root_tmp=Path(td)
         (root_tmp/"stub.h").write_text(STUB)
