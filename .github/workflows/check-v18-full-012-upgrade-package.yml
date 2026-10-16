@@ -238,6 +238,7 @@ jobs:
           python3 labmate/scripts/patch_momentum_native_ext_cc1101_tx_lease.py momentum-src
           python3 labmate/scripts/patch_momentum_native_ext_cc1101_tx_lease.py momentum-src --apply
           python3 labmate/tests/test_v18_native_ext_cc1101_tx_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_ext_cc1101_free_lease.py momentum-src
           python3 labmate/scripts/patch_momentum_native_wiegand_exti_lease.py momentum-src
           python3 labmate/scripts/patch_momentum_native_wiegand_exti_lease.py momentum-src --apply
           python3 labmate/tests/test_v18_native_wiegand_exti_lease.py momentum-src
