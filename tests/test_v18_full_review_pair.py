@@ -97,6 +97,20 @@ class FullReviewPairTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, needle):
             self.checked(**kwargs)
 
+    def test_full_firmware_ci_invokes_verifier_with_exact_arguments(self):
+        """Catch YAML/Bash accidental double-backslash line continuation."""
+        workflow = (Path(__file__).resolve().parents[1] /
+                    ".github/workflows/check-v18-full-012-upgrade-package.yml"
+                    ).read_text("utf-8")
+        begin = workflow.index("      - name: Independently re-verify FULL review pair")
+        end = workflow.index("      - name: Archive for review ONLY", begin)
+        step = workflow[begin:end]
+        expected = ('python3 labmate/scripts/verify_v18_full_review_pair.py '
+                    'dev-full-candidate --expected-source "$GITHUB_SHA" '
+                    '--expected-run "$GITHUB_RUN_ID"')
+        self.assertIn(expected, step)
+        self.assertNotIn("\\", step, "Shell backslash regression in verifier CLI")
+
     def test_valid_exact_pair(self):
         result = self.checked()
         self.assertEqual(result["Actions run"], str(RUN))
