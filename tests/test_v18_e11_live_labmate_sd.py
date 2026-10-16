@@ -91,7 +91,7 @@ class TestE11LiveLabMateSD(unittest.TestCase):
         local = local_inventory(src)
         m1, m2 = local["log_0050.csv"][1], local["profiles.bin"][1]
         storage = FakeStorage(
-            [b"[F] log_0050.csv 6\r\n[F] profiles.bin 8"],
+            [b"[F] log_0050.csv 6b\r\n[F] profiles.bin 8b"],
             {
                 "/ext/apps_data/labmate/log_0050.csv": m1,
                 "/ext/apps_data/labmate/profiles.bin": m2,
@@ -132,8 +132,8 @@ class TestE11LiveLabMateSD(unittest.TestCase):
 
     def test_multiple_nested_directories(self):
         storage = FakeStorage(
-            [b"[D] configs\r\n[F] log_0055.csv 2",
-             b"[F] app.ini 3"],
+            [b"[D] configs\r\n[F] log_0055.csv 2b",
+             b"[F] app.ini 3b"],
             {
                 "/ext/apps_data/labmate/log_0055.csv": "a"*32,
                 "/ext/apps_data/labmate/configs/app.ini": "b"*32,
@@ -147,6 +147,30 @@ class TestE11LiveLabMateSD(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "storage error"):
             parse_listing(b"Storage error: filesystem not ready")
 
+    def test_exact_real_momentum_storage_cli_file_size_suffix(self):
+        # Momentum pinned d3f89dfe: printf("\\t[F] %s %lub\\r\\n")
+        response = (b"\\t[F] log_0050.csv 116b\\r\\n"
+                    b"\\t[D] configs\\r\\n"
+                    b"\\t[F] log_0051.csv 0b\\r\\n")
+        self.assertEqual(
+            parse_listing(response),
+            [("file", "log_0050.csv", 116),
+             ("directory", "configs", 0),
+             ("file", "log_0051.csv", 0)],
+        )
+
+    def test_refuse_missing_or_wrong_byte_size_suffix(self):
+        for bad in (
+            b"[F] log_0050.csv 116",
+            b"[F] log_0050.csv 116bb",
+            b"[F] log_0050.csv 116B",
+            b"[F] log_0050.csv 116kb",
+        ):
+            with self.subTest(raw=bad), self.assertRaisesRegex(
+                ValueError, "unrecognized"
+            ):
+                parse_listing(bad)
+
     def test_unrecognized_or_malformed_listing_refused(self):
         for value in (
             b"partial data",
@@ -155,14 +179,14 @@ class TestE11LiveLabMateSD(unittest.TestCase):
             b"[F] ../unsafe 123",
             b"[F] file.dat NaN",
             b"[D] \\bad",
-            b"[F] log.csv 1\n[F] LOG.csv 1",
-            b"Empty\n[F] another.csv 3",
+            b"[F] log.csv 1b\n[F] LOG.csv 1b",
+            b"Empty\n[F] another.csv 3b",
         ):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 parse_listing(value)
 
     def test_bad_md5_refused(self):
-        storage = FakeStorage([b"[F] data.bin 2"],
+        storage = FakeStorage([b"[F] data.bin 2b"],
                               {"/ext/apps_data/labmate/data.bin": "INVALID"})
         with self.assertRaisesRegex(ValueError, "MD5"):
             remote_inventory(storage)
