@@ -122,6 +122,17 @@ class ExternalSDTopOnly(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "malformed opaque"):
             survey(fake)
 
+    def test_scope_only_error_does_not_echo_private_name(self):
+        fake = Fake((self.root(), b"[D] Tools", b"[D] ../../private-data"))
+        with self.assertRaisesRegex(ValueError, "invalid SD listing at /ext/apps_data") as ctx:
+            survey(fake)
+        self.assertNotIn("private-data", str(ctx.exception))
+        self.assertEqual(fake.commands, [
+            'storage list "/ext"\r',
+            'storage list "/ext/apps"\r',
+            'storage list "/ext/apps_data"\r',
+        ])
+
     def test_no_serial_followup_after_malformed_response(self):
         fake = Fake((b"unknown-prefix",))
         with self.assertRaisesRegex(ValueError, "unrecognized"):
