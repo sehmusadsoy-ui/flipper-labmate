@@ -66,11 +66,23 @@ with fault-injectable host HAL stubs. Checks include:
 - actual allocator TIM1 collision with PWM and iButton,
   wrong-mask release denial and separate TIM2 coexistence.
 
-**Matched firmware/FAP/updater**:
-[CI #38890148015](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38890148015).
-Check the **completed** workflow before claiming build PASS or
-recording hashes. This is a CI-only uninstalled firmware bundle;
-**DO NOT FLASH**.
+**Matched firmware/FAP/updater — VERIFIED CI PASS**:
+[Full MNTM-012 review CI #38890148015](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38890148015),
+source `2d8c72b0e6b3cf02e26091112d614c53950e3266`,
+**SUCCESS**. Exact native NFC low-power resume C and lease allocator
+host tests, Momentum firmware, one LabMate FAP, native JS plugin,
+APPCHK, full updater checksum/provenance, and verified official
+MNTM-012 radio/option-byte comparison PASS (CI only).
+
+- **CI-only firmware.dfu SHA256:** `ca10f185f19838af2289f2a921b0642c0103481ed9b79a31709bcf59108d2cae`
+- **Matching CI-only labmate.fap SHA256:** `532e270974fd2a6aabc99667ffe3052724ac38c6b90b87ac3104048b63e41b0b`
+- **Review-only complete package artifact ID:** `12041592232`, **DO NOT FLASH**.
+
+Earlier first complete native-NFC paired firmware CI
+[#38890018010](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38890018010)
+was also **SUCCESS**, but lacks the later additional genuine
+low-power-mode C host assertions. Its firmware/FAP checksums match
+the final run; final evidence is #38890148015.
 
 ## Open native safety boundaries
 
