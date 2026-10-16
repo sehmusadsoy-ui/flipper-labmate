@@ -97,5 +97,6 @@ echo "::endgroup::"
 python3 -m unittest discover -v -s tests -p test_v18_full_update_bundle.py
 python3 -m unittest discover -v -s tests -p test_v18_full_review_pair.py
 python3 -m unittest discover -v -s tests -p test_v18_e11_local_preflight.py
+python3 -m unittest discover -v -s tests -p test_v18_e11_review_stage.py
 echo "V1.8 FINAL INTEGRATED HOST SOFTWARE REGRESSION PASS"
 echo "NOT PROVEN: live peripherals, actual microSD durability, Excel, firmware boot or rollback."
