@@ -65,17 +65,28 @@ def main()->int:
             raise ValueError("Pinned Momentum commit mismatch")
         changed=subprocess.check_output(
             ["git","-C",str(root),"diff","--name-only","HEAD"],text=True).splitlines()
-        for path in ROOTS.values():
-            if path in changed:
+        for role,path in ROOTS.items():
+            if path in changed and role!="digital":
                 raise ValueError(f"Unreviewed critical native driver changed: {path}")
         for role,path in ROOTS.items():
             src=(root/path).read_text(encoding="utf-8")
             for signature in EXPECTED[role]:
                 if signature not in src:
                     raise ValueError(f"{role}: legacy hardware control changed: {signature}")
-            if "furi_hal_resource_lease_try_acquire(" in src:
-                raise ValueError(f"{role}: new cooperative migration requires independent review")
-            print(f"E11 LEGACY {role.upper()}: TIM footprint VERIFIED, but UNCOORDINATED")
+            if role=="digital" and path in changed:
+                if ("/* LabMate E11 native DigitalSequence owner. */" not in src or
+                    "digital_sequence_e11_claim(sequence)" not in src or
+                    "digital_sequence_e11_release(sequence)" not in src or
+                    "sequence->e11_lease_fault = true;" not in src):
+                    raise ValueError("digital_sequence changed without verified lease lifecycle")
+                if src.index("digital_sequence_e11_claim(sequence)") > src.index(
+                    "furi_hal_gpio_init(sequence->gpio, GpioModeOutputPushPull"):
+                    raise ValueError("digital_sequence claims AFTER GPIO changes")
+                print("E11 NATIVE DIGITAL: TIM2/DMA cooperative lifecycle SOURCE VERIFIED")
+            else:
+                if "furi_hal_resource_lease_try_acquire(" in src:
+                    raise ValueError(f"{role}: unreviewed native lease migration")
+                print(f"E11 LEGACY {role.upper()}: TIM footprint VERIFIED, but UNCOORDINATED")
         tim2=(dev/"src/labmate_frequency_tim2.c").read_text(encoding="utf-8")
         counter=(dev/"src/labmate_event_counter.c").read_text(encoding="utf-8")
         measurement=(dev/"src/labmate_measurements.c").read_text(encoding="utf-8")
