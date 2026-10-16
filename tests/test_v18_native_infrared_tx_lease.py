@@ -29,6 +29,7 @@ STUB=r"""
 typedef int FuriStatus;
 #define FURI_HAL_LEASE_NATIVE_IR_TX_INTERNAL ((1U<<0)|(1U<<25)|(1U<<26))
 #define FURI_HAL_LEASE_NATIVE_IR_TX_EXT_PA7 (FURI_HAL_LEASE_NATIVE_IR_TX_INTERNAL|(1U<<1))
+#define FURI_HAL_LEASE_NATIVE_IR_DETECT_PA7 (1U<<1)
 #define INFRARED_MIN_FREQUENCY 10000U
 #define INFRARED_MAX_FREQUENCY 1000000U
 #define INFRARED_TIM_TX_DMA_BUFFER_SIZE 200
@@ -40,6 +41,8 @@ typedef int FuriStatus;
 #define INFRARED_DMA_CH1_IRQ 31
 #define INFRARED_DMA_CH2_IRQ 32
 #define GpioModeAnalog 0
+#define GpioModeInput 2
+#define GpioPullUp 3
 #define GpioPullDown 0
 #define GpioSpeedLow 0
 #define GpioModeAltFunctionPushPull 1
@@ -89,9 +92,11 @@ static bool claim_allowed,release_ok=true,tim1_clock,dma1,dma2,lose_clock;
 static int fail_malloc_on=0;
 static uint32_t last_claim_mask;
 static int stop_signaled;
+static bool external_detected;
 uint32_t furi_hal_resource_lease_try_acquire(uint32_t mask) {
     assert(mask==FURI_HAL_LEASE_NATIVE_IR_TX_INTERNAL ||
-           mask==FURI_HAL_LEASE_NATIVE_IR_TX_EXT_PA7);
+           mask==FURI_HAL_LEASE_NATIVE_IR_TX_EXT_PA7 ||
+           mask==FURI_HAL_LEASE_NATIVE_IR_DETECT_PA7);
     claims++;last_claim_mask=mask;return claim_allowed?99U:0U;
 }
 bool furi_hal_resource_lease_release(uint32_t handle,uint32_t mask) {
@@ -116,6 +121,11 @@ void furi_hal_gpio_init_ex(const GpioPin* pin,int mode,int pull,int speed,int al
 }
 void furi_hal_gpio_init(const GpioPin* pin,int mode,int pull,int speed) {
  (void)pin;(void)mode;(void)pull;(void)speed;writes++;
+}
+void furi_hal_cortex_delay_us(uint32_t n) {(void)n;}
+bool furi_hal_gpio_read(const GpioPin* p) {
+ assert(p==&gpio_ext_pa7);
+ return !external_detected;
 }
 void furi_hal_interrupt_set_isr(int irq,void(*fn)(void*),void* ctx) {
  (void)irq;(void)fn;(void)ctx;writes++;
@@ -172,7 +182,7 @@ static void reset_test(void) {
  writes=claims=releases=allocs=allocated_ok=freed=waits=0;
  tim1_clock=dma1=dma2=lose_clock=false;
  claim_allowed=false;release_ok=true;fail_malloc_on=0;
- last_claim_mask=0;stop_signaled=0;
+ last_claim_mask=0;stop_signaled=0;external_detected=false;
  furi_hal_infrared_state=InfraredStateIdle;
  infrared_e11_tx_handle=infrared_e11_tx_mask=0U;infrared_e11_tx_fault=false;
  infrared_tx_output=FuriHalInfraredTxPinInternal;
@@ -204,6 +214,20 @@ int main(void) {
    assert(allocs==4 && allocated_ok==3 && freed==allocated_ok);
    assert(!infrared_tim_tx.stop_semaphore);
  }
+ /* The accessory probe itself must never reconfigure PA7 when denied. */
+ reset_test();
+ assert(furi_hal_infrared_detect_tx_output()==FuriHalInfraredTxPinInternal);
+ assert(writes==0 && claims==1 && releases==0);
+ reset_test();claim_allowed=true;external_detected=true;
+ assert(furi_hal_infrared_detect_tx_output()==FuriHalInfraredTxPinExtPA7);
+ assert(last_claim_mask==FURI_HAL_LEASE_NATIVE_IR_DETECT_PA7);
+ assert(writes==2 && claims==1 && releases==1);
+ reset_test();claim_allowed=true;release_ok=false;external_detected=true;
+ assert(furi_hal_infrared_detect_tx_output()==FuriHalInfraredTxPinInternal);
+ assert(infrared_e11_tx_fault && infrared_e11_tx_handle==99U);
+ int previous_writes=writes;
+ assert(!furi_hal_infrared_async_tx_try_start(38000U,0.33f));
+ assert(writes==previous_writes && claims==1);
  /* Valid TX claim, START and normal semaphore STOP release. */
  reset_test();claim_allowed=true;
  assert(furi_hal_infrared_async_tx_try_start(38000U,0.33f));
@@ -279,6 +303,11 @@ def main() -> None:
     api=(root/"targets/f7/api_symbols.csv").read_text()
     assert "/* E11 native infrared TX timer/DMA/PA7 cooperative owner. */" in ir
     assert "FURI_HAL_LEASE_NATIVE_IR_TX_EXT_PA7" in head
+    assert "FURI_HAL_LEASE_NATIVE_IR_DETECT_PA7" in head
+    assert ir.index("furi_hal_resource_lease_try_acquire(mask);",
+        ir.index("FuriHalInfraredTxPin furi_hal_infrared_detect_tx_output")) < ir.index(
+        "furi_hal_gpio_init(gpio, GpioModeInput",ir.index(
+        "FuriHalInfraredTxPin furi_hal_infrared_detect_tx_output"))
     assert "mask == FURI_HAL_LEASE_NATIVE_IR_TX_EXT_PA7" in resource
     assert "Function,+,furi_hal_infrared_async_tx_try_start,_Bool," in api
     assert "furi_hal_infrared_async_tx_try_start(" in worker
@@ -296,10 +325,12 @@ def main() -> None:
     # e11 helper is inserted after function declarations before RX ISR
     funcs=ir[ir.index("static void furi_hal_infrared_async_tx_free_resources(void) {"):
              ir.index("void furi_hal_infrared_async_tx_set_data_isr_callback(")]
+    detect=ir[ir.index("FuriHalInfraredTxPin furi_hal_infrared_detect_tx_output(void) {"):
+              ir.index("void furi_hal_infrared_set_tx_output(")]
     with tempfile.TemporaryDirectory(prefix="labmate_ir_tx_e11_") as td:
         tmp=Path(td)
         exe=tmp/"test"
-        (tmp/"host.c").write_text(STUB+"\n"+helpers+"\n"+funcs+"\n"+TEST)
+        (tmp/"host.c").write_text(STUB+"\n"+helpers+"\n"+funcs+"\n"+detect+"\n"+TEST)
         subprocess.run(["cc","-std=c11","-Wall","-Wextra","-Werror","-pedantic",
                         "-O0",str(tmp/"host.c"),"-o",str(exe)],check=True)
         subprocess.run([str(exe)],check=True)
