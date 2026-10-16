@@ -41,7 +41,9 @@ def patch(h,r,s,wh,app):
     wh=once(wh,
         "    void begin(void);\n    void end(void);",
         "    void begin(void);\n    /* E11 true only after BOTH inputs and callback slots are owned. */\n"
-        "    bool tryBegin(void);\n    /* Ignore stale callbacks after BUSY/fault. */\n"\n        "    bool e11IsActive(void) const { return e11_owner != 0U && !e11_fault; }\n"\n        "    void end(void);")
+        "    bool tryBegin(void);\n    /* Ignore stale callbacks after BUSY/fault. */\n"
+        "    bool e11IsActive(void) const { return e11_owner != 0U && !e11_fault; }\n"
+        "    void end(void);")
     wh=once(wh,
         "private:\n    static bool DoWiegandConversion(void);",
         "private:\n    uint32_t e11_owner = 0;\n    bool e11_fault = false;\n    static bool DoWiegandConversion(void);")
