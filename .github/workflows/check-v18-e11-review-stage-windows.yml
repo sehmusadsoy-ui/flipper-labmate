@@ -1,0 +1,86 @@
+name: v1.8 E11 exact FULL review stage on Windows (NO FLASH)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - ".github/workflows/check-v18-e11-review-stage-windows.yml"
+      - "scripts/stage_v18_e11_review_only.py"
+      - "scripts/preflight_v18_e11_local.py"
+      - "scripts/verify_v18_full_review_pair.py"
+      - "scripts/check_v18_full_update_bundle.py"
+      - "tests/test_v18_e11_review_stage.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  exact_public_review:
+    name: Synthetic rejection tests plus real pinned CI artifact (NO DEVICE)
+    runs-on: windows-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout exact E11 review source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Pin portable Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Native Windows negative-path and no-overwrite tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m unittest discover -v -s tests -p test_v18_e11_review_stage.py
+          if ($LASTEXITCODE -ne 0) { throw 'Windows E11 review-stage tests FAILED' }
+      - name: Fetch independently pinned actual full candidate for PUBLIC-only review
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $dest = Join-Path $env:RUNNER_TEMP 'e11-pinned-full-38966248325'
+          if (Test-Path -LiteralPath $dest) { throw 'Unexpected existing review dir' }
+          New-Item -ItemType Directory -Path $dest | Out-Null
+          gh run download 38966248325 -R sehmusadsoy-ui/flipper-labmate -n v18DEV-FULL-MNTM012-REVIEW-DO-NOT-FLASH -D $dest
+          if ($LASTEXITCODE -ne 0) { throw 'Pinned real full CI artifact download FAILED' }
+          Write-Host 'REAL FULL review-only archive downloaded. NO USB/FLASH.'
+      - name: Independently check exact real archive then stage ONLY to runner temp
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $inputDir = Join-Path $env:RUNNER_TEMP 'e11-pinned-full-38966248325'
+          $outDir = Join-Path $env:RUNNER_TEMP 'e11-review-only-stage'
+          $check = Join-Path $env:RUNNER_TEMP 'e11_validate_and_stage.py'
+          $code = @'
+          from pathlib import Path
+          import sys
+          sys.path.insert(0, str(Path("scripts").resolve()))
+          from preflight_v18_e11_local import SOURCE, RUN, ARTIFACTS, assert_sha
+          from verify_v18_full_review_pair import verify
+          from stage_v18_e11_review_only import inspect_updater, write_review_stage
+          original, output = Path(sys.argv[1]), Path(sys.argv[2])
+          for name, digest in ARTIFACTS.items():
+              assert_sha(original / name, digest)
+          verify(original, SOURCE, RUN)
+          files = inspect_updater(original / "firmware-full-update.tgz")
+          staged = write_review_stage(output, files)
+          assert (output / "STAGING_REVIEW_ONLY.txt").is_file()
+          assert (staged / "firmware.dfu").read_bytes() == (original / "firmware.dfu").read_bytes()
+          print("REAL FULL CI 38966248325 WINDOWS REVIEW STAGE PASS - NO FLASH")
+          print("PUBLIC ARTIFACT ONLY: private operator rollback/backups NOT available on CI.")
+          '@
+          Set-Content -LiteralPath $check -Value $code -Encoding UTF8
+          python $check $inputDir $outDir
+          if ($LASTEXITCODE -ne 0) { throw 'Actual full review-only staging FAILED' }
+          if (-not (Test-Path -LiteralPath (Join-Path $outDir 'STAGING_REVIEW_ONLY.txt'))) {
+              throw 'Missing review-only warning marker'
+          }
+      - name: Final strict physical boundary
+        shell: pwsh
+        run: |
+          Write-Host 'CI checks PUBLIC artifact and synthetic tests only.'
+          Write-Host 'NO USB, firmware flash, FAP install, recovery rehearsal, SD write or Stable promotion.'
