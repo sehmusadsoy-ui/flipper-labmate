@@ -95,10 +95,16 @@ int main(void) {
     assert(w.state==InfraredWorkerStateIdle && started==1 && joined==1);
     assert(callbacks==4 && flags==1 && resets==1);
     assert(timeout_calls==0 && hal_stops==0 && timer_starts==1);
+    infrared_worker_rx_stop(&w); /* denied START => no-op, no thread join */
+    assert(w.state==InfraredWorkerStateIdle && started==1 && joined==1);
+    assert(callbacks==4 && flags==1 && resets==1 && hal_stops==0);
     /* Legacy void API must also unwind on BUSY. */
     infrared_worker_rx_start(&w);
     assert(w.state==InfraredWorkerStateIdle && started==2 && joined==2);
     assert(callbacks==8 && flags==2 && resets==2 && !hal_stops);
+    infrared_worker_rx_stop(&w); /* legacy void START rejection */
+    assert(w.state==InfraredWorkerStateIdle && joined==2 && flags==2);
+    assert(callbacks==8 && hal_stops==0);
     /* Actual owned RX allows capture/timeout and STOP. */
     lease_available=true;
     assert(infrared_worker_rx_try_start(&w));
