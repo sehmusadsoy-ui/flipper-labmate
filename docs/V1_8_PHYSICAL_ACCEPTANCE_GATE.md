@@ -1891,3 +1891,40 @@ Flipper's [official firmware recovery guide](https://docs.flipper.net/zero/basic
 A new offline [13-case no-install recovery audit](../scripts/audit_v18_e11_recovery_readiness.py) returns `exact_prior_firmware_recovery: NOT_PROVEN`, `known_official_release_fallback: FILE_VERIFIED_BOOT_UNTESTED`, `preserved_current_exitfix_fap_identity: MATCH` and `firmware_trial_decision: NO_GO`. [Host CI #38981611042](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38981611042) and [pinned old/new package audit #38981663476](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38981663476) both **SUCCESS**. These are software/static risk-assessment successes, NOT on-device recovery acceptance.
 
 **Decision: exact prior firmware restore and any trial update remain OPEN/NO-GO.** This conclusion is independent of the user's low priority for non-LabMate SD files. Any actual recovery or update requires a separately approved and vetted procedure; current full and split E11 review packages still **DO NOT FLASH**. Stable/main and EXITFIX preserved.
+
+
+## 2026-10-17 — Split E11 updater cannot guarantee EXITFIX survives OLD resource cleanup
+
+Verified the EXACT pinned Momentum updater source
+`applications/system/updater/util/update_task_worker_backup.c`:
+`update_task_post_update()` first restores internal backup;
+when resource update is selected, it calls
+`update_task_cleanup_resources()`, which reads the OLD on-device
+`/ext/Manifest` and calls `storage_common_remove()` on its
+listed FILE entries; only afterwards is the NEW resource archive
+extracted to /ext. This source behavior invalidates any
+unqualified claim that merely removing `apps/Tools/labmate.fap`
+from our experimental NEW FAP-separated resource archive protects
+the currently installed EXITFIX FAP. The old on-device manifest
+might list the EXITFIX path. Its contents are not yet known.
+
+Added [strict read-only `/ext/Manifest`
+procedure](V1_8_E11_LIVE_UPDATER_MANIFEST_HANDOFF.md).
+It reads the existing manifest with pinned Flipper CLI MD5 and
+read_chunks and only emits count+known LabMate presence flags;
+it creates no PC backup and performs NO device write. The
+operator has not executed it on COM7 yet. Any `YES` on old
+manifest's LabMate FAP path is confirmed exposure to old-resource
+cleanup; a `NO` is NOT full updater safety proof.
+
+All tool tests PASS: [native upstream source
+#38982495403](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38982495403),
+[Windows simulated protocol
+#38982495374](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38982495374),
+[full host regressions
+#38982495377](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38982495377).
+**Actual on-device manifest risk remains OPEN**, as do
+fallback firmware identity, custom firmware safety,
+FAP physical installation and full GPIO/TIM1/TIM2/EXTI E11
+real-device acceptance. Both updater artifacts STILL DO NOT FLASH;
+draft PR #13, installed EXITFIX and Stable unchanged.
