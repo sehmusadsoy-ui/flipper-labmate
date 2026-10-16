@@ -20,6 +20,8 @@ STUB=r"""
 #define furi_check(x) assert(x)
 #define furi_assert(x) assert(x)
 #define FURI_LOG_W(...) ((void)0)
+#define FURI_CRITICAL_ENTER() ((void)0)
+#define FURI_CRITICAL_EXIT() ((void)0)
 typedef void (*FuriHalSubGhzCaptureCallback)(bool,uint32_t,void*);
 typedef struct {void (*start_async_rx)(void*,void*);} SubGhzDeviceInterconnect;
 typedef struct {
