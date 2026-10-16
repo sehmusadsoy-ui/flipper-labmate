@@ -20,7 +20,9 @@ STUB=r"""
 #define furi_check(x) assert(x)
 #define FURI_CRITICAL_ENTER() ((void)0)
 #define FURI_CRITICAL_EXIT() ((void)0)
-#define FURI_HAL_RFID_EMULATE_TIMER 2
+typedef struct {uint32_t ARR,CCR3;} SimTimer;
+static SimTimer sim_timer;
+#define FURI_HAL_RFID_EMULATE_TIMER (&sim_timer)
 #define FURI_HAL_RFID_EMULATE_TIMER_BUS 2
 #define FURI_HAL_RFID_EMULATE_TIMER_CHANNEL 3
 #define RFID_DMA 2
