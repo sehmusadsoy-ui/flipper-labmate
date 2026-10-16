@@ -15,6 +15,7 @@ on:
       - "tests/test_v18_native_lfrfid_busy_ui.py"
       - "scripts/patch_momentum_native_rfid_emulate_dma_lease.py"
       - "tests/test_v18_native_rfid_emulate_dma_lease.py"
+      - "tests/test_v18_native_rfid_capture_tim2_lease.py"
       - ".github/workflows/check-v18-native-rfid-emulate-dma.yml"
   workflow_dispatch:
 permissions:
