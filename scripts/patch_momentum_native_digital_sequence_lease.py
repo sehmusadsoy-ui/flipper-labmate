@@ -89,6 +89,14 @@ static uint32_t digital_sequence_e11_mask(const GpioPin* pin) {
 }
 
 static bool digital_sequence_e11_claim(DigitalSequence* sequence) {
+#ifdef DIGITAL_SIGNAL_DEBUG_OUTPUT_PIN
+    /* A second debug GPIO is configured by the original native routine.
+     * Its resource is not covered by this SINGLE-pin atomic claim.
+     * Disable the optional mode rather than overwrite a foreign owner.
+     */
+    (void)sequence;
+    return false;
+#endif
     if(sequence->e11_lease_fault || sequence->e11_lease_handle) return false;
     const uint32_t mask = digital_sequence_e11_mask(sequence->gpio);
     if(!mask) return false;
