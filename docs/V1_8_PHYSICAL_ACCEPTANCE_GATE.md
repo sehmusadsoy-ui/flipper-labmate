@@ -1340,3 +1340,36 @@ review and fresh explicit user authorization; passing this preflight
 cannot authorize applying a FULL updater (radio, option-byte and
 resource changes possible). The branch remains DRAFT and Stable
 source/tag/assets remain unchanged.
+
+
+## 2026-10-17 — Operator exact seven-file Windows E11 STAGE ONLY PASS
+
+Operator pasted the completed **no-USB** report of the pinned
+`stage_v18_e11_review_only.py` offline stage using validated
+full candidate #38966248325 and current checked backups:
+
+```
+EXACT E11 CANDIDATE AND BACKUP PREFLIGHT PASS (OFFLINE)
+REVIEW-ONLY UPDATER FILES: 7
+REVIEW DIRECTORY: Downloads/LabMate-E11-Staged-REVIEW-38966248325/f7-update-mntm-HEAD-d3f89dfe
+E11 LOCAL REVIEW STAGING PASS - NOT AUTHORIZED TO FLASH
+No Flipper connection, firmware install, FAP overwrite, SD operation or restore.
+E11 REVIEW STAGING COMPLETE - NO FLASH
+```
+
+The actual seven expected update components are now staged in a new
+local Windows **review** folder, not on the Flipper. The exact latest
+firmware/FAP source, updater manifest, radio, four SHA256s and
+operator backups were rechecked on the PC as a prerequisite; the
+portable stage-only script had Windows full-real-archive CI
+#38970840598 SUCCESS (13/13 negative/positive synthetic cases).
+This stage is **not a device install / boot / functional test**.
+
+**E11 REAL DEVICE STATUS: NOT STARTED / NO-GO for a write at this
+point.** The original artifact warns `DO NOT FLASH`, rollback
+remains not actually exercised, and an explicitly reviewed
+new-candidate procedure plus independent user approval is missing.
+The proven existing on-device version remains the historical EXITFIX
+FAP, not the newly staged candidate. Details and risk gates:
+[`V1_8_E11_DEVICE_TRIAL_GATE_2026-10-17.md`](V1_8_E11_DEVICE_TRIAL_GATE_2026-10-17.md).
+No release, Stable, microSD, firmware, FAP or radio change resulted.
