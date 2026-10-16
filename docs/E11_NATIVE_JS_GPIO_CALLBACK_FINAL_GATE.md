@@ -65,9 +65,10 @@ interception mechanism.
 The corresponding full pinned Momentum native + one LabMate FAP +
 JS GPIO module + single MNTM-012 no-flash updater and archive gate
 is [#38936030380](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38936030380).
-Its **final conclusion must be independently verified** before
-declaring full-build acceptance. Prior no-flash updater runs are
-not proof for this newly added JS teardown/IRQ-inventory stage.
+**Final result verified SUCCESS**, including one matched native
+Momentum build, actual LabMate FAP, native JS GPIO and MNTM-012 updater
+checksums/source policy. Prior no-flash updater runs were not used as
+a substitute for this new end-to-end software gate.
 
 ## What this does NOT establish
 
@@ -92,7 +93,7 @@ interface. Blindly turning that slot into bool would make
 existing third-party radio plugin pointers binary-incompatible.
 We do not silently change this ABI or report BUSY as START success.
 
-**Result:** JS callback host + inventory gates PASS, full-build
-gate separately pending at the time of this document, physical
+**Result:** JS callback host + inventory + full matched firmware/FAP
+software gates all PASS; physical
 coexistence and versioned third-party plugin BUSY remain OPEN;
 firmware-global E11 is **PARTIAL**. Hardware tests deferred.
