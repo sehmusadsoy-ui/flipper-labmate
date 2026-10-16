@@ -110,6 +110,22 @@ int main(void) {
     /* Exercise every real pin mapping and repeated claim/release. */
     for(uint8_t i=0U;i<GPIO_COUNT;++i) {
         app.gpio_index=i;
+        /* Every mapped connector pin must fail without GPIO mutation
+         * if another firmware owner holds that exact physical resource.
+         * A rejected START must not arm a sample or perform a cleanup.
+         */
+        lease_available=false;
+        const unsigned denied_writes=writes, denied_reads=reads;
+        const unsigned denied_claims=claims, denied_releases=releases;
+        level=false;
+        labmate_monitor_gpio_activate(&app);
+        assert(app.monitor_blocked && !app.monitor_active);
+        assert(last_mask==masks[i] && claims==denied_claims+1U);
+        assert(writes==denied_writes && reads==denied_reads);
+        assert(!labmate_monitor_gpio_read(&app,i,&level) && !level);
+        labmate_monitor_gpio_release(&app,i);
+        assert(writes==denied_writes && releases==denied_releases);
+        lease_available=true;
         labmate_monitor_gpio_activate(&app);
         assert(app.monitor_active && !app.monitor_blocked &&
                app.gpio_index==i && last_mask==masks[i]);
