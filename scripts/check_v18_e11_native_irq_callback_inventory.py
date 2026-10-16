@@ -39,7 +39,7 @@ RE=re.compile(r"furi_hal_gpio_(?:add|remove)_int_callback\s*\(")
 def scan(root:Path)->list[tuple[str,int,str]]:
     output=subprocess.check_output(
         ["git","-C",str(root),"grep","-n","-E",
-         r"furi_hal_gpio_(add|remove)_int_callback[[:space:]]*\\(",
+         r"furi_hal_gpio_(add|remove)_int_callback[[:space:]]*\(",
          "--","*.c","*.cpp"],text=True)
     found=[]
     for line in output.splitlines():
