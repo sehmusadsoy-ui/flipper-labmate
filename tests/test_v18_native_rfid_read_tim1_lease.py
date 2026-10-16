@@ -172,6 +172,9 @@ def main():
     assert "Function,+,furi_hal_rfid_tim_read_try_start,_Bool," in api
     source=s[s.index("/* E11 native RFID read TIM1 owner. */"):
              s.index("static void furi_hal_rfid_tim_emulate(void) {")]
+    tuning=s[s.index("void furi_hal_rfid_set_read_period(uint32_t period) {"):
+             s.index("void furi_hal_rfid_comp_start(void) {")]
+    source += "\n" + tuning
     assert source.index("furi_hal_resource_lease_try_acquire(")<source.index(
         "furi_hal_rfid_pins_read();")
     assert source.count("if(!e11_rfid_read_ready()) return;")>=5
