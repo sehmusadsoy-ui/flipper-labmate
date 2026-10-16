@@ -232,8 +232,13 @@ def main() -> int:
         check_windows_drive_args(args.source_drive, args.pc_output)
         result = copy_and_verify_sd(args.source_drive, args.pc_output)
     except (OSError, ValueError, UnicodeError, RuntimeError) as exc:
-        # Errors never enumerate private source path names.
-        p.exit(1, "E11 SD PC BACKUP NOT ACCEPTED - NO FLASH: " + str(exc) + "\n")
+        # Never leak private filename/path data from OSError or UnicodeError.
+        # Own ValueError messages are authored without source item names.
+        if type(exc) is ValueError:
+            reason = str(exc)
+        else:
+            reason = type(exc).__name__ + " - local source/PC IO problem"
+        p.exit(1, "E11 SD PC BACKUP NOT ACCEPTED - NO FLASH: " + reason + "\n")
     for k, v in result.items():
         print(k + ": " + str(v))
     print("E11 FULL SD FILE-CONTENT PC BACKUP VERIFIED - NO FLASH / NO RESTORE")
