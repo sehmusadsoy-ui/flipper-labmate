@@ -112,6 +112,35 @@ int main(void) {
     assert(!labmate_frequency_tim2_capture_valid());
 #ifdef HAS_LEASE
     assert(lease_attempts == 1);
+#ifdef TEST_LEGACY_BUSY_RELEASE_FAULT
+    /* A legacy timer is already running AND firmware refuses to release
+     * our temporary claim. Even after the timer becomes idle, no retry,
+     * teardown or hardware change is safe with that unresolved handle.
+     */
+    lease_available = true;
+    bus_enabled = true;
+    release_succeeds = false;
+    {
+        const int previous_writes = hw_writes;
+        const int previous_reads = hw_reads;
+        assert(!labmate_frequency_tim2_configure());
+        assert(hw_writes == previous_writes && hw_reads == previous_reads);
+        assert(lease_releases == 1);
+        assert(labmate_frequency_tim2_lease_pending());
+        bus_enabled = false;
+        release_succeeds = true;
+        assert(!labmate_frequency_tim2_configure());
+        assert(!labmate_frequency_tim2_capture_valid());
+        labmate_frequency_tim2_enable();
+        labmate_frequency_tim2_disable();
+        assert(labmate_frequency_tim2_read() == 0U);
+        labmate_frequency_tim2_shutdown();
+        assert(hw_writes == previous_writes && hw_reads == previous_reads);
+        assert(lease_attempts == 2 && lease_releases == 1);
+        assert(labmate_frequency_tim2_lease_pending());
+    }
+    return 0;
+#endif
     lease_available = true;
     /* Legacy RFID/SubGHz owner enabled TIM2 but never opted in.
      * Must be detected before modifying PB3 or enabling timer twice.
@@ -186,7 +215,8 @@ int main(void) {
 """
 
 
-def test_one(has_lease: bool, legacy_clock_loss: bool=False) -> None:
+def test_one(has_lease: bool, legacy_clock_loss: bool=False,
+             legacy_busy_release_fault: bool=False) -> None:
     with tempfile.TemporaryDirectory(prefix="labmate_e11_tim2_") as tmp:
         root = Path(tmp)
         (root / "mock.h").write_text(MOCK)
@@ -210,6 +240,8 @@ def test_one(has_lease: bool, legacy_clock_loss: bool=False) -> None:
             args.append("-DHAS_LEASE=1")
         if legacy_clock_loss:
             args.append("-DTEST_LEGACY_CLOCK_LOSS=1")
+        if legacy_busy_release_fault:
+            args.append("-DTEST_LEGACY_BUSY_RELEASE_FAULT=1")
         args.extend([str(root / "harness.c"), "-o", str(exe)])
         subprocess.run(args, check=True)
         subprocess.run([str(exe)], check=True)
@@ -250,6 +282,7 @@ if __name__ == "__main__":
     test_one(False)
     test_one(True)
     test_one(True,legacy_clock_loss=True)
+    test_one(True,legacy_busy_release_fault=True)
     print("E11.1d ACTUAL PB3/TIM2 DRIVER HOST PASS: failed claim has ZERO HAL writes,")
     print("no stale cleanup; acquired lifecycle, STOP/lease release, and fail closed.")
     print("NOT firmware-global ownership, physical timer validation or device PASS.")
