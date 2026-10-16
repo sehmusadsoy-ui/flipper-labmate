@@ -82,3 +82,28 @@ noncooperating TIM1/TIM2 start immediately afterward.
 **Project rule:** v1.6 firmware-global resource ownership is *not*
 closed while the critical native bypasses above remain open. No silent
 scope reductions, Stable replacement, or v1.9 work.
+
+
+
+## 2026-10-16 — Final supported-source E11 software acceptance
+
+**The earlier #38945772528 source-build row is historical.** The newer
+external CC1101 allocation/free/retained-owner hardening is **genuinely
+compiled and covered** by original RX
+[#38955843600](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38955843600)
+SUCCESS, TX
+[#38955874130](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38955874130)
+SUCCESS, and pinned full firmware/one FAP/JS/MNTM-012 updater
+[#38955881504](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38955881504)
+SUCCESS. Post-package E11 repository policy
+[#38957712801](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38957712801)
+SUCCESS. See [signed-off supported software scope](E11_SUPPORTED_SOFTWARE_SIGNOFF_2026-10-16.md)
+for the exact tested SHA and exclusion list.
+
+**Supported/default pinned native-source software implementation:
+ACCEPTED.** This closes the actionable host-regression/build portion
+of E11; it **does not close universal firmware-global arbitration** for
+arbitrary legacy Sub-GHz v1 plugins, alternate sideband/debug GPIO,
+unreviewed external LL paths or physical coexistence/fault recovery.
+Retain those as explicit `UNVERIFIED / UNSUPPORTED` or
+`DEFERRED / HARDWARE PENDING`. No main/Stable mutation, flash or v1.9.
