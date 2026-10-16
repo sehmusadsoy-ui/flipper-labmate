@@ -51,6 +51,10 @@ def safe_relative(key: str) -> Path:
     # remote_inventory; re-validate Windows local destination semantics.
     if not key or key.startswith("/") or "\\" in key or ":" in key:
         raise ValueError("unsafe live SD relative path")
+    # PurePosixPath silently normalizes some dangerous dot components;
+    # refuse original input BEFORE constructing any host path.
+    if any(part in ("", ".", "..") for part in key.split("/")):
+        raise ValueError("unsafe live SD path component")
     parts = PurePosixPath(key).parts
     if not parts or len(parts) > 9:
         raise ValueError("unsafe live SD path depth")
