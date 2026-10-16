@@ -55,6 +55,13 @@ class DeadlineRead:
                     raise ValueError("Flipper CLI response exceeded bounded buffer")
 
 
+def verify_transport_origin(module_file: str, scripts_root: Path) -> None:
+    """Do not use any globally installed Flipper library by accident."""
+    expected = (scripts_root / "flipper" / "storage.py").resolve()
+    if Path(module_file).resolve() != expected:
+        raise ValueError("wrong Flipper transport module imported")
+
+
 def safe_name(name: str) -> str:
     if not NAME.fullmatch(name) or name in (".", "..") or ".." in name:
         raise ValueError("unsafe/ambiguous SD member name")
@@ -207,10 +214,7 @@ def main() -> int:
         import flipper.storage as pinned_storage
         # Never silently import an installed/untrusted different 'flipper'
         # package instead of the exact operator-provided source tree.
-        module_path = Path(pinned_storage.__file__).resolve()
-        expected_path = (args.momentum_scripts / "flipper" / "storage.py").resolve()
-        if module_path != expected_path:
-            raise ValueError("wrong Flipper transport module imported")
+        verify_transport_origin(pinned_storage.__file__, args.momentum_scripts)
         # Its start() sends only device_info, then our code only storage list/md5.
         storage = pinned_storage.FlipperStorage(args.port)
         # Replace upstream infinite wait with a finite response deadline,
