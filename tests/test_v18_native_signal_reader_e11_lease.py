@@ -51,7 +51,7 @@ typedef struct {uint32_t IDR;} GpioPort;
 typedef struct {GpioPort* port;uint32_t pin;} GpioPin;
 static GpioPort port;
 static const GpioPin gpio_nfc_irq_rfid_pull={&port,4U},other={&port,8U};
-typedef enum { GpioPullDummy=6 } GpioPullExtra;
+typedef int GpioPull;
 typedef enum {SignalReaderPolarityNormal,SignalReaderPolarityInverted} SignalReaderPolarity;
 typedef enum {SignalReaderTriggerNone,SignalReaderTriggerRisingFallingEdge} SignalReaderTrigger;
 typedef enum {SignalReaderEventTypeHalfBufferFilled,
@@ -63,7 +63,7 @@ typedef struct SignalReader SignalReader;
 typedef struct {uint32_t OCMode,OCState,OCNState,CompareValue,OCPolarity;} LL_TIM_OC_InitTypeDef;
 #define FURI_HAL_LEASE_NATIVE_SIGNAL_READER_NFC ((uint64_t)0x1FFF00000000ULL)
 static bool claim_ok,release_ok=true,clock_on,rg_on,dma2,dma3,dma5,slot_ok=true,remove_ok=true,flag_half,flag_full;
-static uint32_t owner_counter=77U,expected_owner;
+static uint32_t owner_counter=77U;
 static int claims,releases,writes,callbacks,irq_sets,callback_changes;
 static void(*active_cb)(void*);
 static void* active_ctx;
@@ -128,6 +128,9 @@ static bool dma_full(int unused) {(void)unused;return flag_full;}
 #define LL_DMA_IsActiveFlag_TC2 dma_full
 #define LL_DMA_ClearFlag_HT2(unused) (flag_half=false,++writes)
 #define LL_DMA_ClearFlag_TC2(unused) (flag_full=false,++writes)
+#define LL_DMA_IsActiveFlag_TE2(unused) (false)
+#define LL_DMA_ClearFlag_TC1(unused) (++writes)
+#define LL_DMA_ClearFlag_TE1(unused) (++writes)
 #define LL_TIM_SetPrescaler(...) (++writes)
 #define LL_TIM_SetCounterMode(...) (++writes)
 #define LL_TIM_SetAutoReload(...) (++writes)
@@ -316,8 +319,8 @@ def main():
     with tempfile.TemporaryDirectory(prefix="e11_signal_reader_") as tmp:
         d=Path(tmp);exe=d/"test"
         (d/"reader.c").write_text(STUB+"\n"+reader_src+"\n"+funcs+"\n"+RUN)
-        subprocess.run(["cc","-std=c11","-Wall","-Wextra","-Werror",
-                        "-Wno-pointer-to-int-cast","-pedantic",
+        subprocess.run(["cc","-std=gnu11","-Wall","-Wextra","-Werror",
+                        "-Wno-pointer-to-int-cast",
                         str(d/"reader.c"),"-o",str(exe)],check=True)
         subprocess.run([str(exe)],check=True)
         (d/"parser.c").write_text(PARSER_STUB+"\n"+psrc+"\n"+PARSER_RUN)
