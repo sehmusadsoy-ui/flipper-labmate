@@ -230,6 +230,15 @@ def main():
     assert "if(!e11_ext_rx_ready()) return;" in start
     helper=s[s.index("/* E11 external CC1101 RX TIM17+PB2+EXTI2 owner. */"):
              s.index("#define SUBGHZ_DEVICE_CC1101_EXT_TX_GPIO")]
+    # Separate subsequent TX stage adds globals beside the original RX owner.
+    # Compile the unchanged genuine RX helper without unrelated TX-only data.
+    if "/* E11 native external CC1101 TX TIM17/DMA2 V2 owner. */" in s:
+        for definition in (
+            "static uint32_t e11_ext_tx_owner;\n",
+            "static bool e11_ext_tx_fault;\n",
+        ):
+            assert definition in helper
+            helper=helper.replace(definition,"")
     isr=s[s.index("static void subghz_device_cc1101_ext_capture_ISR("):
           s.index("bool subghz_device_cc1101_ext_try_start_async_rx(")]
     with tempfile.TemporaryDirectory(prefix="e11_ext_cc1101_") as temp:
