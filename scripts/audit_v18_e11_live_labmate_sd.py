@@ -21,7 +21,10 @@ MAX_FILES = 512
 MAX_DEPTH = 8
 MAX_DIRS = 128
 NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$")
-FILE = re.compile(r"^\[F\] (.+) ([0-9]+)$")
+# Momentum d3f89dfe applications/services/storage/storage_cli.c emits
+# printf("\\t[F] %s %lub\\r\\n", name, fileinfo.size).
+# The trailing 'b' is a literal byte-size suffix, NOT part of the name.
+FILE = re.compile(r"^\[F\] (.+) ([0-9]+)b$")
 DIRECTORY = re.compile(r"^\[D\] (.+)$")
 MD5 = re.compile(r"^[a-fA-F0-9]{32}$")
 
