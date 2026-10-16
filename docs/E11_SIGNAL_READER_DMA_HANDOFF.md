@@ -119,3 +119,35 @@ needs an independent final SUCCESS.
 **Physical tests remain DEFERRED / HARDWARE PENDING** (NFC cards,
 field/RF, external CC1101, DMA waveforms, STOP/BACK). No Stable/main,
 flash, SD/USB or v1.9 changes from this allocator foundation.
+
+
+## 2026-10-16 — Reviewed production migrations after the original plan
+
+**The earlier “NOT migrated / dormant” wording above records a former state
+and is superseded for the specific software items below.** The V2
+allocator, SignalReader, ISO15693 parser and external CC1101 TX have
+since been migrated in the development branch:
+
+- `scripts/patch_momentum_native_signal_reader_e11_lease.py`:
+  actual native SignalReader now claims TIM16, DMA2 CH2/3/5,
+  DMAMUX RG0, PA2 and EXTI2 atomically, using the V2 allocator.
+  Its native ISR and STOP paths are guarded.
+  [SignalReader original-C host #38924389571 — SUCCESS](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38924389571).
+- `scripts/patch_momentum_native_ext_cc1101_tx_lease.py` (check
+  actual repository filename before modification) integrates
+  external CC1101 TX's separate TIM17/DMA2 CH3/4/5 ownership
+  into native TX C/ISR/STOP and tests collision with SignalReader.
+  [External CC1101 TX original-C host #38924389450 — SUCCESS](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38924389450).
+- [Additive native 64-bit allocator C host #38924389528 — SUCCESS](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38924389528)
+  and [NFC ISO15693 IRQ restore original-C host #38924389498 — SUCCESS](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38924389498).
+- **Combined pinned Momentum firmware + integrated LabMate FAP +
+  native JS + MNTM-012 updater matched build**
+  [#38924489972 — SUCCESS](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38924489972),
+  source `de5871509bc0f3e09aac5638e962f5ad7806c23f`.
+
+This is **source-C / full no-flash build acceptance**, not real NFC or
+radio/DMA coexistence on hardware. Remaining E11 work includes plugin
+RX/worker BUSY propagation, unsupported G0/debug mirror choices,
+native GPIO/EXTI bypasses and complete explicit functional/physical
+recovery. Do not mark firmware-global E11 COMPLETE merely because
+these shared timer/DMA producers now have host gates.
