@@ -20,6 +20,8 @@ on:
       - "tests/test_v18_native_digital_sequence_lease.py"
       - "scripts/patch_momentum_native_ibutton_tim1_lease.py"
       - "tests/test_v18_native_ibutton_tim1_lease.py"
+      - "scripts/patch_momentum_native_ibutton_protocol_lease.py"
+      - "tests/test_v18_native_ibutton_protocol_lease.py"
       - "tests/test_v18_native_pulse_reader_lease.py"
       - "tests/test_v18_native_pulse_lease_firmware.py"
       - "tests/test_v18_tim2_lease_integration.py"
@@ -103,7 +105,10 @@ jobs:
           python3 labmate/tests/test_v18_native_digital_sequence_lease.py momentum-src
           python3 labmate/scripts/patch_momentum_native_ibutton_tim1_lease.py momentum-src
           python3 labmate/scripts/patch_momentum_native_ibutton_tim1_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_ibutton_protocol_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_ibutton_protocol_lease.py momentum-src --apply
           python3 labmate/tests/test_v18_native_ibutton_tim1_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_ibutton_protocol_lease.py momentum-src
           python3 labmate/tests/test_v18_tim2_lease_integration.py
           python3 labmate/scripts/check_v18_native_legacy_tim2_contract.py momentum-src labmate
           git -C momentum-src diff --check
@@ -192,10 +197,11 @@ jobs:
             sha256sum -c SHA256SUMS.txt
           )
           printf 'LabMate commit: %s\n' "$(git -C labmate rev-parse HEAD)" > dev-full-candidate/PROVENANCE.txt
-          printf 'E11 firmware diff SHA256: %s\n' "$(git -C momentum-src diff -- targets/f7/furi_hal targets/furi_hal_include targets/f7/api_symbols.csv | sha256sum | cut -d ' ' -f 1)" >> dev-full-candidate/PROVENANCE.txt
+          printf 'E11 firmware diff SHA256: %s\n' "$(git -C momentum-src diff -- targets/f7/furi_hal targets/furi_hal_include targets/f7/api_symbols.csv lib/ibutton/protocols/misc/protocol_group_misc.c lib/digital_signal/digital_sequence.c lib/pulse_reader/pulse_reader.c applications/system/js_app/modules/js_gpio.c | sha256sum | cut -d ' ' -f 1)" >> dev-full-candidate/PROVENANCE.txt
           printf 'Native JS GPIO plugin source: applications/system/js_app/modules/js_gpio.c (E11 patched)\n' >> dev-full-candidate/PROVENANCE.txt
           printf 'Native digital sequence source: lib/digital_signal/digital_sequence.c (E11 patched)\n' >> dev-full-candidate/PROVENANCE.txt
           printf 'Native iButton timer source: targets/f7/furi_hal/furi_hal_ibutton.c (E11 patched)\n' >> dev-full-candidate/PROVENANCE.txt
+          printf 'iButton Misc protocol pin START/STOP lifecycle: lib/ibutton/protocols/misc/protocol_group_misc.c (E11 patched)\n' >> dev-full-candidate/PROVENANCE.txt
           printf 'Momentum base: %s\n' "$(git -C momentum-src rev-parse HEAD)" >> dev-full-candidate/PROVENANCE.txt
           printf 'Installed Momentum012 source: %s\n' "$(git -C momentum-012 rev-parse HEAD)" >> dev-full-candidate/PROVENANCE.txt
           printf 'Actions run: %s\n' "$GITHUB_RUN_ID" >> dev-full-candidate/PROVENANCE.txt
