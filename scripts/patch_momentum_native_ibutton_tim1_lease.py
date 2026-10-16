@@ -28,7 +28,7 @@ EXPECTED_DIRTY = {
     "lib/pulse_reader/pulse_reader.c",
     "lib/digital_signal/digital_sequence.c",
 }
-MARKER = "/* E11 native iButton TIM1 cooperative lease (timer only). */"
+MARKER = "/* E11 native iButton TIM1 cooperative lease (timer only)."
 
 def replace_once(s: str, needle: str, replacement: str) -> str:
     if s.count(needle) != 1:
