@@ -1419,3 +1419,42 @@ for E11 flashing. Both original and split artifact are
 **REVIEW-ONLY / NO-GO**. Keep current installed EXITFIX
 and Stable intact; preserve hardware-dependent exceptions.
 See [`V1_8_E11_DEVICE_TRIAL_GATE_2026-10-17.md`](V1_8_E11_DEVICE_TRIAL_GATE_2026-10-17.md).
+
+
+## 2026-10-17 — Live LabMate SD data-parity read-only gate prepared (NOT YET DEVICE PASS)
+
+To resolve the untested current-on-device vs historical **14-file**
+LabMate microSD backup parity question, added the strict read-only
+[`audit_v18_e11_live_labmate_sd.py`](../scripts/audit_v18_e11_live_labmate_sd.py)
+and [Windows operator handoff](V1_8_E11_LIVE_SD_READ_ONLY_HANDOFF.md).
+The audited device scope is fixed to the single production
+`/ext/apps_data/labmate` storage tree. It only issues Flipper CLI
+`device_info`, `storage list` and `storage md5`,
+using finite CLI read deadlines; compares existing local backup
+path/size/MD5 without device writes, SD copies or log deletion.
+Historical log gaps (including `log_0041`–`log_0049` noted
+previously) are not silently restored or declared corrupted;
+a changed/missing/new file returns **GAP** with counts only.
+**MD5 is an inventory screening checksum, not SHA256 proof of
+byte identity or a complete microSD backup.**
+
+Tests: [Linux integrated
+#38975922317](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38975922317)
+**SUCCESS**, [real Windows mock CLI parity
+#38975922250](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38975922250)
+**SUCCESS** (16 tests, 1 Windows NTFS case-insensitive fixture
+skipped; independent simulated rejection on Linux).
+An early Windows mock test #38975686516 failed only from a
+test fixture expecting two case-only-different NTFS filenames;
+this was corrected by conditionally skipping impossible
+construction on Windows, **without weakening production
+fail-closed case-fold collisions**.
+
+**Crucial:** tests were mocked; the user's real current
+Flipper folder is **NOT READ YET** with this new script.
+No proof that all newer logs/profiles are covered by the old copy.
+No device SD change, firmware install, recovery attempt or
+Stable merge has occurred. Full SD outside LabMate's own subtree,
+third-party plugin/resource compatibility and restore rehearsal
+remain **OPEN**. Keep current installed EXITFIX FAP intact;
+original and split E11 updater artifacts remain `DO NOT FLASH`.
