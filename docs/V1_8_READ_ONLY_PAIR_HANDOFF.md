@@ -81,3 +81,42 @@ Existing stable `main`, historic v1.8 tag/assets and the user's
 CSV, profiles and log history remain untouched by these read-only
 preflight operations. If source provenance, hashes or archive differs,
 **REFUSE**, do not automatically "fix" via device flash.
+
+
+## 2026-10-17 — Final verified candidate (supersedes old artifact example)
+
+The **latest completed fully matched full-updater build** is
+[GitHub Actions #38966248325](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38966248325):
+**completed/SUCCESS**, including native firmware/one LabMate FAP/JS
+build, comparison to the published MNTM-012 radio and option-byte
+policy, and the new **independent real archive** verifier.
+The actual tested LabMate source is
+`ba379f20fb29369501e1057f570a911f71ac83f8`.
+Review-only artifact `v18DEV-FULL-MNTM012-REVIEW-DO-NOT-FLASH`,
+ID `12075925371`; scheduled expiry **2026-10-23**.
+
+Exact full-artifact file SHA256 values printed by the full-workflow
+verifier:
+
+| File | Verified SHA256 |
+| --- | --- |
+| `labmate.fap` | `2b31ec3fa9050580dc3c3ff80138578ed185d70811aa8124ebd2d00b8d981af0` |
+| `js_gpio.module` | `fff2ab8ad8e5b320b669283fc611216da99e9cda4dc03428fcd8e8a130ecca0a` |
+| `firmware.dfu` | `88d12fee4edb4fa0ec042a1b526ddb41b8db36aeb9554c6a9a8aef1c37e4e1b0` |
+| `firmware-full-update.tgz` | `11ed3cdf4e99c9c7218973695d349cd946be97d21dfc59231113bde15e94c553` |
+
+E11 firmware diff fingerprint
+`1b3851dfa4de1f62d33430c5a7a4cf563f68da4ebfa01fe332fe7984b7630d80`.
+For the **new** artifact, explicitly replace the older example run,
+source, and extraction directory in the command above: use
+`gh run download 38966248325`, exact source
+`ba379f20fb29369501e1057f570a911f71ac83f8`, and
+`--expected-run 38966248325`. Never mix metadata between runs.
+
+**Not approved for flash** merely because full CI is green.
+On-device latest CLI observation reports base `d3f89dfe`,
+`dirty=true`, API 87.1, and `mntm-dev` dated 14-10-2026, but **does
+not** establish that the latest reviewed firmware DFU or FAP is already
+installed. Read back the actual Flipper FAP and compare its SHA256,
+preserve backup/rollback assets, and explicitly authorize any later
+installation separately.
