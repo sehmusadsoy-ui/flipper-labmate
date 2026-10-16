@@ -2,8 +2,9 @@
 
 **Scope:** v1.8 development `dev/v1.8-completion` and pinned Momentum
 `d3f89dfe2ef6b01839201598e9be1590cba80322`.  
-**Status:** Verified source inventory / OPEN. This document does not
-modify native code or confer a test PASS. Main, Stable, hardware and
+**Status:** Source audit with staged CC1101 RX/NFC EXIT and V2 allocator
+C gates PASS where linked; SignalReader and CC1101 TX remain OPEN.
+This document itself does not confer physical PASS. Main, Stable, hardware and
 SD/USB untouched.
 
 ## Concrete native EXTI source inventory
@@ -14,8 +15,8 @@ SD/USB untouched.
 | `lib/one_wire/one_wire_slave.c` | Native 1-Wire slave START installs a GPIO callback and configures rise/fall pin without E11 claim. STOP changes pin state and removes callback unconditionally. Pinned default `gpio_ibutton` uses **PB14**. | Preserve native iButton emulation TIM1 ownership and separately guard 1-Wire pin + EXTI14; route BUSY and ensure double/denied STOP is not a foreign callback removal |
 | `applications/services/input/input.c` | System input service registers ISR callbacks for all board buttons early, with debounce timers. | **Reserved system infrastructure:** never add a global silent EXTI veto or substitute/erase input callbacks. Pin-claim model must explicitly exclude keypad ports and preserve UI STOP/BACK |
 | `targets/f7/furi_hal/furi_hal_serial_control.c` | **IMPLEMENTED/HOST PASS:** two selected native USART1 RX **PB7/EXTI7** and LPUART1 RX **PC0/EXTI0** atomic lease masks, callback/ctx compare-and-register/remove, owned UART direction changes, new bool service queue BUSY. Actual original production C + allocator [#38917845230](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38917845230). | Must still validate complete source matched firmware/FAP/updater CI [#38917937898](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38917937898), expansion module client GUI/retry and physical HW-13. Legacy void client API cannot return BUSY. |
-| `applications/drivers/subghz/cc1101_ext/cc1101_ext.c` | External CC1101 plugin RX uses **TIM17** and a configurable G0 GPIO with EXTI callback; before its own add it removes any existing callback on that pin. STOP unconditionally removes callback and disables TIM17. | Urgent: never remove other EXTI owner; pin + EXTI + TIM17 atomic ownership, explicit denial/ROLLBACK and external plugin API compatibility. TIM17 also appears in native NFC timer ownership; maintain v1 radio plugin ABI |
-| `lib/signal_reader/signal_reader.c` | SignalReader configures external interrupt trigger/DMAMUX even without a registered GPIO ISR; it enables the EXTI line and DMA request generator. | Pin + EXTI line + DMA/DMAMUX routing together, prevent asynchronous IRQ alias conflicts and stale DMA on STOP |
+| `applications/drivers/subghz/cc1101_ext/cc1101_ext.c` | **RX implemented and host/full firmware PASS** for exact external PB2/EXTI2/TIM17 native owner; callback theft replaced with atomic try-add and compare/remove. [Evidence](E11_NATIVE_EXT_CC1101_RX_GATE.md). **TX still opens TIM17 + DMA2 CH3/4/5 without a composite claim**, external plugin v1 void RX cannot report BUSY to workers, arbitrary G0/mirrors unsupported. | Use V2 exact external TX mask and original DMA ISR/STOP native-C fault injection; design plugin-compatible worker BUSY without changing v1 ABI, verify supported physical mirror aliases and RF HW-14 |
+| `lib/signal_reader/signal_reader.c` + NFC ISO15693 parser/listener | **Still unprotected source client.** Uses NFC PA2/EXTI2 + TIM16 + DMA2 CH2/3/5 + DMAMUX RG0; original STOP leaves request-gen cleanup incomplete. Pinned NFC transparent-mode exit now propagates IRQ restore BUSY and skips unmask ([host C #38921482299](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38921482299) PASS). Exact additive V2 allocator [#38920909082](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38920909082) PASS. | Source-integrate bool SignalReader START, native EXTI callback slot reservation and guarded DMA/DMAMUX IRQ/STOP; propagate parser/listener BUSY. Full matched build and HW-15 still required; [route analysis](E11_SIGNAL_READER_DMA_HANDOFF.md) |
 | `applications/debug/accessor/helpers/wiegand.cpp` and native JS/vGM GPIO | Direct callbacks can be registered for configurable pins (some JS paths already cooperate) | Enumerate exact supported pins and error paths; no blanket blocking of arbitrary GPIO events, isolate debug-only vs production, prevent double removal |
 
 ## Required implementation sequence
