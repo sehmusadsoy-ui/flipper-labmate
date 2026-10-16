@@ -15,7 +15,7 @@ import re
 import sys
 
 from audit_v18_e11_live_labmate_sd import (
-    DeadlineRead, parse_listing, verify_transport_origin
+    DeadlineRead, verify_transport_origin
 )
 
 SCOPES = ("/ext", "/ext/apps", "/ext/apps_data")
@@ -24,13 +24,62 @@ MAX_LIST_ITEMS = 4096
 MAX_TOTAL_TOP_FILES = 4096
 
 
+# Unlike the LabMate BACKUP parser, this survey never follows/opens names.
+# Other apps can legitimately use spaces, extra dots and non-ASCII raw bytes.
+# Treat filenames as opaque bytes and print aggregate counts ONLY.
+OPAQUE_DIR = re.compile(rb"^\\[D\\] (.+)$")
+OPAQUE_FILE = re.compile(rb"^\\[F\\] (.+) ([0-9]{1,10})b$")
+MAX_NAME_BYTES = 255
+MAX_SCOPE_BYTES = 262144
+
+
+def parse_scope_listing(raw: bytes) -> list[tuple[str, bytes, int]]:
+    """Strict CLI line grammar; opaque names are NEVER converted to PC paths."""
+    if not isinstance(raw, bytes) or len(raw) > MAX_SCOPE_BYTES:
+        raise ValueError("unexpected type or size for SD listing")
+    lines = [line[1:] if line.startswith(b"\\t") else line
+             for line in raw.splitlines() if line]
+    if lines == [b"Empty"]:
+        return []
+    result: list[tuple[str, bytes, int]] = []
+    seen: set[bytes] = set()
+    for line in lines:
+        if b"Storage error:" in line:
+            raise ValueError("Flipper SD storage error")
+        f = OPAQUE_FILE.fullmatch(line)
+        d = OPAQUE_DIR.fullmatch(line)
+        if f:
+            kind, name, size = "file", f.group(1), int(f.group(2))
+            if size > 0xFFFFFFFF:
+                raise ValueError("invalid Flipper file byte count")
+        elif d:
+            kind, name, size = "directory", d.group(1), 0
+        else:
+            raise ValueError("unrecognized top-level Flipper listing")
+        # We never use opaque names to construct a device or PC path.
+        # Nonetheless refuse malformed path/separator/control and duplicates.
+        if (not name or len(name) > MAX_NAME_BYTES or
+                name in (b".", b"..") or
+                b"/" in name or b"\\\\" in name or
+                any(c < 32 or c == 127 for c in name)):
+            raise ValueError("malformed opaque SD top-level name")
+        normalized = name.lower()  # ASCII case only; raw bytes kept private
+        if normalized in seen:
+            raise ValueError("duplicate/case-fold collision in SD listing")
+        seen.add(normalized)
+        result.append((kind, name, size))
+        if len(result) > MAX_LIST_ITEMS:
+            raise ValueError("unexpectedly large top-level SD listing")
+    return result
+
+
 def survey(storage) -> dict[str, object]:
     """Bounded, hard-coded read-only listings; never traverse user paths."""
-    results: dict[str, list[tuple[str, str, int]]] = {}
+    results: dict[str, list[tuple[str, bytes, int]]] = {}
     for scope in SCOPES:
         storage.send_and_wait_eol('storage list "' + scope + '"\r')
         raw = storage.read.until(storage.CLI_PROMPT)
-        entries = parse_listing(raw)
+        entries = parse_scope_listing(raw)
         if len(entries) > MAX_LIST_ITEMS:
             raise ValueError("unexpectedly large top-level SD listing")
         results[scope] = entries
@@ -39,7 +88,7 @@ def survey(storage) -> dict[str, object]:
     apps = results["/ext/apps"]
     data = results["/ext/apps_data"]
     topdir = {name.lower() for typ, name, _ in root if typ == "directory"}
-    if not {"apps", "apps_data"} <= topdir:
+    if not {b"apps", b"apps_data"} <= topdir:
         raise ValueError("expected /ext/apps and /ext/apps_data folders missing")
 
     def dirs(scope: str) -> int:
@@ -55,8 +104,8 @@ def survey(storage) -> dict[str, object]:
         name.lower() for typ, name, _ in data if typ == "directory"
     }
     # Those names are compared only locally; not disclosed in output.
-    has_labmate = "labmate" in data_dir_names
-    other_data_dirs = len(data_dir_names - {"labmate"})
+    has_labmate = b"labmate" in data_dir_names
+    other_data_dirs = len(data_dir_names - {b"labmate"})
     other_data_top_files = files("/ext/apps_data")
     other_app_dirs = dirs("/ext/apps")
     other_app_top_files = files("/ext/apps")
