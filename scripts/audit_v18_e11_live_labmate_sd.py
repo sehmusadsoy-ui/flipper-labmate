@@ -204,9 +204,15 @@ def main() -> int:
         # Parse/validate local files first, before touching USB.
         backup = local_inventory(args.backup_dir)
         sys.path.insert(0, str(args.momentum_scripts.resolve()))
-        from flipper.storage import FlipperStorage
+        import flipper.storage as pinned_storage
+        # Never silently import an installed/untrusted different 'flipper'
+        # package instead of the exact operator-provided source tree.
+        module_path = Path(pinned_storage.__file__).resolve()
+        expected_path = (args.momentum_scripts / "flipper" / "storage.py").resolve()
+        if module_path != expected_path:
+            raise ValueError("wrong Flipper transport module imported")
         # Its start() sends only device_info, then our code only storage list/md5.
-        storage = FlipperStorage(args.port)
+        storage = pinned_storage.FlipperStorage(args.port)
         # Replace upstream infinite wait with a finite response deadline,
         # including transport startup and every list/md5 response.
         storage.read = DeadlineRead(storage.port, timeout_seconds=20.0)
