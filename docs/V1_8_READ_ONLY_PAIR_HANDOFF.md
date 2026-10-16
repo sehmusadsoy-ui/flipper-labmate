@@ -120,3 +120,60 @@ not** establish that the latest reviewed firmware DFU or FAP is already
 installed. Read back the actual Flipper FAP and compare its SHA256,
 preserve backup/rollback assets, and explicitly authorize any later
 installation separately.
+
+
+## 2026-10-17 — Single-command local E11 operator inputs preflight (OFFLINE ONLY)
+
+The new [`scripts/preflight_v18_e11_local.py`](../scripts/preflight_v18_e11_local.py)
+is an **offline/read-only, fail-closed** gate for the already acquired
+CI **#38966248325** full candidate. It checks all **four independently
+pinned artifact SHA256s**, then calls the existing independent
+[`verify_v18_full_review_pair.py`](../scripts/verify_v18_full_review_pair.py)
+for the *exact* source commit `ba379f20fb29369501e1057f570a911f71ac83f8`,
+run `38966248325`, full updater inner DFU/radio/SD metadata,
+provenance and required warnings. It also checks rollback MNTM-012
+and original Stable FAP digests, the byte-readback EXITFIX FAP digest,
+nonempty LabMate SD **local backup** files, and the existing local
+qFlipper settings TGZ against independently observed SHA256
+`a0487ede35b8cec4cef505faf57363768fc1bc02d5d7c1dd3a8dcfa282c00ef2`
+and **14-file/1-directory** path-safe TAR structure. It will not
+connect to COM7, launch qFlipper, flash, restore, install, or copy
+anything to the Flipper.
+
+**A local clone of the current development branch is required**, with
+Python 3 and its two Python companion scripts in `scripts/`. Run from
+that clone's root, after separately checking that the exact full
+Actions review artifact and readback copy are located where expected:
+
+```powershell
+py -3 .\scripts\preflight_v18_e11_local.py `
+  --candidate "$HOME\Downloads\LabMate-E11-Review-38966248325" `
+  --rollback "$HOME\Downloads\LabMate-Rollback-MNTM012" `
+  --installed-fap-copy "$HOME\Downloads\LabMate-FAP-ReadOnly-Audit\labmate-installed.fap" `
+  --data-backup "$HOME\Downloads\LabMate-Backup-20261014-201529" `
+  --settings-archive "$HOME\Desktop\Uybelav-backup-20261014-201804.tgz"
+```
+
+**Evidence:** [final integrated no-flash host regression
+#38969669551](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38969669551)
+completed SUCCESS at source commit
+`1c7446b19a9340349862a6ee7f96129e835af005`; the integrated
+suite includes the new [negative-path/positive-path regression file](../tests/test_v18_e11_local_preflight.py)
+and retained prior v1.5–v1.8 native C regressions.
+An earlier first CI attempt failed on a *test harness assertion typo*
+(`assertRaisesRegex` missing a regex); this was fixed, and the new
+run is green. No production Flipper code changed as part of the
+local verifier addition.
+
+**Scope boundary:** This script's own PASS is not yet observed on
+the operator's Windows folder in the current evidence. More
+importantly, even a real local PASS does **not** prove current device
+flash byte identity, full SD equality, operational rollback,
+successful future firmware boot, firmware cross-service resource
+coexistence, physical I²C/DS18B20 performance, or user permission
+to install. The older
+`scripts/install-v18-full012-dev-firmware.ps1` is pinned to a
+*different FAP/DFU/TGZ*. It **must not** be reused or modified to
+bypass its original digest constraints. New exact-pair installation
+requires a separately reviewed tool/procedure, independently tested
+recovery safeguards and explicit operator authorization.
