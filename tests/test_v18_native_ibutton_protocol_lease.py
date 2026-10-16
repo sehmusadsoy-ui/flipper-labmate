@@ -13,12 +13,13 @@ from test_v18_native_ibutton_tim1_lease import STUB, HARNESS
 
 PREFIX = HARNESS.split("static void callback(void* p)")[0]
 MOCK = r"""
+#include <stdio.h>
 typedef struct ProtocolDict { int x; } ProtocolDict;
 typedef int ProtocolId;
 typedef int iButtonProtocolLocalId;
 typedef int iButtonProtocolData;
 #define PROTOCOL_NO (-1)
-static int dictionary_mutations, pin_mutations;
+static int dictionary_mutations;
 size_t protocol_dict_get_data_size(ProtocolDict* dict,int id) {
     (void)dict;(void)id;return 4U;
 }
