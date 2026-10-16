@@ -127,6 +127,11 @@ static void reset(void) {
 }
 int main(void) {
  reset();
+ subghz_device_cc1101_ext=NULL;
+ subghz_device_cc1101_ext_set_async_mirror_pin(&gpio_ext_pa7);
+ subghz_device_cc1101_ext=&instance;
+ assert(instance.async_mirror_pin==NULL && !writes && !claims);
+ reset();
  assert(!subghz_device_cc1101_ext_try_start_async_rx(capture,&instance));
  subghz_device_cc1101_ext_stop_async_rx();
  subghz_device_cc1101_ext_capture_ISR(NULL);
