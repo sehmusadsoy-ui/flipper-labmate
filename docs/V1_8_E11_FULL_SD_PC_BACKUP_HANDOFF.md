@@ -92,7 +92,7 @@ generated automatically.
 \`\`\`powershell
 & {
     $ErrorActionPreference = 'Stop'
-    $sourceCode = 'TO_BE_PINNED_AFTER_FINAL_CI'
+    $sourceCode = 'bb43b8a935cc09b78accc0a44a78c668a779ca01'
     $sdDrive = 'E:\'  # EXAMPLE ONLY: confirm actual SD card reader drive!
     $work = Join-Path $env:TEMP ('LabMate-E11-FullSD-' + [guid]::NewGuid().ToString('N'))
     $output = Join-Path "$HOME\Downloads" (
@@ -105,8 +105,8 @@ generated automatically.
         Join-Path $work 'backup_v18_e11_sd_reader_to_pc.py'
     )
 
-    py -3 (Join-Path $work 'backup_v18_e11_sd_reader_to_pc.py') 
-        --source-drive $sdDrive 
+    py -3 (Join-Path $work 'backup_v18_e11_sd_reader_to_pc.py') `
+        --source-drive $sdDrive `
         --pc-output $output
 
     if ($LASTEXITCODE -ne 0) {
@@ -124,6 +124,25 @@ virtual/COM device (requires a *physical* card reader). If a
 reader is unavailable, record full-card backup as **DEFERRED**.
 The tool should not be used on a card with suspected filesystem
 damage without first selecting an independent recovery procedure.
+
+## Tested on synthetic filesystems, not on operator microSD
+
+- [Native Windows no-device #38979716149](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38979716149):
+  **SUCCESS**, includes 11 synthetic full-card file-content
+  backup / refusal tests plus prior SD parity, snapshot and
+  count-only survey regression suites.
+- [Integrated Linux host #38979716180](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38979716180):
+  **SUCCESS**, same 11 tests (2 Windows-only drive-letter checks
+  skipped), plus all earlier v1.5–v1.8 software regressions.
+- First integrated attempt #38979515374 exposed only an invalid
+  synthetic test fixture trying to remove a nonempty directory;
+  the fixture now deletes its own mock file first. No production
+  file preservation rule was relaxed. No real SD card,
+  private backup file or Flipper was used in CI.
+
+**This does not demonstrate actual Flipper SD reader access,
+PC space sufficiency, mounted-drive behavior or a completed
+operator snapshot. The real full-SD backup gate stays OPEN.**
 
 ## What passing WOULD and WOULD NOT mean
 
