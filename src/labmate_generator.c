@@ -26,7 +26,8 @@ uint32_t labmate_generator_frequency(const LabMateApp* app) {
 
 static void labmate_generator_apply_running(LabMateApp* app) {
     if(!app->generator_running) return;
-#if defined(FURI_HAL_RESOURCE_LEASE_API_V1)
+#if defined(FURI_HAL_RESOURCE_LEASE_API_V1) && \
+    defined(FURI_HAL_PWM_NATIVE_LEASE_API_V1)
     if(app->generator_release_fault ||
        !furi_hal_pwm_is_running(FuriHalPwmOutputIdTim1PA7)) {
         app->generator_blocked = true;
@@ -46,7 +47,8 @@ static void labmate_generator_apply_running(LabMateApp* app) {
 
 void labmate_generator_stop(LabMateApp* app) {
     if(!app->generator_running) return; /* STOP without RUN is a no-op. */
-#if defined(FURI_HAL_RESOURCE_LEASE_API_V1)
+#if defined(FURI_HAL_RESOURCE_LEASE_API_V1) && \
+    defined(FURI_HAL_PWM_NATIVE_LEASE_API_V1)
     if(app->generator_release_fault ||
        !furi_hal_pwm_is_running(FuriHalPwmOutputIdTim1PA7)) {
         /* Do not STOP a timer that may have been seized externally. */
@@ -78,7 +80,7 @@ void labmate_generator_stop(LabMateApp* app) {
     labmate_pwm_pa7_release_probe = 0U;
     app->generator_blocked = false;
 #else
-    /* A stock-SDK DEV build could not have acquired TIM1 in START. */
+    /* Unmatched SDK is guaranteed not to have started native PWM. */
     app->generator_blocked = true;
 #endif
 }
@@ -91,7 +93,8 @@ void labmate_generator_start(LabMateApp* app) {
     }
     const uint32_t hz = labmate_generator_frequency(app);
     if(!labmate_pwm_settings_valid(hz, app->generator_duty_percent)) return;
-#if defined(FURI_HAL_RESOURCE_LEASE_API_V1)
+#if defined(FURI_HAL_RESOURCE_LEASE_API_V1) && \
+    defined(FURI_HAL_PWM_NATIVE_LEASE_API_V1)
     /* Native HAL is the only TIM1/PA7 lease owner. A second
      * preclaim from LabMate would reject this exact START request.
      */
