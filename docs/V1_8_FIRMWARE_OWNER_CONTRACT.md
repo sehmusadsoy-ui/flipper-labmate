@@ -1357,3 +1357,55 @@ must reach independently completed SUCCESS for this latest
 test-only source SHA to be marked PASS. No physical hardware
 calibration, no release approval, no device modification.
 
+## E11.1l — JS GPIO interrupt/event EXTI-line alias safety (2026-10-16)
+
+A source audit found a **remaining cooperative-client collision**
+after native JS GPIO acquired pin-only E11 leases: PC3 and PB3
+are distinct GPIO pins but select the *same physical EXTI3
+hardware line*. Native PulseReader already claims EXTI3,
+yet a JS GPIO `init({inMode:"interrupt"})` or
+`init({inMode:"event"})` could modify the EXTI3 mux for the
+other pin because a pin-only JS claim does not overlap it.
+The GPIO callback-slot try-add protects registered callbacks
+but PulseReader uses DMA without registering that callback;
+the previous try-add safeguard was **not enough**.
+
+**Fix isolated to cooperative E11 clients (no core GPIO
+interception):** The shared firmware lease primitive now defines
+EXTI3/6/7 bits and seven exact *standalone EXTI* masks
+for lines 0, 1, 2, 3, 4, 6 and 7. Native JS GPIO keeps its
+original pin-only handle; when selecting an interrupt or
+event GPIO mode, it atomically obtains a **second EXTI-only
+handle before** callback registration or any GPIO/EXTI mode
+write. `interrupt()` also obtains that EXTI handle before
+adding a callback. PC3 and PB3 both require the identical
+EXTI3 bit. Keeping the EXTI claim until JS manager destruction
+avoids transient relinquish/reacquire races during mode changes.
+On close, the EXT line is released only after callback cleanup
+and pin restoration, **before** the pin lease; a failed EXTI
+release preserves the pin handle as fault-sticky. Other
+non-E11 pins still use their historical behavior.
+
+The PulseReader patch now reuses the shared firmware EXTI
+bits instead of redeclaring duplicate enum constants.
+Its eight GPIO/EXTI composite leases overlap the JS EXTI
+masks, providing symmetric BUSY refusal when a cooperating
+reader/JS operation starts first. Host regression explicitly
+covers a PC3 native JS IRQ blocking PB3 native JS event/IRQ,
+JS EXTI3 versus reader's PC3/PB3 composite lease, EXTI0
+and ordinary digital pin-only operation. This remains a
+**cooperative guarantee**; direct SYSCFG/EXTI register writes
+from legacy Momentum services can bypass it.
+
+**Verification state:** Changes are on
+`dev/v1.8-completion`, PR #13 (Draft).
+Latest native JS CI:
+[38828583368](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38828583368);
+latest additional true firmware C mask test:
+[38828638447](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38828638447);
+latest full MNTM-012 updater:
+[38828638407](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38828638407).
+The prior confirmed PulseReader + complete updater PASS belongs
+to the **pre-EXTI fix** source and does not prove this update.
+Only mark this section CI PASS after exact-run completion.
+No hardware/USB/Stable release acceptance performed.
