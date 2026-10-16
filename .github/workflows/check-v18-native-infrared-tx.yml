@@ -1,10 +1,12 @@
-name: v1.8 E11 native infrared TX TIM1 DMA2 PA7 actual C (NO DEVICE)
+name: v1.8 E11 native infrared RX worker + TX actual C (NO DEVICE)
 on:
   push:
     branches: [dev/v1.8-completion]
     paths:
       - "scripts/patch_momentum_native_infrared_tx_lease.py"
       - "tests/test_v18_native_infrared_tx_lease.py"
+      - "scripts/patch_momentum_native_infrared_rx_worker_lease.py"
+      - "tests/test_v18_native_infrared_rx_worker_lease.py"
       - ".github/workflows/check-v18-native-infrared-tx.yml"
   workflow_dispatch:
 permissions:
@@ -43,10 +45,14 @@ jobs:
           python3 labmate/scripts/patch_momentum_native_infrared_rx_lease.py momentum-src --apply
           python3 labmate/scripts/patch_momentum_native_infrared_tx_lease.py momentum-src
           python3 labmate/scripts/patch_momentum_native_infrared_tx_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_infrared_rx_worker_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_infrared_rx_worker_lease.py momentum-src --apply
           git -C momentum-src diff --check
       - name: Real native TX START/STOP/WAIT and firmware lease C fault injection
         shell: bash
         run: |
           set -euo pipefail
           python3 labmate/tests/test_v18_native_infrared_tx_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_infrared_rx_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_infrared_rx_worker_lease.py momentum-src
           echo "REAL E11 NATIVE IR TX C HOST PASS; NOT DEVICE, NOT GLOBAL HAL"
