@@ -39,17 +39,19 @@ PWM, iButton, NFC and infrared TX TIM1. This is **not** device
 or other RFID mode validation.
 
 [**Full matched Momentum firmware + single FAP + JS/updater
-candidate CI #38903026814**](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38903026814).
-This newer paired CI includes the updated
-`check_v18_native_legacy_tim2_contract.py` safety audit:
-only the exact reviewed RFID read-owner signature is allowed
-while its still-unmigrated TIM2 read-capture, DMA-emulation,
-TIM1+TIM2 field detect and native Sub-GHz paths must remain
-unmodified. Check the workflow's final conclusion before
-asserting full build PASS or recording binary checksums.
+CI #38903026814 — SUCCESS**](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38903026814),
+exact source `57f385bb8b2a303a65378c1427ed75fe858ba094`.
+The workflow completed with its pinned-Momentum source/audit, native C,
+firmware/FAP/JS package build and MNTM-012 updater comparison.
+This success predates the later RFID capture TIM2 source stage and
+is **not** evidence for its new matched firmware build; use
+[its separate acceptance ledger](E11_NATIVE_RFID_CAPTURE_TIM2_GATE.md).
+No firmware/device flash or physical acceptance is implied.
 
-**Explicit remaining RFID-native modes:** read capture TIM2 +
-capture ISR, TIM2 DMA emulation DMA2 CH1/CH2 and IRQ, and
+**Subsequent separately tested stage:** read capture TIM2 + capture ISR
+now has host C/allocator PASS (#38904967453), but upper caller BUSY
+handling and full matched build remain separate gates.
+**Remaining RFID-native modes:** TIM2 DMA emulation DMA2 CH1/CH2 and IRQ, and
 field detection using **both TIM1 and TIM2 plus DMA2 CH1/CH2**.
 Each requires a proper atomic full resource owner and status
 propagation into existing protocol call sites, with GPIO,
