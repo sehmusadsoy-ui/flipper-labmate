@@ -67,7 +67,7 @@ def main()->int:
         changed=subprocess.check_output(
             ["git","-C",str(root),"diff","--name-only","HEAD"],text=True).splitlines()
         for role,path in ROOTS.items():
-            if path in changed and role not in ("digital","rfid"):
+            if path in changed and role not in ("digital","rfid","subghz"):
                 raise ValueError(f"Unreviewed critical native driver changed: {path}")
         for role,path in ROOTS.items():
             src=(root/path).read_text(encoding="utf-8")
@@ -139,7 +139,31 @@ def main()->int:
                     "furi_hal_bus_enable(FURI_HAL_RFID_EMULATE_TIMER_BUS)" not in src or
                     "furi_hal_bus_enable(FURI_HAL_RFID_FIELD_COUNTER_TIMER_BUS)" not in src):
                     raise ValueError("RFID read guard or still-unmigrated modes changed")
-                print("E11 RFID READ/CAPTURE/EMULATE/FIELD cooperative SOURCE VERIFIED; SUBGHZ OPEN")
+                print("E11 RFID READ/CAPTURE/EMULATE/FIELD cooperative SOURCE VERIFIED; SUBGHZ TX OPEN")
+            elif role=="subghz" and path in changed:
+                if ("/* E11 native SubGHz RX TIM2 cooperative owner. */" not in src or
+                    "bool furi_hal_subghz_async_rx_try_start(" not in src or
+                    "e11_subghz_rx_mask_for_mirror" not in src or
+                    "if(!e11_subghz_rx_ready()) return;" not in src or
+                    src.count("furi_hal_resource_lease_try_acquire(")!=1 or
+                    "e11_subghz_rx_fault=true;" not in src):
+                    raise ValueError("SubGHz RX lease/ISR/STOP guard unreviewed")
+                rx=src[src.index("bool furi_hal_subghz_async_rx_try_start("):
+                       src.index("typedef enum {\n    FuriHalSubGhzAsyncTxMiddlewareStateIdle")]
+                if (rx.index("furi_hal_resource_lease_try_acquire(") >
+                    rx.index("furi_hal_subghz_capture_callback = callback;") or
+                    rx.index("furi_hal_resource_lease_try_acquire(") >
+                    rx.index("furi_hal_gpio_init_ex(") or
+                    rx.index("furi_hal_resource_lease_try_acquire(") >
+                    rx.index("furi_hal_subghz_rx();")):
+                    raise ValueError("SubGHz RX claim occurs after hardware side effect")
+                # Reject any mutation to legacy TX body on this RX-only stage:
+                old=subprocess.check_output(
+                    ["git","-C",str(root),"show","HEAD:"+path],text=True)
+                txstart="bool furi_hal_subghz_start_async_tx("
+                if src[src.index(txstart):] != old[old.index(txstart):]:
+                    raise ValueError("SubGHz TX changed without a reviewed TX owner")
+                print("E11 SubGHz RX TIM2/mirror ISR/STOP source VERIFIED; TX direct OPEN")
             else:
                 if "furi_hal_resource_lease_try_acquire(" in src:
                     raise ValueError(f"{role}: unreviewed native lease migration")
