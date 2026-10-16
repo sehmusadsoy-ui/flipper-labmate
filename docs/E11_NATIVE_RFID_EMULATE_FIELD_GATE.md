@@ -87,10 +87,10 @@ is a separate pinned-Momentum stage:
 **Evidence:** original field setup/START/STOP/presence C and exact
 firmware resource allocator executed in host fault tests:
 [CI #38909551118 SUCCESS](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38909551118).
-Test coverage includes legacy TIM1/TIM2/DMA1/2 denial with zero writes,
+Test coverage includes legacy TIM1/TIM2/DMA2 channel 1/2 denial with zero writes,
 owned start/field reading/stop, double stop, failed release, clock loss
 and conflicts with RFID read/capture/emulate, NFC, infrared and Counter.
-No radio/cardiac/USB/SD or Flipper physical test claimed.
+No radio-frequency or Flipper device/USB/SD physical test claimed.
 
 ## Release and open boundaries
 
