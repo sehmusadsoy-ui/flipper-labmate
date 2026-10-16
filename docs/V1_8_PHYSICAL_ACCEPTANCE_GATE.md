@@ -1666,3 +1666,45 @@ conflict/STOP/BACK acceptance and no main/Stable promotion.
 Next protective gate concerns user/custom data OUTSIDE
 `/ext/apps_data/labmate` potentially affected by the full
 Momentum update, and a reviewed recovery plan.
+
+
+## 2026-10-17 — Other apps/apps_data microSD exposure: no-device top-level survey READY
+
+**New physical-risk gate PREPARED but not yet executed on operator Flipper.**
+The user's actual LabMate subtree has two independently preserved
+PC states (14 historical files and 10 current files / 1,791 B).
+This does NOT protect third-party apps/plugins or the remainder of
+the SD card. Updater static comparison had **126 changed
+non-JS-plugin `apps_data/` bundle resource paths** and many
+additional `apps` resource changes. This is updater-content delta,
+NOT on-device user data loss evidence.
+
+A new [strict top-level-only SD scope survey](../scripts/survey_v18_e11_external_sd_ro.py)
+queries only `/ext`, `/ext/apps`, `/ext/apps_data`
+with Momentum pinned Flipper read-only `storage list`.
+It reports **counts only** for top-level root/app/data entries
+and independently flags other app-data directories outside LabMate,
+with no private filenames, nested traversal, file reads, hashing,
+copies, restore, write, formatting or flashing.
+Results **never** assert whole-SD coverage, even if counts are zero.
+
+**Simulation CI:**
+[Windows #38978402213](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38978402213)
+**SUCCESS** (10 new top-level survey cases plus existing safe
+LabMate snapshot/MD5 tests);
+[integrated #38978387190](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38978387190)
+**SUCCESS**. The exact operator
+[PowerShell procedure](V1_8_E11_EXTERNAL_SD_SCOPE_HANDOFF.md) uses
+script code pinned to
+`f63938bf0af57495289e037dea942c12f9ff39fd`.
+**No real COM7 SD root enumeration for this particular probe
+has been performed yet.**
+
+**Remaining NO-GO** for E11 firmware trial:
+independent full microSD current snapshot + source/destination
+checksum verification and non-LabMate plugin/application compatibility
+assessment, recovery rehearsal or reviewed exception,
+separately approved firmware trial package/sequence,
+and native resource E11 physical tests. Existing original
+and FAP-separated review artifacts remain DO NOT FLASH;
+draft PR #13, main/Stable remain unchanged.
