@@ -40,7 +40,7 @@ and independent Momentum base for the library.
 ```powershell
 & {
     $ErrorActionPreference = 'Stop'
-    $auditSource = 'd496b9dd876e28c8e4524e26e667a8f8fac8b6d5'
+    $auditSource = '864dcfe924903c63dc0433de52483f497050a38c'
     $momentumSource = 'd3f89dfe2ef6b01839201598e9be1590cba80322'
     $work = Join-Path $env:TEMP ('LabMate-E11-SD-READONLY-' + [guid]::NewGuid().ToString('N'))
     $transport = Join-Path $work 'flipper'
