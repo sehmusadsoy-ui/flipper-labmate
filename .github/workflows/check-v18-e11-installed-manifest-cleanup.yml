@@ -38,6 +38,9 @@ jobs:
           set -euo pipefail
           python3 -m unittest discover -v -s tests -p test_v18_e11_updater_cleanup_semantics.py
           python3 -m unittest discover -v -s tests -p test_v18_e11_installed_resource_manifest.py
+          python3 -m unittest discover -v -s tests -p test_v18_e11_split_trial_gate.py
+          python3 scripts/check_v18_e11_split_trial_gate.py
+          python3 -m unittest discover -v -s tests -p test_v18_e11_split_review.py
       - name: Fetch exact pinned Momentum updater source for STATIC read-only analysis
         shell: bash
         run: |
@@ -55,6 +58,6 @@ jobs:
           python3 scripts/audit_v18_e11_updater_cleanup_semantics.py \
             --backup-worker "$RUNNER_TEMP/e11-updater-sources/update_task_worker_backup.c" \
             --flasher-worker "$RUNNER_TEMP/e11-updater-sources/update_task_worker_flasher.c"
-          echo 'The presence of an actual old on-device FAP manifest entry remains UNKNOWN.'
+          echo 'REAL operator COM7 old Manifest entry apps/Tools/labmate.fap = YES (read-only audit).'
           echo 'NO Flipper/COM/USB device, no installing, no firmware writing, no restore.'
           echo 'FAP-SPLIT REVIEW ONLY - DO NOT FLASH.'
