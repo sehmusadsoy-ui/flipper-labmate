@@ -20,7 +20,7 @@ NOT migrated**. E11 is **OPEN**.
 The pinned ISO15693 listener **does** transfer this pin during transparent
 mode: `furi_hal_nfc_iso15693_listener_transparent_mode_enter` calls
 `furi_hal_nfc_deinit_gpio_isr()` after switching/deinitializing SPI,
-relinquishing the NFC PA2/EXTI2 callback/lease. The original exit path called the legacy `void furi_hal_nfc_init_gpio_isr()`` before SPI reinit and ignored BUSY. **Now E11 has migrated this EXIT**:
+relinquishing the NFC PA2/EXTI2 callback/lease. The original exit path called the legacy `void furi_hal_nfc_init_gpio_isr()` before SPI reinit and ignored BUSY. **Now E11 has migrated this EXIT**:
 `furi_hal_nfc_try_init_gpio_isr()` returns bool, SPI restoration
 always executes, RX IRQ is not unmasked if denied, and listener deinit
 returns `FuriHalNfcErrorBusy` instead of false success. Replacing this with an unconditional global EXTI veto or
