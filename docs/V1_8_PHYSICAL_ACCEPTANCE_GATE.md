@@ -1373,3 +1373,49 @@ The proven existing on-device version remains the historical EXITFIX
 FAP, not the newly staged candidate. Details and risk gates:
 [`V1_8_E11_DEVICE_TRIAL_GATE_2026-10-17.md`](V1_8_E11_DEVICE_TRIAL_GATE_2026-10-17.md).
 No release, Stable, microSD, firmware, FAP or radio change resulted.
+
+
+## 2026-10-17 — Offline full updater SD-diff risk and new FAP-separated REVIEW derivative
+
+**Actual independent CI compare PASS but installation NO-GO**:
+[`#38972918375`](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38972918375)
+read SHA256-pinned official Momentum MNTM-012 old updater and
+#38966248325 candidate: old 2,150 SD resource files vs new 2,116;
+20 added, 54 removed, 382 changed; 126 differences in other
+`apps_data/` bundled resources. Both official vs new radio bytes
+and OB reference/mask/write-mask policy matched. No evidence user
+CSV/Profiles were overwritten; no complete live microSD backup
+comparison has occurred.
+
+**New critical finding:** the ORIGINAL full update's
+`resources.tar.gz` **embeds the exact new**
+`apps/Tools/labmate.fap` (old official full updater does not).
+Thus the former "firmware first, app only AFTER device boot"
+rollout plan is not a reliable two-phase boundary with that
+original package. It remains **DO NOT FLASH**.
+
+**Remediation at packaging review level only:** deterministic
+[`derive_v18_e11_split_review.py`](../scripts/derive_v18_e11_split_review.py)
+removed exactly the FAP resource path, preserved
+the other 2,115 resource files and native JS GPIO SHA,
+and preserved every other full updater component payload byte.
+It did NOT modify or install the original package, nor rewrite
+the native firmware. Real Linux
+[CI #38973708904](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38973708904)
+SUCCESS with adversarial/positive tests, derived TAR audit,
+independent old official radio/OB comparison and SHA256SUMS
+verification. **Review-only** derivative artifact
+[`12077104037`](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38973708904/artifacts/12077104037),
+`v18E11-SPLIT-REVIEW-DO-NOT-FLASH` has
+derived TGZ SHA256
+`7a57b8e630c95b0346e7681ffac84c2400d84b274d97ead977c15813c2abe923`,
+separate matched FAP + JS module and conspicuous DO-NOT-FLASH notes.
+This is **not a release candidate or boot validation**.
+
+**Physical E11 STOP:** no current full microSD data parity snapshot,
+no restore rehearsal, no actual new firmware/FAP pairing on the
+user's device, resource conflicts untested live, no permission
+for E11 flashing. Both original and split artifact are
+**REVIEW-ONLY / NO-GO**. Keep current installed EXITFIX
+and Stable intact; preserve hardware-dependent exceptions.
+See [`V1_8_E11_DEVICE_TRIAL_GATE_2026-10-17.md`](V1_8_E11_DEVICE_TRIAL_GATE_2026-10-17.md).
