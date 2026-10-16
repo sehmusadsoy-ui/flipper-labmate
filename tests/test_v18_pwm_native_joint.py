@@ -36,6 +36,7 @@ extern unsigned mock_ll_writes;
 #define FURI_HAL_LEASE_MONITOR_PA4 (1U<<11)
 #define FURI_HAL_LEASE_ONEWIRE_PA4 (1U<<11)
 #define FURI_HAL_RESOURCE_LEASE_API_V1 1
+#define FURI_HAL_PWM_NATIVE_LEASE_API_V1 1
 #define GpioModeAltFunctionPushPull 1
 #define GpioModeAnalog 2
 #define GpioPullNo 0
@@ -137,6 +138,8 @@ def main() -> None:
     args=ap.parse_args()
     src=(args.momentum_root/"targets/f7/furi_hal/furi_hal_pwm.c").read_text()
     assert "native_pwm_try_claim" in src
+    capability=(args.momentum_root/"targets/f7/furi_hal/furi_hal_resources.h").read_text()
+    assert "FURI_HAL_PWM_NATIVE_LEASE_API_V1" in capability
     assert "furi_hal_pwm_set_params" in src
     app=GENERATOR.read_text()
     assert "labmate_pwm_pa7_lease_handle" not in app
