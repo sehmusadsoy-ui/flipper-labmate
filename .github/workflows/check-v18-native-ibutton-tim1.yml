@@ -6,6 +6,8 @@ on:
     paths:
       - "scripts/patch_momentum_native_ibutton_tim1_lease.py"
       - "tests/test_v18_native_ibutton_tim1_lease.py"
+      - "scripts/patch_momentum_native_ibutton_protocol_lease.py"
+      - "tests/test_v18_native_ibutton_protocol_lease.py"
       - "scripts/patch_momentum_resource_lease.py"
       - "scripts/patch_momentum_native_digital_sequence_lease.py"
       - ".github/workflows/check-v18-native-ibutton-tim1.yml"
@@ -46,6 +48,8 @@ jobs:
           python3 labmate/scripts/patch_momentum_native_digital_sequence_lease.py momentum-src --apply
           python3 labmate/scripts/patch_momentum_native_ibutton_tim1_lease.py momentum-src
           python3 labmate/scripts/patch_momentum_native_ibutton_tim1_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_ibutton_protocol_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_ibutton_protocol_lease.py momentum-src --apply
           git -C momentum-src diff --check
 
       - name: Execute native iButton and actual firmware allocator C tests
@@ -53,4 +57,5 @@ jobs:
         run: |
           set -euo pipefail
           python3 labmate/tests/test_v18_native_ibutton_tim1_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_ibutton_protocol_lease.py momentum-src
           echo "E11 IBUTTON TIM1 REAL NATIVE C HOST PASS; NOT DEVICE/GLOBAL HAL PASS"
