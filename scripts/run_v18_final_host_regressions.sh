@@ -110,6 +110,7 @@ python3 scripts/audit_v18_e11_recovery_readiness.py
 python3 -m unittest discover -v -s tests -p test_v18_e11_installed_resource_manifest.py
 python3 -m unittest discover -v -s tests -p test_v18_e11_updater_cleanup_semantics.py
 python3 -m unittest discover -v -s tests -p test_v18_e11_split_trial_gate.py
+python3 -m unittest discover -v -s tests -p test_v18_e11_packed_manifest_integrity.py
 python3 scripts/check_v18_e11_split_trial_gate.py
 echo "V1.8 FINAL INTEGRATED HOST SOFTWARE REGRESSION PASS"
 echo "NOT PROVEN: live peripherals, actual microSD durability, Excel, firmware boot or rollback."
