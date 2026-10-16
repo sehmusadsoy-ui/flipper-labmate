@@ -146,4 +146,5 @@ jobs:
           python3 labmate/tests/test_v18_signal_reader_iso15693_route_audit.py momentum-src
           python3 labmate/tests/test_v18_native_signal_reader_e11_lease.py momentum-src
           python3 labmate/tests/test_v18_native_ext_cc1101_tx_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_ext_cc1101_free_lease.py momentum-src
           echo "E11 ext CC1101 TX TIM17 DMA2 V2 real C PASS; plugin upper BUSY/RF OPEN"
