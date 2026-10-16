@@ -204,3 +204,29 @@ hardware concurrency/recovery acceptance (HW-09 to HW-19).
 Do **not** mark firmware-global E11 or v1.6 completely closed, nor
 start v1.9, solely from these software/build results. Physical tests
 remain `DEFERRED / HARDWARE PENDING` by the existing equipment plan.
+
+
+## 2026-10-16 — Supported software scope final sign-off
+
+**The newest production-C RX/TX/free native host tests and full no-flash
+Momentum/FAP/updater CI are VERIFIED SUCCESS.** The exact linked runs,
+tested source SHA, subsequent policy/docs-only diff, temporary review
+artifact, signed-off supported scope and all continuing limitations are
+recorded in
+[`E11_SUPPORTED_SOFTWARE_SIGNOFF_2026-10-16.md`](E11_SUPPORTED_SOFTWARE_SIGNOFF_2026-10-16.md).
+
+- [RX original-C #38955843600 — SUCCESS](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38955843600)
+- [TX original-C #38955874130 — SUCCESS](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38955874130)
+- [Matched full Momentum/ONE LabMate FAP/JS/MNTM-012 package #38955881504 — SUCCESS](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38955881504)
+- [Post-build E11 source-evidence acceptance #38955947905 — SUCCESS](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38955947905)
+
+**Disposition:** supported/default pin native-source E11 software gate
+**ACCEPTED** for the pinned candidate. The stronger **firmware-global
+universal** claim is still **NOT ACCEPTED** for legacy third-party v1
+plugins, optional peripheral GPIO and unknown direct low-level clients;
+on-device hardware coexistence/recovery remains **DEFERRED / HARDWARE
+PENDING**. Thus prior "not completely closed" language means no
+unconditional firmware-global/physical sign-off; it does not negate
+the narrower verified original-production-C/software build PASS.
+
+No Stable/main release, device flash, SD/USB operation or v1.9 work.
