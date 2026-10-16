@@ -133,14 +133,14 @@ class E11InstalledResourceManifestTest(unittest.TestCase):
             str(i).encode("ascii") + b".dat"
             for i in range(125)
         ]
-        large = manifest() + b"\\n".join(records) + b"\\n"
+        large = manifest() + b"\n".join(records) + b"\n"
         self.assertGreater(len(large), 4096)
         storage = FakeStorage({b"/ext/Manifest": large})
         recovered, digest = read_live_manifest(storage)
         self.assertEqual(recovered, large)
         self.assertEqual(digest, hashlib.md5(large).hexdigest())
         self.assertEqual(parse_old_manifest(recovered)["old_manifest_resource_files"],
-                         4 + len(records))
+                         5 + len(records))
         self.assertGreater(
             storage.port.trace.count(b"read-transfer-handshake"), 2
         )
