@@ -44,7 +44,9 @@ int32_t update_task_worker_flash_writer(void* context) {
 }
 '''
 # The pinned real source has update_task variable, not task.
-OLD = OLD.replace("task", "update_task")
+OLD = OLD.replace("task->", "update_task->").replace(
+    "resources(task);", "resources(update_task);"
+)
 
 
 class OldManifestCleanupSemantics(unittest.TestCase):
