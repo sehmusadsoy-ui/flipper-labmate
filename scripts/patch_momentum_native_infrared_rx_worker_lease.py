@@ -139,6 +139,21 @@ void infrared_worker_rx_start(InfraredWorker* instance) {
     (void)infrared_worker_rx_try_start(instance);
 }"""
     worker = once(worker, old, new)
+    worker = once(worker,
+        """void infrared_worker_rx_stop(InfraredWorker* instance) {
+    furi_check(instance);
+    furi_check(instance->state == InfraredWorkerStateRunRx);
+
+    furi_hal_infrared_async_rx_set_timeout_isr_callback""",
+        """void infrared_worker_rx_stop(InfraredWorker* instance) {
+    furi_check(instance);
+    /* A denied legacy void START left no running RX thread.
+     * Do not assert, clear foreign callbacks or STOP foreign TIM2.
+     */
+    if(instance->state == InfraredWorkerStateIdle) return;
+    furi_check(instance->state == InfraredWorkerStateRunRx);
+
+    furi_hal_infrared_async_rx_set_timeout_isr_callback""")
     api = once(api, "Function,+,furi_hal_infrared_async_rx_start,void,\n",
                "Function,+,furi_hal_infrared_async_rx_start,void,\n"
                "Function,+,furi_hal_infrared_async_rx_try_start,_Bool,\n")
