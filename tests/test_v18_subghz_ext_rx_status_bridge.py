@@ -60,9 +60,9 @@ static void nested_start(void* cb,void* ctx){
   bool inner=subghz_devices_try_start_async_rx(&subghz_device_cc1101_ext,cb,ctx);
   assert(!inner);nested_denials++;
  }
- subghz_devices_report_async_rx_start_result(&subghz_device_cc1101_ext,plugin_result);
+ subghz_devices_report_async_rx_start_result(e11_rx_start_pending,plugin_result);
  if(report_twice)
-  subghz_devices_report_async_rx_start_result(&subghz_device_cc1101_ext,!plugin_result);
+  subghz_devices_report_async_rx_start_result(e11_rx_start_pending,!plugin_result);
 }
 static const SubGhzDeviceInterconnect old_interconnect={old_external_start};
 static const SubGhzDevice old_device={"third_party_v1",&old_interconnect};
