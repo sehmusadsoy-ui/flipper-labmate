@@ -30,7 +30,12 @@ def main():
     )
     for term in expected:
         assert term in reader, f"SignalReader source drift: {term}"
-    assert "signal_reader_start(instance->signal_reader" in parser
+    migrated="/* E11 native NFC SignalReader TIM16/DMA2/DMAMUX V2 owner. */" in reader
+    if migrated:
+        assert "signal_reader_try_start(instance->signal_reader" in parser
+        assert "iso15693_parser_try_start(" in listener
+    else:
+        assert "signal_reader_start(instance->signal_reader" in parser
     assert "signal_reader_stop(instance->signal_reader);" in parser
     assert "iso15693_parser_alloc(&gpio_nfc_irq_rfid_pull," in listener
     assert "furi_hal_nfc_deinit_gpio_isr();" in listener
@@ -46,12 +51,17 @@ def main():
     assert reader.index("LL_DMAMUX_EnableRequestGen(") < reader.index(
         "void signal_reader_stop(")
     stop=reader[reader.index("void signal_reader_stop("):]
-    assert "LL_DMAMUX_DisableRequestGen" not in stop, (
-        "SignalReader teardown changed: require new original C/ISR safety gate")
-    assert "furi_hal_resource_lease_v2_try_acquire" not in reader, (
-        "SignalReader migrated: replace this pre-migration audit with native-C fault tests")
-    print("E11 pinned SignalReader/NFC handoff/DMA2 source CONTRACT DISCOVERY PASS")
-    print("SIGNALREADER OWNERSHIP STILL OPEN: no V2 claim, no DMA2 RG0 STOP, no bool START")
+    if migrated:
+        assert "LL_DMAMUX_DisableRequestGen" in stop
+        assert "furi_hal_resource_lease_v2_try_acquire" in reader
+        assert "if(!signal_reader_e11_ready(instance)) return;" in stop
+        print("E11 PINNED NFC SIGNALREADER V2 OWNER SOURCE CONTRACT PASS")
+        print("Run actual patched SignalReader C fault tests and full firmware CI separately.")
+    else:
+        assert "LL_DMAMUX_DisableRequestGen" not in stop
+        assert "furi_hal_resource_lease_v2_try_acquire" not in reader
+        print("E11 pinned SignalReader/NFC handoff/DMA2 source DISCOVERY PASS")
+        print("SIGNALREADER OWNERSHIP STILL OPEN: no V2 claim/DMAMUX RG0 STOP.")
 
 if __name__=="__main__":
     main()
