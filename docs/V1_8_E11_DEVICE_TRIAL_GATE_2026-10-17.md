@@ -595,3 +595,41 @@ CI: [exact upstream source #38982495403](https://github.com/sehmusadsoy-ui/flipp
 **SUCCESS**. Source-level resource deletion is confirmed;
 actual old installed Manifest entries remain UNKNOWN. Keep E11
 firmware trial, stable merge and any FAP overwrite **NO-GO**.
+
+
+## 2026-10-17 — REAL installed old Manifest confirms FAP-SPLIT cannot preserve EXITFIX
+
+**Physical read-only operator evidence, not simulated:** the corrected
+COM7 audit reported `old_manifest_resource_files=2114`,
+`old_manifest_directories=165`, `manifest_total_records=2281`,
+`old_cleanup_lists_installed_labmate_fap=YES`,
+`old_cleanup_labmate_data_files=0`,
+`old_cleanup_non_labmate_apps_data_files=156`,
+`old_cleanup_app_fap_files=268`,
+`split_updater_guarantees_exitfix_survival=NO`,
+`live_manifest_readback_md5_screen=MATCH` and
+`trial_write_authorized=NO`.
+
+**The FAP-excluded experimental updater is no longer a viable
+candidate for an EXITFIX-preserving update.** The pinned updater
+resource phase first removes old manifest FILE entries, which
+**include** `/ext/apps/Tools/labmate.fap`, before extracting
+NEW resources; split new resources omit that FAP. Existing
+EXITFIX can therefore be removed with no LabMate replacement.
+This is a CONFIRMED CLEANUP SCOPE hazard, not evidence the file
+was already removed: it has NOT been updated or flashed.
+
+**Version pairing:** an original full updater includes a NEW E11
+FAP, not the current EXITFIX. It remains DO NOT FLASH pending a
+separately reviewed and explicitly authorized firmware/FAP pair,
+rollback strategy and real E11 native GPIO/TIM/EXTI acceptance.
+A theoretical firmware-only resource-skip strategy must not be
+treated as safe merely because it skips Manifest cleanup:
+SD resources and firmware/plugin ABI compatibility remain open.
+
+The `apps_data/labmate=0` old manifest count is a narrower
+positive result for the legacy *resource cleanup*, not a
+general guarantee against runtime data mutations. Protect the
+verified old/current LabMate PC copies. No repeat device scan
+or backup is required by this finding. [Detailed real-device
+evidence](V1_8_E11_LIVE_UPDATER_MANIFEST_HANDOFF.md).
