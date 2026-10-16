@@ -1529,3 +1529,53 @@ the fixed program on the device and shares the path/size/MD5
 comparison counts. Never auto-restore, delete or sync logs. Firmware
 and split-review updater remain **DO NOT FLASH**; Stable and PR state
 unchanged.
+
+
+## 2026-10-17 — Real COM7 current LabMate data vs prior backup: COVERAGE GAP
+
+**ACTUAL OPERATOR-REPORTED REAL DEVICE RESULTS** after executing the
+corrected read-only and pinned Momentum `storage list`/MD5 auditor:
+
+```
+historical_backup_files: 14
+current_device_files: 10
+same_path_same_size_md5: 3
+historical_files_now_absent: 9
+new_device_files_not_in_backup: 5
+changed_files_not_covered_by_backup: 2
+current_data_backup_parity: GAP
+screening_method: FILE_PATH_AND_SIZE_PLUS_MD5_ONLY
+individual_file_sha256_verified: NO
+full_microSD_covered: NO
+restoration_rehearsed: NO
+install_authorized: NO
+BACKUP COVERAGE GAP CONFIRMED; DO NOT RESTORE/DELETE/SYNC AUTOMATICALLY
+BACKUP COVERAGE GAP - NO FLASH
+```
+
+**Gate: BACKUP COVERAGE GAP, not PASS.** The old local backup holds
+14 files, the current on-device `/ext/apps_data/labmate` subtree
+has 10 files, only 3 file paths match in both size and MD5, 9
+older file paths are now absent on-device, 5 new device file paths
+are not present in the historical 14-file backup and 2 overlapping
+paths have changed. The measured name/size/MD5 difference does
+NOT prove files were erased by a particular firmware/app action,
+or that the nine specifically correspond to older
+`log_0041.csv`–`log_0049.csv` without a separate named
+inventory. It also does not verify SHA256 or whole-card parity.
+Older backup and the present device data must BOTH be preserved,
+with **no restore/delete/sync/overwrite**.
+
+**New mandatory protection requirement:** prepare a new, uniquely
+named **PC-only readback snapshot** of every current LabMate
+device file, validate lengths, device MD5 against local readback
+and SHA256 of written files, then compare a second live inventory
+to detect in-process drift. Do not modify or merge the previous
+14-file historical backup. A successful snapshot of the live
+LabMate directory still is NOT a full microSD backup or a
+recovery/restore rehearsal; full updater compatibility
+and E11 physical resource tests remain open.
+
+**Hold:** new E11 FULL and separately staged FAP-excluded review
+artifacts still **DO NOT FLASH**. No firmware trial authorization,
+physical E11 acceptance, Stable merge or release.
