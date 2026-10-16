@@ -27,7 +27,8 @@ EVIDENCE={
     "tests/test_v18_native_ext_cc1101_tx_lease.py":
         ("subghz_device_cc1101_ext_set_async_mirror_pin", "e11_ext_tx_fault"),
     "tests/test_v18_native_ext_cc1101_free_lease.py":
-        ("subghz_device_cc1101_ext_free", "e11_ext_rx_fault", "e11_ext_tx_fault"),
+        ("subghz_device_cc1101_ext_alloc", "subghz_device_cc1101_ext_free",
+         "e11_ext_rx_fault", "e11_ext_tx_fault", "fail_alloc"),
 }
 WORKFLOW_REQUIRED=(
     "patch_momentum_subghz_ext_rx_status_bridge.py",
@@ -55,6 +56,8 @@ def check(root:Path):
             "Pinned Momentum baseline changed without owner review")
     for item in WORKFLOW_REQUIRED:
         require(item in flow, "Missing E11 full-build step: "+item)
+    require(flow.count("python3 labmate/tests/test_v18_native_ext_cc1101_free_lease.py momentum-src") >= 2,
+            "Original CC1101 alloc/free gate must run after both RX and TX patch stages")
     require("DO NOT FLASH" in flow and "not a release" in flow.lower(),
             "No-flash review-only package contract changed")
     require("SubGhzDeviceInterconnect" in doc and
