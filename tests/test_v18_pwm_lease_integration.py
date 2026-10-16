@@ -117,15 +117,15 @@ int main(void){
     assert(pwm_register_writes==0U);
     labmate_generator_start(&app);
     assert(!app.generator_running && app.generator_blocked);
-    assert(pwm_start_calls==0U && lease_attempts==0U);
 #ifdef HAS_LEASE
+    assert(pwm_start_calls==1U && lease_attempts==0U);
     /* First use an occupied but non-cooperating TIM1 bus. HAL denies
      * safely, so FAP must not mistakenly mark generator_running. */
     lease_available=true;
     legacy_bus_busy=true;
     labmate_generator_start(&app);
     assert(!app.generator_running && app.generator_blocked);
-    assert(pwm_start_calls==1U && pwm_register_writes==0U &&
+    assert(pwm_start_calls==2U && pwm_register_writes==0U &&
            lease_attempts==0U); /* ZERO FAP preclaims */
     legacy_bus_busy=false;
     /* An already running native PWM client is not ours to retune or stop. */
@@ -137,7 +137,7 @@ int main(void){
 
     labmate_generator_start(&app);
     assert(app.generator_running && !app.generator_blocked);
-    assert(pwm_start_calls==2U && pwm_register_writes==1U &&
+    assert(pwm_start_calls==3U && pwm_register_writes==1U &&
            lease_attempts==0U);
     before=pwm_register_writes;
     labmate_generator_start(&app);
@@ -181,7 +181,7 @@ int main(void){
      * case without a restart by forcing the native bus to disappear.
      */
 #else
-    assert(lease_attempts==0U && lease_releases==0U);
+    assert(pwm_start_calls==0U && lease_attempts==0U && lease_releases==0U);
     lease_available=true;
     app.generator_blocked=false;
     labmate_generator_start(&app);
