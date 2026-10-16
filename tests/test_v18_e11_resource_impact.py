@@ -10,7 +10,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from audit_v18_e11_resource_impact import (
-    sha, inventory_resources, compare_resource_files, JS_PATH, FAP_PATH,
+    sha, inventory_resources, compare_resource_files, model_split_resources_without_labmate_fap, JS_PATH, FAP_PATH,
 )
 
 
@@ -49,6 +49,39 @@ class E11ResourceImpactTest(unittest.TestCase):
         self.assertEqual(result["modified_count"], 1)
         self.assertFalse(result["device_write_authorized"])
         self.assertFalse(result["labmate_fap_embedded"])
+
+    def test_split_model_excludes_only_fap_and_retains_exact_js(self):
+        self.new[FAP_PATH] = sha(self.fap)
+        before = dict(self.new)
+        model = model_split_resources_without_labmate_fap(
+            self.new, expected_js=sha(self.js), expected_fap=sha(self.fap)
+        )
+        self.assertEqual(self.new, before, "model cannot mutate inputs")
+        self.assertTrue(model["split_model_exact_fap_excluded"])
+        self.assertTrue(model["split_model_js_gpio_preserved"])
+        self.assertEqual(model["split_model_remaining_resource_file_count"],
+                         len(self.new) - 1)
+        self.assertFalse(model["split_model_creates_new_firmware"])
+        self.assertFalse(model["split_model_device_write_authorized"])
+
+    def test_split_model_refuses_wrong_or_missing_app(self):
+        with self.assertRaisesRegex(ValueError, "matching bundled FAP"):
+            model_split_resources_without_labmate_fap(
+                self.new, expected_js=sha(self.js), expected_fap=sha(self.fap)
+            )
+        self.new[FAP_PATH] = sha(b"wrong")
+        with self.assertRaisesRegex(ValueError, "matching bundled FAP"):
+            model_split_resources_without_labmate_fap(
+                self.new, expected_js=sha(self.js), expected_fap=sha(self.fap)
+            )
+
+    def test_split_model_refuses_wrong_plugin(self):
+        self.new[FAP_PATH] = sha(self.fap)
+        self.new[JS_PATH] = sha(b"wrong plugin")
+        with self.assertRaisesRegex(ValueError, "JS GPIO"):
+            model_split_resources_without_labmate_fap(
+                self.new, expected_js=sha(self.js), expected_fap=sha(self.fap)
+            )
 
     def test_bundled_labmate_fap_must_match(self):
         self.new[FAP_PATH] = sha(b"fake-fap")
