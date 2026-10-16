@@ -153,3 +153,31 @@ contents are not approved for flash and no firmware/FAP application
 will be recommended on the basis of staging PASS alone. Full-updater
 radio, SD resources and option-byte policy remain a physical
 risk, and recovery is not proven.
+
+
+## 2026-10-17 — Windows real-artifact stage-only verification PASS
+
+[Windows CI #38970840598](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38970840598)
+**COMPLETED SUCCESS** on review staging source
+`5226b2b81d87c515a686d120c001fc996480811b`:
+
+- **13/13 Windows synthetic negative/positive stage tests PASS**,
+  including wrong embedded DFU/radio, path traversal, symlink,
+  duplicate, missing/extra members and local overwrite refusal.
+- Windows fetched the actual review-only FULL artifact from
+  `#38966248325`, verified four independently pinned SHA256s,
+  exact Actions source/run provenance, radio and updater contents,
+  extracted exactly the expected seven update components to a
+  brand-new **runner temporary review** directory, and verified the
+  staged `firmware.dfu` bytes.
+- CI printed
+  `REAL FULL CI 38966248325 WINDOWS REVIEW STAGE PASS - NO FLASH`.
+  Private qFlipper settings and microSD backup files are **not in CI**;
+  those were verified previously on the operator's PC using the full
+  independent local preflight, which is re-invoked by the operator
+  stage script before writing any **new local** staging folder.
+
+**Remaining:** the newly added stage script has not yet been executed
+on the operator's Windows PC. Windows CI stage success is NOT an
+operator real-device trial, safe-to-flash certification, recovered
+settings validation, or an authorization to apply full updater.
