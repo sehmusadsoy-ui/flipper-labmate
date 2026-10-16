@@ -148,6 +148,8 @@ def compare_backups(
         "current_data_backup_parity": (
             "MATCH" if not (absent or new or modified) else "GAP"
         ),
+        "screening_method": "FILE_PATH_AND_SIZE_PLUS_MD5_ONLY",
+        "individual_file_sha256_verified": "NO",
         "full_microSD_covered": "NO",
         "restoration_rehearsed": "NO",
         "install_authorized": "NO",
@@ -184,7 +186,8 @@ def main() -> int:
     if result["current_data_backup_parity"] == "GAP":
         print("BACKUP COVERAGE GAP CONFIRMED; DO NOT RESTORE/DELETE/SYNC AUTOMATICALLY")
         return 2
-    print("LABMATE LIVE DIRECTORY PARITY PASS - ONLY THAT DIRECTORY, NO FLASH")
+    print("LABMATE LIVE DIRECTORY SIZE+MD5 SCREEN MATCH - NO FLASH")
+    print("NOT A FULL SD BACKUP OR RESTORE TEST; SHA256 READBACK NOT VERIFIED")
     return 0
 
 
