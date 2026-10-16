@@ -18,7 +18,7 @@ from test_v18_e11_usb_sd_backup import FakeStorage
 
 def manifest(*, fap=True, labmate_data=True) -> bytes:
     entries = [
-        b"V:1",
+        b"V:0",
         b"T:1760000000",
         b"D:apps",
         b"D:apps/Tools",
@@ -82,6 +82,19 @@ class E11InstalledResourceManifestTest(unittest.TestCase):
         ):
             with self.subTest(entry=item), self.assertRaises(ValueError):
                 parse_old_manifest(manifest() + item + b"\n")
+
+    def test_duplicate_or_wrong_momentum_metadata_refused(self):
+        baseline = manifest()
+        for bad in (
+            baseline + b"V:0\n",
+            baseline + b"T:1760000001\n",
+            baseline.replace(b"V:0", b"V:7"),
+            baseline.replace(b"T:1760000000", b"T:unknown"),
+            baseline.replace(b"V:0\n", b""),
+            baseline.replace(b"T:1760000000\n", b""),
+        ):
+            with self.subTest(bad=bad[:24]), self.assertRaises(ValueError):
+                parse_old_manifest(bad)
 
     def test_reject_empty_or_implausibly_short_manifest(self):
         for content in (b"", b"V:1\n", b"D:apps\n", b"F:" + b"a" * 32 + b":0:apps/x\n"):
