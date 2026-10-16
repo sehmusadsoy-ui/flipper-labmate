@@ -140,6 +140,10 @@ def compare_resource_files(
         "non_js_app_data_changed_preview": changed_data[:20],
         "js_gpio_binary_matches": True,
         "labmate_fap_embedded": bool(fap),
+        "labmate_fap_in_earlier_update": any(k.lower() == FAP_PATH.lower() for k in old),
+        "bundled_fap_blocks_assumed_firmware_then_fap_separation": bool(fap),
+        "other_resource_changes_require_manual_compatibility_review": bool(changed_data or deleted or modified),
+        "trial_go_no_go": "NO-GO",
         "device_write_authorized": False,
     }
 
