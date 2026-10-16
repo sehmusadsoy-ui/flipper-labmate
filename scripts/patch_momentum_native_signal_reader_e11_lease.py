@@ -11,6 +11,7 @@ from pathlib import Path
 import subprocess
 import sys
 from patch_momentum_native_iso15693_irq_restore_busy import EXPECTED as ISO_PRE,SOURCE as NFC
+from patch_momentum_e11_extended_dma_lease import API
 
 PIN="d3f89dfe2ef6b01839201598e9be1590cba80322"
 READER="lib/signal_reader/signal_reader.c"
@@ -25,7 +26,7 @@ def one(s,old,new):
         raise ValueError("Pinned SignalReader/ISO source mismatch "+repr(old[:115]))
     return s.replace(old,new,1)
 
-def patch(reader,header,parser,parser_header,nfc):
+def patch(reader,header,parser,parser_header,nfc,api):
     if MARK in reader: raise ValueError("Already applied")
     if "/* E11 ISO15693 exact NFC IRQ restoration BUSY return. */" not in nfc:
         raise ValueError("NFC transparent EXIT fail-closed predecessor missing")
@@ -247,7 +248,11 @@ void iso15693_parser_start(
     }
 
     while(true) {""")
-    return reader,header,parser,parser_header,nfc
+    api=one(api,
+        'Function,+,signal_reader_start,void,"SignalReader*, SignalReaderCallback, void*"\n',
+        'Function,+,signal_reader_start,void,"SignalReader*, SignalReaderCallback, void*"\n'
+        'Function,+,signal_reader_try_start,_Bool,"SignalReader*, SignalReaderCallback, void*"\n')
+    return reader,header,parser,parser_header,nfc,api
 
 def main():
     p=argparse.ArgumentParser()
@@ -267,7 +272,7 @@ def main():
         check=(root/"targets/f7/furi_hal/furi_hal_resources.h").read_text()
         if "#define FURI_HAL_RESOURCE_LEASE_API_V2 1" not in check:
             raise ValueError("Missing actual matched V2 DMA/DMAMUX allocator")
-        paths=(READER,READER_H,PARSER,PARSER_H,NFC)
+        paths=(READER,READER_H,PARSER,PARSER_H,NFC,API)
         old=[(root/p).read_text(encoding="utf-8") for p in paths]
         new=patch(*old)
         print("E11 NFC SIGNALREADER V2 DRIVER+PARSER+LISTENER SOURCE PREFLIGHT PASS")
