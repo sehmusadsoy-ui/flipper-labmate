@@ -31,7 +31,7 @@ def patch(h,r,src,pub,api):
         "#define FURI_HAL_LEASE_NATIVE_NFC_IRQ_PA2_EXTI2 (FuriHalLeasePa2|FuriHalLeaseExti2)\n",
         "#define FURI_HAL_LEASE_NATIVE_NFC_IRQ_PA2_EXTI2 (FuriHalLeasePa2|FuriHalLeaseExti2)\n"
         "/* USART1 RX PB7 / LPUART1 RX PC0: distinct physical EXTI aliases. */\n"
-        "enum { FuriHalLeasePb7=(1U<<30), FuriHalLeaseLpuart1=(1U<<31) };\n"
+        "#define FuriHalLeasePb7 (1UL<<30)\n#define FuriHalLeaseLpuart1 (1UL<<31)\n"
         "#define FURI_HAL_LEASE_NATIVE_SERIAL_EXP_USART1 (FuriHalLeaseUsart1|FuriHalLeasePb7|FuriHalLeaseExti7)\n"
         "#define FURI_HAL_LEASE_NATIVE_SERIAL_EXP_LPUART1 (FuriHalLeaseLpuart1|FuriHalLeasePc0|FuriHalLeaseExti0)\n")
     r=once(r,
