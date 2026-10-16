@@ -474,3 +474,47 @@ current snapshot gate** but not the full-device SD gate.
 **Decision: NO-GO for firmware flashing despite successful
 LabMate folder snapshot.** Do not reuse historical installer
 or merge PR #13 / touch Stable.
+
+
+## 2026-10-17 — Actual non-LabMate SD exposure confirmed; verified whole-card backup tool READY
+
+Real read-only operator COM7 scope survey on the installed EXITFIX
+firmware completed PASS. Top-level card structure:
+`/ext: 27 directories + 1 file`;
+`/ext/apps: 14 directories + 0 files`;
+`/ext/apps_data: 57 OTHER application-data directories plus the
+LabMate directory, 0 top-level files`. The two preserved PC
+LabMate states (14 historical and 10 current files / 1791 bytes)
+are **not** full-SD backups. The existence of these other
+directories does not establish damage or alteration.
+
+Prepared new [PC reader-mounted SD content preservation
+helper](../scripts/backup_v18_e11_sd_reader_to_pc.py)
+with [operator/read-only protection handoff](V1_8_E11_FULL_SD_PC_BACKUP_HANDOFF.md).
+It requires separately confirmed SD drive root, physically stopped
+Flipper and a reader; uses **source FILE READ ONLY** and a
+brand-new folder on a different PC drive. Copies all reachable
+ordinary/hidden nested files and empty directories, checks
+source/destination SHA256 and second source inventory,
+refuses root mismatch, special linked paths, insufficient free
+space and drift; incomplete PC copies are prominently marked.
+The tool is NOT a raw image/metadata clone or real restore test;
+Windows volume mounting may still alter device filesystem metadata.
+**No physical card was accessed by new CI tests** and no automatic
+format/mount/restore is performed.
+
+- [Windows no-device regression #38979716149](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38979716149)
+  **SUCCESS**: 11 mock source/destination/rollback-guard tests,
+  plus earlier Windows read-only survey/snapshot suites.
+- [Integrated software regression #38979716180](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38979716180)
+  **SUCCESS**.
+- Verified script source pin
+  `bb43b8a935cc09b78accc0a44a78c668a779ca01`.
+- **Actual operator full-SD copy: NOT YET RUN.**
+
+**NO-GO for firmware flash** continues until a fresh true full-SD
+content backup (or an explicitly documented deferred/exception
+decision), separately assessed recovery/rollback procedure and
+newly authorized trial-grade firmware/FAP pair. Successful
+LabMate folder backup and top-level SD survey do not satisfy
+these barriers. PR #13 DRAFT, Stable/main unchanged.
