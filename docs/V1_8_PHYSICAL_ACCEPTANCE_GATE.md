@@ -1293,3 +1293,50 @@ review artifact. Draft PR #13 remains unmerged; main/Stable unchanged.
 No future Flipper firmware/FAP write is authorized by these read-only
 checks; separate exact-pair install planning, review, and explicit
 operator approval remain required.
+
+
+## 2026-10-17 — Operator exact full-pair OFFLINE integrated preflight PASS
+
+**USER-REPORTED WINDOWS LOCAL READ-ONLY PRECHECK PASS** after executing
+the exact [`scripts/preflight_v18_e11_local.py`](../scripts/preflight_v18_e11_local.py)
+from tested source commit
+`1c7446b19a9340349862a6ee7f96129e835af005` with the downloaded
+actual FULL run `38966248325` review candidate, old MNTM-012 and
+v1.8 Stable rollback assets, current installed EXITFIX FAP readback,
+LabMate microSD folder copy and Desktop settings archive.
+
+Raw operator transcript (no COM port access or device writes):
+
+```
+E11 full-pair source/run/provenance and local SHA256: PASS
+Current EXITFIX FAP local copy digest: PASS
+Rollback firmware / Stable FAP local digest: PASS
+LabMate local data backup: 14 readable files
+Settings TGZ pinned digest / 14 files + 1 dir: PASS
+LOCAL E11 INPUT PREFLIGHT PASS - NO FLASH, NO DEVICE ACCEPTANCE
+RESTORE NOT REHEARSED. Operator consent still required before device write.
+E11 LOCAL PREFLIGHT COMPLETED - NO FLASH
+```
+
+**Gate accepted: LOCAL INPUT/PACKAGE/BACKUP READABILITY ONLY.**
+This is more comprehensive than four manifest hashes: the exact
+source/run/provenance, embedded radio checksum, DFU and updater structure
+were re-audited with the paired preflight. The physical Flipper still
+runs the earlier v1.8DEV EXITFIX FAP digest
+`7a76f626f34a65059d9536fa2cd52b2639f4d1038a9b5c69291fa28d5e4f63be`.
+Do **not** attribute old EXITFIX physical E1–E9 results to new CI FAP
+`2b31ec3fa9050580dc3c3ff80138578ed185d70811aa8124ebd2d00b8d981af0`.
+
+**Still OPEN:** actual offline restore rehearsal/contingency;
+current-device full microSD backup parity; live E11 native
+cross-service owners and STOP/BACK denial/reacquisition; real sensor
+or calibrated equipment deferred per exceptions; matched new full
+firmware/FAP device installation/startup. No proof of on-device
+native patch SHA is possible from the abbreviated `info device`
+`d3f89dfe dirty=true` record alone. The older historical full
+installer is pinned to *different* binaries and is not suitable for
+this artifact. Any future write needs exact-pair installer/runbook
+review and fresh explicit user authorization; passing this preflight
+cannot authorize applying a FULL updater (radio, option-byte and
+resource changes possible). The branch remains DRAFT and Stable
+source/tag/assets remain unchanged.
