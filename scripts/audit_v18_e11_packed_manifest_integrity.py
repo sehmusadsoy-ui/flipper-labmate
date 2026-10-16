@@ -130,7 +130,15 @@ def check_consistency(
         name for name in set(actual) & set(declared) if actual[name] != declared[name]
     }
     if unlisted or mismatched:
-        raise ValueError("packed manifest missing or mismatching resource contents")
+        raise ValueError(
+            "packed manifest missing or mismatching resource contents:"
+            " unlisted_actual=" + str(len(unlisted)) +
+            " wrong_md5_size=" + str(len(mismatched)) +
+            " undeclared_labmate=" + str(fap in unlisted) +
+            " undeclared_js_gpio=" + str(js in unlisted) +
+            " wrong_labmate=" + str(fap in mismatched) +
+            " wrong_js_gpio=" + str(js in mismatched)
+        )
     if js not in actual or js not in declared:
         raise ValueError("packed native JS GPIO resource not declared")
     if expected_js_sha256 is not None and not re.fullmatch(r"[a-f0-9]{64}",expected_js_sha256):
