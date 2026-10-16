@@ -6,6 +6,7 @@ on:
     paths:
       - "scripts/patch_momentum_native_pwm_lease.py"
       - "tests/test_v18_native_pwm_lease.py"
+      - "tests/test_v18_pwm_native_joint.py"
       - ".github/workflows/check-v18-native-pwm-service-lease.yml"
   workflow_dispatch:
 
@@ -50,6 +51,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 labmate/tests/test_v18_native_pwm_lease.py momentum-src
+          python3 labmate/tests/test_v18_pwm_native_joint.py momentum-src
           echo "HOST ONLY: HAL denial tests, not real GPIO/timer behavior."
       - name: Stage exactly one LabMate application
         shell: bash
