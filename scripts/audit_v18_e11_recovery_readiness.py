@@ -9,10 +9,8 @@ A matching nominal firmware branch/source prefix is NOT full image identity.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal
-
 from preflight_v18_e11_local import (
-    INSTALLED_EXITFIX, ROLLBACK, ARTIFACTS, SOURCE
+    INSTALLED_EXITFIX, ROLLBACK, ARTIFACTS
 )
 from check_v18_full_vs_mntm012 import OFFICIAL_MNTM012_SHA256
 
