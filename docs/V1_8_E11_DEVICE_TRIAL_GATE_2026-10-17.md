@@ -556,3 +556,12 @@ physical acceptance. Neither old FULL nor FAP-separated review
 archives are flash-authorized. PR stays draft and main/Stable
 remain unchanged. A complete SD backup may always be obtained
 later over USB or reader if the owner chooses.
+
+
+## 2026-10-17 — Recovery equivalence checked: official 012 fallback is NOT exact prior mntm-dev
+
+[Recovery/DFU decision memo](V1_8_E11_FIRMWARE_RECOVERY_DECISION.md) establishes a safety distinction overlooked by a simple archived-backup SHA check. The running device is `mntm-dev`, base `d3f89dfe`, dirty=true; the local verified rollback TGZ is official `mntm-012`. No independently trusted SHA256 of the currently installed **entire firmware image** nor identical restorable old custom firmware package is established. Recovering to official MNTM-012 could be a viable **release fallback**, but is not the same as returning to the current customized firmware. The old Stable FAP is not the on-device EXITFIX FAP, although a matching EXITFIX readback copy is preserved.
+
+Flipper's [manufacturer recovery documentation](https://docs.flipper.net/zero/basics/firmware-update/firmware-recovery) describes qFlipper USB DFU recovery **as a recovery path, not a non-destructive preflight**. Its firmware Repair can erase internal storage; settings recovery from the saved qFlipper TGZ is not rehearsed. Never instruct immediate DFU/Repair to prove a future rollback.
+
+[Automated offline NO-GO audit](../scripts/audit_v18_e11_recovery_readiness.py) with 13 adversarial tests distinguishes these cases. [Host CI #38981611042](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38981611042) **SUCCESS**; [independently pinned update resource/radio/OB verification #38981663476](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38981663476) **SUCCESS**. The resulting label is `E11 OFFLINE RECOVERY EQUIVALENCE AUDIT PASS - TRIAL NO-GO`, **not** permission to flash. Device-level recovery equivalence and independent firmware install/boot consent remain OPEN, even though non-LabMate full-SD backup is optional given the operator's stated data priorities. PR #13 draft; original and split artifacts DO NOT FLASH.
