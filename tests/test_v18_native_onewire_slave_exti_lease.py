@@ -171,7 +171,7 @@ def main():
     assert "bool furi_hal_gpio_try_add_int_callback(" in gh
     assert "bool furi_hal_gpio_try_remove_int_callback(" in gh
     assert "if(!bus->e11_owner || bus->e11_fault) return;" in s
-    gpio=gc[gc.index("/* E11 compare-and-register"):gc.index("void furi_hal_gpio_add_int_callback(")]
+    gpio=gc[gc.index("/* Atomically refuse a full EXTI line"):gc.index("void furi_hal_gpio_add_int_callback(")]
     start=s[s.index("OneWireSlave* onewire_slave_alloc("):s.index("void onewire_slave_set_reset_callback(")]
     assert start.index("furi_hal_resource_lease_try_acquire(") < start.index("furi_hal_gpio_try_add_int_callback(")
     assert start.index("furi_hal_gpio_try_add_int_callback(") < start.index("furi_hal_gpio_write(bus->gpio_pin, true);")
