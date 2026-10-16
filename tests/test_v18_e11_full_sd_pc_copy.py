@@ -3,13 +3,14 @@
 from __future__ import annotations
 import hashlib
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from backup_v18_e11_sd_reader_to_pc import copy_and_verify_sd, inventory
+from backup_v18_e11_sd_reader_to_pc import copy_and_verify_sd, inventory, check_windows_drive_args
 
 
 class SDReaderPCCopyTests(unittest.TestCase):
@@ -30,6 +31,17 @@ class SDReaderPCCopyTests(unittest.TestCase):
         (self.sd / "apps_data" / "Other App" / "my...settings.ini").write_bytes(b"settings")
         (self.sd / "apps_data" / "café" / "notes.txt").write_bytes(b"unicode")
         self.out = self.root / "PC-new-full-copy"
+
+    @unittest.skipUnless(os.name == "nt", "Windows drive-root guard is OS-specific")
+    def test_windows_cli_never_accepts_system_drive_as_sd(self):
+        sysroot=Path(os.environ.get("SystemDrive", "C:") + "\\")
+        with self.assertRaisesRegex(ValueError, "system drive"):
+            check_windows_drive_args(sysroot, self.root / "pc-backup")
+
+    @unittest.skipUnless(os.name == "nt", "Windows drive-root guard is OS-specific")
+    def test_windows_cli_rejects_subdirectory_instead_of_drive_root(self):
+        with self.assertRaisesRegex(ValueError, "exact drive ROOT"):
+            check_windows_drive_args(self.sd, self.out)
 
     def test_preserves_nested_hidden_unicode_empty_directories(self):
         dirs, files = inventory(self.sd)
