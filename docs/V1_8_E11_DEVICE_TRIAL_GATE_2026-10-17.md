@@ -181,3 +181,44 @@ risk, and recovery is not proven.
 on the operator's Windows PC. Windows CI stage success is NOT an
 operator real-device trial, safe-to-flash certification, recovered
 settings validation, or an authorization to apply full updater.
+
+
+## 2026-10-17 — Actual operator Windows seven-file review staging PASS
+
+**USER-REPORTED LOCAL DEVICE-FREE PASS** running the newly validated,
+exact-source `stage_v18_e11_review_only.py` against the independently
+verified full-review package `#38966248325`, the previous
+on-device-readback EXITFIX FAP, and operator-held backups:
+
+```
+EXACT E11 CANDIDATE AND BACKUP PREFLIGHT PASS (OFFLINE)
+REVIEW-ONLY UPDATER FILES: 7
+REVIEW DIRECTORY: Downloads/LabMate-E11-Staged-REVIEW-38966248325/f7-update-mntm-HEAD-d3f89dfe
+E11 LOCAL REVIEW STAGING PASS - NOT AUTHORIZED TO FLASH
+No Flipper connection, firmware install, FAP overwrite, SD operation or restore.
+E11 REVIEW STAGING COMPLETE - NO FLASH
+```
+
+Seven regular updater components were written to a *new local Windows
+review directory only*. **This closes the exact Windows operator
+review-staging gate, not the full firmware installation gate.**
+User's old working `EXITFIX` FAP remains on-device; no current
+firmware image or serial radio test was changed.
+
+**Formal go/no-go outcome at this point: NO-GO for firmware write.**
+The source archive and stage explicitly warn `DO NOT FLASH`;
+the historical installer is pinned to different bytes and cannot
+be repurposed. No independently verified restoration run exists.
+Full updater may affect radio firmware, SD resources, option bytes,
+and application ABI. A separate, reviewed and explicitly authorized
+new build/procedure must be in place before attempting physical E11
+trial. Nothing in an offline PASS is consent to flash.
+
+**Remaining decisions for trial authorization:** (a) review the
+full-updater option-byte/radio/SD compatibility and firmware recovery
+method for the exact device, (b) independently scope possible backup
+gaps and preservation of historical log/profile data, (c) finalize
+new exact-match install-and-post-boot procedure with stop rules,
+(d) obtain **new explicit operator authorization**. Real E11
+GPIO/TIM1/TIM2/EXTI physical acceptance and deferred hardware
+fixtures remain open and must not be described as PASS.
