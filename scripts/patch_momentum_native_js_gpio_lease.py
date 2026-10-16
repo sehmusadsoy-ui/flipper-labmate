@@ -289,9 +289,9 @@ def main() -> int:
         header=(root/"targets/f7/furi_hal/furi_hal_resources.h").read_text()
         gpio=(root/"targets/f7/furi_hal/furi_hal_gpio.h").read_text()
         pwm=(root/"targets/f7/furi_hal/furi_hal_pwm.c").read_text()
-        if "FURI_HAL_LEASE_MONITOR_PA7" not in header or
-            "FURI_HAL_LEASE_JS_EXTI3" not in header or (
-            "FURI_HAL_GPIO_HAS_TRY_ADD_INT_CALLBACK" not in gpio) or (
+        if ("FURI_HAL_LEASE_MONITOR_PA7" not in header or
+            "FURI_HAL_LEASE_JS_EXTI3" not in header or
+            "FURI_HAL_GPIO_HAS_TRY_ADD_INT_CALLBACK" not in gpio or
             "LabMate E11 native PWM lease owner:" not in pwm):
             raise ValueError("Missing prerequisite lease/native PWM/IRQ patches")
         dest=root/TARGET
