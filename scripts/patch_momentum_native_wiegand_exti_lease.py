@@ -40,13 +40,34 @@ def patch(h,r,s,wh,app):
     wh=once(wh,
         "    void begin(void);\n    void end(void);",
         "    void begin(void);\n    /* E11 true only after BOTH inputs and callback slots are owned. */\n"
-        "    bool tryBegin(void);\n    void end(void);")
+        "    bool tryBegin(void);\n    /* Ignore stale callbacks after BUSY/fault. */\n"\n        "    bool e11IsActive(void) const { return e11_owner != 0U && !e11_fault; }\n"\n        "    void end(void);")
     wh=once(wh,
         "private:\n    static bool DoWiegandConversion(void);",
         "private:\n    uint32_t e11_owner = 0;\n    bool e11_fault = false;\n    static bool DoWiegandConversion(void);")
     s=once(s,
         "#include <furi_hal.h>\n",
         "#include <furi_hal.h>\n#include <furi_hal_resources.h>\n")
+    s=once(s,
+        """static void input_isr_d0(void* _ctx) {
+    WIEGAND* _this = static_cast<WIEGAND*>(_ctx);
+    _this->ReadD0();
+}
+
+static void input_isr_d1(void* _ctx) {
+    WIEGAND* _this = static_cast<WIEGAND*>(_ctx);
+    _this->ReadD1();
+}""",
+        """static void input_isr_d0(void* _ctx) {
+    WIEGAND* _this = static_cast<WIEGAND*>(_ctx);
+    if(!_this || !_this->e11IsActive()) return;
+    _this->ReadD0();
+}
+
+static void input_isr_d1(void* _ctx) {
+    WIEGAND* _this = static_cast<WIEGAND*>(_ctx);
+    if(!_this || !_this->e11IsActive()) return;
+    _this->ReadD1();
+}""")
     s=once(s,
         """void WIEGAND::begin() {
     _lastWiegand = 0;
