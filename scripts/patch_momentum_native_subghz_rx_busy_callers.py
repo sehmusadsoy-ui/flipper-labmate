@@ -49,7 +49,10 @@ static void subghz_device_cc1101_int_interconnect_start_async_rx(void* callback,
         "extern const SubGhzDevice subghz_device_cc1101_int;",
         "extern const SubGhzDevice subghz_device_cc1101_int;\n"
         "/* New firmware-local bool start; do not change plugin function pointers. */\n"
-        "bool subghz_device_cc1101_int_interconnect_try_start_async_rx(void* callback, void* context);")
+        "/* Export C linkage: firmware_api_table is compiled as C++. */\n"
+        "#ifdef __cplusplus\nextern \\"C\\" {\n#endif\n"
+        "bool subghz_device_cc1101_int_interconnect_try_start_async_rx(void* callback, void* context);\n"
+        "#ifdef __cplusplus\n}\n#endif")
     d=once(d,
         '#include "registry.h"\n',
         '#include "registry.h"\n#include "cc1101_int/cc1101_int_interconnect.h"\n')
