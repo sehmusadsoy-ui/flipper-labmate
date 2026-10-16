@@ -123,6 +123,22 @@ an operator-approved controlled restart with known firmware and
 validated physical wiring. No automatic firmware flash or device
 reboot was implemented by this stage.
 
+## Automated evidence acceptance regression
+
+[Software evidence + physical deferral guard #38948658080 — SUCCESS](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38948658080)
+executes `scripts/check_v18_e11_software_acceptance.py` against the
+current development repository. It refuses missing original-C regression
+steps in the matched full firmware/FAP workflow, accidental loss of the
+pinned source requirement, unchecked v1 plugin ABI claims, discarded
+direct-LL audit, removal of fail-closed/sticky-fault recovery language,
+or falsely reclassifying deferred physical acceptance as PASS.
+
+This is a **repository policy/evidence gate**, not a substitute for
+native C fault injection, firmware compilation or hardware acceptance.
+Its corresponding last complete firmware/FAP **#38945772528 SUCCESS**
+predates this documentation-only/CI-only gate; no native source change
+has been introduced by this acceptance script.
+
 ## Explicit acceptance decision
 
 **Software covered and host-verified:** matched native Flipper firmware
