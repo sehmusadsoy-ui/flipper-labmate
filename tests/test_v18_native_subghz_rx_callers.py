@@ -107,8 +107,8 @@ def main()->None:
     # After the E11 status bridge, the genuine device helper preceding
     # this function owns the synchronous report state. Compile that exact
     # original production C too; earlier RX-only stages still work.
-    start=("/* E11 matched radio plugin v1 RX status sidechannel; ABI unchanged. */"
-           if "/* E11 matched radio plugin v1 RX status sidechannel; ABI unchanged. */"
+    start=("/* E11 matched radio plugin v1 RX status sidechannel; ABI unchanged."
+           if "/* E11 matched radio plugin v1 RX status sidechannel; ABI unchanged."
            in devices else "/* E11 cooperative SubGHz RX BUSY path;")
     devfunc=devices[devices.index(start):
                     devices.index("void subghz_devices_start_async_rx(")]
