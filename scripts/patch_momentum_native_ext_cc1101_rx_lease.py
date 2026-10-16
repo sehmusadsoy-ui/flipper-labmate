@@ -51,6 +51,18 @@ static bool e11_ext_rx_ready(void) {
     return true;
 }
 ''')
+    # Do not free live RX callback context / owner after a denied STOP.
+    # The void device free API cannot report BUSY, so retain the object
+    # until a controlled, verified recovery instead of risking UAF.
+    s=one(s,
+        """void subghz_device_cc1101_ext_free(void) {
+    furi_assert(subghz_device_cc1101_ext != NULL);""",
+        """void subghz_device_cc1101_ext_free(void) {
+    if(!subghz_device_cc1101_ext) return;
+    if(e11_ext_rx_owner || e11_ext_rx_fault) {
+        FURI_LOG_E(TAG, "E11 external RX lease still held; skip radio free");
+        return;
+    }""")
     s=one(s,
         """void subghz_device_cc1101_ext_set_async_mirror_pin(const GpioPin* pin) {
     subghz_device_cc1101_ext->async_mirror_pin = pin;
