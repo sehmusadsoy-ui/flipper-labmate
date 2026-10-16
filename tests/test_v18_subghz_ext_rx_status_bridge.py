@@ -118,7 +118,7 @@ def main():
     types=(root/"lib/subghz/devices/types.h").read_text()
     api=(root/"targets/f7/api_symbols.csv").read_text()
     ext=(root/"applications/drivers/subghz/cc1101_ext/cc1101_ext.c").read_text()
-    assert "/* E11 matched radio plugin v1 RX status sidechannel; ABI unchanged. */" in dev
+    assert "/* E11 matched radio plugin v1 RX status sidechannel; ABI unchanged." in dev
     assert "void subghz_devices_report_async_rx_start_result(" in dh
     assert "Function,+,subghz_devices_report_async_rx_start_result,void," in api
     assert "bool subghz_device_cc1101_ext_try_start_async_rx(" in ext
@@ -126,7 +126,7 @@ def main():
     assert 'SUBGHZ_RADIO_DEVICE_PLUGIN_API_VERSION 1' in types
     assert "void subghz_devices_start_async_rx(" in dh
     assert "subghz_devices_report_async_rx_start_result(" in plugin
-    source=dev[dev.index("/* E11 matched radio plugin v1 RX status sidechannel; ABI unchanged. */"):
+    source=dev[dev.index("/* E11 matched radio plugin v1 RX status sidechannel; ABI unchanged."):
                dev.index("void subghz_devices_start_async_rx(",dev.index("/* E11 matched radio plugin"))]
     wrap=plugin[plugin.index("extern const SubGhzDevice subghz_device_cc1101_ext;"):
                 plugin.index("static void subghz_device_cc1101_ext_interconnect_load_preset(")]
