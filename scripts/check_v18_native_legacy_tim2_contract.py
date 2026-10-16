@@ -164,7 +164,7 @@ def main()->int:
                     tx.index("furi_hal_subghz_async_tx.callback = callback;") or
                     tx.index("furi_hal_resource_lease_try_acquire(") >
                     tx.index("furi_hal_gpio_init_ex(") or
-                    "FURI_HAL_LEASE_NATIVE_SUBGHZ_TX_BASE" not in tx or
+                    "FURI_HAL_LEASE_NATIVE_SUBGHZ_TX_BASE" not in src or
                     "FURI_HAL_LEASE_NATIVE_SUBGHZ_TX_MIRROR_PA7" not in src or
                     "FURI_HAL_LEASE_NATIVE_SUBGHZ_TX_MIRROR_PB3" not in src or
                     "LL_DMA_IsEnabledChannel(SUBGHZ_DMA_CH1_DEF)" not in tx or
