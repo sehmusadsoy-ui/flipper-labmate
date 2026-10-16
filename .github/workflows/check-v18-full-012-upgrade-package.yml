@@ -36,6 +36,8 @@ on:
       - "tests/test_v18_native_rfid_capture_tim2_lease.py"
       - "scripts/patch_momentum_native_lfrfid_read_worker_busy.py"
       - "tests/test_v18_native_lfrfid_read_worker_busy.py"
+      - "scripts/patch_momentum_native_lfrfid_raw_read_busy.py"
+      - "tests/test_v18_native_lfrfid_raw_read_busy.py"
       - "tests/test_v18_native_pulse_reader_lease.py"
       - "tests/test_v18_native_pulse_lease_firmware.py"
       - "tests/test_v18_tim2_lease_integration.py"
@@ -145,6 +147,9 @@ jobs:
           python3 labmate/scripts/patch_momentum_native_lfrfid_read_worker_busy.py momentum-src
           python3 labmate/scripts/patch_momentum_native_lfrfid_read_worker_busy.py momentum-src --apply
           python3 labmate/tests/test_v18_native_lfrfid_read_worker_busy.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_lfrfid_raw_read_busy.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_lfrfid_raw_read_busy.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_lfrfid_raw_read_busy.py momentum-src
           python3 labmate/tests/test_v18_tim2_lease_integration.py
           python3 labmate/scripts/check_v18_native_legacy_tim2_contract.py momentum-src labmate
           git -C momentum-src diff --check
@@ -233,7 +238,7 @@ jobs:
             sha256sum -c SHA256SUMS.txt
           )
           printf 'LabMate commit: %s\n' "$(git -C labmate rev-parse HEAD)" > dev-full-candidate/PROVENANCE.txt
-          printf 'E11 firmware diff SHA256: %s\n' "$(git -C momentum-src diff -- targets/f7/furi_hal targets/furi_hal_include targets/f7/api_symbols.csv lib/ibutton/protocols/misc/protocol_group_misc.c lib/infrared/worker/infrared_worker.c lib/infrared/worker/infrared_worker.h lib/digital_signal/digital_sequence.c lib/pulse_reader/pulse_reader.c lib/lfrfid/lfrfid_worker_modes.c applications/system/js_app/modules/js_gpio.c | sha256sum | cut -d ' ' -f 1)" >> dev-full-candidate/PROVENANCE.txt
+          printf 'E11 firmware diff SHA256: %s\n' "$(git -C momentum-src diff -- targets/f7/furi_hal targets/furi_hal_include targets/f7/api_symbols.csv lib/ibutton/protocols/misc/protocol_group_misc.c lib/infrared/worker/infrared_worker.c lib/infrared/worker/infrared_worker.h lib/digital_signal/digital_sequence.c lib/pulse_reader/pulse_reader.c lib/lfrfid/lfrfid_worker_modes.c lib/lfrfid/lfrfid_raw_worker.c lib/lfrfid/lfrfid_worker.h applications/system/js_app/modules/js_gpio.c | sha256sum | cut -d ' ' -f 1)" >> dev-full-candidate/PROVENANCE.txt
           printf 'Native JS GPIO plugin source: applications/system/js_app/modules/js_gpio.c (E11 patched)\n' >> dev-full-candidate/PROVENANCE.txt
           printf 'Native digital sequence source: lib/digital_signal/digital_sequence.c (E11 patched)\n' >> dev-full-candidate/PROVENANCE.txt
           printf 'Native iButton timer source: targets/f7/furi_hal/furi_hal_ibutton.c (E11 patched)\n' >> dev-full-candidate/PROVENANCE.txt
@@ -241,7 +246,7 @@ jobs:
           printf 'Native NFC dual timer TIM1/TIM17 lifecycle: targets/f7/furi_hal/furi_hal_nfc_timer.c and furi_hal_nfc.c (E11 patched)\n' >> dev-full-candidate/PROVENANCE.txt
           printf 'Native infrared RX TIM2 lease and TX TIM1/DMA2/PA7: targets/f7/furi_hal/furi_hal_infrared.c (E11 patched)\n' >> dev-full-candidate/PROVENANCE.txt
           printf 'Infrared worker BUSY-aware TX START/WAIT and RX thread STOP cleanup: lib/infrared/worker/infrared_worker.c/h (E11 patched)\n' >> dev-full-candidate/PROVENANCE.txt
-          printf 'Native RFID READ TIM1 + CAPTURE TIM2 and LFRFID normal-read worker BUSY: targets/f7/furi_hal/furi_hal_rfid.c/h + lib/lfrfid/lfrfid_worker_modes.c (E11 staged; raw/DMA/field NOT migrated)\n' >> dev-full-candidate/PROVENANCE.txt
+          printf 'RFID TIM1 read + TIM2 capture, LFRFID normal and raw READ BUSY/STOP guards: targets/f7/furi_hal/furi_hal_rfid.c/h + lib/lfrfid/lfrfid_worker_modes.c + lib/lfrfid/lfrfid_raw_worker.c/h (E11 staged; DMA/field UNMIGRATED)\n' >> dev-full-candidate/PROVENANCE.txt
           printf 'Momentum base: %s\n' "$(git -C momentum-src rev-parse HEAD)" >> dev-full-candidate/PROVENANCE.txt
           printf 'Installed Momentum012 source: %s\n' "$(git -C momentum-012 rev-parse HEAD)" >> dev-full-candidate/PROVENANCE.txt
           printf 'Actions run: %s\n' "$GITHUB_RUN_ID" >> dev-full-candidate/PROVENANCE.txt
