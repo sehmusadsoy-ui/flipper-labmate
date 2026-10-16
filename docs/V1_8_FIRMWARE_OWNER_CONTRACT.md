@@ -1532,12 +1532,29 @@ no duplicate FAP claim. This is a new acceptance
 gate for the PWM workflow, native PWM workflow and
 full MNTM-012 updater review.
 
-The new exact-code CI runs
-[38830093580](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38830093580),
-[38830093591](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38830093591),
-and [38830093633](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38830093633)
-were started for this candidate. Do **not** mark it
-fully PASS until the separate CI jobs complete SUCCESS.
+**Verified at exact SHA**
+`bb921e5f816e6d117d7920c608ba9c7abd8faf2e`:
+[Production generator PWM CI #38830093580](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38830093580)
+and
+[real native Momentum PWM C CI #38830093591](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38830093591)
+both completed **SUCCESS**. The two CI jobs independently
+executed the actual-generator/actual-native-C joint
+regression, the native-service host tests, built real
+matched firmware and single FAP with APPCHK. The exact
+CI-only firmware.dfu SHA256 for those two runs is
+`decdfc56b034a01a8c538daea225192eb13cea61bc6a0c93032cfcec5544cf62`;
+paired labmate.fap SHA256
+`0c309c11c4925b48d1eeed325265ce8e6c8fb367eb31a036a1779c1904e75010`.
+No native JS plugin was requested by those two narrow
+test workflows, so do **not** infer a JS plugin fingerprint.
+
+Independent full MNTM-012 updater and all associated SD
+resources/JS plugin:
+[CI #38830093633](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38830093633).
+Its package-level result must be independently SUCCESS
+before calling the complete updater PASS, and any later
+source changes require new paired checksums.
+
 This is still not a physically verified PWM output,
 Flipper firmware installation, global HAL safety or
 Stable release. No device/USB/SD changes.
