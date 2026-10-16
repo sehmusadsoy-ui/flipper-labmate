@@ -10,7 +10,7 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from stage_v18_e11_review_only import FILES, ROOT, inspect_updater, write_review_stage
+from stage_v18_e11_review_only import FILES, ROOT, inspect_updater, write_review_stage, require_isolated_output
 from preflight_v18_e11_local import ARTIFACTS
 import hashlib
 
@@ -129,6 +129,17 @@ class E11ReviewStageTest(unittest.TestCase):
                                write_review_stage, self.root / "other",
                                {"firmware.dfu": b"x"})
         self.assertFalse((self.root / "other").exists())
+
+    def test_refuse_stage_inside_any_verified_input(self):
+        for name in ("candidate", "rollback", "data"):
+            protected = self.root / name
+            protected.mkdir()
+            with self.assertRaisesRegex(ValueError, "protected"):
+                require_isolated_output(
+                    protected / "new-review",
+                    (protected,),
+                )
+            self.assertFalse((protected / "new-review").exists())
 
     def test_refuse_linked_output_parent(self):
         target = self.root / "real"
