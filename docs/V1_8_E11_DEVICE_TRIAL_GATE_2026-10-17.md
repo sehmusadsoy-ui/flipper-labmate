@@ -289,3 +289,77 @@ the 126 `apps_data/` paths) still require a separate compatibility
 review and physical post-boot checks. The stored user settings and
 LabMate data backups are readable but **restoration not rehearsed**.
 Neither model feasibility nor CI proves device safety.
+
+
+## 2026-10-17 — FAP-SEPARATED E11 review derivative built and verified on CI (NOT FLASHABLE)
+
+A new *strictly review-only*, deterministic
+[`derive_v18_e11_split_review.py`](../scripts/derive_v18_e11_split_review.py)
+was implemented to address the concrete static blocker identified
+above: the original full updater ships the LabMate FAP within
+`apps/Tools/labmate.fap`, so a firmware-before-FAP verification
+sequence was not enforceable with the ORIGINAL full bundle.
+
+**Observed real Linux CI and exact original artifact**:
+[Workflow #38973708904](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38973708904)
+**COMPLETED SUCCESS**. It fetched actual full `#38966248325`
+review bytes and official pinned MNTM-012 rollback updater, ran
+adversarial resource and derivative tests, then generated ONE
+**derived review** TGZ. In-memory and post-write checksum validation
+showed:
+
+- **ONE path removed from the nested update resources:**
+  `apps/Tools/labmate.fap`, matching independently SHA256-pinned
+  `2b31ec3fa9050580dc3c3ff80138578ed185d70811aa8124ebd2d00b8d981af0`.
+- The **remaining 2,115 resource files are byte-digest equivalent**
+  to those from original candidate #38966248325, including exact
+  native `js_gpio.fal` SHA256
+  `fff2ab8ad8e5b320b669283fc611216da99e9cda4dc03428fcd8e8a130ecca0a`.
+  No original LabMate persistent-data path was part of either source
+  resource inventory.
+- **All seven full updater component payload bytes were preserved**
+  except the inner `resources.tar.gz`. Firmware DFU, official C2 radio
+  binary, updater manifest, option-byte policy, loader, firstboot
+  and splash remained the exact original component bytes.
+- The resulting archive was independently unpacked/audited again:
+  **LabMate FAP ABSENT from updater**, JS native module retained,
+  seven members exactly, option-byte policy and radio bytes match
+  official MNTM-012, no private device or microSD access.
+- The matched `labmate.fap` and `js_gpio.module` were copied into
+  the **same review-only CI artifact as SEPARATE files**, along with
+  freshly verified `SHA256SUMS.txt`, `PROVENANCE.txt`, and a prominent
+  **READ_ME_FIRST / DO NOT FLASH** warning.
+
+**New derivative identity (never confuse with original):**
+
+- Review-only artifact:
+  [`v18E11-SPLIT-REVIEW-DO-NOT-FLASH`](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38973708904/artifacts/12077104037),
+  artifact ID `12077104037`, configured for **7 days** retention.
+- Derived exact `firmware-full-update-SPLIT-REVIEW-DO-NOT-FLASH.tgz`
+  SHA256:
+  `7a57b8e630c95b0346e7681ffac84c2400d84b274d97ead977c15813c2abe923`.
+- Original full TGZ SHA256
+  `11ed3cdf4e99c9c7218973695d349cd946be97d21dfc59231113bde15e94c553`
+  **is unchanged** and still exists separately.
+- This is a **deterministic derived review archive**, NOT a new native
+  Momentum/FAP build, NOT a tested boot image, and NOT an approved
+  installer. The FAP is separated at packaging level only; we have
+  *not* proven actual firmware/resource activation ordering on
+  Flipper hardware.
+
+**Current decision: NO-GO for physical flashing remains.**
+The coupled-FAP-in-original-updater problem is technically isolated
+in a *non-installed review variant*, but a complete
+compatible *trial*-grade package still needs separate product
+review, accurate device state/SD backup parity and independent
+recovery planning. Importantly the 20 added, 54 removed and 382
+changed files vs official older Momentum resources (126 changes in
+other `apps_data/` resource paths) **still exist** in the derivative
+apart from the one now-excluded FAP. Third-party app/plugin
+compatibility and user-customized microSD resources remain
+unverified; do not claim a full-SD backup merely because 14 LabMate
+files were saved.
+
+**No hardware tests or writes** occurred, no `selfupdate.py`,
+`runfap.py`, `-Apply`, flash/restore/SD mutation was run.
+PR #13 remains draft; Stable/main/tag/assets unchanged.
