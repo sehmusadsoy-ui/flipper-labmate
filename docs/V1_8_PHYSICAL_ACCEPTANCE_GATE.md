@@ -1458,3 +1458,32 @@ Stable merge has occurred. Full SD outside LabMate's own subtree,
 third-party plugin/resource compatibility and restore rehearsal
 remain **OPEN**. Keep current installed EXITFIX FAP intact;
 original and split E11 updater artifacts remain `DO NOT FLASH`.
+
+
+## 2026-10-17 — Read-only live SD comparison hardening complete (Windows/Linux CI PASS)
+
+**Latest source-only safety checks completed without touching user device.**
+The proposed read-only `audit_v18_e11_live_labmate_sd.py`
+now additionally uses a **finite 20-second CLI response timeout**
+and bounded serial receive buffer, and verifies that the
+`flipper.storage` module was imported from the exact explicitly
+provided source tree, not an unrelated/global Python package.
+Tests include malicious import location, absent/new/modified
+historical logs, invalid CLI responses, case conflicts, empty
+SD and disconnected serial timeouts.
+
+- [Native Windows fake-COM regression #38976222692](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38976222692):
+  **SUCCESS** (17 cases: 16 pass, one Windows NTFS fixture skip).
+- [v1.8 integrated production/host regression #38976222719](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38976222719):
+  **SUCCESS**, including the new read-only audit model.
+- Final [operator read-only COM7 handoff](V1_8_E11_LIVE_SD_READ_ONLY_HANDOFF.md)
+  pins auditor source commit
+  `864dcfe924903c63dc0433de52483f497050a38c`
+  and separately the official Momentum source transport commit
+  `d3f89dfe2ef6b01839201598e9be1590cba80322`.
+
+**Current device parity remains NOT TESTED** because these are
+simulation/host tests only. The 14-file older backup is still NOT
+demonstrated current, and no whole-SD device image or restore
+rehearsal exists. Keep E11 install, recovery and Stable
+acceptance BLOCKED; do not infer physical resource PASS.
