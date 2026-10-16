@@ -85,6 +85,9 @@ static SubGhzDeviceCC1101Ext instance;
 static SubGhzDeviceCC1101Ext* subghz_device_cc1101_ext=&instance;
 static uint32_t e11_ext_tx_owner;
 static bool e11_ext_tx_fault;
+/* The genuine shared RX/TX setter sees both lease families. */
+static uint32_t e11_ext_rx_owner;
+static bool e11_ext_rx_fault;
 static int claims,releases,writes,pin_writes,radio_idle,radio_tx,irq_attaches,irq_detaches,refills;
 static bool allow_claim,allow_release=true,tim17,ch3,ch4,ch5,fail_alloc,half_flag,full_flag;
 static void* tx_alloc(size_t count) {return fail_alloc?NULL:calloc(1,count);}
@@ -169,6 +172,7 @@ static void reset_case(void){
  allow_claim=false;allow_release=true;
  tim17=ch3=ch4=ch5=fail_alloc=half_flag=full_flag=false;
  e11_ext_tx_owner=0U;e11_ext_tx_fault=false;
+ e11_ext_rx_owner=0U;e11_ext_rx_fault=false;
  instance.state=SubGhzDeviceCC1101ExtStateIdle;
  instance.regulation=SubGhzDeviceCC1101ExtRegulationTxRx;
  instance.g0_pin=&gpio_ext_pb2;
@@ -190,8 +194,18 @@ int main(void){
  assert(!start() && !claims && !writes);
  reset_case();allow_claim=true;instance.g0_pin=&gpio_ext_pb3;
  assert(!start() && !claims && !writes);
- reset_case();allow_claim=true;instance.async_mirror_pin=&gpio_ext_pa7;
+ reset_case();allow_claim=true;
+ subghz_device_cc1101_ext_set_async_mirror_pin(&gpio_ext_pa7);
+ assert(instance.async_mirror_pin==&gpio_ext_pa7);
  assert(!start() && !claims && !writes);
+ subghz_device_cc1101_ext_set_async_mirror_pin(NULL);
+ assert(instance.async_mirror_pin==NULL);
+ reset_case();e11_ext_rx_owner=247U;
+ subghz_device_cc1101_ext_set_async_mirror_pin(&gpio_ext_pa7);
+ assert(instance.async_mirror_pin==NULL);
+ reset_case();e11_ext_rx_fault=true;
+ subghz_device_cc1101_ext_set_async_mirror_pin(&gpio_ext_pa7);
+ assert(instance.async_mirror_pin==NULL);
  for(int n=0;n<4;n++){
   reset_case();allow_claim=true;
   if(n==0)tim17=true;
@@ -210,6 +224,8 @@ int main(void){
  reset_case();allow_claim=true;
  assert(start() && tim17 && ch3 && ch4 && !ch5);
  assert(e11_ext_tx_owner==812U && irq_attaches==1 && radio_tx==1 && pin_writes);
+ subghz_device_cc1101_ext_set_async_mirror_pin(&gpio_ext_pa7);
+ assert(instance.async_mirror_pin==NULL); /* TX lease forbids mirror retarget. */
  int prev_claims=claims;
  assert(!start() && claims==prev_claims);
  assert(!subghz_device_cc1101_ext_is_async_tx_complete());
@@ -228,6 +244,8 @@ int main(void){
  reset_case();allow_claim=true;allow_release=false;
  assert(start());subghz_device_cc1101_ext_stop_async_tx();
  assert(e11_ext_tx_fault && e11_ext_tx_owner==812U && !tim17);
+ subghz_device_cc1101_ext_set_async_mirror_pin(&gpio_ext_pa7);
+ assert(instance.async_mirror_pin==NULL); /* Failed release stays sticky. */
  before=writes;
  subghz_device_cc1101_ext_stop_async_tx();
  assert(writes==before && !start());
@@ -257,6 +275,10 @@ def main():
     assert "FURI_HAL_LEASE_NATIVE_EXT_CC1101_TX" in h
     a=s.index("/* E11 native external CC1101 TX TIM17/DMA2 V2 owner. */")
     src=s[a:]
+    setter=s[s.index("void subghz_device_cc1101_ext_set_async_mirror_pin("):
+             s.index("const GpioPin* subghz_device_cc1101_ext_get_data_gpio(")]
+    assert "e11_ext_rx_owner || e11_ext_rx_fault" in setter
+    assert "e11_ext_tx_owner || e11_ext_tx_fault" in setter
     assert src.count("furi_hal_resource_lease_v2_try_acquire(")==1
     assert src.index("furi_hal_resource_lease_v2_try_acquire(") < src.index(
         "subghz_device_cc1101_ext->async_tx.callback = callback;")
@@ -268,7 +290,7 @@ def main():
     assert "LL_DMA_DeInit(SUBGHZ_DEVICE_CC1101_EXT_DMA_CH4_DEF);" in src
     with tempfile.TemporaryDirectory(prefix="e11_ext_cc1101_tx_") as tmp:
         d=Path(tmp);exe=d/"test"
-        (d/"native.c").write_text(STUB+"\n"+src+"\n"+RUN)
+        (d/"native.c").write_text(STUB+"\n"+setter+"\n"+src+"\n"+RUN)
         subprocess.run(["cc","-std=gnu11","-Wall","-Wextra","-Werror",
                         "-Wno-pointer-to-int-cast",str(d/"native.c"),"-o",str(exe)],check=True)
         subprocess.run([str(exe)],check=True)
