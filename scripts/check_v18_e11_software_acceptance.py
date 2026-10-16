@@ -26,6 +26,8 @@ EVIDENCE={
         ("subghz_device_cc1101_ext_set_async_mirror_pin", "e11_ext_rx_fault"),
     "tests/test_v18_native_ext_cc1101_tx_lease.py":
         ("subghz_device_cc1101_ext_set_async_mirror_pin", "e11_ext_tx_fault"),
+    "tests/test_v18_native_ext_cc1101_free_lease.py":
+        ("subghz_device_cc1101_ext_free", "e11_ext_rx_fault", "e11_ext_tx_fault"),
 }
 WORKFLOW_REQUIRED=(
     "patch_momentum_subghz_ext_rx_status_bridge.py",
@@ -34,10 +36,10 @@ WORKFLOW_REQUIRED=(
     "check_v18_e11_native_irq_callback_inventory.py",
     "test_v18_native_js_gpio_callback_cleanup.py",
     "test_v18_native_imu_fifo_exti_lease.py",
-    "test_v18_native_ext_cc1101_tx_lease.py",
     "test_v18_native_signal_reader_e11_lease.py",
     "test_v18_native_ext_cc1101_rx_lease.py",
     "test_v18_native_ext_cc1101_tx_lease.py",
+    "test_v18_native_ext_cc1101_free_lease.py",
 )
 
 def require(cond, reason):
