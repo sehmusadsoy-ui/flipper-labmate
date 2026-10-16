@@ -586,14 +586,14 @@ manifest probe](V1_8_E11_LIVE_UPDATER_MANIFEST_HANDOFF.md) and
 It reads ONLY /ext/Manifest with storage md5 + read_chunks, verifies
 source-screen checksum before/after, reports ONLY counts and known
 LabMate flags and refuses to create install permission in all
-outcomes. **OPERATOR HAS NOT RUN THIS PROBE ON ACTUAL COM7 YET.**
+outcomes. **The operator subsequently ran this on real COM7; see confirmed YES result in the latest section below.**
 
 CI: [exact upstream source #38982495403](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38982495403)
 **SUCCESS** (10 static semantic tests and 11 manifest tests);
 [Windows simulated device #38982495374](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38982495374)
 **SUCCESS**; [full host suite #38982495377](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38982495377)
 **SUCCESS**. Source-level resource deletion is confirmed;
-actual old installed Manifest entries remain UNKNOWN. Keep E11
+actual old installed Manifest entries were UNKNOWN at this earlier stage; subsequently read on real COM7. Keep E11
 firmware trial, stable merge and any FAP overwrite **NO-GO**.
 
 
