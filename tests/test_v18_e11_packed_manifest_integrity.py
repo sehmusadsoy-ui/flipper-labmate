@@ -130,6 +130,17 @@ class SyntheticPackedManifest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"lack data/Manifest"):
             scan_packed_resources(body)
 
+    def test_wrong_but_well_formed_independent_fingerprints_are_rejected(self):
+        wrong="0" * 64
+        with self.assertRaisesRegex(ValueError,"packed LabMate FAP SHA256 mismatch"):
+            check_consistency(
+                self.resource(), should_include_fap=True,
+                expected_fap_sha256=wrong)
+        with self.assertRaisesRegex(ValueError,"packed native JS GPIO SHA256 mismatch"):
+            check_consistency(
+                self.resource(), should_include_fap=True,
+                expected_js_sha256=wrong)
+
     def test_exact_sha256_argument_validation(self):
         with self.assertRaisesRegex(ValueError,"fingerprint"):
             check_consistency(self.resource(),should_include_fap=True,
