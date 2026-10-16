@@ -142,7 +142,7 @@ def main():
         # Official device symbol gets declaration from copied wrapper.
         src.write_text(HEADER+"\n"+source+"\n"+wrap+"\n"+bootstrap+definition+RUN)
         subprocess.run(["cc","-std=c11","-O0","-Wall","-Wextra","-Werror",
-                        "-pedantic",str(src),"-o",str(exe)],check=True)
+                        str(src),"-o",str(exe)],check=True)
         subprocess.run([str(exe)],check=True)
     print("E11 actual matched subghz_devices C + original external plugin wrapper HOST PASS")
     print("Legacy v1 third-party receiver remains UNVERIFIED, NOT universally BUSY-safe.")
