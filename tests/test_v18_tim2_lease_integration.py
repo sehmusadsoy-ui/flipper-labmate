@@ -221,6 +221,10 @@ def test_callers() -> None:
         required = (
             "if(!labmate_frequency_tim2_configure()) {\n"
             "        app->capture_blocked = true;\n"
+            "        /* BUSY if a legacy native timer is already active; ERR if the\n"
+            "         * fresh lease could not be released and must remain reserved.\n"
+            "         */\n"
+            "        if(labmate_frequency_tim2_lease_pending()) app->capture_release_fault = true;\n"
             "        return;\n"
             "    }"
         )
