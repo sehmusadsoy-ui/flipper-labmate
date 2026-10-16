@@ -45,7 +45,6 @@ extern TIM_TypeDef tim1, tim17;
 #define FURI_HAL_NFC_CARRIER_HZ 13560000UL
 #define FURI_HAL_LEASE_NATIVE_NFC_TIMERS ((1U<<0)|(1U<<24))
 #define SystemCoreClock 64000000UL
-#define UINT16_MAX 65535
 typedef struct {int32_t fwt,fdt;} FuriHalNfcPollerCompensation;
 typedef struct {int32_t fdt;} FuriHalNfcListenerCompensation;
 typedef struct {
