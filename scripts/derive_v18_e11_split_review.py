@@ -171,7 +171,19 @@ def stage_derived_review(candidate: Path, old_official: Path, output: Path) -> P
     output.mkdir()
     result = output / DERIVED_NAME
     result.write_bytes(derived_bytes)
+    # A SEPARATE, independently pinned app file is included ONLY as review
+    # evidence; there is no installer or device write in this program.
+    for name in ("labmate.fap", "js_gpio.module"):
+        source = candidate / name
+        if sha(source.read_bytes()) != ARTIFACTS[name]:
+            raise ValueError("separate matched binary changed: " + name)
+        (output / name).write_bytes(source.read_bytes())
     (output / "READ_ME_FIRST.txt").write_text(WARNING, encoding="utf-8")
+    (output / "SHA256SUMS.txt").write_text(
+        "".join(sha((output / name).read_bytes()) + "  " + name + "\\n"
+                for name in (DERIVED_NAME, "labmate.fap", "js_gpio.module")),
+        encoding="utf-8",
+    )
     (output / "PROVENANCE.txt").write_text(
         "Original Actions run: " + str(RUN) + "\n"
         "Original LabMate source: " + SOURCE + "\n"
@@ -183,6 +195,11 @@ def stage_derived_review(candidate: Path, old_official: Path, output: Path) -> P
     )
     if hashlib.sha256(result.read_bytes()).hexdigest() != sha(derived_bytes):
         raise ValueError("derived file write verification failed")
+    if set(inspect_updater(result)) != set(FILES):
+        raise ValueError("derived updater structure failed independent review")
+    for name in ("labmate.fap", "js_gpio.module"):
+        if sha((output / name).read_bytes()) != ARTIFACTS[name]:
+            raise ValueError("separate reviewed app/JS SHA256 mismatch")
     return result
 
 
