@@ -14,6 +14,7 @@ import hashlib
 from pathlib import Path
 import re
 import sys
+import time
 
 REMOTE_ROOT = "/ext/apps_data/labmate"
 MAX_FILES = 512
@@ -23,6 +24,35 @@ NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$")
 FILE = re.compile(r"^\[F\] (.+) ([0-9]+)$")
 DIRECTORY = re.compile(r"^\[D\] (.+)$")
 MD5 = re.compile(r"^[a-fA-F0-9]{32}$")
+
+
+class DeadlineRead:
+    """Finite response deadline instead of upstream BufferedRead's endless loop."""
+
+    def __init__(self, stream, timeout_seconds: float = 20.0):
+        if not 2.0 <= timeout_seconds <= 120.0:
+            raise ValueError("out-of-range finite serial read timeout")
+        self.stream = stream
+        self.buffer = bytearray()
+        self.timeout_seconds = timeout_seconds
+
+    def until(self, eol: str = "\n", cut_eol: bool = True) -> bytes:
+        marker = eol.encode("ascii")
+        deadline = time.monotonic() + self.timeout_seconds
+        while True:
+            index = self.buffer.find(marker)
+            if index >= 0:
+                cut = index if cut_eol else index + len(marker)
+                part = bytes(self.buffer[:cut])
+                del self.buffer[:index + len(marker)]
+                return part
+            if time.monotonic() >= deadline:
+                raise TimeoutError("Flipper CLI did not respond within safe deadline")
+            chunk = self.stream.read(max(1, min(4096, self.stream.in_waiting)))
+            if chunk:
+                self.buffer.extend(chunk)
+                if len(self.buffer) > 262144:
+                    raise ValueError("Flipper CLI response exceeded bounded buffer")
 
 
 def safe_name(name: str) -> str:
@@ -176,7 +206,11 @@ def main() -> int:
         sys.path.insert(0, str(args.momentum_scripts.resolve()))
         from flipper.storage import FlipperStorage
         # Its start() sends only device_info, then our code only storage list/md5.
-        with FlipperStorage(args.port) as storage:
+        storage = FlipperStorage(args.port)
+        # Replace upstream infinite wait with a finite response deadline,
+        # including transport startup and every list/md5 response.
+        storage.read = DeadlineRead(storage.port, timeout_seconds=20.0)
+        with storage:
             live = remote_inventory(storage)
         result = compare_backups(live, backup)
     except (OSError, ValueError, UnicodeError, ImportError, RuntimeError) as err:
