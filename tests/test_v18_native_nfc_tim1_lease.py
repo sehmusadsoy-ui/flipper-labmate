@@ -19,7 +19,6 @@ HAL = r"""
 #include <stdlib.h>
 
 #define furi_check(x) assert(x)
-#define TAG "NFC test"
 typedef int FuriHalBus;
 typedef int FuriHalInterruptId;
 typedef int IRQn_Type;
