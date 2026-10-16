@@ -148,6 +148,31 @@ def compare_resource_files(
     }
 
 
+def model_split_resources_without_labmate_fap(
+    resources: dict[str, str], *, expected_js: str, expected_fap: str
+) -> dict[str, object]:
+    """Pure in-memory plan only: no re-packing, file output, install or flash."""
+    fap_names = [k for k in resources if k.lower() == FAP_PATH.lower()]
+    if len(fap_names) != 1 or resources[fap_names[0]] != expected_fap:
+        raise ValueError("cannot model split: exactly one matching bundled FAP required")
+    remaining = {k: v for k, v in resources.items() if k != fap_names[0]}
+    if any(k.lower() == FAP_PATH.lower() for k in remaining):
+        raise ValueError("split model still includes LabMate FAP")
+    js = [k for k in remaining if k.lower() == JS_PATH.lower()]
+    if len(js) != 1 or remaining[js[0]] != expected_js:
+        raise ValueError("split model lost exact native JS GPIO module")
+    if any(k.lower() == "apps_data/labmate" or
+           k.lower().startswith("apps_data/labmate/") for k in remaining):
+        raise ValueError("split model unexpectedly embeds LabMate saved data")
+    return {
+        "split_model_exact_fap_excluded": True,
+        "split_model_js_gpio_preserved": True,
+        "split_model_remaining_resource_file_count": len(remaining),
+        "split_model_creates_new_firmware": False,
+        "split_model_device_write_authorized": False,
+    }
+
+
 def audit(old_tgz: Path, candidate: Path) -> dict[str, object]:
     if not candidate.is_dir() or candidate.is_symlink():
         raise ValueError("review candidate folder required")
@@ -164,6 +189,12 @@ def audit(old_tgz: Path, candidate: Path) -> dict[str, object]:
         expected_js=ARTIFACTS["js_gpio.module"],
         expected_fap=ARTIFACTS["labmate.fap"],
     )
+    # Assess feasibility only. A new separately audited package would still
+    # have to be BUILT, hashed, CI-validated and explicitly approved.
+    result.update(model_split_resources_without_labmate_fap(
+        new, expected_js=ARTIFACTS["js_gpio.module"],
+        expected_fap=ARTIFACTS["labmate.fap"],
+    ))
     return result
 
 
