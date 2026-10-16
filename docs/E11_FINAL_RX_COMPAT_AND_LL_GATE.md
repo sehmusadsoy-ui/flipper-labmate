@@ -139,6 +139,33 @@ Its corresponding last complete firmware/FAP **#38945772528 SUCCESS**
 predates this documentation-only/CI-only gate; no native source change
 has been introduced by this acceptance script.
 
+## 2026-10-16 follow-up — external mirror-pin state guard
+
+A later source-only change after the verified full bundle #38945772528
+addresses an additional CC1101 native failure mode: the original mirror
+setter dereferenced the external radio object even if it was not
+allocated. The matched RX and TX patch scripts now leave the mirror
+unchanged when that pointer is NULL, and keep their RX-owner, TX-owner
+and sticky-fault denial checks. This avoids changing a GPIO selection
+while an in-flight receiver/transmitter owns the default external PB2
+route, without enabling any unsupported alternate G0 or debug-mirror pin.
+
+The existing original-C RX/TX harnesses now compile and call the actual
+patched public `subghz_device_cc1101_ext_set_async_mirror_pin`
+function, exercising unallocated-radio, idle configuration, active
+lease and sticky-fault denial. The repository-level acceptance guard
+requires both original-C tests to remain wired into the full matched
+workflow. These checks are narrowly scoped to the native setter and
+default configuration; they do **not** establish physical pin safety,
+a universal third-party-plugin v1 BUSY result, or release approval.
+
+**Evidence state for these NEW commits:** repository source updated;
+native RX/TX CI and a fresh full firmware/FAP/JS/MNTM-012 successful
+run must be checked independently. The prior #38945772528 SUCCESS and
+#38948658080 source-policy SUCCESS were recorded **before** these
+follow-up edits and must not be misattributed to this new source.
+No flash, no merge, no Stable overwrite or physical test was performed.
+
 ## Explicit acceptance decision
 
 **Software covered and host-verified:** matched native Flipper firmware
