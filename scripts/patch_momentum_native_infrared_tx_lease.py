@@ -125,7 +125,9 @@ def patch(h:str,r:str,ir:str,pub:str,worker:str,api:str):
         "/* IR TX: DMA2 ch1/2 are unique hardware resources, NOT DMA1. */\n"
         "enum { FuriHalLeaseDma2Ch1=(1U<<25), FuriHalLeaseDma2Ch2=(1U<<26) };\n"
         "#define FURI_HAL_LEASE_NATIVE_IR_TX_INTERNAL (FuriHalLeaseTim1|FuriHalLeaseDma2Ch1|FuriHalLeaseDma2Ch2)\n"
-        "#define FURI_HAL_LEASE_NATIVE_IR_TX_EXT_PA7 (FURI_HAL_LEASE_NATIVE_IR_TX_INTERNAL|FuriHalLeasePa7)\n")
+        "#define FURI_HAL_LEASE_NATIVE_IR_TX_EXT_PA7 (FURI_HAL_LEASE_NATIVE_IR_TX_INTERNAL|FuriHalLeasePa7)\n"
+        "/* Pa7-only short acquisition during accessory presence detection. */\n"
+        "#define FURI_HAL_LEASE_NATIVE_IR_DETECT_PA7 (FuriHalLeasePa7)\n")
     r=change(r,
         "           mask == FURI_HAL_LEASE_NATIVE_IR_RX_TIM2 ||\n",
         "           mask == FURI_HAL_LEASE_NATIVE_IR_RX_TIM2 ||\n"
@@ -291,6 +293,54 @@ void furi_hal_infrared_async_tx_stop(void) {""")
     if(!infrared_e11_tx_ready()) return;
 
     FURI_CRITICAL_ENTER();""")
+    ir=change(ir,
+        """FuriHalInfraredTxPin furi_hal_infrared_detect_tx_output(void) {
+    for(FuriHalInfraredTxPin pin = FuriHalInfraredTxPinInternal + 1; //-V1008
+        pin < FuriHalInfraredTxPinMax;
+        ++pin) {
+        const GpioPin* gpio = infrared_tx_pins[pin];
+        furi_hal_gpio_init(gpio, GpioModeInput, GpioPullUp, GpioSpeedLow);
+        furi_hal_cortex_delay_us(1000U);
+        const bool level = furi_hal_gpio_read(gpio);
+        furi_hal_gpio_init(gpio, GpioModeAnalog, GpioPullNo, GpioSpeedLow);
+        if(!level) return pin;
+    }
+
+    return FuriHalInfraredTxPinInternal;
+}""",
+        """FuriHalInfraredTxPin furi_hal_infrared_detect_tx_output(void) {
+    /* Even accessory detection reconfigures PA7 twice. Protect the
+     * temporary GPIO transaction, not only the TX timer session.
+     */
+    if(infrared_e11_tx_handle || infrared_e11_tx_fault ||
+       furi_hal_infrared_state != InfraredStateIdle)
+        return FuriHalInfraredTxPinInternal;
+    const uint32_t mask=FURI_HAL_LEASE_NATIVE_IR_DETECT_PA7;
+    const uint32_t lease=furi_hal_resource_lease_try_acquire(mask);
+    if(!lease) return FuriHalInfraredTxPinInternal;
+    FuriHalInfraredTxPin found=FuriHalInfraredTxPinInternal;
+    for(FuriHalInfraredTxPin pin = FuriHalInfraredTxPinInternal + 1; //-V1008
+        pin < FuriHalInfraredTxPinMax;
+        ++pin) {
+        const GpioPin* gpio = infrared_tx_pins[pin];
+        furi_hal_gpio_init(gpio, GpioModeInput, GpioPullUp, GpioSpeedLow);
+        furi_hal_cortex_delay_us(1000U);
+        const bool level = furi_hal_gpio_read(gpio);
+        furi_hal_gpio_init(gpio, GpioModeAnalog, GpioPullNo, GpioSpeedLow);
+        if(!level) {
+            found=pin;
+            break;
+        }
+    }
+    if(!furi_hal_resource_lease_release(lease,mask)) {
+        infrared_e11_tx_handle=lease;
+        infrared_e11_tx_mask=mask;
+        infrared_e11_tx_fault=true;
+        return FuriHalInfraredTxPinInternal;
+    }
+    return found;
+}
+""")
     ir=change(ir,
         """    furi_check(tx_pin < FuriHalInfraredTxPinMax);
     infrared_tx_output = tx_pin;
