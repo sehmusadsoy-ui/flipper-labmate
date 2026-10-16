@@ -51,6 +51,17 @@ static bool e11_ext_rx_ready(void) {
     return true;
 }
 ''')
+    # Re-opening after a sticky, retained radio object must report BUSY,
+    # never assert on double alloc. Also refuse allocation failure cleanly.
+    s=one(s,
+        """bool subghz_device_cc1101_ext_alloc(SubGhzDeviceConf* conf) {
+    furi_assert(subghz_device_cc1101_ext == NULL);
+    subghz_device_cc1101_ext = malloc(sizeof(SubGhzDeviceCC1101Ext));""",
+        """bool subghz_device_cc1101_ext_alloc(SubGhzDeviceConf* conf) {
+    if(subghz_device_cc1101_ext || e11_ext_rx_owner || e11_ext_rx_fault)
+        return false;
+    subghz_device_cc1101_ext = malloc(sizeof(SubGhzDeviceCC1101Ext));
+    if(!subghz_device_cc1101_ext) return false;""")
     # Do not free live RX callback context / owner after a denied STOP.
     # The void device free API cannot report BUSY, so retain the object
     # until a controlled, verified recovery instead of risking UAF.
