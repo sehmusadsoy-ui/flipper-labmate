@@ -30,7 +30,7 @@ an authenticated SHA256 readback**. It is not a full microSD snapshot.
 ## Real device procedure — proposed, not yet run
 
 The operator must choose to run the command with qFlipper and any other
-COM7 consumer closed. The pinned trusted raw scripts are downloaded
+COM7 consumer closed. The auditor additionally refuses any import of a different `flipper.storage` module.\nThe pinned trusted raw scripts are downloaded
 into a **brand-new PC temporary folder only**, with no overwrite of
 old backups and no device modification. Python3 and `pyserial` are
 required (they were previously used successfully for the installed
@@ -40,12 +40,13 @@ and independent Momentum base for the library.
 ```powershell
 & {
     $ErrorActionPreference = 'Stop'
-    $auditSource = '91e038b1aafcdc94eecdb44be926d40454a079ed'
+    $auditSource = 'd496b9dd876e28c8e4524e26e667a8f8fac8b6d5'
     $momentumSource = 'd3f89dfe2ef6b01839201598e9be1590cba80322'
     $work = Join-Path $env:TEMP ('LabMate-E11-SD-READONLY-' + [guid]::NewGuid().ToString('N'))
     $transport = Join-Path $work 'flipper'
     New-Item -ItemType Directory -Path $work | Out-Null
     New-Item -ItemType Directory -Path $transport | Out-Null
+    Set-Content -LiteralPath (Join-Path $transport '__init__.py') -Value '' -Encoding ASCII
 
     Invoke-WebRequest -UseBasicParsing -Uri (
         "https://raw.githubusercontent.com/sehmusadsoy-ui/flipper-labmate/$auditSource/scripts/audit_v18_e11_live_labmate_sd.py"
