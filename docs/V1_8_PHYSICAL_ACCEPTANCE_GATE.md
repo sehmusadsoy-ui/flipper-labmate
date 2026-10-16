@@ -1068,3 +1068,42 @@ Record **separately**: Button Analyzer START/STOP/RESUME/RESET and preserved com
 Only after **all required** software, matched-firmware and safe physical acceptance gates are reported and verified may a revised `v1.8` Stable asset be considered. Historical source `v1.8` tag provenance must remain immutable; document exact old and replacement source/FAP SHA256, review release asset updates explicitly, then redownload and independently verify the remote asset. No v1.8.1 or v1.9 feature work until the original v1.8 completion decision is satisfied.
 
 **Evidence classification:** CODE IMPLEMENTED ≠ CI PASS ≠ PHYSICAL PASS. A planned test or generated `.dfu` is not evidence of a device result.
+
+
+## 2026-10-17 — Latest read-only COM7 firmware CLI observation
+
+**Operator evidence — read-only `info device` response received over COM7:
+CLI DEVICE IDENTITY PASS.** Windows enumerated a healthy USB serial
+interface on COM7; Python/.NET serial command `info device` returned
+2,280 characters without a transfer error, identifying `Flipper Zero`,
+firmware `mntm-dev`, `firmware.commit.hash: d3f89dfe`,
+`firmware.commit.dirty: true`, `firmware.branch.name: HEAD`,
+`firmware.build.date: 14-10-2026`, `firmware.api: 87.1`,
+`radio.alive: true`, and provisioned region `TR`.
+
+**Interpretation:** a patched/development Momentum image is currently
+installed, with a base abbreviated SHA matching the pinned development
+source; `dirty=true` does **not** independently authenticate the
+complete E11 patchset or the current on-device FAP bytes. Radio
+`alive=true` is firmware communication status only, not actual
+transmission, reception or E11 conflict testing. No device UID, BLE
+address, personal device name or other unique hardware identifier was
+retained in this public report.
+
+The newer [exact full review run #38966248325](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38966248325)
+is **completed/SUCCESS** on LabMate commit
+`ba379f20fb29369501e1057f570a911f71ac83f8`, and the independently
+invoked **FULL pair validator** and archived review-only artifact steps
+both PASS. **This is not the installed image**: current physical FAP
+SHA256 still must be read back and compared, and if the new firmware
+were ever considered for installation, separately check exact DFU and
+approved recovery. No USB write, flash, FAP install, SD mutation or
+release operation is authorized by this device-info observation.
+
+**Next non-destructive gate:** use the pinned Momentum
+`scripts/storage.py -p COM7 receive` to copy only
+`/ext/apps/Tools/labmate.fap` to a distinct Windows audit path and
+compute its local SHA256; compare it to historical known candidates
+without assuming an abbreviated firmware commit authenticates FAP
+identity. Keep logs/profiles untouched; original hardware fixtures
+remain `DEFERRED / HARDWARE PENDING`.
