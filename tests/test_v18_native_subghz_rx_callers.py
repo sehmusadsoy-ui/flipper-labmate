@@ -15,6 +15,7 @@ STUB=r"""
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <string.h>
 #include <stdio.h>
 #define furi_check(x) assert(x)
 #define furi_assert(x) assert(x)
