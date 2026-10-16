@@ -2,7 +2,7 @@
 
 **Branch:** `dev/v1.8-completion` / Draft PR #13.  
 **Pinned Momentum:** `d3f89dfe2ef6b01839201598e9be1590cba80322`.  
-**Status:** SOURCE AUDIT / OPEN. **NOT a native Sub-GHz patch or safety PASS**.
+**Status:** Former source audit, now PARTIALLY IMPLEMENTED. RX/TX HAL and built-in RX worker have original-C host gates PASS. Full matching firmware and physical RF are separate gates.
 No custom firmware flash, device test, SD changes or release.
 
 ## Why Sub-GHz is the next critical blocker
@@ -19,7 +19,7 @@ No custom firmware flash, device test, SD changes or release.
   several hardware mutations. There is a genuine **DMA2 conflict
   with infrared TX TIM1+DMA2** and native RFID DMA/field despite
   different timer numbers.
-- Exact internal **CC1101 G0 / connector PB3 alias** and the dynamic
+- Exact internal **CC1101 G0 = PA1 (not connector PB3)** and the dynamic
   `async_mirror_pin` must be inspected against pinned board mapping.
   A full pin+timer+DMA claim must precede pin changes. Unsupported
   arbitrary mirror pins should return an explicit status, not silently
@@ -48,34 +48,42 @@ No custom firmware flash, device test, SD changes or release.
    A change to the device interconnect ABI must account for these
    call sites and independent external radio implementations.
 
-## Required safe migration (in production firmware)
+## 2026-10-16 implemented and still-open caller chain
 
-1. **RX:** implement bool native TRY_START with an atomic TIM2 +
-   CC1101 G0 physical pin/IRQ owner, no radio/callback/clock/GPIO
-   mutations before successful claim and legacy-disabled preflight.
-   Preserve existing exported void symbols for ABI compatibility.
-   Route BUSY through interconnect/device/main Sub-GHz RX callers so
-   no worker or state is started and no STOP occurs after denial.
-2. **TX:** one atomic TIM2+DMA2 CH1 plus CH2 when mirror is enabled,
-   with the exact GPIO aliases as part of the claim before radio
-   switching or buffer allocation. Preserve regional false vs BUSY
-   handling. Denied/malloc-failure starts must perform zero hardware
-   changes and leave no orphaned software state.
-3. **Interrupts and STOP:** the original TX DMA ISR, TIM2 IRQ,
-   completion check and RX ISR must verify current owner. Native STOP
-   only tears down its own channels, radio GPIO, callback/IRQ and
-   timer, then releases its exact handle. Sticky release failure
-   or unexpected bus loss must prevent unsafe restart.
-4. **Validation:** real original production C fault injection of
-   both HAL and device/main callers, with native RFID FIELD/
-   EMULATE/READ/CAPTURE and infrared conflicts, denied zero writes,
-   dynamic mirror, legacy clocks, allocator faults, clock loss and
-   repeated START/STOP. Then a full pinned matched Momentum+single
-   LabMate FAP+native JS+MNTM-012 updater CI and official policy/APPCHK
-   verification. Physical RF coexistence remains
-   **DEFERRED / HARDWARE PENDING**.
+The original description above records the unsafe *before* state at
+pinned Momentum. It must not be mistaken for today's patched source.
 
-This source audit complements
-[`E11_NATIVE_SUBGHZ_RESOURCE_GATE.md`](E11_NATIVE_SUBGHZ_RESOURCE_GATE.md).
-**E11 firmware-global is OPEN**, no v1.6 COMPLETE, no Stable/main,
-no v1.9 and **NO FLASH**.
+- Native RX now uses `furi_hal_subghz_async_rx_try_start`, an atomic
+  TIM2 claim and a guarded ISR/STOP. Debug mirror PA7 or external PB3
+  adds the corresponding physical pin; other mirror pins explicitly
+  fail closed. Genuine HAL production C + firmware allocator host
+  [#38911157761 PASS](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38911157761).
+- The built-in CC1101 interconnect, `subghz_devices_try_start_async_rx`
+  and `subghz_txrx_rx` now propagate BUSY so the normal worker and
+  speaker do not start falsely. The existing third-party radio
+  interconnect `void` function pointer has **not** changed.
+  Genuine production caller C host
+  [#38911453319 PASS](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38911453319).
+  External radio plugins still cannot return BUSY through their
+  legacy void ABI and need separate design coordination.
+- Native TX now owns TIM2+DMA2 CH1; with the validated PA7/PB3
+  external mirror it additionally owns DMA2 CH2 and the actual pin.
+  Denied START, completion, native DMA ISR, malloc failure and STOP are
+  guarded by the exact opaque lease.
+  Genuine native production-C and allocator host
+  [#38912471437 PASS](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38912471437).
+  Optional `FURI_HAL_SUBGHZ_TX_GPIO` build configurations are rejected
+  until their GPIO also has a reviewable lease contract.
+
+For detailed source links, limits and mandatory full-package CI see
+[`E11_NATIVE_SUBGHZ_RX_TX_GATE.md`](E11_NATIVE_SUBGHZ_RX_TX_GATE.md).
+
+**Still OPEN:** dynamic mirrors beyond PA7/PB3, external-plugin BUSY
+reporting, native CLI/debug routes, hopper retry/failure semantics,
+additional internal GPIO/EXTI users, RF concurrent recovery,
+actual RF/SD/Flipper tests, and final exact firmware/FAP/updater
+build verification. The firmware-wide v1.6/E11 contract is NOT closed.
+
+**Development boundary:** No device flash, no Stable/main merge,
+no SD/USB touch, no v1.9; hardware checks remain
+**DEFERRED / HARDWARE PENDING**.
