@@ -123,7 +123,8 @@ def main():
     assert "bool furi_hal_resource_lease_release(uint32_t handle, uint32_t resources)" in r
     assert "uint32_t furi_hal_resource_lease_v2_try_acquire(uint64_t resources)" in r
     mask=h[h.index("enum {\n    FuriHalLeaseTim1"):h.index("/* Returns unique nonzero")]
-    # The original V1 header slice already includes the added V2 masks.\n    alloc=r[r.index("/* Firmware-owned E11 lease primitive"):
+    # The original V1 header slice already includes the added V2 masks.
+    alloc=r[r.index("/* Firmware-owned E11 lease primitive"):
             r.index("const GpioPinRecord* furi_hal_resources_pin_by_number")]
     with tempfile.TemporaryDirectory(prefix="e11_mask_v2_") as tmp:
         d=Path(tmp);exe=d/"lease"
