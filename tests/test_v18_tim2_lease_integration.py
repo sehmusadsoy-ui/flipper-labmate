@@ -21,7 +21,7 @@ MOCK = r"""
 typedef struct { uint8_t pin; } GpioPin;
 extern const GpioPin gpio_ext_pb3;
 extern int hw_writes, hw_reads, lease_attempts, lease_releases;
-extern bool lease_available, release_succeeds;
+extern bool lease_available, release_succeeds, bus_enabled;
 uint32_t furi_hal_resource_lease_try_acquire(uint32_t mask);
 bool furi_hal_resource_lease_release(uint32_t handle, uint32_t mask);
 #ifdef HAS_LEASE
@@ -53,8 +53,20 @@ static inline void e11_mock_tim_init(const LL_TIM_InitTypeDef* p) {
 }
 #define furi_hal_gpio_init_ex(...) (++hw_writes)
 #define furi_hal_gpio_init_simple(...) (++hw_writes)
-#define furi_hal_bus_enable(...) (++hw_writes)
-#define furi_hal_bus_disable(...) (++hw_writes)
+static inline bool furi_hal_bus_is_enabled(int bus) {
+    (void)bus;
+    return bus_enabled;
+}
+static inline void e11_bus_enable(void) {
+    ++hw_writes;
+    bus_enabled = true;
+}
+static inline void e11_bus_disable(void) {
+    ++hw_writes;
+    bus_enabled = false;
+}
+#define furi_hal_bus_enable(...) e11_bus_enable()
+#define furi_hal_bus_disable(...) e11_bus_disable()
 #define LL_TIM_Init(t, cfg) e11_mock_tim_init(cfg)
 #define LL_TIM_IC_SetActiveInput(...) (++hw_writes)
 #define LL_TIM_IC_SetPrescaler(...) (++hw_writes)
@@ -75,7 +87,7 @@ HARNESS = r"""
 #include <assert.h>
 #include "mock.h"
 int hw_writes, hw_reads, lease_attempts, lease_releases;
-bool lease_available, release_succeeds = true;
+bool lease_available, release_succeeds = true, bus_enabled;
 const GpioPin gpio_ext_pb3 = {3};
 uint32_t furi_hal_resource_lease_try_acquire(uint32_t mask) {
     assert(mask == 12U);
@@ -97,21 +109,32 @@ int main(void) {
     assert(labmate_frequency_tim2_read() == 0U);
     labmate_frequency_tim2_shutdown();
     assert(hw_writes == 0 && hw_reads == 0 && lease_releases == 0);
+    assert(!labmate_frequency_tim2_capture_valid());
 #ifdef HAS_LEASE
     assert(lease_attempts == 1);
     lease_available = true;
+    /* Legacy RFID/SubGHz owner enabled TIM2 but never opted in.
+     * Must be detected before modifying PB3 or enabling timer twice.
+     */
+    bus_enabled = true;
+    int before = hw_writes;
+    assert(!labmate_frequency_tim2_configure());
+    assert(hw_writes == before && lease_releases == 1);
+    assert(!labmate_frequency_tim2_lease_pending());
+    bus_enabled = false;
     assert(labmate_frequency_tim2_configure());
+    assert(labmate_frequency_tim2_capture_valid());
     assert(labmate_frequency_tim2_lease_pending());
     assert(hw_writes > 0);
-    int before = hw_writes;
+    before = hw_writes;
     assert(!labmate_frequency_tim2_configure()); /* no double claim */
-    assert(hw_writes == before && lease_attempts == 2);
+    assert(hw_writes == before && lease_attempts == 3);
     labmate_frequency_tim2_enable();
     assert(labmate_frequency_tim2_read() == 23U);
     labmate_frequency_tim2_disable();
     assert(hw_reads == 1);
     labmate_frequency_tim2_shutdown();
-    assert(lease_releases == 1);
+    assert(lease_releases == 2);
     assert(!labmate_frequency_tim2_lease_pending());
     before = hw_writes;
     labmate_frequency_tim2_shutdown();
@@ -122,12 +145,12 @@ int main(void) {
     release_succeeds = false;
     assert(labmate_frequency_tim2_configure());
     labmate_frequency_tim2_shutdown();
-    assert(lease_releases == 2);
+    assert(lease_releases == 3);
     assert(labmate_frequency_tim2_lease_pending());
     before = hw_writes;
     assert(!labmate_frequency_tim2_configure());
     labmate_frequency_tim2_shutdown();
-    assert(hw_writes == before && lease_releases == 2);
+    assert(hw_writes == before && lease_releases == 3);
 #else
     assert(lease_attempts == 0);
     lease_available = true;
@@ -184,6 +207,12 @@ def test_callers() -> None:
         assert "if(labmate_frequency_tim2_lease_pending()) {" in (ROOT/path).read_text()
     assert "bool labmate_frequency_tim2_configure(void);" in HEADER.read_text()
     assert "bool labmate_frequency_tim2_lease_pending(void);" in HEADER.read_text()
+    assert "bool labmate_frequency_tim2_capture_valid(void);" in HEADER.read_text()
+    counter=(ROOT/"src/labmate_event_counter.c").read_text()
+    assert "if(!labmate_frequency_tim2_capture_valid())" in counter
+    assert "if(healthy && app->capture_owner == LabMateCaptureCounter)" in counter
+    high=(ROOT/"src/labmate_measurements.c").read_text()
+    assert "if(!labmate_frequency_tim2_capture_valid())" in high
 
 
 if __name__ == "__main__":
