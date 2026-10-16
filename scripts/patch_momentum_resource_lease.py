@@ -50,6 +50,12 @@ enum {
     FuriHalLeaseI2c3 = (1U << 13),
     FuriHalLeasePc3 = (1U << 14),
     FuriHalLeasePa6 = (1U << 15),
+    /* Physical EXTI aliases also apply to OTHER GPIO ports with
+     * matching pin number; keep in shared primitive, not PulseReader.
+     */
+    FuriHalLeaseExti3 = (1U << 19),
+    FuriHalLeaseExti6 = (1U << 20),
+    FuriHalLeaseExti7 = (1U << 21),
 };
 #define FURI_HAL_LEASE_PWM_PA7 (FuriHalLeaseTim1 | FuriHalLeasePa7)
 #define FURI_HAL_LEASE_COUNTER_PB3 (FuriHalLeaseTim2 | FuriHalLeasePb3)
@@ -60,6 +66,18 @@ enum {
 #define FURI_HAL_LEASE_ONEWIRE_PA4 (FuriHalLeasePa4)
 #define FURI_HAL_LEASE_I2C3_EXT (FuriHalLeaseI2c3 | FuriHalLeasePc0 | FuriHalLeasePc1)
 #define FURI_HAL_LEASE_USART1 (FuriHalLeaseUsart1)
+/* Exact standalone EXTI claims let a GPIO owner acquire the shared
+ * EXTI line AFTER its separate pin claim without surrendering the pin.
+ * A separate handle is required: claiming pin+EXTI would overlap the
+ * existing pin-only handle held by the same service.
+ */
+#define FURI_HAL_LEASE_JS_EXTI0 (FuriHalLeaseExti0)
+#define FURI_HAL_LEASE_JS_EXTI1 (FuriHalLeaseExti1)
+#define FURI_HAL_LEASE_JS_EXTI2 (FuriHalLeaseExti2)
+#define FURI_HAL_LEASE_JS_EXTI3 (FuriHalLeaseExti3)
+#define FURI_HAL_LEASE_JS_EXTI4 (FuriHalLeaseExti4)
+#define FURI_HAL_LEASE_JS_EXTI6 (FuriHalLeaseExti6)
+#define FURI_HAL_LEASE_JS_EXTI7 (FuriHalLeaseExti7)
 /* Passive GPIO Monitor pin-only claims. They overlap relevant TIM1/TIM2,
  * EXTI, I2C and OneWire composite leases on the same physical pin.
  * PC3 and PA6 have their own bit, not the onboard button EXTI alias:
@@ -111,6 +129,13 @@ static bool furi_hal_lease_mask_allowed(uint32_t mask) {
            mask == FURI_HAL_LEASE_ONEWIRE_PA4 ||
            mask == FURI_HAL_LEASE_I2C3_EXT ||
            mask == FURI_HAL_LEASE_USART1 ||
+           mask == FURI_HAL_LEASE_JS_EXTI0 ||
+           mask == FURI_HAL_LEASE_JS_EXTI1 ||
+           mask == FURI_HAL_LEASE_JS_EXTI2 ||
+           mask == FURI_HAL_LEASE_JS_EXTI3 ||
+           mask == FURI_HAL_LEASE_JS_EXTI4 ||
+           mask == FURI_HAL_LEASE_JS_EXTI6 ||
+           mask == FURI_HAL_LEASE_JS_EXTI7 ||
            mask == FURI_HAL_LEASE_MONITOR_PC0 ||
            mask == FURI_HAL_LEASE_MONITOR_PC1 ||
            mask == FURI_HAL_LEASE_MONITOR_PC3 ||
