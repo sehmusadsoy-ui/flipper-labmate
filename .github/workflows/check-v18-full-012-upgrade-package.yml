@@ -18,6 +18,7 @@ on:
       - "tests/test_v18_native_pulse_reader_lease.py"
       - "tests/test_v18_native_pulse_lease_firmware.py"
       - "tests/test_v18_native_pwm_lease.py"
+      - "tests/test_v18_pwm_native_joint.py"
       # Any production LabMate change requires a new exact matching
       # patched-Momentum FAP build before physical acceptance/release.
       - "src/**"
@@ -83,6 +84,7 @@ jobs:
           python3 labmate/scripts/patch_momentum_native_pwm_lease.py momentum-src
           python3 labmate/scripts/patch_momentum_native_pwm_lease.py momentum-src --apply
           python3 labmate/tests/test_v18_native_pwm_lease.py momentum-src
+          python3 labmate/tests/test_v18_pwm_native_joint.py momentum-src
           python3 labmate/scripts/patch_momentum_native_js_gpio_lease.py momentum-src
           python3 labmate/scripts/patch_momentum_native_js_gpio_lease.py momentum-src --apply
           python3 labmate/tests/test_v18_native_js_gpio_lease.py momentum-src
