@@ -6,6 +6,8 @@ on:
     paths:
       - ".github/workflows/check-v18-full-012-upgrade-package.yml"
       - "scripts/check_v18_full_update_bundle.py"
+      - "scripts/verify_v18_full_review_pair.py"
+      - "tests/test_v18_full_review_pair.py"
       - "tests/test_v18_full_update_bundle.py"
       - "scripts/check_v18_full_vs_mntm012.py"
       - "scripts/patch_momentum_i2c_timeout.py"
@@ -368,6 +370,16 @@ jobs:
           Never mix this matched FAP with unpatched Momentum firmware.
           EOF
           echo "DEV TEST ARCHIVE MADE: NO DEVICE INTERACTION."
+
+      - name: Independently re-verify FULL review pair bytes and pinned provenance (NO FLASH)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 labmate/scripts/verify_v18_full_review_pair.py \\
+            dev-full-candidate \\
+            --expected-source "$GITHUB_SHA" \\
+            --expected-run "$GITHUB_RUN_ID"
+          echo "FULL PAIR READ-ONLY SHA256/PROVENANCE/UPDATER PASS; NO DEVICE ACTION."
 
       - name: Archive for review ONLY (not a release)
         uses: actions/upload-artifact@v4
