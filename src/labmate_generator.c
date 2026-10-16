@@ -2,9 +2,12 @@
 #include <furi_hal_pwm.h>
 #include <furi_hal_resources.h>
 
-/* E11.1e: LabMate-local opt-in firmware lease. A legacy Momentum TIM1
- * user that bypasses the lease is NOT detected by this API. */
-static uint32_t labmate_pwm_pa7_lease_handle;
+/* E11: the matched native PWM HAL acquires the sole TIM1+PA7 claim.
+ * LabMate must NEVER preclaim the same mask: doing so would make the
+ * native HAL reject its own START (self-deadlock).
+ * This retained handle is used only for STOP release verification.
+ */
+static uint32_t labmate_pwm_pa7_release_probe;
 
 /* Existing 15 verified presets are unmodified, followed by CUSTOM in UI. */
 const uint32_t labmate_generator_frequencies[] = {
@@ -24,9 +27,11 @@ uint32_t labmate_generator_frequency(const LabMateApp* app) {
 static void labmate_generator_apply_running(LabMateApp* app) {
     if(!app->generator_running) return;
 #if defined(FURI_HAL_RESOURCE_LEASE_API_V1)
-    if(labmate_pwm_pa7_lease_handle == 0U || app->generator_release_fault) {
+    if(app->generator_release_fault ||
+       !furi_hal_pwm_is_running(FuriHalPwmOutputIdTim1PA7)) {
         app->generator_blocked = true;
-        return; /* Do not touch TIM1 without the actual lease. */
+        app->generator_release_fault = true;
+        return; /* Native PWM no longer reports an active owner. */
     }
     const uint32_t hz = labmate_generator_frequency(app);
     if(labmate_pwm_settings_valid(hz, app->generator_duty_percent)) {
@@ -42,23 +47,35 @@ static void labmate_generator_apply_running(LabMateApp* app) {
 void labmate_generator_stop(LabMateApp* app) {
     if(!app->generator_running) return; /* STOP without RUN is a no-op. */
 #if defined(FURI_HAL_RESOURCE_LEASE_API_V1)
-    if(labmate_pwm_pa7_lease_handle == 0U) {
+    if(app->generator_release_fault ||
+       !furi_hal_pwm_is_running(FuriHalPwmOutputIdTim1PA7)) {
+        /* Do not STOP a timer that may have been seized externally. */
         app->generator_blocked = true;
         app->generator_release_fault = true;
-        return; /* Never stop a potentially foreign TIM1 owner. */
+        return;
     }
-    /* Keep ownership while stopping TIM1 and returning PA7 to safe mode. */
+    /* Native HAL stops its own TIM1 and releases its own sole lease. */
     furi_hal_pwm_stop(FuriHalPwmOutputIdTim1PA7);
     app->generator_running = false;
     app->generator_state = false;
-    if(!furi_hal_resource_lease_release(
-           labmate_pwm_pa7_lease_handle, FURI_HAL_LEASE_PWM_PA7)) {
-        /* Retain the unresolved handle and block all future PWM starts. */
+    /* A void HAL STOP cannot report failed release. Probe the exact
+     * shared claim only AFTER HAL STOP, without GPIO or timer writes.
+     * If another service claims in between, conservatively stay ERR.
+     */
+    labmate_pwm_pa7_release_probe =
+        furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_PWM_PA7);
+    if(!labmate_pwm_pa7_release_probe) {
         app->generator_release_fault = true;
         app->generator_blocked = true;
         return;
     }
-    labmate_pwm_pa7_lease_handle = 0U;
+    if(!furi_hal_resource_lease_release(
+           labmate_pwm_pa7_release_probe, FURI_HAL_LEASE_PWM_PA7)) {
+        app->generator_release_fault = true;
+        app->generator_blocked = true;
+        return; /* Keep the failed probe token to deny restart. */
+    }
+    labmate_pwm_pa7_release_probe = 0U;
     app->generator_blocked = false;
 #else
     /* A stock-SDK DEV build could not have acquired TIM1 in START. */
@@ -68,24 +85,25 @@ void labmate_generator_stop(LabMateApp* app) {
 
 void labmate_generator_start(LabMateApp* app) {
     if(app->generator_running || app->generator_editing) return;
-    if(app->generator_release_fault || labmate_pwm_pa7_lease_handle != 0U) {
+    if(app->generator_release_fault || labmate_pwm_pa7_release_probe != 0U) {
         app->generator_blocked = true;
         return;
     }
     const uint32_t hz = labmate_generator_frequency(app);
     if(!labmate_pwm_settings_valid(hz, app->generator_duty_percent)) return;
 #if defined(FURI_HAL_RESOURCE_LEASE_API_V1)
-    /* Claim BEFORE the firmware PWM HAL's TIM1 enable or PA7 mux writes. */
-    const uint32_t handle =
-        furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_PWM_PA7);
-    if(handle == 0U) {
+    /* Native HAL is the only TIM1/PA7 lease owner. A second
+     * preclaim from LabMate would reject this exact START request.
+     */
+    if(furi_hal_pwm_is_running(FuriHalPwmOutputIdTim1PA7)) {
         app->generator_blocked = true;
-        return; /* Zero PWM HAL calls: foreign lease remains untouched. */
+        return; /* Other PWM user: no mutation. */
     }
-    labmate_pwm_pa7_lease_handle = handle;
-    /* This HAL returns void and legacy services may bypass the lease:
-     * source/build PASS must never be interpreted as global exclusion. */
     furi_hal_pwm_start(FuriHalPwmOutputIdTim1PA7, hz, app->generator_duty_percent);
+    if(!furi_hal_pwm_is_running(FuriHalPwmOutputIdTim1PA7)) {
+        app->generator_blocked = true;
+        return; /* Denied by occupied pin, clock or native lease. */
+    }
     app->generator_running = true;
     app->generator_state = false;
     app->generator_blocked = false;
