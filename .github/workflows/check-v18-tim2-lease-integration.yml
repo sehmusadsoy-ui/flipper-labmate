@@ -8,9 +8,11 @@ on:
       - "src/labmate_frequency_tim2.h"
       - "src/labmate_frequency_capture.c"
       - "src/labmate_event_counter.c"
+      - "src/labmate_measurements.c"
       - "tests/test_v18_tim2_lease_integration.py"
       - ".github/workflows/check-v18-tim2-lease-integration.yml"
       - "scripts/patch_momentum_resource_lease.py"
+      - "scripts/check_v18_native_legacy_tim2_contract.py"
       - "scripts/patch_momentum_gpio_tryadd.py"
       - "scripts/patch_momentum_i2c_timeout.py"
   workflow_dispatch:
@@ -51,6 +53,7 @@ jobs:
           python3 labmate/scripts/patch_momentum_i2c_timeout.py momentum-src --apply
           python3 labmate/scripts/patch_momentum_resource_lease.py momentum-src --allow-timed-i2c --apply
           python3 labmate/scripts/patch_momentum_gpio_tryadd.py momentum-src --allow-prepatched --apply
+          python3 labmate/scripts/check_v18_native_legacy_tim2_contract.py momentum-src labmate
           git -C momentum-src diff --check
 
       - name: Stage one integrated LabMate production FAP
