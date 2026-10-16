@@ -121,6 +121,24 @@ int main(void) {
     furi_hal_ibutton_emulate_stop();
     furi_hal_ibutton_emulate_set_next(5U);
     assert(hardware_writes==w && releases==2);
+#ifdef TEST_RELEASE_FAULT
+    /* STOP must not report reusable TIM1 after firmware refuses release.
+     * HAL timer and ISR teardown is our own and runs before release.
+     */
+    release_ok=false;
+    furi_hal_ibutton_emulate_start(50U,callback,NULL);
+    assert(bus_enabled && furi_hal_ibutton->e11_lease_handle);
+    furi_hal_ibutton_emulate_stop();
+    assert(!bus_enabled && !active_irq);
+    assert(furi_hal_ibutton->e11_lease_fault);
+    assert(furi_hal_ibutton->e11_lease_handle==99U && releases==3);
+    w=hardware_writes;
+    furi_hal_ibutton_emulate_start(123U,callback,NULL);
+    furi_hal_ibutton_emulate_set_next(45U);
+    furi_hal_ibutton_emulate_stop();
+    assert(hardware_writes==w && releases==3);
+    return 0;
+#endif
     /* If another service kills the clock during emulation, do not call
      * bus_disable or touch another owner ISR, keep our claim sticky.
      */
@@ -194,6 +212,10 @@ def main() -> None:
         exe=root_tmp/"test"
         subprocess.run(["cc","-std=c11","-Wall","-Wextra","-Werror","-pedantic","-O0",
                         "-I",str(root_tmp),str(root_tmp/"host.c"),"-o",str(exe)],check=True)
+        subprocess.run([str(exe)],check=True)
+        subprocess.run(["cc","-std=c11","-Wall","-Wextra","-Werror","-pedantic",
+                        "-O0","-DTEST_RELEASE_FAULT=1","-I",str(root_tmp),
+                        str(root_tmp/"host.c"),"-o",str(exe)],check=True)
         subprocess.run([str(exe)],check=True)
         masks_start=h.index("enum {\n    FuriHalLeaseTim1")
         masks_end=h.index("/* Returns unique nonzero",masks_start)
