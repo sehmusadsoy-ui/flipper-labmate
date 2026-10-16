@@ -133,8 +133,7 @@ since been migrated in the development branch:
   DMAMUX RG0, PA2 and EXTI2 atomically, using the V2 allocator.
   Its native ISR and STOP paths are guarded.
   [SignalReader original-C host #38924389571 — SUCCESS](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38924389571).
-- `scripts/patch_momentum_native_ext_cc1101_tx_lease.py` (check
-  actual repository filename before modification) integrates
+- `scripts/patch_momentum_native_ext_cc1101_tx_lease.py` integrates
   external CC1101 TX's separate TIM17/DMA2 CH3/4/5 ownership
   into native TX C/ISR/STOP and tests collision with SignalReader.
   [External CC1101 TX original-C host #38924389450 — SUCCESS](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38924389450).
