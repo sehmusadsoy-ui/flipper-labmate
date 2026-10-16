@@ -1211,3 +1211,31 @@ overwriting historical copies. **No firmware flash, FAP install, SD
 modification, release operation or Stable promotion is authorized** by
 partial backup PASS. A valid backup is still not proof that restore
 has been rehearsed.
+
+
+## 2026-10-17 — Located original qFlipper settings TGZ on Desktop (candidate only)
+
+**Operator read-only file discovery result:** the original previously
+validated settings backup basename
+`Uybelav-backup-20261014-201804.tgz` was found in the operator's
+**Desktop**, **not** the older assumed Downloads location. Reported size
+**1,550 bytes**, a plausible compact settings-only `.tgz` archive
+but **not by itself evidence of contents, authenticity or restorability**.
+The corresponding public report stores only its basename and
+user-relative location, not personal Windows account identifiers.
+The same read-only search also found the expected official rollback
+firmware archive in `Downloads/LabMate-Rollback-MNTM012`; its digest
+was already checked independently as PASS in the preceding gate.
+
+**Status update:** change previous 'missing backup' from
+'not located at expected Downloads path' to **FOUND AT DESKTOP /
+CONTENTS AND LOCAL SHA256 NOT YET VALIDATED**.
+Older 2026-10-14 qFlipper archive structural PASS cannot, on its
+own, cryptographically identify this particular now-found file.
+Run a strictly read-only, no-extraction, no-USB local archive
+integrity/path/type/count check, reporting only a checksum and
+validation status (not contents). Continue fail-closed until
+result is received. Previous full preflight PASS text typed after a
+PowerShell exception remains invalid. Recovery/restore rehearsal
+is **still unverified even if the archive check later passes**.
+No device write, firmware update, Stable change or app replacement.
