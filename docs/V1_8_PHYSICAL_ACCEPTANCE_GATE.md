@@ -1123,3 +1123,50 @@ This exactly matches the previously audited **v1.8DEV EXITFIX** FAP built and in
 **Identity distinctions:** this proves the copied on-device application's *bytes at the read-back time* match known EXITFIX. It does NOT prove any new E11 native firmware patch beyond the earlier observed `mntm-dev` `d3f89dfe` dirty base, and does **not** prove the newest full review FAP from CI #38966248325 (`2b31ec3fa9050580dc3c3ff80138578ed185d70811aa8124ebd2d00b8d981af0`) is installed. It isn't the hash of the copied FAP. Do not conflate historical on-device acceptance with the newly-built candidate's physical gate. Any physical test of the new matched pair still requires separately reviewed backup, recovery and user approval.
 
 The Windows copy was a new *local* audit file; no firmware update, on-device FAP replacement, microSD log/profile deletion, USB firmware write, main/Stable update or release modification occurred. Unique Flipper device identifiers are deliberately excluded from this report.
+
+
+## 2026-10-17 — New full review artifact: operator Windows SHA256 4/4
+
+**USER-REPORTED READ-ONLY LOCAL ARTIFACT CHECK PASS:** After one earlier
+incomplete PowerShell invocation with an unset `$dir` (which was
+**NOT** counted as a validation), operator successfully completed the
+four-entry `Get-FileHash -Algorithm SHA256` comparison on the downloaded
+[CI #38966248325](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38966248325)
+review artifact in a dedicated Windows Downloads folder. Reported output:
+
+```
+SHA256 PASS: firmware-full-update.tgz
+SHA256 PASS: labmate.fap
+SHA256 PASS: firmware.dfu
+SHA256 PASS: js_gpio.module
+FULL PACKAGE SHA256 PASS (4/4) - NO FLASH
+```
+
+All four pinned hashes are documented in
+[`V1_8_READ_ONLY_PAIR_HANDOFF.md`](V1_8_READ_ONLY_PAIR_HANDOFF.md)
+and are the exact values separately printed by the verified same-run
+GitHub Actions validator. **This closes the user's local copy SHA256
+integrity check**, not device acceptance, physical firmware
+compatibility, a full downloaded archive provenance re-audit on Windows,
+or a verified rollback procedure. The older terminal line
+`Write-Host "FOUR FILES VERIFIED - NO FLASH"` was merely a manual print
+and was *not* used as evidence.
+
+**Next blocking gate: local BACKUP/ROLLBACK CHECK BEFORE ANY DEVICE WRITE.**
+Verify existence and digest of the official MNTM-012 rollback updater and
+unchanged v1.8 Stable FAP, verify the operator's 2026-10-14 qFlipper
+settings backup, verify the LabMate microSD folder copy actually has
+nonzero readable profile/CSV files, and preserve the separately copied
+on-device EXITFIX FAP SHA256
+`7a76f626f34a65059d9536fa2cd52b2639f4d1038a9b5c69291fa28d5e4f63be`.
+These checks must be *read-only*, may disclose only status/counts/file
+basenames, and must not run `-Apply`, `selfupdate.py` or `runfap.py`.
+A folder count alone is insufficient to attest integrity or restore
+fitness; actual restoration still has not been rehearsed.
+
+**Compatibility warning:** `scripts/install-v18-full012-dev-firmware.ps1`
+is historically pinned to *another* older source/DFU/FAP bundle
+(`5e3267...` TGZ / `e69f717...` DFU / `9a276e6...` FAP). It is
+**not the installer for the new #38966248325 candidate**. Do not bypass
+its SHA checks, alter the original files, or invoke it against the
+new package; no E11 update has been authorized merely by a 4/4 PASS.
