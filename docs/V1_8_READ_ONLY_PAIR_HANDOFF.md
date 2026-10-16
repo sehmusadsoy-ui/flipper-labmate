@@ -165,8 +165,15 @@ An earlier first CI attempt failed on a *test harness assertion typo*
 run is green. No production Flipper code changed as part of the
 local verifier addition.
 
-**Scope boundary:** This script's own PASS is not yet observed on
-the operator's Windows folder in the current evidence. More
+**Updated 2026-10-17 physical operator report:** the user executed the exact
+script on the Windows candidate, EXITFIX readback, rollback and backup
+folders and obtained all success lines, including
+`LOCAL E11 INPUT PREFLIGHT PASS - NO FLASH, NO DEVICE ACCEPTANCE`.
+This closes the **offline operator input gate only**; see the exact
+[physical trial go/no-go plan](V1_8_E11_DEVICE_TRIAL_GATE_2026-10-17.md).
+
+**Scope boundary:** The script's actual reported PASS does not grant
+installation approval. More
 importantly, even a real local PASS does **not** prove current device
 flash byte identity, full SD equality, operational rollback,
 successful future firmware boot, firmware cross-service resource
