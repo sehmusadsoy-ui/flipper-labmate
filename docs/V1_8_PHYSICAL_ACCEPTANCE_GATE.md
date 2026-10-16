@@ -1579,3 +1579,42 @@ and E11 physical resource tests remain open.
 **Hold:** new E11 FULL and separately staged FAP-excluded review
 artifacts still **DO NOT FLASH**. No firmware trial authorization,
 physical E11 acceptance, Stable merge or release.
+
+
+## 2026-10-17 — New PC-only snapshot utility for current 10 live files (CI PASS, OPERATOR PENDING)
+
+Based on actual `historical_backup_files=14`,
+`current_device_files=10`, `same_path_same_size_md5=3`,
+`historical_files_now_absent=9`,
+`new_device_files_not_in_backup=5`,
+`changed_files_not_covered_by_backup=2`,
+added [`snapshot_v18_e11_live_labmate_sd.py`](../scripts/snapshot_v18_e11_live_labmate_sd.py)
+and [PC-only operator handoff](V1_8_E11_LIVE_SNAPSHOT_HANDOFF.md).
+
+Unlike the first live-list audit, this new utility has a carefully
+scoped **new PC destination only**: original 14-file backup is never
+overwritten, all current device LabMate files are transferred using
+upstream Flipper **read-only storage read_chunks**, verified for
+live-listed size/MD5, written to an exclusive new PC file and
+SHA256-checked from disk, then rechecked against a final live
+listing/hash inventory to detect concurrent modification.
+Creates a per-file local manifest and clearly labeled
+`INCOMPLETE-DO-NOT-RESTORE.txt` on any interrupted transfer.
+**Does not** merge the nine historically absent files back onto
+the device, delete/sync files, install an app or flash firmware.
+The snapshot and historical files together provide source copies,
+not a validated end-to-end restore procedure.
+
+**CI only, NOT real PC/device execution:**
+[Windows fake COM + snapshot #38977176906](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38977176906)
+**SUCCESS**; 9 dedicated snapshot positive/negative tests,
+plus 19 earlier SD parser tests (one Windows NTFS fixture skip).
+[Integrated host #38977160159](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38977160159)
+**SUCCESS**. No user private data in CI.
+
+**Present gate classification:**
+`CURRENT_LABMATE_DEVICE_DATA_PROTECTED=NOT_YET` until the owner
+runs actual COM7 PC-only snapshot command and returns its success
+report. **Full microSD backup, third-party plugins, restore rehearsal,
+E11 firmware and native resource physical tests all remain OPEN**.
+Full and split experimental packages **DO NOT FLASH**.
