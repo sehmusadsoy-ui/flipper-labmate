@@ -141,6 +141,29 @@ int main(void) {
     labmate_frequency_tim2_disable();
     labmate_frequency_tim2_enable();
     assert(hw_writes == before && hw_reads == 1);
+#ifdef TEST_LEGACY_CLOCK_LOSS
+    /* A bypassing radio/RFID driver switched off the TIM2 clock.
+     * Never read, disable or reset TIM2/PB3 from this point. Our lease
+     * remains held until firmware reset to avoid a dangerous reuse.
+     */
+    assert(labmate_frequency_tim2_configure());
+    bus_enabled = false;
+    before = hw_writes;
+    int read_before = hw_reads, release_before = lease_releases;
+    assert(!labmate_frequency_tim2_capture_valid());
+    labmate_frequency_tim2_enable();
+    labmate_frequency_tim2_disable();
+    assert(labmate_frequency_tim2_read() == 0U);
+    labmate_frequency_tim2_shutdown();
+    assert(hw_writes == before && hw_reads == read_before);
+    assert(lease_releases == release_before);
+    assert(labmate_frequency_tim2_lease_pending());
+    bus_enabled = true; /* A foreign user restored the clock */
+    assert(!labmate_frequency_tim2_capture_valid());
+    assert(!labmate_frequency_tim2_configure());
+    labmate_frequency_tim2_shutdown();
+    assert(hw_writes == before && lease_releases == release_before);
+#else
     /* Failed release blocks all future configuration and double teardown. */
     release_succeeds = false;
     assert(labmate_frequency_tim2_configure());
@@ -151,6 +174,7 @@ int main(void) {
     assert(!labmate_frequency_tim2_configure());
     labmate_frequency_tim2_shutdown();
     assert(hw_writes == before && lease_releases == 3);
+#endif
 #else
     assert(lease_attempts == 0);
     lease_available = true;
@@ -162,7 +186,7 @@ int main(void) {
 """
 
 
-def test_one(has_lease: bool) -> None:
+def test_one(has_lease: bool, legacy_clock_loss: bool=False) -> None:
     with tempfile.TemporaryDirectory(prefix="labmate_e11_tim2_") as tmp:
         root = Path(tmp)
         (root / "mock.h").write_text(MOCK)
@@ -184,6 +208,8 @@ def test_one(has_lease: bool) -> None:
         ]
         if has_lease:
             args.append("-DHAS_LEASE=1")
+        if legacy_clock_loss:
+            args.append("-DTEST_LEGACY_CLOCK_LOSS=1")
         args.extend([str(root / "harness.c"), "-o", str(exe)])
         subprocess.run(args, check=True)
         subprocess.run([str(exe)], check=True)
@@ -219,6 +245,7 @@ if __name__ == "__main__":
     test_callers()
     test_one(False)
     test_one(True)
+    test_one(True,legacy_clock_loss=True)
     print("E11.1d ACTUAL PB3/TIM2 DRIVER HOST PASS: failed claim has ZERO HAL writes,")
     print("no stale cleanup; acquired lifecycle, STOP/lease release, and fail closed.")
     print("NOT firmware-global ownership, physical timer validation or device PASS.")
