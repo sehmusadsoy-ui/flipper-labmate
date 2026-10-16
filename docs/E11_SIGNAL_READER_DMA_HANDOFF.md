@@ -20,10 +20,10 @@ NOT migrated**. E11 is **OPEN**.
 The pinned ISO15693 listener **does** transfer this pin during transparent
 mode: `furi_hal_nfc_iso15693_listener_transparent_mode_enter` calls
 `furi_hal_nfc_deinit_gpio_isr()` after switching/deinitializing SPI,
-relinquishing the NFC PA2/EXTI2 callback/lease. The exit path calls the
-legacy `void furi_hal_nfc_init_gpio_isr()` before SPI reinit, so an
-unexpected BUSY **cannot currently propagate** to the listener and
-its cleanup. Replacing this with an unconditional global EXTI veto or
+relinquishing the NFC PA2/EXTI2 callback/lease. The original exit path called the legacy `void furi_hal_nfc_init_gpio_isr()`` before SPI reinit and ignored BUSY. **Now E11 has migrated this EXIT**:
+`furi_hal_nfc_try_init_gpio_isr()` returns bool, SPI restoration
+always executes, RX IRQ is not unmasked if denied, and listener deinit
+returns `FuriHalNfcErrorBusy` instead of false success. Replacing this with an unconditional global EXTI veto or
 with an IRQ callback removal is **unsafe**. The lifecycle must be
 transactional and report status on both acquire and restore.
 
@@ -79,14 +79,20 @@ tests genuine firmware V1+V2 C under cross-family collisions,
 wrong release/double release, unsupported partial masks, handle
 exhaustion and pthread start races. This passes as **allocator-level
 evidence only**, NOT SignalReader/CC1101 TX implementation acceptance.
-Matching firmware package CI also remains a separate acceptance gate.
+Matching V2-only full MNTM-012/firmware/FAP/JS/updater build
+[#38921080301](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38921080301)
+**SUCCESS**. An additional NFC ISO15693 IRQ restoration original-C
+host gate [#38921482299](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38921482299)
+**SUCCESS**, and its combined full candidate
+[#38921812742](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38921812742)
+needs an independent final SUCCESS.
 
 ## Required software completion stages (not claimed PASS)
 
-1. Extend NFC ISO15693 transparent exit to check the status-bearing
-   NFC PA2+EXTI2 re-registration. Preserve SPI/radio cleanup and
-   propagate or retry a truthful BUSY; do not silently report ISO15693
-   PASS with an absent IRQ handler.
+1. **DONE (host C):** ISO15693 transparent EXIT checks the NFC PA2+EXTI2
+   bool re-registration; preserves SPI cleanup, skips IRQ unmask on BUSY
+   and reports BUSY from listener deinit. The remaining entry-side
+   handoff, recovery/retry and physical listener mode still need tests.
 2. Convert genuine SignalReader START to bool with atomic V2 lease
    **before** its buffer/ISR/GPIO/DMAMUX/timer writes, native legacy
    peripheral/channel preflight, and precise EXTI2 callback-slot
