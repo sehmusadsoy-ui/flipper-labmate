@@ -69,14 +69,23 @@ iButton, NFC and GPIO Monitor PA7. Actual worker source is
 checked for ordering and BUSY non-wait control flow.
 
 [**Complete paired Momentum firmware/FAP/JS/updater CI
-#38897716100**](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38897716100)
-was started against latest source
-`30195b114743a02e79feab8df2d5e11e8884b6f1` including
-PA7 presence detection. The earlier pre-probe full CI run
-[#38897419654](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38897419654)
-tests the preceding TX stage only. **Do not claim final firmware/FAP
-PASS until the final workflow completes SUCCESS**.
-Never flash a CI-only test package.
+#38897716100 — SUCCESS**](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38897716100)
+on source `30195b114743a02e79feab8df2d5e11e8884b6f1`
+including PA7 accessory probing (the subsequent commits only
+modify documentation). Exact pinned native IR TX actual C, native
+worker source order and firmware lease allocator fault cases PASS,
+the full Momentum DFU and one integrated LabMate FAP/JS plugin
+build, `APPCHK` and original official MNTM-012 radio/option-byte
+and updater archive comparison PASS. **CI-only — DO NOT FLASH.**
+
+- `firmware.dfu` SHA256: `b6429aa7921604259decb34d4a3a8d7374c52851a205cc6158526d9dec885ad8`
+- Matched `labmate.fap` SHA256: `06049bc78b895052d657218328302a2f49b98d1620527000da6ad83788e6e93b`
+- Review-only full firmware/FAP/JS archive artifact ID: `12045340798`
+
+The preceding [CI #38897419654](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38897419654)
+also completed **SUCCESS**, but did not include the subsequent
+external-PA7 detection lease and is not the authoritative candidate.
+No device or physical infrared TX validation was performed.
 
 ## Not yet established / remaining risks
 
