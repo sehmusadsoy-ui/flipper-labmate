@@ -145,8 +145,10 @@ def main()->int:
                     "bool furi_hal_subghz_async_rx_try_start(" not in src or
                     "e11_subghz_rx_mask_for_mirror" not in src or
                     "if(!e11_subghz_rx_ready()) return;" not in src or
-                    src.count("furi_hal_resource_lease_try_acquire(")!=1 or
-                    "e11_subghz_rx_fault=true;" not in src):
+                    src.count("furi_hal_resource_lease_try_acquire(")!=2 or
+                    "/* E11 native SubGHz TX TIM2/DMA2 lease owner. */" not in src or
+                    "e11_subghz_rx_fault=true;" not in src or
+                    "e11_subghz_tx_fault=true;" not in src):
                     raise ValueError("SubGHz RX lease/ISR/STOP guard unreviewed")
                 rx=src[src.index("bool furi_hal_subghz_async_rx_try_start("):
                        src.index("typedef enum {\n    FuriHalSubGhzAsyncTxMiddlewareStateIdle")]
@@ -157,13 +159,22 @@ def main()->int:
                     rx.index("furi_hal_resource_lease_try_acquire(") >
                     rx.index("furi_hal_subghz_rx();")):
                     raise ValueError("SubGHz RX claim occurs after hardware side effect")
-                # Reject any mutation to legacy TX body on this RX-only stage:
-                old=subprocess.check_output(
-                    ["git","-C",str(root),"show","HEAD:"+path],text=True)
-                txstart="bool furi_hal_subghz_start_async_tx("
-                if src[src.index(txstart):] != old[old.index(txstart):]:
-                    raise ValueError("SubGHz TX changed without a reviewed TX owner")
-                print("E11 SubGHz RX TIM2/mirror ISR/STOP source VERIFIED; TX direct OPEN")
+                tx=src[src.index("bool furi_hal_subghz_start_async_tx("):]
+                if (tx.index("furi_hal_resource_lease_try_acquire(") >
+                    tx.index("furi_hal_subghz_async_tx.callback = callback;") or
+                    tx.index("furi_hal_resource_lease_try_acquire(") >
+                    tx.index("furi_hal_gpio_init_ex(") or
+                    "FURI_HAL_LEASE_NATIVE_SUBGHZ_TX_BASE" not in tx or
+                    "FURI_HAL_LEASE_NATIVE_SUBGHZ_TX_MIRROR_PA7" not in src or
+                    "FURI_HAL_LEASE_NATIVE_SUBGHZ_TX_MIRROR_PB3" not in src or
+                    "LL_DMA_IsEnabledChannel(SUBGHZ_DMA_CH1_DEF)" not in tx or
+                    "if(!e11_subghz_tx_ready()) return;" not in src or
+                    "(void)e11_subghz_tx_release();" not in src):
+                    raise ValueError("Native SubGHz TX composite TIM2/DMA2 guard missing")
+                if ("e11_subghz_tx_handle || e11_subghz_tx_fault" not in src or
+                    "e11_subghz_rx_handle || e11_subghz_rx_fault" not in src):
+                    raise ValueError("Debug mirror setter can switch during active owner")
+                print("E11 native SubGHz RX TIM2 + TX TIM2/DMA2 source VERIFIED; mirror/physical OPEN")
             else:
                 if "furi_hal_resource_lease_try_acquire(" in src:
                     raise ValueError(f"{role}: unreviewed native lease migration")
