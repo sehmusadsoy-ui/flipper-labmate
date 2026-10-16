@@ -63,9 +63,9 @@ def patch(ir: str, h: str, worker: str, wh: str, api: str):
         raise ValueError("Unreviewed native RX TIM2 start return count")
     block = block.replace(start, "bool furi_hal_infrared_async_rx_try_start(void) {", 1)
     block = block.replace("return;", "return false;")
-    if not block.endswith("    LL_TIM_EnableCounter(INFRARED_RX_TIMER);\n}"):
+    if not block.rstrip().endswith("    LL_TIM_EnableCounter(INFRARED_RX_TIMER);\n}"):
         raise ValueError("Unrecognized RX START end")
-    block = block[:-1] + """    return true;
+    block = block.rstrip()[:-1] + """    return true;
 }
 
 /* Keep original public void symbol. Native worker uses bool status. */
