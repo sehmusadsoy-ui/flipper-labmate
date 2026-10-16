@@ -1791,3 +1791,51 @@ No Flipper SD data or firmware was written by this check.
 **E11 firmware trial NO-GO** until recovery/data and separate
 trial authorization gates are satisfied. PR #13 still DRAFT,
 Stable/main and working EXITFIX unchanged.
+
+
+## 2026-10-17 — Full SD content backup via PC reader: host-tested tooling, operator pending
+
+Because actual COM7 read-only scope survey confirmed
+`/ext/apps_data` contains **57 other-app data directories**
+outside the separately preserved 14 historical and 10 current
+LabMate files, a full card protection gate is now explicitly
+required before the firmware trial.
+
+A standalone Windows [reader-mounted SD-to-PC
+backup tool](../scripts/backup_v18_e11_sd_reader_to_pc.py)
+was added with
+[an explicit non-destructive handoff](V1_8_E11_FULL_SD_PC_BACKUP_HANDOFF.md).
+After a physically powered-off Flipper's SD is installed in
+a separate Windows card reader, the script requires a manually
+confirmed non-system source drive root and a different-drive,
+brand-new PC destination. It reads SD files exclusively as bytes,
+copies hidden/nested files and empty directories, SHA256-verifies
+every PC file against the read original and final live SD re-read,
+and fails closed on unreadable/special/reparse entries, destination
+overlap, file drift or insufficient space; on error it leaves
+`INCOMPLETE-DO-NOT-RESTORE.txt`. It never touches firmware,
+COM/USB, restore, source-side file write, wipe or formatting.
+
+**Limit:** Windows mounting the card is not forensically
+write-blocked. This is a file-content backup, not a raw disk
+image, exact FAT attribute clone, full-device physical recovery
+test or authorization to flash. File names and SHA manifest
+stay private on PC.
+
+CI source commit
+`bb43b8a935cc09b78accc0a44a78c668a779ca01`:
+[Windows mock #38979716149](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38979716149)
+**SUCCESS** (11 SD PC backup mock cases; Windows drive-root
+checks included), and
+[integrated no-flash #38979716180](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38979716180)
+**SUCCESS**. Old synthetic regression failure #38979515374
+was fixture setup (non-empty mock directory `rmdir`), now
+fixed without changing data safety policy.
+
+**Actual operator FULL SD copy is PENDING.**
+Do not mark `WHOLE_SD_FILE_CONTENTS=PASS` until user reports
+a complete verified copy; even then
+`RAW_FAT_METADATA`, `RESTORE_REHEARSAL`, updated-app
+compatibility and `E11_PHYSICAL_RESOURCE_ACCEPTANCE` remain
+OPEN. E11 experimental firmware files remain **DO NOT FLASH**;
+Stable/main unchanged.
