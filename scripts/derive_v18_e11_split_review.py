@@ -21,7 +21,6 @@ from audit_v18_e11_resource_impact import (
 )
 from preflight_v18_e11_local import ARTIFACTS, SOURCE, RUN
 from stage_v18_e11_review_only import inspect_updater, FILES, ROOT
-from check_v18_full_vs_mntm012 import check as check_official
 from verify_v18_full_review_pair import verify, OFFICIAL_RADIO_SHA256
 
 DERIVED_NAME = "firmware-full-update-SPLIT-REVIEW-DO-NOT-FLASH.tgz"
@@ -37,7 +36,7 @@ WARNING = (
 def tarball(items: list[tuple[str, bytes | None]]) -> bytes:
     """Canonical, path-safe regular files/directories, deterministic gzip."""
     tarbuf = io.BytesIO()
-    with tarfile.open(fileobj=tarbuf, mode="w", format=tarfile.USTAR_FORMAT) as tf:
+    with tarfile.open(fileobj=tarbuf, mode="w", format=tarfile.PAX_FORMAT) as tf:
         seen: set[str] = set()
         for name, data in items:
             is_dir = data is None
@@ -166,8 +165,7 @@ def stage_derived_review(candidate: Path, old_official: Path, output: Path) -> P
     original = inspect_updater(candidate / "firmware-full-update.tgz")
     derived_bytes = derive_full_review(original)
     # Before any output: nested source, derived and official radio/OB verified.
-    # check_official can accept actual paths only, so compare in-memory manifest
-    # below and independently recheck official original already in audit.
+    # Original radio/option bytes were independently checked by audit().
     if b"resources.tar.gz" not in original["update.fuf"]:
         raise ValueError("updater manifest unexpectedly lacks resources")
     output.mkdir()
