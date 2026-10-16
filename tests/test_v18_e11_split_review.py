@@ -13,7 +13,7 @@ from audit_v18_e11_resource_impact import (
     FAP_PATH, JS_PATH, sha, inventory_resources
 )
 from derive_v18_e11_split_review import (
-    tarball, split_resources, derive_full_review, ROOT, FILES
+    tarball, split_resources, derive_full_review, ROOT, FILES, WARNING
 )
 
 
@@ -52,6 +52,16 @@ class DerivedSplitReviewTest(unittest.TestCase):
             expected_dfu=sha(self.dfu),
             expected_radio=sha(self.radio),
         )
+
+    def test_future_split_review_readme_warns_of_real_exitfix_removal(self):
+        for required in (
+            "REAL COM7 old /ext/Manifest",
+            "apps/Tools/labmate.fap",
+            "SPLIT AS EXITFIX-PRESERVING TRIAL REJECTED",
+            "DO NOT FLASH OR INSTALL",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, WARNING)
 
     def test_exact_one_fap_resource_removed_only(self):
         original = inventory_resources(self.resources)
