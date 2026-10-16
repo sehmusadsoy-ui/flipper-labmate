@@ -10,6 +10,8 @@ on:
       - "tests/test_v18_e11_split_review.py"
       - "scripts/audit_v18_e11_packed_manifest_integrity.py"
       - "tests/test_v18_e11_packed_manifest_integrity.py"
+      - "scripts/check_v18_e11_split_trial_gate.py"
+      - "docs/evidence/V1_8_E11_LIVE_OLD_MANIFEST_OPERATOR_2026-10-17.txt"
       - "tests/test_v18_e11_resource_impact.py"
       - "scripts/check_v18_full_vs_mntm012.py"
       - "scripts/check_v18_full_update_bundle.py"
@@ -43,6 +45,7 @@ jobs:
           python3 -m unittest discover -v -s tests -p test_v18_e11_resource_impact.py
           python3 -m unittest discover -v -s tests -p test_v18_e11_split_review.py
           python3 -m unittest discover -v -s tests -p test_v18_e11_packed_manifest_integrity.py
+          python3 scripts/check_v18_e11_split_trial_gate.py
           python3 -m unittest discover -v -s tests -p test_v18_e11_recovery_readiness.py
           python3 scripts/audit_v18_e11_recovery_readiness.py
       - name: Fetch exact independently known official MNTM-012 rollback
@@ -121,13 +124,12 @@ jobs:
             --full-updater "$RUNNER_TEMP/e11-risk/full/firmware-full-update.tgz" \
             --split-updater "$RUNNER_TEMP/e11-derived-split-review-only/firmware-full-update-SPLIT-REVIEW-DO-NOT-FLASH.tgz"
           echo 'Paired archives checked OFFLINE. SPLIT HAS NO DEVICE TRIAL PERMISSION.'
-      - name: Archive distinctly marked split derivative for REVIEW ONLY
-        uses: actions/upload-artifact@v4
-        with:
-          name: v18E11-SPLIT-REVIEW-DO-NOT-FLASH
-          path: ${{ runner.temp }}/e11-derived-split-review-only/*
-          retention-days: 7
-          if-no-files-found: error
+      # Deliberately do not publish the rejected FAP-split binary:
+      # the real OLD Manifest removes EXITFIX and the NEW split Manifest
+      # still declares a now-absent FAP. The temporary package exists
+      # only in the ephemeral CI runner for protocol/integrity comparison.
       - name: Boundary declaration
         run: |
           echo 'NO DEVICE ACCESS, NO USB, NO FLASH, NO FAP INSTALL, NO REPAIR, NO RESTORE, NO RELEASE.'
+          echo 'Split review derivative is NOT uploaded as a downloadable artifact.'
+          echo 'It contains a stale FAP entry in the packed new resource Manifest.'
