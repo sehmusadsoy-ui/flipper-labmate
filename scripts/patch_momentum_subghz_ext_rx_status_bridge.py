@@ -27,6 +27,9 @@ def once(s,old,new):
 def patch(d,dh,ext_i,api):
     if MARK in d: raise ValueError("External status sidechannel already staged")
     d=once(d,
+        '#include "registry.h"\n',
+        '#include "registry.h"\n#include <string.h>\n')
+    d=once(d,
         """/* E11 cooperative SubGHz RX BUSY path; plugin interconnect ABI unchanged. */
 bool subghz_devices_try_start_async_rx(""",
         """/* E11 matched radio plugin v1 RX status sidechannel; ABI unchanged.
