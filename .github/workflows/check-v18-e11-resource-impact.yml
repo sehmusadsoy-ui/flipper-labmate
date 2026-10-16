@@ -8,6 +8,8 @@ on:
       - "scripts/audit_v18_e11_resource_impact.py"
       - "scripts/derive_v18_e11_split_review.py"
       - "tests/test_v18_e11_split_review.py"
+      - "scripts/audit_v18_e11_packed_manifest_integrity.py"
+      - "tests/test_v18_e11_packed_manifest_integrity.py"
       - "tests/test_v18_e11_resource_impact.py"
       - "scripts/check_v18_full_vs_mntm012.py"
       - "scripts/check_v18_full_update_bundle.py"
@@ -40,6 +42,7 @@ jobs:
           set -euo pipefail
           python3 -m unittest discover -v -s tests -p test_v18_e11_resource_impact.py
           python3 -m unittest discover -v -s tests -p test_v18_e11_split_review.py
+          python3 -m unittest discover -v -s tests -p test_v18_e11_packed_manifest_integrity.py
           python3 -m unittest discover -v -s tests -p test_v18_e11_recovery_readiness.py
           python3 scripts/audit_v18_e11_recovery_readiness.py
       - name: Fetch exact independently known official MNTM-012 rollback
@@ -110,6 +113,14 @@ jobs:
           print("Independent LabMate FAP is a separately checked review file.")
           print("DO NOT FLASH / NO ACTUAL DEVICE VALIDATION")
           PY
+      - name: Verify original and split resource Manifest against packed bytes (NO INSTALL)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/audit_v18_e11_packed_manifest_integrity.py \
+            --full-updater "$RUNNER_TEMP/e11-risk/full/firmware-full-update.tgz" \
+            --split-updater "$RUNNER_TEMP/e11-derived-split-review-only/firmware-full-update-SPLIT-REVIEW-DO-NOT-FLASH.tgz"
+          echo 'Paired archives checked OFFLINE. SPLIT HAS NO DEVICE TRIAL PERMISSION.'
       - name: Archive distinctly marked split derivative for REVIEW ONLY
         uses: actions/upload-artifact@v4
         with:
