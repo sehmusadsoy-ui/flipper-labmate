@@ -18,6 +18,10 @@ HEADER=r"""
 #include <stddef.h>
 #include <string.h>
 #include <stdio.h>
+#include <pthread.h>
+static pthread_mutex_t critical_mutex=PTHREAD_MUTEX_INITIALIZER;
+#define FURI_CRITICAL_ENTER() do {assert(!pthread_mutex_lock(&critical_mutex));} while(0)
+#define FURI_CRITICAL_EXIT() do {assert(!pthread_mutex_unlock(&critical_mutex));} while(0)
 #define furi_check(x) assert(x)
 #define FURI_LOG_W(...) ((void)0)
 typedef void (*SubGhzDeviceCC1101ExtCaptureCallback)(bool,uint32_t,void*);
