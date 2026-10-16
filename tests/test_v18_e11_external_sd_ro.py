@@ -7,7 +7,7 @@ import sys
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from survey_v18_e11_external_sd_ro import survey
+from survey_v18_e11_external_sd_ro import survey, parse_scope_listing
 
 
 class FakeRead:
@@ -72,10 +72,45 @@ class ExternalSDTopOnly(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "storage error"):
             survey(fake)
 
-    def test_unexpected_unicode_refused(self):
-        fake = Fake((self.root(), b"[D] Tools\r\n", b"[D] caf\xe9"))
-        with self.assertRaises(UnicodeError):
-            survey(fake)
+    def test_opaque_other_app_names_accept_spaces_dots_and_non_ascii(self):
+        # Other-app names are never used in commands or printed.
+        sample = (b"\t[D] Sensor Tools\r\n"
+                  b"\t[D] archive..old\r\n"
+                  b"\t[D] caf\xc3\xa9\r\n"
+                  b"\t[D] legacy\xe9\r\n"
+                  b"\t[F] my config 2026.ini 116b\r\n")
+        self.assertEqual(len(parse_scope_listing(sample)), 5)
+        fake = Fake((self.root(), sample, b"\t[D] labmate\r\n" + sample))
+        result = survey(fake)
+        self.assertEqual(result["apps_data_OTHER_directories"], 4)
+        self.assertEqual(result["apps_data_top_level_files"], 1)
+        self.assertEqual(result["apps_data_labmate_folder_present"], "YES")
+        for private in ("Sensor Tools", "2026.ini", "archive..old", "legacy"):
+            self.assertNotIn(private, str(result))
+
+    def test_opaque_parser_requires_real_byte_suffix(self):
+        self.assertEqual(
+            parse_scope_listing(b"\t[D] apps\r\n\t[F] file with spaces 116b\r\n"),
+            [("directory", b"apps", 0), ("file", b"file with spaces", 116)]
+        )
+        for item in (
+            b"[F] name 116", b"[F] name 116BB", b"[F] name 4294967296b",
+            b"[F] name NaNb", b"[F] name 8kb", b"[D] ",
+        ):
+            with self.subTest(item=item), self.assertRaises(ValueError):
+                parse_scope_listing(item)
+
+    def test_opaque_parser_rejects_controls_and_separators(self):
+        for item in (
+            b"[D] ..", b"[D] ../evil", b"[D] C:\\evil",
+            b"[D] x\x00y", b"[D] x\x1fy", b"[D] x/y",
+            b"[D] .", b"[D] " + b"n" * 256,
+        ):
+            with self.subTest(item=item), self.assertRaises(ValueError):
+                parse_scope_listing(item)
+
+    def test_empty_tabbed_cli_marker(self):
+        self.assertEqual(parse_scope_listing(b"\tEmpty\r\n"), [])
 
     def test_case_collision_rejected(self):
         fake = Fake((self.root(), b"Empty", b"[D] js_app\r\n[D] JS_APP"))
@@ -84,7 +119,7 @@ class ExternalSDTopOnly(unittest.TestCase):
 
     def test_malformed_traversal_rejected(self):
         fake = Fake((self.root(), b"Empty", b"[D] ../evil"))
-        with self.assertRaisesRegex(ValueError, "unsafe"):
+        with self.assertRaisesRegex(ValueError, "malformed opaque"):
             survey(fake)
 
     def test_no_serial_followup_after_malformed_response(self):
