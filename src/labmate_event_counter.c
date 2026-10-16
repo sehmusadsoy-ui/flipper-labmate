@@ -15,6 +15,10 @@ void labmate_event_counter_start(LabMateApp* app) {
      * count/time until UP RESET or a new Counter tool entry. */
     if(!labmate_frequency_tim2_configure()) {
         app->capture_blocked = true;
+        /* BUSY if a legacy native timer is already active; ERR if the
+         * fresh lease could not be released and must remain reserved.
+         */
+        if(labmate_frequency_tim2_lease_pending()) app->capture_release_fault = true;
         return;
     }
     app->counter_last_hw = 0U;
