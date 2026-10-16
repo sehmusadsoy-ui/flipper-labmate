@@ -350,3 +350,33 @@ and About's final position. Do not move About into COMM.
 **Do not label research UI, decoder, CI or arbitrary hash as a
 physically functional device.** Do not promise a solution to firmware
 API restrictions before verifying the actual supported interface.
+
+
+
+## 2026-10-16 — v1.6/E11 carry-over: supported firmware software gate accepted
+
+A newer pinned Momentum source candidate with all E11 cooperative native
+owners, original-C CC1101 RX/TX/allocate/free fault paths and the one
+integrated LabMate FAP has **real GitHub Actions PASS evidence**:
+
+- RX original-C [#38955843600](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38955843600)
+  and TX original-C [#38955874130](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38955874130).
+- Exact tested LabMate source `349d717f6cde7d1a117edea0db0058e9f2a5748f`;
+  full no-flash Momentum + one FAP + JS + MNTM-012 updater
+  [#38955881504](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38955881504)
+  **SUCCESS**.
+- Repository source-evidence guard after the documentation-only
+  sign-off [#38957712801](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38957712801)
+  **SUCCESS**.
+
+**Disposition:** the **documented supported/default pinned native E11
+software scope** is accepted; see
+[E11_SUPPORTED_SOFTWARE_SIGNOFF_2026-10-16.md](E11_SUPPORTED_SOFTWARE_SIGNOFF_2026-10-16.md).
+The much stronger guarantee of *all* possible firmware/external
+plugins/GPIO/dynamic LL clients remains **NOT PROVEN**. In particular,
+legacy Sub-GHz v1 `void` plugin BUSY reports remain `UNVERIFIED`,
+unleased optional configurations are not supported, and fixture-driven
+on-device coexistence and exceptional recovery are `HARDWARE PENDING`.
+This checkpoint neither rewrites the older milestone-history rows nor
+authorizes v1.8 Stable replacement, a new FAP variant, or v1.9.
+The final integrated v1.8 device/release checklist still applies.
