@@ -35,6 +35,37 @@ and firmware authorization. The script fail-closes unrecognized
 listings, missing standard roots, path tricks and collisions,
 unbounded responses and timeouts.
 
+**Read-only parser safety correction (after first actual device attempt):**
+The user executed the original COM7 scope survey and received
+`E11 EXTERNAL SD SURVEY REFUSED - NO DEVICE WRITE:
+unsafe/ambiguous SD member name`. No scope counts were produced,
+and no SD data was changed. The earlier survey incorrectly reused
+the strict LabMate *backup filename* parser on all other apps,
+which may have names containing spaces, multiple dots or
+non-ASCII raw bytes. The exact offending private name is
+**not known** and should not be printed or guessed.
+
+The corrected **top-level-count-only** parser uses opaque raw bytes
+for names (no Unicode decoding, path building or subsequent commands
+based on names), recognizes only the exact Momentum
+`[D] name` and `[F] name <decimal>b` CLI grammar, and
+compares only the public fixed literal roots `apps`,
+`apps_data`, `labmate` in memory. It continues to refuse malformed
+CLI output, unsupported byte counts, separators/control bytes, names
+over 255 bytes, or ASCII-case collisions, with sanitized errors
+naming **only** the hardcoded directory that failed. This approach
+preserves strict LabMate backup path validation separately.
+No app data, private names or file contents are printed.
+
+**Corrected verified CI after the parser update:**
+[Windows #38978962924](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38978962924)
+**SUCCESS** — 14 new survey tests including Unicode/space/dots and
+negative privacy/path tests, plus 19 existing read-only listing
+tests (one NTFS fixture skip) and 9 PC snapshot tests.
+[Integrated Linux host #38978962925](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38978962925)
+**SUCCESS** at pinned source
+`1da7dab93cfd72d94b243c3f5732ded9f8e26e5d`.
+
 **Host tests, NOT real operator SD evidence:**
 [Windows synthetic no-device workflow #38978402213](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38978402213)
 **SUCCESS** with 10 mock survey tests, alongside existing 19 listing
@@ -42,7 +73,7 @@ and 9 snapshot mocks; [integrated host
 #38978387190](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38978387190)
 **SUCCESS** on the same new survey model. No private SD card was read
 by CI. New script/test pin is
-`f63938bf0af57495289e037dea942c12f9ff39fd`.
+`1da7dab93cfd72d94b243c3f5732ded9f8e26e5d`.
 
 ## Operator procedure — not yet executed
 
@@ -55,7 +86,7 @@ local files are overwritten.
 ```powershell
 & {
     $ErrorActionPreference = 'Stop'
-    $source = 'f63938bf0af57495289e037dea942c12f9ff39fd'
+    $source = '1da7dab93cfd72d94b243c3f5732ded9f8e26e5d'
     $momentum = 'd3f89dfe2ef6b01839201598e9be1590cba80322'
     $work = Join-Path $env:TEMP ('LabMate-E11-SDScope-' + [guid]::NewGuid().ToString('N'))
     $transport = Join-Path $work 'flipper'
