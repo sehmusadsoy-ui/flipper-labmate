@@ -36,10 +36,10 @@ enum {
     FuriHalLeaseDma1Ch4 = (1U << 16),
     FuriHalLeaseDma1Ch5 = (1U << 17),
     FuriHalLeaseDmamuxReq0 = (1U << 18),
-    FuriHalLeaseExti3 = (1U << 19),
-    FuriHalLeaseExti6 = (1U << 20),
-    FuriHalLeaseExti7 = (1U << 21),
 };
+/* EXTI3, EXTI6, EXTI7 now come from the shared E11 primitive:
+ * the native JS GPIO adapter claims those same line aliases.
+ */
 #define FURI_HAL_LEASE_PULSE_CORE (FuriHalLeaseTim2 | FuriHalLeaseDma1Ch4 | FuriHalLeaseDma1Ch5 | FuriHalLeaseDmamuxReq0)
 /* Nonconnector pins keep the historical native reader capability.
  * CORE owns timer/DMA only: their GPIO/EXTI paths remain unarbitrated.
@@ -233,8 +233,10 @@ def main() -> int:
         if dirty!=EXPECTED_DIRTY:
             raise ValueError("Unexpected firmware prepatch state: "+repr(sorted(dirty)))
         base=(root/HEADER).read_text()
-        if "FURI_HAL_RESOURCE_LEASE_API_V1" not in base:
-            raise ValueError("firmware lease API prerequisite absent")
+        if "FURI_HAL_RESOURCE_LEASE_API_V1" not in base or (
+            "FuriHalLeaseExti3 = (1U << 19)" not in base) or (
+            "FURI_HAL_LEASE_JS_EXTI3" not in base):
+            raise ValueError("firmware shared EXTI alias prerequisite absent")
         if "LabMate E11 native JS GPIO connector-owner contract." not in (
             root/"applications/system/js_app/modules/js_gpio.c").read_text():
             raise ValueError("native JS prerequisite absent")
