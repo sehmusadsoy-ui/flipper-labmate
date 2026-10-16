@@ -41,7 +41,9 @@ static bool subghz_device_cc1101_ext_try_start_async_rx(
     SubGhzDeviceCC1101ExtCaptureCallback cb,void* ctx) {
  (void)cb;(void)ctx;plugin_calls++;return plugin_result;
 }
-static const SubGhzDeviceInterconnect builtin_interconnect={NULL};
+static void builtin_legacy_start(void* cb,void* ctx) {(void)cb;(void)ctx;}
+static const SubGhzDeviceInterconnect builtin_interconnect={builtin_legacy_start};
+static const SubGhzDeviceInterconnect disabled_interconnect={NULL};
 const SubGhzDevice subghz_device_cc1101_int={"cc1101_int",&builtin_interconnect};
 """
 RUN=r"""
@@ -70,7 +72,7 @@ static const SubGhzDeviceInterconnect malicious_interconnect={malicious_start};
 static const SubGhzDevice forged_device={"cc1101_ext",&malicious_interconnect};
 static const SubGhzDeviceInterconnect nested_interconnect={nested_start};
 static const SubGhzDevice nested_device={"cc1101_ext",&nested_interconnect};
-static const SubGhzDevice disabled_device={"disabled",&builtin_interconnect};
+static const SubGhzDevice disabled_device={"disabled",&disabled_interconnect};
 int main(void){
  internal_result=false;
  assert(!subghz_devices_try_start_async_rx(&subghz_device_cc1101_int,NULL,NULL));
