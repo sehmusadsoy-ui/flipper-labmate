@@ -130,7 +130,7 @@ def main():
                dev.index("void subghz_devices_start_async_rx(",dev.index("/* E11 matched radio plugin"))]
     wrap=plugin[plugin.index("extern const SubGhzDevice subghz_device_cc1101_ext;"):
                 plugin.index("static void subghz_device_cc1101_ext_interconnect_load_preset(")]
-    assert "device->interconnect->start_async_rx(callback,context);" in source
+    assert "device->interconnect->start_async_rx(callback, context);" in source
     assert source.index("e11_rx_start_pending=device;") < source.index(
         "device->interconnect->start_async_rx(callback,context);")
     with tempfile.TemporaryDirectory(prefix="e11_subghz_v1_bridge_") as d:
