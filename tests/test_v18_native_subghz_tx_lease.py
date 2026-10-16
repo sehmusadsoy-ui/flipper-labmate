@@ -20,7 +20,7 @@ STUB=r"""
 #define FURI_CRITICAL_ENTER() ((void)0)
 #define FURI_CRITICAL_EXIT() ((void)0)
 #define TAG "SubGHz"
-#define FURI_LOG_D(...) ((void)0)
+#define FURI_LOG_D(tag,fmt,...) ((void)printf(fmt, __VA_ARGS__))
 #define FURI_LOG_W(...) ((void)0)
 enum { FuriHalBusTIM2=2, SubGhzStateIdle=1, SubGhzStateAsyncTx=2,
  SubGhzRegulationTxRx=1,SubGhzRegulationOnlyRx=0 };
@@ -48,6 +48,7 @@ static SimTimer timer2;
 #define TIM2 (&timer2)
 #define DMA2 2
 #define SUBGHZ_DMA 2
+#define LL_DMA_CHANNEL_1 1
 #define SUBGHZ_DMA_CH1_CHANNEL 1
 #define SUBGHZ_DMA_CH1_DEF 2,1
 #define SUBGHZ_DMA_CH2_DEF 2,2
