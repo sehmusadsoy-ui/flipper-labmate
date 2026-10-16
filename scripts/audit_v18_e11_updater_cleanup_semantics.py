@@ -35,10 +35,10 @@ def _function(src: str, signature: str) -> str:
 
 
 def audit(backup_worker: str, flasher_worker: str) -> dict[str, str]:
-    cleanup = _function(backup_worker, "static void update_task_cleanup_resources(")
-    post = _function(backup_worker, "static bool update_task_post_update(")
-    flash = _function(flasher_worker, "int32_t update_task_worker_flash_writer(")
-    before = _function(backup_worker, "static bool update_task_pre_update(")
+    cleanup = re.sub(r"\s+", " ", _function(backup_worker, "static void update_task_cleanup_resources("))
+    post = re.sub(r"\s+", " ", _function(backup_worker, "static bool update_task_post_update("))
+    flash = re.sub(r"\s+", " ", _function(flasher_worker, "int32_t update_task_worker_flash_writer("))
+    before = re.sub(r"\s+", " ", _function(backup_worker, "static bool update_task_pre_update("))
 
     for text in (
         'resource_manifest_reader_open(manifest_reader, EXT_PATH("Manifest"))',
