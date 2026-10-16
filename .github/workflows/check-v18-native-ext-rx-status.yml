@@ -51,6 +51,7 @@ on:
       - "tests/test_v18_native_js_gpio_callback_cleanup.py"
       - "scripts/patch_momentum_subghz_ext_rx_status_bridge.py"
       - "tests/test_v18_subghz_ext_rx_status_bridge.py"
+      - "scripts/check_v18_e11_direct_ll_boundary.py"
       - ".github/workflows/check-v18-native-ext-rx-status.yml"
   workflow_dispatch:
 permissions:
@@ -164,4 +165,5 @@ jobs:
           python3 labmate/tests/test_v18_native_imu_fifo_exti_lease.py momentum-src
           python3 labmate/tests/test_v18_native_js_gpio_callback_cleanup.py momentum-src
           python3 labmate/tests/test_v18_subghz_ext_rx_status_bridge.py momentum-src
+          python3 labmate/scripts/check_v18_e11_direct_ll_boundary.py momentum-src
           echo "E11 matched external CC1101 RX BUSY signal C PASS; old unknown v1 remains unverified"
