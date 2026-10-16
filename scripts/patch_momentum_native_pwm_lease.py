@@ -196,10 +196,25 @@ def main() -> int:
             raise ValueError("E11 patched firmware masks missing")
         source_file = root / TARGET
         updated = patch_source(source_file.read_text(encoding="utf-8"))
+        # The app must never assume an unrelated firmware with only
+        # the experimental lease table has the cooperative native PWM
+        # HAL: explicitly advertise the patched service at compile time.
+        resource_file = root / RESOURCE
+        if "FURI_HAL_PWM_NATIVE_LEASE_API_V1" in resource:
+            raise ValueError("Native PWM owner capability already present")
+        if resource.count("#define FURI_HAL_RESOURCE_LEASE_API_V1 1") != 1:
+            raise ValueError("Missing exact firmware resource ABI anchor")
+        resource_updated = resource.replace(
+            "#define FURI_HAL_RESOURCE_LEASE_API_V1 1",
+            "#define FURI_HAL_RESOURCE_LEASE_API_V1 1\\n"
+            "#define FURI_HAL_PWM_NATIVE_LEASE_API_V1 1",
+            1,
+        )
         print("E11 NATIVE PWM EXACT-MOMENTUM SOURCE PATCH APPLICABLE PASS")
         if args.apply:
+            resource_file.write_text(resource_updated, encoding="utf-8")
             source_file.write_text(updated, encoding="utf-8")
-            print("PATCHED native PWM HAL: TIM1/PA7 + PA4 LPTIM2; no device writes")
+            print("PATCHED native PWM HAL+capability: TIM1/PA7 + PA4 LPTIM2; no device writes")
         else:
             print("READ-ONLY PREFLIGHT: no files modified")
         return 0
