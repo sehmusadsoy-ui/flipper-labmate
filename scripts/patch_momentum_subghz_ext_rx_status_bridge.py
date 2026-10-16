@@ -18,7 +18,7 @@ from patch_momentum_native_ext_cc1101_rx_lease import EXT
 PIN="d3f89dfe2ef6b01839201598e9be1590cba80322"
 EXT_I="applications/drivers/subghz/cc1101_ext/cc1101_ext_interconnect.c"
 EXPECTED=JS_PRE|{JS}
-MARK="/* E11 matched radio plugin v1 RX status sidechannel; ABI unchanged. */"
+MARK="/* E11 matched radio plugin v1 RX status sidechannel; ABI unchanged."
 
 def once(s,old,new):
     if s.count(old)!=1: raise ValueError("Pinned external radio status source anchor "+repr(old[:110]))
