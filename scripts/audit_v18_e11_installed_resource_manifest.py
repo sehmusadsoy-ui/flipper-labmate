@@ -28,7 +28,8 @@ MAX_MANIFEST_BYTES = 4 * 1024 * 1024
 MAX_ENTRIES = 30000
 CHUNK = 2048
 FILE_RE = re.compile(rb"F:([0-9a-fA-F]{32}):([0-9]{1,10}):(.+)")
-META_RE = re.compile(rb"[VT]:(.{1,256})")
+VERSION_RE = re.compile(rb"V:([0-9]{1,4})")
+TIMESTAMP_RE = re.compile(rb"T:([0-9]{1,16})")
 TARGET_FAP = b"apps/tools/labmate.fap"
 TARGET_DATA_PREFIX = b"apps_data/labmate/"
 MAX_NAME_BYTES = 700
@@ -55,7 +56,8 @@ def parse_old_manifest(data: bytes) -> dict[str, object]:
         raise ValueError("old resource Manifest absent, empty or oversized")
     files: set[bytes] = set()
     directories: set[bytes] = set()
-    meta = 0
+    version_seen = False
+    timestamp_seen = False
     total = 0
     for raw_line in data.splitlines():
         if not raw_line:
@@ -76,16 +78,22 @@ def parse_old_manifest(data: bytes) -> dict[str, object]:
             if normalized in files or normalized in directories:
                 raise ValueError("duplicate resource manifest directory")
             directories.add(normalized)
-        elif META_RE.fullmatch(raw_line):
-            meta += 1
+        elif (v := VERSION_RE.fullmatch(raw_line)) is not None:
+            if version_seen or int(v.group(1)) != 0:
+                raise ValueError("duplicate/unsupported resource manifest version")
+            version_seen = True
+        elif TIMESTAMP_RE.fullmatch(raw_line) is not None:
+            if timestamp_seen:
+                raise ValueError("duplicate resource manifest timestamp")
+            timestamp_seen = True
         else:
             raise ValueError("unrecognized old resource Manifest entry")
-    if not files or not directories or total < 10:
+    if not files or not directories or not version_seen or not timestamp_seen or total < 10:
         raise ValueError("implausible incomplete old firmware resource manifest")
     return {
         "old_manifest_resource_files": len(files),
         "old_manifest_directories": len(directories),
-        "old_manifest_metadata_lines": meta,
+        "old_manifest_metadata_lines": 2,
         "old_cleanup_lists_installed_labmate_fap": "YES" if TARGET_FAP in files else "NO",
         "old_cleanup_labmate_data_files": sum(
             p.startswith(TARGET_DATA_PREFIX) for p in files
@@ -157,9 +165,9 @@ def main() -> int:
         with storage as device:
             blob, digest = read_live_manifest(device)
         result = parse_old_manifest(blob)
-    except (OSError, ValueError, RuntimeError, UnicodeError,
-            TimeoutError, ImportError) as error:
-        # Do not print a private file path or a raw CLI response.
+    except Exception as error:
+        # Pinned transport may raise its own Exception subclass; fail closed.
+        # Never print a private filename or raw CLI output.
         reason = str(error) if type(error) is ValueError else type(error).__name__
         p.exit(1, "E11 LIVE MANIFEST AUDIT REFUSED - NO WRITE: " + reason + "\n")
     for name, value in result.items():
