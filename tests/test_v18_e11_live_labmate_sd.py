@@ -6,11 +6,12 @@ import io
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from audit_v18_e11_live_labmate_sd import (
-    parse_listing, remote_inventory, local_inventory, compare_backups,
+    parse_listing, remote_inventory, local_inventory, compare_backups, DeadlineRead,
 )
 
 class FakeRead:
@@ -35,11 +36,40 @@ class FakeStorage:
         self.commands.append('storage md5 "' + path + '"')
         return self.digests[path]
 
+class FakeSerialStream:
+    def __init__(self, payload: bytes = b""):
+        self.pending = bytearray(payload)
+    @property
+    def in_waiting(self):
+        return len(self.pending)
+    def read(self, count):
+        data = bytes(self.pending[:count])
+        del self.pending[:count]
+        return data
+
+
 class TestE11LiveLabMateSD(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name)
+
+    def test_bounded_cli_reader_retains_pipelined_responses(self):
+        stream = FakeSerialStream(b"listing\\r\\n>: ".replace(b"\\r", b"\r").replace(b"\\n", b"\n"))
+        read = DeadlineRead(stream, timeout_seconds=2)
+        self.assertEqual(read.until("\r\n"), b"listing")
+        self.assertEqual(read.until(">: "), b"")
+
+    def test_bounded_cli_reader_times_out_without_data(self):
+        reader = DeadlineRead(FakeSerialStream(), timeout_seconds=2)
+        with patch("audit_v18_e11_live_labmate_sd.time.monotonic", side_effect=[0.0, 2.0]):
+            with self.assertRaises(TimeoutError):
+                reader.until(">: ")
+
+    def test_bounded_cli_reader_rejects_oversized_response(self):
+        reader = DeadlineRead(FakeSerialStream(b"a" * 262145), timeout_seconds=2)
+        with self.assertRaisesRegex(ValueError, "bounded buffer"):
+            reader.until(">: ")
 
     def test_exact_parity_with_read_only_flipper_commands(self):
         src = self.root / "copy"
