@@ -102,9 +102,9 @@ void subghz_devices_start_async_rx(const SubGhzDevice* device, void* callback, v
     subghz_txrx_speaker_on(instance);
     subghz_worker_start(instance->worker);""")
     api=once(api,
-        'Function,-,subghz_device_cc1101_ext_ep,const FlipperAppPluginDescriptor*,\\n',
-        'Function,-,subghz_device_cc1101_ext_ep,const FlipperAppPluginDescriptor*,\\n'
-        'Function,+,subghz_device_cc1101_int_interconnect_try_start_async_rx,_Bool,"void*, void*"\\n')
+        'Function,-,subghz_device_cc1101_ext_ep,const FlipperAppPluginDescriptor*,\n',
+        'Function,-,subghz_device_cc1101_ext_ep,const FlipperAppPluginDescriptor*,\n'
+        'Function,+,subghz_device_cc1101_int_interconnect_try_start_async_rx,_Bool,"void*, void*"\n')
     api=once(api,
         'Function,+,subghz_devices_start_async_rx,void,"const SubGhzDevice*, void*, void*"\n',
         'Function,+,subghz_devices_start_async_rx,void,"const SubGhzDevice*, void*, void*"\n'
