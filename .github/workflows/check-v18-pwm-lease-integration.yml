@@ -10,11 +10,13 @@ on:
       - "src/labmate_internal.h"
       - "src/labmate_ui_screens.c"
       - "tests/test_v18_pwm_lease_integration.py"
+      - "tests/test_v18_pwm_native_joint.py"
       - "tests/test_v18_monitor_pa7_protection.py"
       - ".github/workflows/check-v18-pwm-lease-integration.yml"
       - "scripts/patch_momentum_resource_lease.py"
       - "scripts/patch_momentum_gpio_tryadd.py"
       - "scripts/patch_momentum_i2c_timeout.py"
+      - "scripts/patch_momentum_native_pwm_lease.py"
   workflow_dispatch:
 
 permissions:
@@ -57,6 +59,8 @@ jobs:
           python3 labmate/scripts/patch_momentum_i2c_timeout.py momentum-src --apply
           python3 labmate/scripts/patch_momentum_resource_lease.py momentum-src --allow-timed-i2c --apply
           python3 labmate/scripts/patch_momentum_gpio_tryadd.py momentum-src --allow-prepatched --apply
+          python3 labmate/scripts/patch_momentum_native_pwm_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_pwm_native_joint.py momentum-src
           git -C momentum-src diff --check
 
       - name: Stage one integrated LabMate production app
