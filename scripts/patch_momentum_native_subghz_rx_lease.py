@@ -49,10 +49,12 @@ def patch(h,r,s,pub,api):
         '    /* Do not switch debug GPIO identity during an owned RX session. */\n'
         '    if(e11_subghz_rx_handle || e11_subghz_rx_fault) return;\n'
         '    furi_hal_subghz.async_mirror_pin = pin;\n}')
-    # Define handle *before* setter. Cannot permit duplicate symbol after this stage.
+    # Define the helper after the global SubGHz object and before its
+    # first setter: the global type and object must be declared first.
     s=once(s,
-        '#define TAG "FuriHalSubGhz"\n',
-        '''#define TAG "FuriHalSubGhz"
+        '    .bypass_region = false,\\n};\\n\\nint32_t furi_hal_subghz_get_rolling_counter_mult',
+        '''    .bypass_region = false,
+};
 
 /* E11 native SubGHz RX TIM2 cooperative owner. */
 static uint32_t e11_subghz_rx_handle;
@@ -78,7 +80,8 @@ static uint32_t e11_subghz_rx_mask_for_mirror(const GpioPin* mirror) {
     if(mirror==&gpio_ext_pb3) return FURI_HAL_LEASE_NATIVE_SUBGHZ_RX_MIRROR_PB3;
     return 0U;
 }
-''')
+
+int32_t furi_hal_subghz_get_rolling_counter_mult''')
     s=once(s,
         'static void furi_hal_subghz_capture_ISR(void* context) {\n    UNUSED(context);\n',
         'static void furi_hal_subghz_capture_ISR(void* context) {\n'
