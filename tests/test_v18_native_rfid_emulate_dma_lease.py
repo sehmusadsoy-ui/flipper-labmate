@@ -104,7 +104,7 @@ static void furi_hal_interrupt_set_isr(int irq,void(*isr)(void*),void* ctx) {
 #define LL_TIM_SetClockDivision(...) (++writes)
 #define LL_TIM_SetClockSource(...) (++writes)
 #define LL_TIM_ConfigETR(...) (++writes)
-#define LL_TIM_OC_Init(...) (++writes)
+#define LL_TIM_OC_Init(...) ((void)(&TIM_OC_InitStruct),++writes)
 #define LL_TIM_GenerateEvent_UPDATE(...) (++writes)
 #define LL_TIM_OC_SetPolarity(...) (++writes)
 #define LL_TIM_EnableDMAReq_UPDATE(...) (++writes)
@@ -113,7 +113,7 @@ static void furi_hal_interrupt_set_isr(int irq,void(*isr)(void*),void* ctx) {
 #define LL_TIM_SetCounter(...) (++writes)
 #define LL_TIM_EnableCounter(...) (++writes)
 #define LL_TIM_DisableCounter(...) (++writes)
-#define LL_DMA_Init(...) (++writes)
+#define LL_DMA_Init(...) ((void)(&dma_config),++writes)
 #define LL_DMA_EnableChannel dma_enable
 #define LL_DMA_DeInit dma_deinit
 #define LL_DMA_EnableIT_TC(...) (++writes)
