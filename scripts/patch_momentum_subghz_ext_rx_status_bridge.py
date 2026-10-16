@@ -72,7 +72,7 @@ bool subghz_devices_try_start_async_rx(""")
     e11_rx_start_pending=device;
     e11_rx_start_reported=false;
     e11_rx_start_result=false;
-    device->interconnect->start_async_rx(callback,context);
+    device->interconnect->start_async_rx(callback, context);
     const bool valid=e11_rx_start_reported;
     const bool accepted=e11_rx_start_result;
     e11_rx_start_pending=NULL;
