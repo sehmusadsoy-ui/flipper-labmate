@@ -51,10 +51,18 @@ TIM2 collision with Counter/PulseReader/DigitalSequence and
 unrelated TIM1 coexistence. Strict `-Werror -pedantic`.
 
 [Full matched Momentum firmware + LabMate FAP + JS plugin +
-updater CI #38891777756](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38891777756)
-was initiated against new RX source `15042024678e9432149f214f61e9008dfe644a10`.
-**Only a completed SUCCESS workflow permits a full-build PASS
-claim**; record exact hashes only from that job's logs.
+updater CI #38891777756](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38891777756):
+**SUCCESS**. Built from tested RX source `15042024678e9432149f214f61e9008dfe644a10`
+with only subsequent documentation changes. Exact native IR RX real-C
+3/3 host tests and firmware lease allocator PASS. Full Momentum
+firmware, single integrated LabMate FAP, native JS GPIO plugin,
+SD/updater resources, API/APPCHK and original official
+MNTM-012 radio/option-byte full-package comparison PASS.
+All CI-only; **DO NOT FLASH**.
+
+- `firmware.dfu` SHA256: `0b38fddbf9743c2f12b8d9ffdf6c83986cee17a9ad0a470c23f9f352729bbcb9`
+- Matched `labmate.fap` SHA256: `09992e2d0239d5b3e3559814c86ad2948e87b0ca14c3bdf6cf0f322ba6af78c0`
+- Review-only full firmware/FAP/JS bundle artifact ID: `12042467473` (not a release or physical validation).
 
 ## High-priority work NOT finished
 
