@@ -11,7 +11,7 @@ from unittest.mock import patch
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from audit_v18_e11_live_labmate_sd import (
-    parse_listing, remote_inventory, local_inventory, compare_backups, DeadlineRead,
+    parse_listing, remote_inventory, local_inventory, compare_backups, DeadlineRead, verify_transport_origin,
 )
 
 class FakeRead:
@@ -53,6 +53,18 @@ class TestE11LiveLabMateSD(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name)
+
+    def test_refuse_wrong_imported_flipper_storage_code(self):
+        trusted = self.root / "scripts"
+        (trusted / "flipper").mkdir(parents=True)
+        genuine = trusted / "flipper" / "storage.py"
+        genuine.write_text("trusted mock", encoding="utf-8")
+        verify_transport_origin(str(genuine), trusted)
+        fake = self.root / "other-flipper" / "storage.py"
+        fake.parent.mkdir()
+        fake.write_text("wrong module", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "wrong Flipper"):
+            verify_transport_origin(str(fake), trusted)
 
     def test_bounded_cli_reader_retains_pipelined_responses(self):
         stream = FakeSerialStream(b"listing\\r\\n>: ".replace(b"\\r", b"\r").replace(b"\\n", b"\n"))
