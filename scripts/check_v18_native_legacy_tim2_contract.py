@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """E11 legacy-native TIM2 risk contract; fail on changed pinned source footprint.
 
-Intentionally DOES NOT patch RFID/SubGHz/digital_sequence: their public APIs
-and state machines must not silently skip void-return timer starts. This is
-a source-verified *negative safety gate*, NOT global native arbitration.
+Audit only: DigitalSequence and RFID read TIM1 are explicitly
+reviewed cooperating native owners; other RFID modes and SubGHz
+remain native/direct HAL bypasses. No silent void-start veto.
+This is a negative safety gate, NOT firmware-global arbitration.
 """
 from __future__ import annotations
 import argparse
@@ -66,7 +67,7 @@ def main()->int:
         changed=subprocess.check_output(
             ["git","-C",str(root),"diff","--name-only","HEAD"],text=True).splitlines()
         for role,path in ROOTS.items():
-            if path in changed and role!="digital":
+            if path in changed and role not in ("digital","rfid"):
                 raise ValueError(f"Unreviewed critical native driver changed: {path}")
         for role,path in ROOTS.items():
             src=(root/path).read_text(encoding="utf-8")
@@ -83,6 +84,24 @@ def main()->int:
                     "furi_hal_gpio_init(sequence->gpio, GpioModeOutputPushPull"):
                     raise ValueError("digital_sequence claims AFTER GPIO changes")
                 print("E11 NATIVE DIGITAL: TIM2/DMA cooperative lifecycle SOURCE VERIFIED")
+            elif role=="rfid" and path in changed:
+                if ("/* E11 native RFID read TIM1 owner. */" not in src or
+                    "bool furi_hal_rfid_tim_read_try_start(" not in src or
+                    "furi_hal_rfid_tim_read_stop(void)" not in src or
+                    src.count("furi_hal_resource_lease_try_acquire(")!=1):
+                    raise ValueError("RFID source changes exceed one reviewed READ TIM1 owner")
+                read=src[src.index("bool furi_hal_rfid_tim_read_try_start("):
+                         src.index("static void furi_hal_rfid_tim_emulate(void)")]
+                if (read.index("furi_hal_resource_lease_try_acquire(") >
+                    read.index("furi_hal_rfid_pins_read();")):
+                    raise ValueError("RFID READ claim occurs after GPIO mutation")
+                if ("if(!e11_rfid_read_ready()) return;" not in src or
+                    "e11_rfid_read_fault=true;" not in src or
+                    "furi_hal_bus_enable(RFID_CAPTURE_TIM_BUS)" not in src or
+                    "furi_hal_bus_enable(FURI_HAL_RFID_EMULATE_TIMER_BUS)" not in src or
+                    "furi_hal_bus_enable(FURI_HAL_RFID_FIELD_COUNTER_TIMER_BUS)" not in src):
+                    raise ValueError("RFID read guard or still-unmigrated modes changed")
+                print("E11 RFID READ TIM1 cooperative SOURCE VERIFIED; capture/emulate/field UNCOORDINATED")
             else:
                 if "furi_hal_resource_lease_try_acquire(" in src:
                     raise ValueError(f"{role}: unreviewed native lease migration")
