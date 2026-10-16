@@ -17,8 +17,8 @@ the pinned original sources rather than building a separate FAP:
   The pinned internal iButton GPIO is `gpio_ibutton` = PB14.
   This stage explicitly **refuses arbitrary pin choices** (future
   expansion needs a separate verified per-pin/EXTI lease).
-- Adds `furi_hal_gpio_try_add_int_callback` and
-  `furi_hal_gpio_try_remove_int_callback`. Each checks the
+- Reuses the existing E11.1c `furi_hal_gpio_try_add_int_callback` and
+  adds a complementary `furi_hal_gpio_try_remove_int_callback`. Both check the
   existing callback slot under the GPIO critical section. If another
   callback is registered, a native OneWire START **cannot overwrite it
   or crash via the legacy furi_check assertion**; denied callback
@@ -55,9 +55,7 @@ not rewritten substitutes. Cases cover:
   use-after-free); original firmware allocator refuses duplicate or
   wrong-mask claim release and preserves separate EXTI2 alias.
 
-[Matched full Momentum firmware + one integrated LabMate FAP + native
-JS GPIO + updater/policy gate #38915167375](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38915167375)
-requires explicit SUCCESS before declaring this particular software
+The first combined full build [#38915167375](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38915167375) caught duplicate E11.1c TRY-ADD declarations and correctly FAILED. The patch was corrected to reuse the existing tested TRY-ADD; the follow-up [#38915550293](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38915550293) requires explicit SUCCESS before declaring this particular software
 build integrated. Host CI by itself does **not** approve it.
 
 ## Still OPEN
