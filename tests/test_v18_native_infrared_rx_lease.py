@@ -44,6 +44,7 @@ static TIM_TypeDef tim2;
 #define LL_TIM_ICPSC_DIV1 1
 #define LL_TIM_OCMODE_ACTIVE 1
 #define TIM_CCMR1_CC1S 1
+#define TIM_CCMR1_CC2S 2
 #define UNUSED(x) (void)(x)
 #define furi_check(x) assert(x)
 #define FURI_CRITICAL_ENTER() ((void)0)
@@ -110,7 +111,7 @@ void furi_crash(void) {abort();}
 #define LL_TIM_CC_EnableChannel(...) (++writes)
 #define LL_TIM_SetCounter(...) (++writes)
 #define LL_TIM_EnableCounter(...) (++writes)
-#define LL_TIM_OC_SetCompareCH3(...) (++writes)
+#define LL_TIM_OC_SetCompareCH3(timer, compare) ((void)(timer),(void)(compare),++writes)
 #define LL_TIM_OC_SetMode(...) (++writes)
 #define LL_TIM_EnableIT_CC3(...) (++writes)
 #define LL_TIM_IsActiveFlag_CC1(...) 0
