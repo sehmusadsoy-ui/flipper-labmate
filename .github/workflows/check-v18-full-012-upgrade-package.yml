@@ -16,6 +16,8 @@ on:
       - "scripts/patch_momentum_native_js_gpio_lease.py"
       - "tests/test_v18_native_js_gpio_lease.py"
       - "scripts/patch_momentum_native_pulse_reader_lease.py"
+      - "scripts/patch_momentum_native_digital_sequence_lease.py"
+      - "tests/test_v18_native_digital_sequence_lease.py"
       - "tests/test_v18_native_pulse_reader_lease.py"
       - "tests/test_v18_native_pulse_lease_firmware.py"
       - "tests/test_v18_tim2_lease_integration.py"
@@ -94,6 +96,9 @@ jobs:
           python3 labmate/scripts/patch_momentum_native_pulse_reader_lease.py momentum-src --apply
           python3 labmate/tests/test_v18_native_pulse_reader_lease.py momentum-src
           python3 labmate/tests/test_v18_native_pulse_lease_firmware.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_digital_sequence_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_digital_sequence_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_digital_sequence_lease.py momentum-src
           python3 labmate/tests/test_v18_tim2_lease_integration.py
           python3 labmate/scripts/check_v18_native_legacy_tim2_contract.py momentum-src labmate
           git -C momentum-src diff --check
@@ -184,6 +189,7 @@ jobs:
           printf 'LabMate commit: %s\n' "$(git -C labmate rev-parse HEAD)" > dev-full-candidate/PROVENANCE.txt
           printf 'E11 firmware diff SHA256: %s\n' "$(git -C momentum-src diff -- targets/f7/furi_hal targets/furi_hal_include targets/f7/api_symbols.csv | sha256sum | cut -d ' ' -f 1)" >> dev-full-candidate/PROVENANCE.txt
           printf 'Native JS GPIO plugin source: applications/system/js_app/modules/js_gpio.c (E11 patched)\n' >> dev-full-candidate/PROVENANCE.txt
+          printf 'Native digital sequence source: lib/digital_signal/digital_sequence.c (E11 patched)\n' >> dev-full-candidate/PROVENANCE.txt
           printf 'Momentum base: %s\n' "$(git -C momentum-src rev-parse HEAD)" >> dev-full-candidate/PROVENANCE.txt
           printf 'Installed Momentum012 source: %s\n' "$(git -C momentum-012 rev-parse HEAD)" >> dev-full-candidate/PROVENANCE.txt
           printf 'Actions run: %s\n' "$GITHUB_RUN_ID" >> dev-full-candidate/PROVENANCE.txt
