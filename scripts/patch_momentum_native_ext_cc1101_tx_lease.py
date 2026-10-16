@@ -32,6 +32,16 @@ def patch(s):
         "static bool e11_ext_rx_fault;\n"
         "static uint32_t e11_ext_tx_owner;\n"
         "static bool e11_ext_tx_fault;\n")
+    # An RX-owned, RX-faulted, TX-owned or TX-faulted external radio
+    # cannot be allocated a second time or resume behind an old context.
+    s=one(s,
+        """    if(subghz_device_cc1101_ext || e11_ext_rx_owner || e11_ext_rx_fault)
+        return false;
+    subghz_device_cc1101_ext = malloc(sizeof(SubGhzDeviceCC1101Ext));""",
+        """    if(subghz_device_cc1101_ext || e11_ext_rx_owner || e11_ext_rx_fault ||
+       e11_ext_tx_owner || e11_ext_tx_fault)
+        return false;
+    subghz_device_cc1101_ext = malloc(sizeof(SubGhzDeviceCC1101Ext));""")
     # RX and TX share the same radio object: do not free the live DMA/IRQ
     # context after either owner or a sticky release fault remains.
     s=one(s,
