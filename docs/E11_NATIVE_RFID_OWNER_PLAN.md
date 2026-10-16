@@ -1,7 +1,9 @@
 # E11 RFID native owner migration — exact pinned-source plan
 
-**Status:** OPEN / DESIGN GATE ONLY. No native RFID source modification,
-device test or release approval is implied.  
+**Status:** OPEN / PARTIALLY IMPLEMENTED. READ TIM1 and comparator capture
+TIM2 are staged with production-C host evidence. DMA emulation, field,
+upstream BUSY handling, other native IRQ/GPIO and hardware remain OPEN;
+no release approval is implied.  
 **Pinned Momentum:** `d3f89dfe2ef6b01839201598e9be1590cba80322`  
 **Branch:** `dev/v1.8-completion`, Draft PR #13.
 
@@ -22,7 +24,7 @@ not one interchangeable TIM1/TIM2 owner:
 
 ## Required staged approach
 
-First migrate **read PWM** as a canonical TIM1-only claim with a
+The implemented first stage migrated **read PWM** as a canonical TIM1-only claim with a
 status-bearing internal start. Acquire before enabling clock or
 changing RFID pins. A denied START must not mutate hardware,
 and `read_continue`, `read_pause`, period, pulse and STOP must
@@ -32,8 +34,10 @@ legacy void HAL symbols for ABI while adding a truthful BUSY status
 for upstream callers; otherwise a denied native START may still
 leave the caller believing RF transmission is active.
 
-Then migrate **TIM2 read capture** and **TIM2 + DMA2 emulation**
-with complete IRQ/DMA/GPIO claims and native consumer BUSY handling.
+The second staged host-verified stage migrated **TIM2 comparator read capture**
+with a timer-owner guard on the ISR/STOP; its legacy upper callers,
+comparator/EXTI and internal GPIO ownership remain open. Next migrate
+**TIM2 + DMA2 emulation** with complete IRQ/DMA/GPIO claims and native consumer BUSY handling.
 A claim must occur before updating callback state, GPIO modes,
 timer registers, DMA requests or interrupt installation.
 Native ISR must check the current owner. STOP only releases the
@@ -72,3 +76,9 @@ other native EXTI clients bypass the lease table. Physical
 coexistence is **DEFERRED / HARDWARE PENDING**, not PASS.
 No main/Stable merge and no firmware installation without an
 approved backup/recovery and physical acceptance protocol.
+
+## 2026-10-16 evidence checkpoint
+
+- READ TIM1 actual-C+allocator host [#38902785963](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38902785963) SUCCESS; full matched firmware+FAP/JS/updater [#38903026814](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38903026814) SUCCESS.
+- Capture TIM2 actual native production-C+allocator host [#38904967453](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38904967453) SUCCESS. See [capture gate](E11_NATIVE_RFID_CAPTURE_TIM2_GATE.md); its full matched updater [#38904996042](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38904996042) needs separately confirmed conclusion.
+- Physical coexistence remains DEFERRED / HARDWARE PENDING. Firmware-wide E11 still OPEN; main, Stable, Flipper, SD/USB remain untouched.
