@@ -1,0 +1,55 @@
+name: v1.8 E11 old Manifest resource cleanup source gate (NO FLASH)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - ".github/workflows/check-v18-e11-installed-manifest-cleanup.yml"
+      - "scripts/audit_v18_e11_updater_cleanup_semantics.py"
+      - "tests/test_v18_e11_updater_cleanup_semantics.py"
+      - "scripts/audit_v18_e11_installed_resource_manifest.py"
+      - "tests/test_v18_e11_installed_resource_manifest.py"
+      - "scripts/backup_v18_e11_usb_sd_to_pc.py"
+      - "scripts/audit_v18_e11_live_labmate_sd.py"
+      - "scripts/survey_v18_e11_external_sd_ro.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pinned_existing_firmware_updater:
+    name: Pinned Momentum old-resource cleanup semantics + live manifest READ-ONLY model
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout E11 audits only (never install)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Synthetic old Manifest cleanup / serial read tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -v -s tests -p test_v18_e11_updater_cleanup_semantics.py
+          python3 -m unittest discover -v -s tests -p test_v18_e11_installed_resource_manifest.py
+      - name: Fetch exact pinned Momentum updater source for STATIC read-only analysis
+        shell: bash
+        run: |
+          set -euo pipefail
+          root='https://raw.githubusercontent.com/Next-Flip/Momentum-Firmware/d3f89dfe2ef6b01839201598e9be1590cba80322/applications/system/updater/util'
+          mkdir -p "$RUNNER_TEMP/e11-updater-sources"
+          curl --fail --silent --show-error --location --retry 3 "$root/update_task_worker_backup.c" -o "$RUNNER_TEMP/e11-updater-sources/update_task_worker_backup.c"
+          curl --fail --silent --show-error --location --retry 3 "$root/update_task_worker_flasher.c" -o "$RUNNER_TEMP/e11-updater-sources/update_task_worker_flasher.c"
+          test -s "$RUNNER_TEMP/e11-updater-sources/update_task_worker_backup.c"
+          test -s "$RUNNER_TEMP/e11-updater-sources/update_task_worker_flasher.c"
+      - name: Verify old live resource Manifest cleanup PRECEDES new archive unpack
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/audit_v18_e11_updater_cleanup_semantics.py \
+            --backup-worker "$RUNNER_TEMP/e11-updater-sources/update_task_worker_backup.c" \
+            --flasher-worker "$RUNNER_TEMP/e11-updater-sources/update_task_worker_flasher.c"
+          echo 'The presence of an actual old on-device FAP manifest entry remains UNKNOWN.'
+          echo 'NO Flipper/COM/USB device, no installing, no firmware writing, no restore.'
+          echo 'FAP-SPLIT REVIEW ONLY - DO NOT FLASH.'
