@@ -32,7 +32,7 @@ EXPECTED={
  "rfid":(
     "#define FURI_HAL_RFID_EMULATE_TIMER_BUS     FuriHalBusTIM2",
     "#define RFID_CAPTURE_TIM_BUS FuriHalBusTIM2",
-    "#define FURI_HAL_RFID_FIELD_COUNTER_TIMER_BUS FuriHalBusTIM2",
+    "#define FURI_HAL_RFID_FIELD_COUNTER_TIMER_BUS     FuriHalBusTIM2",
     "#define FURI_HAL_RFID_READ_TIMER_BUS            FuriHalBusTIM1",
     "#define FURI_HAL_RFID_FIELD_TIMEOUT_TIMER_BUS FuriHalBusTIM1",
  ),
