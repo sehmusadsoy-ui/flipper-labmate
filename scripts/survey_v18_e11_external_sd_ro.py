@@ -79,7 +79,11 @@ def survey(storage) -> dict[str, object]:
     for scope in SCOPES:
         storage.send_and_wait_eol('storage list "' + scope + '"\r')
         raw = storage.read.until(storage.CLI_PROMPT)
-        entries = parse_scope_listing(raw)
+        try:
+            entries = parse_scope_listing(raw)
+        except ValueError as exc:
+            # Scope is hardcoded and public; never expose other-app file names.
+            raise ValueError("invalid SD listing at " + scope + ": " + str(exc)) from None
         if len(entries) > MAX_LIST_ITEMS:
             raise ValueError("unexpectedly large top-level SD listing")
         results[scope] = entries
