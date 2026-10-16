@@ -7,6 +7,8 @@ on:
       - ".github/workflows/check-v18-e11-live-sd-parity-model.yml"
       - "scripts/audit_v18_e11_live_labmate_sd.py"
       - "tests/test_v18_e11_live_labmate_sd.py"
+      - "scripts/snapshot_v18_e11_live_labmate_sd.py"
+      - "tests/test_v18_e11_live_snapshot.py"
   workflow_dispatch:
 
 permissions:
@@ -32,6 +34,8 @@ jobs:
           $ErrorActionPreference = 'Stop'
           python -m unittest discover -v -s tests -p test_v18_e11_live_labmate_sd.py
           if ($LASTEXITCODE -ne 0) { throw "E11 SD parity model failed" }
+          python -m unittest discover -v -s tests -p test_v18_e11_live_snapshot.py
+          if ($LASTEXITCODE -ne 0) { throw "E11 safe PC snapshot tests failed" }
           Write-Host "FLIPPER LABMATE SD PARITY READ-ONLY MODEL PASS"
           Write-Host "HISTORICAL MISSING LOGS REMAIN AN UNRESOLVED DATA PARITY QUESTION"
           Write-Host "NO COM, USB, DEVICE WRITE, FLASH, FORMAT OR RESTORE"
