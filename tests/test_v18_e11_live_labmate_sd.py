@@ -150,6 +150,10 @@ class TestE11LiveLabMateSD(unittest.TestCase):
         folder.mkdir()
         (folder / "a.csv").write_bytes(b"a")
         (folder / "A.csv").write_bytes(b"b")
+        # On default Windows NTFS a.csv and A.csv are the SAME file.
+        # Do not mistake filesystem case-folding for a broken guard.
+        if len(list(folder.iterdir())) < 2:
+            self.skipTest("filesystem cannot represent distinct case-colliding paths")
         with self.assertRaisesRegex(ValueError, "duplicate"):
             local_inventory(folder)
 
