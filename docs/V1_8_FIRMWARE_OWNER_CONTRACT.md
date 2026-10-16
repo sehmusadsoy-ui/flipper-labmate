@@ -1407,5 +1407,32 @@ latest full MNTM-012 updater:
 [38828638407](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38828638407).
 The prior confirmed PulseReader + complete updater PASS belongs
 to the **pre-EXTI fix** source and does not prove this update.
-Only mark this section CI PASS after exact-run completion.
+**Now VERIFIED:**
+[Native JS CI #38828583368](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38828583368)
+completed SUCCESS for source `048c7f5b13fad82fb7d2e7c35524edbbb5ddeb7e`,
+covering actual extracted JS GPIO claim C on PC3/PB3 EXTI3,
+non-E11 pins, actual `js_gpio.fal` APPCHK, real core firmware
+and `labmate.fap`. CI-only SHA256:
+`js_gpio.fal` `aff57ea10200e9bc19b762ce88041161b6732e2113cc01e8a4a365bcedf53c00`;
+`firmware.dfu` `decdfc56b034a01a8c538daea225192eb13cea61bc6a0c93032cfcec5544cf62`;
+`labmate.fap` `f5ec23a8a5183cb912c609631667e97e5aa71d1f4bb012f04623e39256f06e03`.
+
+[Native Pulse + **actual firmware claim C** CI #38828638447](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38828638447)
+also completed SUCCESS for later source
+`1a252f1c5eac12bc2c2afe92b99024e236143f4e`:
+it checked real firmware exact-mask ownership (including JS
+EXTI3 versus native PulseReader PC3/PB3), actual native
+PulseReader C, native JS helper C and real paired firmware,
+FAP and plugin APPCHK. CI-only SHA256:
+`firmware.dfu` `533818184f7beebcb69cc32067aec4fd20157d0c5cb624a397a07c44fcc7a72b`;
+`labmate.fap` `909554929082c93f3005a8bcb85da5ade366cdb5bc525267108515dfc6719f60`;
+`js_gpio.fal` `398e83812ade8adebb86eae7e7493ba5a8a421e8c061cac6548ba382093d6d36`.
+**These two separate triplets MUST NOT be mixed**, despite
+both builds passing.
+
+The separately packaged full MNTM-012 updater
+[38828638407](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38828638407)
+requires its own final SUCCESS before package-level PASS.
+Neither CI run proves actual physical interrupt behavior,
+firmware-wide legacy TIM2/EXTI arbitration or rollback.
 No hardware/USB/Stable release acceptance performed.
