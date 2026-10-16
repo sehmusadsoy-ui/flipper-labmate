@@ -34,6 +34,7 @@ on:
       - "tests/test_v18_native_serial_expansion_exti_lease.py"
       - "scripts/patch_momentum_native_ext_cc1101_rx_lease.py"
       - "tests/test_v18_native_ext_cc1101_rx_lease.py"
+      - "tests/test_v18_native_ext_cc1101_free_lease.py"
       - ".github/workflows/check-v18-native-ext-cc1101-rx.yml"
   workflow_dispatch:
 permissions:
@@ -122,4 +123,5 @@ jobs:
           python3 labmate/tests/test_v18_native_nfc_irq_exti_lease.py momentum-src
           python3 labmate/tests/test_v18_native_serial_expansion_exti_lease.py momentum-src
           python3 labmate/tests/test_v18_native_ext_cc1101_rx_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_ext_cc1101_free_lease.py momentum-src
           echo "E11 ext CC1101 TIM17+PB2+EXTI2 actual C PASS; TX/physical OPEN"
