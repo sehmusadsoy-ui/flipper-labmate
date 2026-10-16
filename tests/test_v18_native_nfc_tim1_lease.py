@@ -155,10 +155,10 @@ int main(void) {
     allow_release=false;
     assert(!furi_hal_nfc_timers_init());
     assert(writes==0 && nfc_e11_handle==77U && nfc_e11_fault);
-    int c=claims;
+    int preflight_claims=claims;
     clock17=false;
     assert(!furi_hal_nfc_timers_init());
-    assert(claims==c && writes==0);
+    assert(claims==preflight_claims && writes==0);
     puts("E11 NFC PRE-FLIGHT STICKY FAILED RELEASE REAL C PASS");
     return 0;
 #endif
