@@ -52,6 +52,22 @@ class SyntheticPackedManifest(unittest.TestCase):
         self.assertEqual(d["labmate_pairing_in_resources"],"FULL_BUNDLE_DECLARED_AND_PRESENT")
         self.assertEqual(d["physical_install_approved"],"NO")
 
+    def test_one_pinned_generated_firstboot_outside_manifest_is_reported(self):
+        # Exact Momentum scripts/update.py outputs this generated Slideshow
+        # after the resources Manifest was built; no generic allowance.
+        self.paths["dolphin/firstboot.bin"] = b"fake generated firstboot"
+        self.dirs.append("dolphin")
+        report=check_consistency(self.resource(),should_include_fap=True)
+        self.assertEqual(report["packed_manifest_unlisted_files"],1)
+        self.assertEqual(report["packed_generated_firstboot_not_in_manifest"],"YES")
+        self.assertEqual(report["packed_manifest_other_unlisted_files"],0)
+
+    def test_any_other_extra_unlisted_file_still_fails(self):
+        self.paths["dolphin/other-unlisted.bin"] = b"private bytes"
+        self.dirs.append("dolphin")
+        with self.assertRaisesRegex(ValueError,"mismatching resource contents"):
+            check_consistency(self.resource(),should_include_fap=True)
+
     def test_split_tgz_keeps_stale_fap_reference(self):
         d=check_consistency(self.resource(omit_fap=True),should_include_fap=False)
         self.assertEqual(d["packed_actual_resource_files"],2)
