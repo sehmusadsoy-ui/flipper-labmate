@@ -14,6 +14,8 @@ on:
       - "scripts/verify_v18_full_review_pair.py"
       - "scripts/stage_v18_e11_review_only.py"
       - "scripts/preflight_v18_e11_local.py"
+      - "scripts/audit_v18_e11_recovery_readiness.py"
+      - "tests/test_v18_e11_recovery_readiness.py"
   workflow_dispatch:
 
 permissions:
