@@ -43,12 +43,21 @@ DMA/IRQ/GPIO and a bounded-period semaphore wait detects unexpected
 clock loss rather than hanging indefinitely on a missing event.
 
 Native output selection cannot change while TX owns its lease.
+The external IR accessory presence-detection path also now takes
+a temporary PA7-only reservation **before configuring the pin**.
+Denied detection leaves GPIO unchanged; failed release retains a
+sticky handle and rejects later TX. This closes the otherwise
+unprotected PA7 probe in the original native HAL.
 
 ## Validation
 
 [**Real original patched native infrared TX C + exact firmware lease
 allocator host CI #38897339075](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38897339075)
-**SUCCESS**. Original production code is compiled with strict
+**SUCCESS** for source before the detection extension. The later
+[**PA7 detect + native TX actual-C CI #38897716061**](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38897716061)
+is also **SUCCESS**, on source
+`30195b114743a02e79feab8df2d5e11e8884b6f1`.
+Original production code is compiled with strict
 C warnings and host HAL instrumentation. Source test includes
 denied claim zero peripheral writes and zero allocations,
 legacy occupied TIM1 and DMA, failed preflight handle release,
@@ -59,10 +68,14 @@ loss and bounded WAIT, and actual firmware C interlock with PWM,
 iButton, NFC and GPIO Monitor PA7. Actual worker source is
 checked for ordering and BUSY non-wait control flow.
 
-[**Complete paired full Momentum firmware/FAP/JS/updater CI
-#38897419654**](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38897419654)
-was started against source `c4585c8948ee25514b68d6f88bf1c7abc9ac9865`.
-**Do not claim a full firmware/FAP PASS before its final SUCCESS**.
+[**Complete paired Momentum firmware/FAP/JS/updater CI
+#38897716100**](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38897716100)
+was started against latest source
+`30195b114743a02e79feab8df2d5e11e8884b6f1` including
+PA7 presence detection. The earlier pre-probe full CI run
+[#38897419654](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38897419654)
+tests the preceding TX stage only. **Do not claim final firmware/FAP
+PASS until the final workflow completes SUCCESS**.
 Never flash a CI-only test package.
 
 ## Not yet established / remaining risks
@@ -71,9 +84,10 @@ Never flash a CI-only test package.
   allocator C, but **does not emulate an entire physical DMA
   interruption sequence on a Flipper**. Firmware build alone cannot
   establish no race against other native direct-register clients.
-- `furi_hal_infrared_detect_tx_output()` may independently
-  reconfigure PA7 while probing an external IR accessory; its
-  transient pin-scanning path needs a separate lease or refusal.
+- `furi_hal_infrared_detect_tx_output()` now uses a bounded
+  temporary PA7 claim during presence detection; actual pinned
+  native C denied-detection and sticky failed-release host cases
+  PASS. Physical accessory compatibility remains hardware pending.
 - `infrared_worker_rx_start()` uses a legacy void native RX START;
   denied START is hardware-safe but cannot report BUSY to a
   worker that may start its RX thread without capturing data.
