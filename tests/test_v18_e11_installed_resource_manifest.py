@@ -125,6 +125,26 @@ class E11InstalledResourceManifestTest(unittest.TestCase):
         self.assertFalse(any(b"write_chunk" in c or b"storage remove" in c
                              or b"update install" in c for c in commands))
 
+    def test_multichunk_binary_read_matches_full_manifest_exactly(self):
+        # The actual old Manifest may be much larger than one 2048-byte
+        # transfer, unlike the user's 10 small LabMate CSV/profile files.
+        records = [
+            b"F:" + (b"a" * 32) + b":0:assets/long_entry_" +
+            str(i).encode("ascii") + b".dat"
+            for i in range(125)
+        ]
+        large = manifest() + b"\\n".join(records) + b"\\n"
+        self.assertGreater(len(large), 4096)
+        storage = FakeStorage({b"/ext/Manifest": large})
+        recovered, digest = read_live_manifest(storage)
+        self.assertEqual(recovered, large)
+        self.assertEqual(digest, hashlib.md5(large).hexdigest())
+        self.assertEqual(parse_old_manifest(recovered)["old_manifest_resource_files"],
+                         4 + len(records))
+        self.assertGreater(
+            storage.port.trace.count(b"read-transfer-handshake"), 2
+        )
+
     def test_changed_source_manifest_md5_refused(self):
         storage = FakeStorage({b"/ext/Manifest": manifest()})
         storage.port.sabotage_md5 = True
