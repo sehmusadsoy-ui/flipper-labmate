@@ -63,6 +63,13 @@ def patch(ir: str, h: str, worker: str, wh: str, api: str):
         raise ValueError("Unreviewed native RX TIM2 start return count")
     block = block.replace(start, "bool furi_hal_infrared_async_rx_try_start(void) {", 1)
     block = block.replace("return;", "return false;")
+    # A different infrared TX session can already occupy this HAL state.
+    # The old void implementation asserted; status-bearing start must BUSY.
+    if block.count("    furi_check(furi_hal_infrared_state == InfraredStateIdle);") != 1:
+        raise ValueError("Native RX Busy-state signature changed")
+    block = block.replace(
+        "    furi_check(furi_hal_infrared_state == InfraredStateIdle);",
+        "    if(furi_hal_infrared_state != InfraredStateIdle) return false;",1)
     if not block.rstrip().endswith("    LL_TIM_EnableCounter(INFRARED_RX_TIMER);\n}"):
         raise ValueError("Unrecognized RX START end")
     block = block.rstrip()[:-1] + """    return true;
