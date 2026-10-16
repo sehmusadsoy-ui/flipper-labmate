@@ -102,8 +102,8 @@ module and MNTM-012 full updater package with source provenance,
 APPCHK, radio/option-byte policy and checksums must pass at its *exact
 source SHA* before accepting these stages as build-matched software.
 Current full gate:
-[CI #38912588242](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38912588242).
-Record its final conclusion separately from the three host-C success
+[CI #38913062269](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38913062269) (full firmware/ABI/release packaging IN PROGRESS at this checkpoint).
+Earlier #38912588242 failed at firmware link because the new built-in CC1101 boolean wrapper lacked C linkage in the C++ SDK table; the header now uses extern-C linkage (source commit 69ecfdd). Record the final #38913062269 conclusion separately from the three host-C success
 runs; older successful package #38909551244 predates Sub-GHz work.
 
 Remaining E11 coverage: native RF pin and EXTI/IRQ users beyond
