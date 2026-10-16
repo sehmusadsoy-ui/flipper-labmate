@@ -180,7 +180,7 @@ def stage_derived_review(candidate: Path, old_official: Path, output: Path) -> P
         (output / name).write_bytes(source.read_bytes())
     (output / "READ_ME_FIRST.txt").write_text(WARNING, encoding="utf-8")
     (output / "SHA256SUMS.txt").write_text(
-        "".join(sha((output / name).read_bytes()) + "  " + name + "\\n"
+        "".join(sha((output / name).read_bytes()) + "  " + name + "\n"
                 for name in (DERIVED_NAME, "labmate.fap", "js_gpio.module")),
         encoding="utf-8",
     )
