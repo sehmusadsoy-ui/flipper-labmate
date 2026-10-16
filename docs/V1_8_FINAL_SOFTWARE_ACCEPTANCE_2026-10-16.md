@@ -45,3 +45,41 @@ limitations are explicitly dispositioned.
 
 **Preservation:** no `main` merge, stable asset/tag mutation, microSD
 modification, USB activity, firmware flash, or automatic reboot.
+
+
+## 2026-10-16 — Full review-archive preflight hardening
+
+The previous Windows read-only pair verifier was built for a **minimal**
+updater with a different file/provenance schema and must not be reused
+for the final full MNTM-012 migration archive. Added a separate full
+candidate read-only verifier
+[`scripts/verify_v18_full_review_pair.py`](../scripts/verify_v18_full_review_pair.py).
+It requires the exact independently supplied LabMate commit and Actions
+run number, checks the four binary SHA256s (FAP, JS GPIO, DFU, full
+updater), validates pinned Momentum/MNTM-012 provenance and warning,
+checks the embedded DFU and manifest/option-byte structure using the
+original full TGZ audit, and compares the updater radio fingerprint
+against the independently verified official MNTM-012 digest.
+
+Its malformed/mixed/duplicate/missing-file negative cases are integrated
+into the one host regression gate. Latest source-only
+[run #38964331746](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38964331746)
+**SUCCESS** on `ceafa6c9d73aedd50b6af4545d0cfdcf97626cf8`.
+The real full updater workflow has also been amended to execute the
+verifier on the generated full archive **before** uploading review
+artifacts. As of this document revision, that newer complete firmware
+execution [#38964038267](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38964038267)
+requires an independently observed final conclusion; the previous
+matched build #38955881504 remains the last **verified full SUCCESS**
+until this new workflow completes. No flash or new device test.
+
+[Exact existing artifact and no-device instructions](V1_8_READ_ONLY_PAIR_HANDOFF.md)
+use an official Actions run number and an exact expected source SHA;
+never silently substitute an expired artifact. A self-consistent
+checksum is not independent proof of download authenticity.
+
+**Stable integrity checkpoint:** the GitHub `v1.8` release still
+points at `02b05639364d6dd71f5eb70456eca379c59218cb` and publishes
+`labmate.fap` SHA256
+`119c44bb854030a73a60fa205d38770bf77f048bb166ab379a03135c1de5f3b0`.
+No release asset, tag or `main` update was undertaken here.
