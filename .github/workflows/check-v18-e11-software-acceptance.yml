@@ -1,0 +1,26 @@
+name: v1.8 E11 software evidence and physical-defer acceptance guard
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - "scripts/check_v18_e11_software_acceptance.py"
+      - "scripts/check_v18_e11_direct_ll_boundary.py"
+      - "scripts/patch_momentum_subghz_ext_rx_status_bridge.py"
+      - "docs/E11_FINAL_RX_COMPAT_AND_LL_GATE.md"
+      - ".github/workflows/check-v18-e11-software-acceptance.yml"
+      - ".github/workflows/check-v18-full-012-upgrade-package.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout E11 branch
+        uses: actions/checkout@v4
+      - name: Enforce E11 software evidence and open physical acceptance
+        run: python3 scripts/check_v18_e11_software_acceptance.py .
