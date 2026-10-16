@@ -1708,3 +1708,54 @@ separately approved firmware trial package/sequence,
 and native resource E11 physical tests. Existing original
 and FAP-separated review artifacts remain DO NOT FLASH;
 draft PR #13, main/Stable remain unchanged.
+
+
+## 2026-10-17 — Initial external-SD survey refused private-name grammar; safe opaque parser fixed
+
+**ACTUAL DEVICE OPERATOR REPORT, first attempted top-level SD scope
+survey:**
+
+```
+E11 EXTERNAL SD SURVEY REFUSED - NO DEVICE WRITE: unsafe/ambiguous SD member name
+SD SCOPE SURVEY FAILED - NO FLASH
+```
+
+This is a *safe early refusal*, **not** device storage corruption,
+backup damage, an enumerated non-LabMate folder count, or evidence
+that files have been deleted. **No actual top-level exposure totals
+were collected in this attempt.**
+
+Cause in our own source: the first
+`survey_v18_e11_external_sd_ro.py` imported LabMate's strict
+`parse_listing()`, which requires a restricted ASCII-safe name
+suitable for backup readback and file paths, then misapplied that
+same rule to other applications' *count-only* top-level directory
+entries. The specific real private filename and the precise
+folder responsible were intentionally never printed, and are
+not known from this output.
+
+**Reviewed engineering correction:** Other-app names are now
+parsed as **opaque bytes** and NEVER used to build PC/device
+file paths, enter child directories or appear in output. Valid
+spaced, extra-dot and non-ASCII entries can be counted. Malformed
+Flipper list grammar/size, separators/controls, duplicate
+ASCII-case names and excessive entries still fail closed.
+Errors identify only one of the three fixed public scopes,
+without exposing user file names. The original LabMate file-path
+parser remains strict for the existing readback/backup tools.
+
+**Validation:** [Windows no-device
+#38978962924](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38978962924)
+**SUCCESS**, 14 survey checks plus prior 19 listing + 9
+snapshot cases; [integrated no-flash
+#38978962925](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38978962925)
+**SUCCESS**; corrected script/test source SHA
+`1da7dab93cfd72d94b243c3f5732ded9f8e26e5d`.
+[Revised source-pinned operator procedure](V1_8_E11_EXTERNAL_SD_SCOPE_HANDOFF.md).
+
+**Current state:** RETRY NOT YET RUN on the user's actual COM7.
+Actual non-LabMate SD counts, full SD backup/recovery rehearsals
+and E11 live GPIO/TIM/EXTI acceptance remain OPEN; original
+and split reviewed updater are **DO NOT FLASH**. Historical
+14-file + current 10-file (1791-byte) LabMate PC backups
+remain separately preserved.
