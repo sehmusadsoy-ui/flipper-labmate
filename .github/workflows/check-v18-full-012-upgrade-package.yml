@@ -50,6 +50,8 @@ on:
       - "tests/test_v18_native_subghz_rx_lease.py"
       - "scripts/patch_momentum_native_subghz_rx_busy_callers.py"
       - "tests/test_v18_native_subghz_rx_callers.py"
+      - "scripts/patch_momentum_native_subghz_tx_lease.py"
+      - "tests/test_v18_native_subghz_tx_lease.py"
       - "tests/test_v18_native_pulse_reader_lease.py"
       - "tests/test_v18_native_pulse_lease_firmware.py"
       - "tests/test_v18_tim2_lease_integration.py"
@@ -180,6 +182,9 @@ jobs:
           python3 labmate/scripts/patch_momentum_native_subghz_rx_busy_callers.py momentum-src
           python3 labmate/scripts/patch_momentum_native_subghz_rx_busy_callers.py momentum-src --apply
           python3 labmate/tests/test_v18_native_subghz_rx_callers.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_subghz_tx_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_subghz_tx_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_subghz_tx_lease.py momentum-src
           python3 labmate/tests/test_v18_tim2_lease_integration.py
           python3 labmate/scripts/check_v18_native_legacy_tim2_contract.py momentum-src labmate
           git -C momentum-src diff --check
@@ -276,7 +281,7 @@ jobs:
           printf 'Native NFC dual timer TIM1/TIM17 lifecycle: targets/f7/furi_hal/furi_hal_nfc_timer.c and furi_hal_nfc.c (E11 patched)\n' >> dev-full-candidate/PROVENANCE.txt
           printf 'Native infrared RX TIM2 lease and TX TIM1/DMA2/PA7: targets/f7/furi_hal/furi_hal_infrared.c (E11 patched)\n' >> dev-full-candidate/PROVENANCE.txt
           printf 'Infrared worker BUSY-aware TX START/WAIT and RX thread STOP cleanup: lib/infrared/worker/infrared_worker.c/h (E11 patched)\n' >> dev-full-candidate/PROVENANCE.txt
-          printf 'RFID READ/CAPTURE/EMULATE/FIELD native owners + SubGHz RX TIM2 and supported PA7/PB3 mirror BUSY; native radio RX application chain preserves external plugin ABI. SubGHz TX, unsupported mirrors and EXTI remain OPEN.\n' >> dev-full-candidate/PROVENANCE.txt
+          printf 'RFID READ/CAPTURE/EMULATE/FIELD native owners + SubGHz RX TIM2 and TX TIM2/DMA2 CH1(+CH2 mirror); PA7/PB3 debug-mirror claims, RX application BUSY and third-party plugin ABI preserved. Other mirror pins, native EXTI/IRQ and physical RF remain OPEN.\n' >> dev-full-candidate/PROVENANCE.txt
           printf 'Momentum base: %s\n' "$(git -C momentum-src rev-parse HEAD)" >> dev-full-candidate/PROVENANCE.txt
           printf 'Installed Momentum012 source: %s\n' "$(git -C momentum-012 rev-parse HEAD)" >> dev-full-candidate/PROVENANCE.txt
           printf 'Actions run: %s\n' "$GITHUB_RUN_ID" >> dev-full-candidate/PROVENANCE.txt
