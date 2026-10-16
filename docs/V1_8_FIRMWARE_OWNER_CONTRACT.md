@@ -1436,3 +1436,40 @@ requires its own final SUCCESS before package-level PASS.
 Neither CI run proves actual physical interrupt behavior,
 firmware-wide legacy TIM2/EXTI arbitration or rollback.
 No hardware/USB/Stable release acceptance performed.
+
+## E11.1m — Bounded native-service safety decision (2026-10-16)
+
+Before attempting any more all-firmware E11 interception, pinned
+upstream source review identifies these *independent* core owners:
+
+| Native path on pinned Momentum | Exact competing resources | Why a quick intercept is unsafe |
+|---|---|---|
+| `lib/digital_signal/digital_sequence.c` | TIM2 + DMA1 CH1/2, output GPIO BSRR | `digital_sequence_transmit()` returns `void`, uses a critical section and direct LL timer/DMA writes; a silently denied `furi_hal_bus_enable(TIM2)` would still leave subsequent unguarded register access and DMA sequence cleanup |
+| `targets/f7/furi_hal/furi_hal_subghz.c` | TIM2 async RX/TX, radio GPIO and timer ISR/DMA | Native Sub-GHz state machine sets active states and callbacks while entering asynchronous capture/transmit; must have an explicit BUSY-safe rollback path before adding ownership and may not lose valid ongoing RF activity |
+| `targets/f7/furi_hal/furi_hal_rfid.c` | TIM1 reader/timeout, TIM2 emulation/capture/field counter and DMA2 | Several different TIM1/TIM2 lifecycle paths exist; blocking just one bus enable without coordinating state and paired stop paths risks broken built-in RFID |
+| `targets/f7/furi_hal/furi_hal_bus.c` | Central TIM1/TIM2 peripheral clock enable/disable/reset | API returns `void` and calls assert-style `furi_check`; it has neither a caller identity token nor a BUSY result. Silently skipping enable would not prevent callers' direct LL writes; global assertions would create crashes instead of safe contention handling |
+
+**Engineering decision for this DEV branch:** Do not add a
+generic global intercept to the firmware bus/GPIO
+register paths merely to obtain an E11 green checkbox.
+The verified **cooperative subset** is LabMate local owners
+plus participating Momentum PWM, JS GPIO (pin and EXTI),
+and PulseReader (timer, DMA, DMAMUX, pin and EXTI).
+Native radio/RFID/digital-sequence paths are *not* yet
+mandatory participants and concurrent operation with a
+claimed LabMate TIM1/TIM2/EXTI remains an **open software
+safety limitation**, separate from deferred missing-fixture
+hardware validation. The positive host/CI results for
+individual migrated services do not contradict this.
+
+Any extension to the listed critical services must
+first define a BUSY-safe public API/state transition,
+recoverable cleanup and precise built-in regression
+without reducing existing radio/RFID functionality.
+Either that additional work is approved and tested,
+or v1.8 must explicitly narrow its supported
+cross-service concurrency contract *before* final Stable
+approval; the original unqualified firmware-wide
+ownership objective may **not** be silently checked PASS.
+This decision is not a release authorization and changes
+no installed firmware.
