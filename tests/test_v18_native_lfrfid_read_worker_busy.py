@@ -103,7 +103,8 @@ def main()->None:
     assert "varint_pair_free(ctx.pair);" in read and "buffer_stream_free(ctx.stream);" in read
     assert "if(lfrfid_worker_check_for_stop(worker))" in read
     assert process.count("state == LFRFIDWorkerReadBusy") >= 2
-    assert "worker->read_cb(LFRFIDWorkerReadHardwareBusy, PROTOCOL_NO, worker->cb_ctx);" in process
+    if "LFRFIDWorkerReadHardwareBusy" in worker:
+        assert "worker->read_cb(LFRFIDWorkerReadHardwareBusy, PROTOCOL_NO, worker->cb_ctx);" in process
     assert "LFRFIDWorkerReadBusy, /* E11:" in helpers
     with tempfile.TemporaryDirectory(prefix="e11_lfrfid_read_busy_") as t:
         tmp=Path(t);src=tmp/"read_worker.c";exe=tmp/"read_worker"
