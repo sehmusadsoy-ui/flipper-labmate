@@ -363,3 +363,71 @@ files were saved.
 **No hardware tests or writes** occurred, no `selfupdate.py`,
 `runfap.py`, `-Apply`, flash/restore/SD mutation was run.
 PR #13 remains draft; Stable/main/tag/assets unchanged.
+
+
+## 2026-10-17 — Live LabMate data-copy parity gate (prepared, no USB test yet)
+
+The immediate backup-coverage issue is distinct from full-updater
+source-integrity verification:
+
+- Official MNTM-012 and E11 updater resource inventories are only
+  *bundled firmware resources*. The E11 split-review derivative omits
+  the LabMate FAP, but does **not** establish what currently exists
+  under the real Flipper microSD `/ext/apps_data/labmate`.
+- The operator's older LabMate folder backup contains **14 locally
+  readable files**. Prior history evidence showed some earlier
+  `log_0041.csv`–`log_0049.csv` entries were missing from a later
+  device listing; there is no demonstrated reason for this, and
+  **no recovery/delete/sync action is authorized**.
+- The original qFlipper `1,550-byte` settings TGZ is *not a full SD
+  backup*. Neither the verified rollback updater nor its archive
+  structure proves that a recovery actually restores user data.
+
+**New fail-closed read-only inspection (not yet executed on the
+operator's actual COM port):**
+[`scripts/audit_v18_e11_live_labmate_sd.py`](../scripts/audit_v18_e11_live_labmate_sd.py)
+reads only the LabMate SD subtree `/ext/apps_data/labmate`,
+using Momentum's existing Flipper CLI transport with
+`device_info` startup, `storage list` and `storage md5`
+only. The script inspects the existing local historical backup
+without modifying it, computes local MD5 + size/path, and compares
+each inventory entry, reporting **counts only**:
+
+- `historical_files_now_absent`: files in historical backup but
+  missing on the live SD (e.g. possibly missing past logs).
+- `new_device_files_not_in_backup`: fresh logs/profiles which must be
+  separately preserved; do not equate an old 14-file backup with
+  this actual data.
+- `changed_files_not_covered_by_backup`: same path, different byte
+  count or MD5, indicating potential drift.
+- `same_path_same_size_md5`: screening matches, not authenticated
+  SHA256 readback proofs.
+
+**Fail-close policy:** any gap results in a nonzero status and
+`BACKUP COVERAGE GAP CONFIRMED`, without deleting or restoring
+anything. Even a complete size/MD5 match is limited to LabMate's
+own subtree: MD5 is a screening hash, not an independent SHA256
+proof and certainly **not an entire microSD backup or restore
+rehearsal**. Invalid CLI responses, unexpected paths, symlinks,
+case-collisions, missing/empty directories or the wrong root
+are refused.
+
+For the operator's existing Windows environment, after successful
+CI/peer review of this new script, read-only device verification
+could be invoked using a pinned local GitHub source copy and the
+previously used COM7:
+
+```powershell
+py -3 .\scripts\audit_v18_e11_live_labmate_sd.py `
+  --port COM7 `
+  --momentum-scripts "$HOME\Momentum-Firmware\scripts" `
+  --backup-dir "$HOME\Downloads\LabMate-Backup-20261014-201529"
+```
+
+**This is a proposed operator command, not a completed check.**
+Run it only with explicit operator intent and a readable, trusted
+local `Momentum-Firmware/scripts/flipper/storage.py` tree and
+with other programs (such as qFlipper) not holding COM7.
+Do not modify code to auto-copy, prune, clear, restore or flash.
+Even if the LabMate-only result is a size/MD5 screen match,
+other SD folders and updater resource changes remain open.
