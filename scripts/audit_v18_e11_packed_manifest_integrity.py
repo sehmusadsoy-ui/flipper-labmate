@@ -28,6 +28,10 @@ MAX_MEMBERS = 20000
 RECORD = re.compile(rb"F:([a-fA-F0-9]{32}):([0-9]{1,10}):(.+)")
 DIRECTORY = re.compile(rb"D:(.+)")
 TIME = re.compile(rb"T:[0-9]{1,16}")
+# Pinned Momentum scripts/update.py generates dolphin/firstboot.bin when
+# packaging resources, after an earlier resources/Manifest snapshot.
+# This exact known single generated file is handled separately; no wildcards.
+GENERATED_FIRSTBOOT = "dolphin/firstboot.bin"
 
 
 def _path(value: bytes) -> str:
@@ -129,10 +133,11 @@ def check_consistency(
     mismatched = {
         name for name in set(actual) & set(declared) if actual[name] != declared[name]
     }
-    if unlisted or mismatched:
+    unexpected_unlisted = unlisted - {GENERATED_FIRSTBOOT}
+    if unexpected_unlisted or mismatched:
         raise ValueError(
             "packed manifest missing or mismatching resource contents:"
-            " unlisted_actual=" + str(len(unlisted)) +
+            " unexpected_unlisted_actual=" + str(len(unexpected_unlisted)) +
             " wrong_md5_size=" + str(len(mismatched)) +
             " undeclared_labmate=" + str(fap in unlisted) +
             " undeclared_js_gpio=" + str(js in unlisted) +
@@ -165,6 +170,8 @@ def check_consistency(
         "packed_manifest_declared_files": len(declared),
         "packed_manifest_orphan_references": len(missing),
         "packed_manifest_unlisted_files": len(unlisted),
+        "packed_generated_firstboot_not_in_manifest": "YES" if GENERATED_FIRSTBOOT in unlisted else "NO",
+        "packed_manifest_other_unlisted_files": len(unexpected_unlisted),
         "packed_manifest_wrong_file_md5_or_size": len(mismatched),
         "packed_actual_labmate_fap_present": "YES" if fap in actual else "NO",
         "packed_manifest_declares_labmate_fap": "YES" if fap in declared else "NO",
