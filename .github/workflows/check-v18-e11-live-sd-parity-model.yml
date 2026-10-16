@@ -11,6 +11,8 @@ on:
       - "tests/test_v18_e11_live_snapshot.py"
       - "scripts/survey_v18_e11_external_sd_ro.py"
       - "tests/test_v18_e11_external_sd_ro.py"
+      - "scripts/backup_v18_e11_sd_reader_to_pc.py"
+      - "tests/test_v18_e11_full_sd_pc_copy.py"
   workflow_dispatch:
 
 permissions:
