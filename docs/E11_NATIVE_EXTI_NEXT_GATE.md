@@ -87,7 +87,7 @@ read with these newer exact, passing development source stages:
   an active sensor or waiting on absent FIFO notifications.
   [Actual native FIFO-C/allocator #38933011284 PASS](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38933011284);
   [IMU-inclusive full firmware/FAP/updater #38933103357](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38933103357)
-  requires a **separate final SUCCESS** before full software acceptance.
+  **SUCCESS** as a separate full matched native software-build gate.
   [IMU gate](E11_NATIVE_IMU_FIFO_PB2_GATE.md).
 
 **Still OPEN:** JS GPIO legacy raw callback removal despite live
@@ -97,3 +97,23 @@ external plugin v1 void RX BUSY-to-worker compatibility, dynamic
 GPIO/debug mirror choices and exceptional cross-device recovery.
 Physical HW-16/HW-17 remains deferred. Do not infer firmware-global
 COMPLETE from these two host gates or install anything on device.
+
+## 2026-10-16 — Exact JS GPIO and complete raw-callback scan
+
+Original JS GPIO mode and module teardown now use the exact HAL
+callback/context compare-and-remove, protecting the registered
+semaphore, physical EXTI aliases and sticky faulty-lease behavior
+([source and host #38935496608 — SUCCESS](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38935496608)).
+The pinned **entire C/C++ callback caller inventory** now permits
+only the native HAL primitive definition and original system-input
+button service to invoke legacy unguarded add/remove; the seven
+reviewed native application/HAL callers use cooperative TRY/compare
+primitives ([inventory #38935946504 — SUCCESS](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38935946504)).
+Latest complete pinned Momentum/FAP/JS/MNTM-012 matched updater
+[**#38936030380 — SUCCESS**](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38936030380).
+
+Firmware-global E11 remains **PARTIAL** only for uncovered direct
+register paths, explicit third-party SubGHz plugin v1 void RX BUSY
+compatibility, alternate pins/mirrors and exceptional recovery, plus
+all deferred physical acceptance. HW-18 added. Do not rename these
+software BUILD gates to a hardware PASS.
