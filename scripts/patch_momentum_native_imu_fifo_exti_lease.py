@@ -25,8 +25,8 @@ def once(s,old,new):
 def patch(src,header,imu):
     if MARK in src: raise ValueError("IMU FIFO owner already applied")
     src=once(src,
-        "#include <furi_hal.h>\n",
-        "#include <furi_hal.h>\n#include <furi_hal_resources.h>\n")
+        '#include "ICM42688P.h"\n',
+        '#include "ICM42688P.h"\n#include <furi_hal_resources.h>\n')
     src=once(src,
         """struct ICM42688P {
     FuriHalSpiBusHandle* spi_bus;
