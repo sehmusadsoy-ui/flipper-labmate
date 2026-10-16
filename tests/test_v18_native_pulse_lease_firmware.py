@@ -50,6 +50,22 @@ int main(void){
     REQUIRE(a);
     REQUIRE(furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_PULSE_PB3)==0U);
     REQUIRE(furi_hal_resource_lease_release(a,FURI_HAL_LEASE_PULSE_PC3));
+    /* JS ownership of a *different* GPIO port must still block the
+     * shared EXTI3 line. This covers IRQ/event mode, not GPIO read.
+     */
+    a=furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_JS_EXTI3);
+    REQUIRE(a);
+    REQUIRE(furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_PULSE_PC3)==0U);
+    REQUIRE(furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_PULSE_PB3)==0U);
+    REQUIRE(furi_hal_resource_lease_release(a,FURI_HAL_LEASE_JS_EXTI3));
+    a=furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_PULSE_PC3);
+    REQUIRE(a);
+    REQUIRE(furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_JS_EXTI3)==0U);
+    REQUIRE(furi_hal_resource_lease_release(a,FURI_HAL_LEASE_PULSE_PC3));
+    a=furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_JS_EXTI0);
+    REQUIRE(a);
+    REQUIRE(furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_PULSE_PC0)==0U);
+    REQUIRE(furi_hal_resource_lease_release(a,FURI_HAL_LEASE_JS_EXTI0));
     a=furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_PULSE_NONCONNECTOR);
     REQUIRE(a);
     REQUIRE(furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_PULSE_PC0)==0U);
@@ -88,6 +104,7 @@ def main() -> None:
     source_end=s.index("const GpioPinRecord* furi_hal_resources_pin_by_number",source_start)
     implementation=s[source_start:source_end]
     assert "FURI_HAL_LEASE_PULSE_NONCONNECTOR" in masks
+    assert "FURI_HAL_LEASE_JS_EXTI3" in masks
     assert "mask == FURI_HAL_LEASE_PULSE_PA7" in implementation
     with tempfile.TemporaryDirectory(prefix="labmate_e11_native_mask_") as td:
         c=Path(td)/"lease.c"
