@@ -76,7 +76,7 @@ bool furi_hal_ibutton_emulate_try_stop(void);
     z = b.index("\nvoid furi_hal_ibutton_emulate_set_next(", a)
     part = b[a:z]
     # The void start previously has early returns only on failed ownership.
-    if part.count("return;") != 2:
+    if part.count("return;") != 3:
         raise ValueError(f"Unexpected native iButton START early-return count {part.count('return;')}")
     part = part.replace("return;", "return false;")
     part = once(part,
