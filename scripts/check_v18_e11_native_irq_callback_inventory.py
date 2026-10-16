@@ -51,7 +51,7 @@ def scan(root:Path)->list[tuple[str,int,str]]:
 
 def check(root:Path):
     sha=subprocess.check_output(["git","-C",str(root),"rev-parse","HEAD"],text=True).strip()
-    if sha!=PINN: raise ValueError("Not exact pinned Momentum")
+    if sha!=PINNED: raise ValueError("Not exact pinned Momentum")
     changed=set(subprocess.check_output(
         ["git","-C",str(root),"diff","--name-only","HEAD"],text=True).splitlines())
     if INPUT in changed: raise ValueError("System input button service changed: unsafe global EXTI policy")
