@@ -10,6 +10,7 @@ on:
       - "scripts/check_v18_full_vs_mntm012.py"
       - "scripts/patch_momentum_i2c_timeout.py"
       - "scripts/patch_momentum_resource_lease.py"
+      - "scripts/check_v18_native_legacy_tim2_contract.py"
       - "scripts/patch_momentum_gpio_tryadd.py"
       - "scripts/patch_momentum_native_pwm_lease.py"
       - "scripts/patch_momentum_native_js_gpio_lease.py"
@@ -92,6 +93,8 @@ jobs:
           python3 labmate/scripts/patch_momentum_native_pulse_reader_lease.py momentum-src --apply
           python3 labmate/tests/test_v18_native_pulse_reader_lease.py momentum-src
           python3 labmate/tests/test_v18_native_pulse_lease_firmware.py momentum-src
+          python3 labmate/tests/test_v18_tim2_lease_integration.py
+          python3 labmate/scripts/check_v18_native_legacy_tim2_contract.py momentum-src labmate
           git -C momentum-src diff --check
           echo "E11 NATIVE PWM/RESOURCES + FULL MNTM012 SOURCE MATCH; no physical flash."
 
