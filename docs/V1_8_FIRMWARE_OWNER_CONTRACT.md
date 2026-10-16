@@ -1473,3 +1473,71 @@ approval; the original unqualified firmware-wide
 ownership objective may **not** be silently checked PASS.
 This decision is not a release authorization and changes
 no installed firmware.
+
+## E11.1n — LabMate/Native PWM double-owner conflict and matched HAL gate (2026-10-16)
+
+**Root cause found by two-source review:** The original LabMate
+`labmate_generator_start()` first claimed
+`FURI_HAL_LEASE_PWM_PA7`, and then invoked the *new*
+Momentum `furi_hal_pwm_start(TIM1/PA7)`. But the native PWM
+service introduced by E11.1i itself attempts an atomic
+`FURI_HAL_LEASE_PWM_PA7` claim before configuring TIM1.
+The second attempt is correctly denied by the firmware's
+single-owner table. Independently passing LabMate-only
+and native-HAL-only host tests **did not prove these two
+real modules could operate together**. If this code had
+been flashed as a matched pair, LabMate could have falsely
+advertised PWM RUN while the native HAL performed no
+timer/pin writes.
+
+**Fix:** The native Momentum PWM HAL is now the *sole*
+claim holder for PA7/TIM1. LabMate no longer preclaims
+the exact mask. Before START it declines to modify
+an already-running native PWM channel; after the native
+void-return START it checks `furi_hal_pwm_is_running()`
+and reports BUSY rather than RUN if the native HAL
+refused a competing pin or legacy-enabled TIM1 bus.
+Retune and STOP require a still-running native PWM
+service. After STOP, LabMate obtains and immediately
+releases a temporary `FURI_HAL_LEASE_PWM_PA7` **probe**
+to detect whether native STOP really surrendered the
+timer+pin reservation. If release failed or a foreign
+service wins a race, it stays ERR/blocked and never
+restarts blindly. No FAP-local preclaim precedes START.
+
+**Matched-firmware capability gate:** The exact pinned
+`scripts/patch_momentum_native_pwm_lease.py`
+now adds `FURI_HAL_PWM_NATIVE_LEASE_API_V1` to the
+patched firmware resource header **only alongside the
+real native PWM driver patch**. The LabMate generator
+fails closed unless both that marker and the E11 shared
+resource lease API are present. An SDK with only the
+generic lease table, or a stock SDK, cannot mistakenly
+enable an uncoordinated PWM. This is a build capability
+check, **not** proof that legacy radio/RFID services
+are fully coordinated.
+
+**Regressions:** `tests/test_v18_pwm_lease_integration.py`
+compiles/executes the actual LabMate generator C under
+stock, generic-lease-only and matching native PWM
+HAL configurations; tests denial without register writes,
+real native owner START, retune, STOP probe and sticky
+release faults. `tests/test_v18_pwm_native_joint.py`
+compiles the actual LabMate generator **and the actual
+patched Momentum `furi_hal_pwm.c` into the same
+mocked firmware process** with one shared lease
+allocator. The joint regression demands successful
+START+retune+STOP+reentry, denied occupied pin, and
+no duplicate FAP claim. This is a new acceptance
+gate for the PWM workflow, native PWM workflow and
+full MNTM-012 updater review.
+
+The new exact-code CI runs
+[38830093580](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38830093580),
+[38830093591](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38830093591),
+and [38830093633](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38830093633)
+were started for this candidate. Do **not** mark it
+fully PASS until the separate CI jobs complete SUCCESS.
+This is still not a physically verified PWM output,
+Flipper firmware installation, global HAL safety or
+Stable release. No device/USB/SD changes.
