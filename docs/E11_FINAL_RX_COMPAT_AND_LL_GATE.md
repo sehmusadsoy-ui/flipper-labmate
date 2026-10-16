@@ -66,8 +66,9 @@ also included all earlier original C/C++ E11 regression tests.
 The most recent matching full no-flash Momentum firmware, ONE LabMate
 FAP, JS GPIO, radio stack, MNTM-012 updater, API and option-byte-policy
 gate is [#38945772528](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38945772528).
-**Its terminal SUCCESS must be verified independently** before this
-particular software combination is considered build-accepted.
+**Final conclusion verified SUCCESS.** This exact candidate includes
+firmware-native radio plugin, updated SDK API, one LabMate FAP, JS GPIO,
+full MNTM-012 updater checksums and E11 direct LL regression gate.
 
 ## Reserved direct EXTI and disjoint native DMA channel audit
 
@@ -127,7 +128,7 @@ reboot was implemented by this stage.
 **Software covered and host-verified:** matched native Flipper firmware
 owners and their documented default/supported pins, exact callback
 lifecycle, CC1101 official plugin RX status, current static LL
-channel/EXTI inventory and single-package build (once CI concludes).
+channel/EXTI inventory and single-package build (as proven by the matching completed CI).
 
 **Still outside a universal COMPLETE claim:** unchanged third-party
 v1 radio plugin void callbacks, nonstandard dynamic GPIO or radio
