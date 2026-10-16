@@ -1641,3 +1641,29 @@ not validate these new TIM2 edits. New TIM2 and full
 updater CI runs are checked independently. Hardware
 fixtures and recovery remain deferred. No flash,
 USB, SD card, Stable tags, or on-device updates.
+
+### E11.1p independent production TIM2 CI evidence
+
+[**CI #38831276537 SUCCESS**](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38831276537),
+exact LabMate source SHA
+`65d7e72881c7ecb078a720a1ff76e31f7e0e48d1`.
+The real production C TIM2 host suite (including
+legacy-TIM2-bus already enabled, delayed clock-loss,
+failed claim, matched STOP and sticky release), the
+native legacy source audit, the pinned patched
+Momentum firmware, its exported APIs and
+`labmate.fap` compile/APPCHK passed.
+
+Exact **CI-only** SHA256:
+- `firmware.dfu`:
+  `cdfe26af16baff93d6c5e1a20b03e3f133ea4b84384e6c000d2779dc3d58bd25`
+- `labmate.fap`:
+  `8d65b46b1d9d752a3894ddd6766de7118921a64fbd8001dfb060e0808bb60c95`
+
+The later two production callers' BUSY-vs-ERR
+classification is covered in a subsequent
+full matched updater job [#38831353509](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38831353509);
+do not reuse the above hashes as a claim of that
+later *complete* updater. The separately compiled
+JS GPIO plugin was not built in the narrow TIM2 job.
+No device behavior or rollback accepted.
