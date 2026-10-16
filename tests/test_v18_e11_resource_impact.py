@@ -55,7 +55,11 @@ class E11ResourceImpactTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "LabMate FAP differs"):
             self.compare()
         self.new[FAP_PATH] = sha(self.fap)
-        self.assertTrue(self.compare()["labmate_fap_embedded"])
+        finding = self.compare()
+        self.assertTrue(finding["labmate_fap_embedded"])
+        self.assertTrue(finding["bundled_fap_blocks_assumed_firmware_then_fap_separation"])
+        self.assertEqual(finding["trial_go_no_go"], "NO-GO")
+        self.assertFalse(finding["device_write_authorized"])
 
     def test_persistent_labmate_backup_files_must_not_be_in_updater(self):
         self.new["apps_data/labmate/profiles.dat"] = sha(b"data")
