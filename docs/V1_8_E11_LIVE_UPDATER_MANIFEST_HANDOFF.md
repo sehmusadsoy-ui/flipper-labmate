@@ -126,3 +126,61 @@ does not yet guarantee the installed EXITFIX survives cleanup.
 Regardless of the old manifest outcome, exact dirty firmware
 recovery and E11 physical GPIO/TIM1/TIM2/EXTI tests remain OPEN.
 Both updater packages are DO NOT FLASH, Stable and EXITFIX intact.
+
+
+## 2026-10-17 — REAL COM7 manifest verdict: EXITFIX is explicitly scheduled for old-resource removal
+
+**The operator has NOW executed the exact source-pinned COM7 read-only audit
+described above.** This supersedes earlier "not executed"/"unknown" language.
+
+```text
+old_manifest_resource_files: 2114
+old_manifest_directories: 165
+old_manifest_metadata_lines: 2
+old_cleanup_lists_installed_labmate_fap: YES
+old_cleanup_labmate_data_files: 0
+old_cleanup_non_labmate_apps_data_files: 156
+old_cleanup_app_fap_files: 268
+old_cleanup_lists_apps_tools_parent: YES
+manifest_total_records: 2281
+current_installed_manifest_provenance: READ_FROM_DEVICE_NOT_AUTHENTICATED
+old_resource_cleanup_behavior: REMOVES_OLD_MANIFEST_FILE_ENTRIES
+split_new_bundle_excludes_labmate_fap: YES_REVIEW_ONLY
+split_updater_guarantees_exitfix_survival: NO
+exact_prior_firmware_restore_tested: NO
+trial_write_authorized: NO
+live_manifest_readback_md5_screen: MATCH
+E11 OLD RESOURCE CLEANUP SCOPE AUDIT PASS - FIRMWARE TRIAL NO-GO
+E11 RESOURCE MANIFEST CHECK PASS - NO FLASH
+```
+
+**Authoritative decision:** Under the verified Momentum native updater's
+post-update resource cleanup, the **current installed LabMate app at
+`/ext/apps/Tools/labmate.fap` IS in the old manifest's FILE removal
+list**. Hence a trial that enables this resource-cleanup phase is
+expected to remove that file. Our experimental FAP-SPLIT updater also
+omits LabMate from the new bundle and therefore does NOT reintroduce
+a LabMate FAP during that unpack. It must **NOT** be used as the
+proposed way to preserve installed EXITFIX or as a device trial package.
+
+The original full updater DOES include the new uninstalled E11
+LabMate FAP and, if resources are updated, may replace EXITFIX
+with E11's matching but untested application. It is also
+**DO NOT FLASH**; containing the replacement is not authorization
+or proof of its proper operation. The manifested zero entries
+under `apps_data/labmate` indicate the old **resource-manifest
+cleanup does not directly enumerate those persistent-data file
+paths**, not that all possible updater or runtime writes are absent.
+
+The 156 other `apps_data` resource files and 268 app FAPs are
+*manifest entries*, not proof of damaged or deleted files. The
+Manifest was read only, MD5 matched and no files were removed.
+No full installed firmware image has been hashed; its exact
+rollback remains unproven.
+
+**Safety gate:** `SPLIT_UPDATER_AS_EXITFIX_PRESERVATION=REJECTED`.
+`ORIGINAL_FULL_E11_TRIAL=NO_GO`.
+`DEVICE_WRITE_AUTHORIZED=NO`. Only offline planning is permitted.
+Historical 14-file LabMate PC backup and current 10-file/1791-byte
+PC copy remain independently preserved. The working installed EXITFIX
+must not be overwritten or removed.
