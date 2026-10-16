@@ -1487,3 +1487,45 @@ simulation/host tests only. The 14-file older backup is still NOT
 demonstrated current, and no whole-SD device image or restore
 rehearsal exists. Keep E11 install, recovery and Stable
 acceptance BLOCKED; do not infer physical resource PASS.
+
+
+## 2026-10-17 — First live COM7 SD listing refused; Momentum byte-suffix parser fixed
+
+**ACTUAL OPERATOR RESULT (not a physical PASS):**
+
+```
+LABMATE LIVE SD AUDIT REFUSED: unrecognized Flipper storage-list response
+READ-ONLY AUDIT FAILED - NO FLASH
+```
+
+The first read-only device listing attempt reached the parser but
+did not produce any file-count or historical-backup comparison
+result. This does **not** establish SD corruption, current
+parity or missing-log changes. The Flipper and microSD contents
+were not modified by this read-only operation.
+
+**Exact root cause found in pinned upstream**
+`Momentum-Firmware@d3f89dfe`,
+`applications/services/storage/storage_cli.c`:
+`storage_cli_list()` emits `[F] <filename> <decimal-size>b`,
+where `b` is literal. Our preliminary parser expected just
+the decimal size. It correctly refused a format it did not
+recognize. Now the parser **requires literal b**, preserves
+strict path and response safety and includes a real tab/CRLF/size
+CLI sample and malformed-unit rejection tests.
+
+**Corrected source/test commit:**
+`0f0a5f2d636809bbc529d4e34b2f964ee5051967`.
+- [Windows fake-COM regression #38976590206](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38976590206):
+  **SUCCESS**, 19 cases (18 pass, 1 impossible NTFS collision
+  fixture skipped).
+- [Full integrated host regression #38976590323](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38976590323):
+  **SUCCESS**.
+- [Corrected read-only Windows handoff](V1_8_E11_LIVE_SD_READ_ONLY_HANDOFF.md)
+  pins the exact new script source and unchanged Momentum transport.
+
+**Live parity check remains OPEN** until the operator actually runs
+the fixed program on the device and shares the path/size/MD5
+comparison counts. Never auto-restore, delete or sync logs. Firmware
+and split-review updater remain **DO NOT FLASH**; Stable and PR state
+unchanged.
