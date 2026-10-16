@@ -1558,3 +1558,86 @@ source changes require new paired checksums.
 This is still not a physically verified PWM output,
 Flipper firmware installation, global HAL safety or
 Stable release. No device/USB/SD changes.
+
+## E11.1p — Native TIM2 already-busy / unexpected clock loss & legacy RF boundary (2026-10-16)
+
+**New actual-C LabMate safety correction:** The GPIO/TIM2 owner
+`src/labmate_frequency_tim2.c` previously obtained a successful
+firmware `FURI_HAL_LEASE_COUNTER_PB3` despite an unrelated
+RFID, Sub-GHz or `digital_sequence` session already having
+enabled TIM2 without participating in the lease table.
+It could then reconfigure PB3 and call
+`furi_hal_bus_enable(TIM2)`, which is assert-based in
+Momentum when a peripheral clock is already enabled.
+
+This driver now, **after its atomic lease and BEFORE any
+GPIO, TIM2 or clock writes**, checks
+`furi_hal_bus_is_enabled(FuriHalBusTIM2)`. If busy,
+it releases **its own** temporary lease and returns
+false, letting Counter/HIGH report BUSY; it never resets
+or disables a foreign timer. If even the release fails,
+its opaque firmware handle is retained and further
+starts are prohibited until firmware restart.
+Clock-health checks also guard enable, disable, read and
+STOP. If a bypassing service unexpectedly disables the
+timer *after* LabMate starts, the driver goes sticky-fault:
+it refuses further timer/port writes and retains its
+own reservation rather than assert in HAL bus-disable.
+`labmate_event_counter_poll()` never treats a guarded
+zero as a 32-bit wrap/full-scale pulse count; its STOP
+does not consume a fabricated final edge snapshot.
+The HIGH frequency measurement invalidates its last
+rate instead of publishing fictitious readings.
+
+**Actual driver tests:** `tests/test_v18_tim2_lease_integration.py`
+now compiles and runs the production TIM2 C driver
+against mock HAL in stock, matched E11, and simulated
+clock-loss modes. Scenarios include legacy native
+timer already enabled (zero GPIO/register mutation),
+foreign disabled clock in-flight, ordinary START,
+snapshot/STOP/reentry, refused firmware lease and
+sticky owner-release fault. These cases specifically
+cover *pre-existing* native TIM2 ownership and an
+observable unexpected clock disable. They cannot
+guarantee exclusion from a service that bypasses the
+lease and races to enable TIM2 **after** LabMate's
+preflight; the read-before-write test is not atomic
+against uncooperative services.
+
+**Native RFID/Sub-GHz/digital-sequence safety review:**
+`scripts/check_v18_native_legacy_tim2_contract.py` is
+a new *read-only, pinned-Momentum* audit gate. It
+requires verified TIM1/TIM2 bus and start/stop source
+footprints for native
+`furi_hal_subghz.c`, `furi_hal_rfid.c`,
+`digital_sequence.c` and `furi_hal_bus.c`,
+and explicitly rejects accidental changes to those
+critical native files. It checks that the LabMate
+counter and HIGH consumers still implement the
+fail-closed preflight and reading health guards.
+The audit is included in exact matched TIM2 and
+full MNTM-012 updater workflows.
+
+**Binding limitation:** This does **not** make native
+radio/RFID sequences safe to run concurrently with
+an already-active LabMate TIM2 capture. Their start
+functions return `void` and can set state, ISR or
+DMA configuration before/after timer enable. Refusing
+the clock enable alone cannot unwind their state
+machines and could break Flipper radio or RFID tools.
+We **did not modify** those native services, HAL
+bus functions, onboard RF hardware state or published
+Stable. Until a separately reviewed BUSY-safe native
+service migration and physical coexistence check
+exists, E11's *global* TIM2 owner guarantee remains
+**OPEN** and concurrent use is **unsupported**.
+It is not acceptable to declare v1.6 fully complete
+merely because this bounded guard or build passes.
+
+**Evidence status:** Previous paired PWM/final MNTM-012
+updater [38830093633](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38830093633)
+completed SUCCESS for the *prior* source SHA; it does
+not validate these new TIM2 edits. New TIM2 and full
+updater CI runs are checked independently. Hardware
+fixtures and recovery remain deferred. No flash,
+USB, SD card, Stable tags, or on-device updates.
