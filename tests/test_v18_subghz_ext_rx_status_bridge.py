@@ -77,6 +77,30 @@ static const SubGhzDevice forged_device={"cc1101_ext",&malicious_interconnect};
 static const SubGhzDeviceInterconnect nested_interconnect={nested_start};
 static const SubGhzDevice nested_device={"cc1101_ext",&nested_interconnect};
 static const SubGhzDevice disabled_device={"disabled",&disabled_interconnect};
+/* Genuine overlapping worker attempt, while a v1 plugin callback has
+ * not returned. No global critical lock is held during the callback.
+ */
+static pthread_mutex_t waiting_lock=PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t waiting_cv=PTHREAD_COND_INITIALIZER;
+static bool waiting_entered,waiting_release;
+static const SubGhzDevice waiting_device;
+static void waiting_start(void* cb,void* ctx) {
+ (void)cb;(void)ctx;
+ assert(!pthread_mutex_lock(&waiting_lock));
+ waiting_entered=true;
+ assert(!pthread_cond_broadcast(&waiting_cv));
+ while(!waiting_release)
+  assert(!pthread_cond_wait(&waiting_cv,&waiting_lock));
+ assert(!pthread_mutex_unlock(&waiting_lock));
+ subghz_devices_report_async_rx_start_result(&waiting_device,true);
+}
+static const SubGhzDeviceInterconnect waiting_interconnect={waiting_start};
+static const SubGhzDevice waiting_device={"cc1101_ext",&waiting_interconnect};
+static void* other_thread_rx(void* unused) {
+ (void)unused;
+ assert(subghz_devices_try_start_async_rx(&waiting_device,NULL,NULL));
+ return NULL;
+}
 int main(void){
  internal_result=false;
  assert(!subghz_devices_try_start_async_rx(&subghz_device_cc1101_int,NULL,NULL));
@@ -110,7 +134,23 @@ int main(void){
  /* Asynchronous/spurious reports outside a call do nothing. */
  subghz_devices_report_async_rx_start_result(&subghz_device_cc1101_ext,true);
  assert(!e11_rx_start_reported && !e11_rx_start_pending);
- puts("E11 original SubGHz v1 plugin sidechannel C: external BUSY/ABI PASS");
+ pthread_t thread;
+ waiting_entered=false;waiting_release=false;
+ assert(!pthread_create(&thread,NULL,other_thread_rx,NULL));
+ assert(!pthread_mutex_lock(&waiting_lock));
+ while(!waiting_entered)
+  assert(!pthread_cond_wait(&waiting_cv,&waiting_lock));
+ assert(!pthread_mutex_unlock(&waiting_lock));
+ int external_before=plugin_calls;
+ assert(!subghz_devices_try_start_async_rx(&subghz_device_cc1101_ext,NULL,NULL));
+ assert(plugin_calls==external_before && e11_rx_start_pending==&waiting_device);
+ assert(!pthread_mutex_lock(&waiting_lock));
+ waiting_release=true;
+ assert(!pthread_cond_broadcast(&waiting_cv));
+ assert(!pthread_mutex_unlock(&waiting_lock));
+ assert(!pthread_join(thread,NULL));
+ assert(!e11_rx_start_pending && !e11_rx_start_reported);
+ puts("E11 original SubGHz v1 plugin sidechannel C: external BUSY/ABI/race PASS");
  return 0;
 }
 """
