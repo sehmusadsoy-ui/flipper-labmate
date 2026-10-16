@@ -76,6 +76,7 @@ on:
       - "tests/test_v18_native_js_gpio_callback_cleanup.py"
       - "scripts/patch_momentum_subghz_ext_rx_status_bridge.py"
       - "tests/test_v18_subghz_ext_rx_status_bridge.py"
+      - "scripts/check_v18_e11_direct_ll_boundary.py"
       - "scripts/check_v18_e11_native_irq_callback_inventory.py"
       - "tests/test_v18_signal_reader_iso15693_route_audit.py"
       - "tests/test_v18_native_pulse_reader_lease.py"
@@ -247,6 +248,7 @@ jobs:
           python3 labmate/scripts/patch_momentum_subghz_ext_rx_status_bridge.py momentum-src
           python3 labmate/scripts/patch_momentum_subghz_ext_rx_status_bridge.py momentum-src --apply
           python3 labmate/tests/test_v18_subghz_ext_rx_status_bridge.py momentum-src
+          python3 labmate/scripts/check_v18_e11_direct_ll_boundary.py momentum-src
           python3 labmate/tests/test_v18_native_subghz_rx_callers.py momentum-src
           python3 labmate/scripts/check_v18_e11_native_irq_callback_inventory.py momentum-src
           python3 labmate/tests/test_v18_signal_reader_iso15693_route_audit.py momentum-src
