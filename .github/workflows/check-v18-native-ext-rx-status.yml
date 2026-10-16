@@ -1,0 +1,167 @@
+name: v1.8 E11 matched external CC1101 v1 RX BUSY bridge C gate
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - "scripts/patch_momentum_native_rfid_read_tim1_lease.py"
+      - "scripts/patch_momentum_native_rfid_capture_tim2_lease.py"
+      - "tests/test_v18_native_rfid_read_tim1_lease.py"
+      - "tests/test_v18_native_rfid_capture_tim2_lease.py"
+      - "scripts/patch_momentum_native_lfrfid_read_worker_busy.py"
+      - "tests/test_v18_native_lfrfid_read_worker_busy.py"
+      - "scripts/patch_momentum_native_lfrfid_raw_read_busy.py"
+      - "tests/test_v18_native_lfrfid_raw_read_busy.py"
+      - "scripts/patch_momentum_native_lfrfid_busy_ui.py"
+      - "tests/test_v18_native_lfrfid_busy_ui.py"
+      - "scripts/patch_momentum_native_rfid_emulate_dma_lease.py"
+      - "tests/test_v18_native_rfid_emulate_dma_lease.py"
+      - "tests/test_v18_native_rfid_capture_tim2_lease.py"
+      - "scripts/patch_momentum_native_lfrfid_emulate_busy.py"
+      - "tests/test_v18_native_lfrfid_emulate_worker_busy.py"
+      - "scripts/patch_momentum_native_rfid_field_owner.py"
+      - "tests/test_v18_native_rfid_field_owner.py"
+      - "scripts/patch_momentum_native_subghz_rx_lease.py"
+      - "tests/test_v18_native_subghz_rx_lease.py"
+      - "scripts/patch_momentum_native_subghz_rx_busy_callers.py"
+      - "tests/test_v18_native_subghz_rx_callers.py"
+      - "scripts/patch_momentum_native_subghz_tx_lease.py"
+      - "tests/test_v18_native_subghz_tx_lease.py"
+      - "scripts/patch_momentum_native_onewire_slave_exti_lease.py"
+      - "tests/test_v18_native_onewire_slave_exti_lease.py"
+      - "scripts/patch_momentum_native_nfc_irq_exti_lease.py"
+      - "tests/test_v18_native_nfc_irq_exti_lease.py"
+      - "scripts/patch_momentum_native_serial_expansion_exti_lease.py"
+      - "tests/test_v18_native_serial_expansion_exti_lease.py"
+      - "scripts/patch_momentum_native_ext_cc1101_rx_lease.py"
+      - "tests/test_v18_native_ext_cc1101_rx_lease.py"
+      - "scripts/patch_momentum_e11_extended_dma_lease.py"
+      - "tests/test_v18_extended_dma_lease.py"
+      - "scripts/patch_momentum_native_iso15693_irq_restore_busy.py"
+      - "tests/test_v18_native_iso15693_irq_restore_busy.py"
+      - "tests/test_v18_signal_reader_iso15693_route_audit.py"
+      - "scripts/patch_momentum_native_signal_reader_e11_lease.py"
+      - "tests/test_v18_native_signal_reader_e11_lease.py"
+      - "scripts/patch_momentum_native_ext_cc1101_tx_lease.py"
+      - "tests/test_v18_native_ext_cc1101_tx_lease.py"
+      - "scripts/patch_momentum_native_wiegand_exti_lease.py"
+      - "tests/test_v18_native_wiegand_exti_lease.py"
+      - "scripts/patch_momentum_native_imu_fifo_exti_lease.py"
+      - "tests/test_v18_native_imu_fifo_exti_lease.py"
+      - "scripts/patch_momentum_native_js_gpio_callback_cleanup.py"
+      - "tests/test_v18_native_js_gpio_callback_cleanup.py"
+      - "scripts/patch_momentum_subghz_ext_rx_status_bridge.py"
+      - "tests/test_v18_subghz_ext_rx_status_bridge.py"
+      - ".github/workflows/check-v18-native-ext-rx-status.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native_ext_rx_status:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout LabMate E11 development
+        uses: actions/checkout@v4
+        with:
+          path: labmate
+          persist-credentials: false
+      - name: Checkout exact Momentum source
+        uses: actions/checkout@v4
+        with:
+          repository: Next-Flip/Momentum-Firmware
+          ref: d3f89dfe2ef6b01839201598e9be1590cba80322
+          path: momentum-src
+          persist-credentials: false
+      - name: Apply predecessor native lease stages through RX worker (NO FLASH)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 labmate/scripts/patch_momentum_i2c_timeout.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_resource_lease.py momentum-src --allow-timed-i2c --apply
+          python3 labmate/scripts/patch_momentum_gpio_tryadd.py momentum-src --allow-prepatched --apply
+          python3 labmate/scripts/patch_momentum_native_pwm_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_js_gpio_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_pulse_reader_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_digital_sequence_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_ibutton_tim1_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_ibutton_protocol_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_nfc_timers_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_infrared_rx_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_infrared_tx_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_infrared_rx_worker_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_rfid_read_tim1_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_rfid_read_tim1_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_rfid_capture_tim2_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_rfid_capture_tim2_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_lfrfid_read_worker_busy.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_lfrfid_read_worker_busy.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_lfrfid_raw_read_busy.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_lfrfid_raw_read_busy.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_lfrfid_busy_ui.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_lfrfid_busy_ui.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_rfid_emulate_dma_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_rfid_emulate_dma_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_lfrfid_emulate_busy.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_lfrfid_emulate_busy.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_rfid_field_owner.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_rfid_field_owner.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_subghz_rx_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_subghz_rx_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_subghz_rx_busy_callers.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_subghz_rx_busy_callers.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_subghz_tx_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_subghz_tx_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_onewire_slave_exti_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_onewire_slave_exti_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_nfc_irq_exti_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_nfc_irq_exti_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_serial_expansion_exti_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_serial_expansion_exti_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_ext_cc1101_rx_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_ext_cc1101_rx_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_e11_extended_dma_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_e11_extended_dma_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_iso15693_irq_restore_busy.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_iso15693_irq_restore_busy.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_signal_reader_e11_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_signal_reader_e11_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_ext_cc1101_tx_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_ext_cc1101_tx_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_wiegand_exti_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_wiegand_exti_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_imu_fifo_exti_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_imu_fifo_exti_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_js_gpio_callback_cleanup.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_js_gpio_callback_cleanup.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_subghz_ext_rx_status_bridge.py momentum-src
+          python3 labmate/scripts/patch_momentum_subghz_ext_rx_status_bridge.py momentum-src --apply
+          git -C momentum-src diff --check
+      - name: Exercise actual radio plugin RX start result, missing report and ABI C
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 labmate/tests/test_v18_native_rfid_read_tim1_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_rfid_capture_tim2_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_lfrfid_read_worker_busy.py momentum-src
+          python3 labmate/tests/test_v18_native_lfrfid_raw_read_busy.py momentum-src
+          python3 labmate/tests/test_v18_native_lfrfid_busy_ui.py momentum-src
+          python3 labmate/tests/test_v18_native_rfid_emulate_dma_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_lfrfid_emulate_worker_busy.py momentum-src
+          python3 labmate/tests/test_v18_native_rfid_field_owner.py momentum-src
+          python3 labmate/tests/test_v18_native_subghz_rx_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_subghz_rx_callers.py momentum-src
+          python3 labmate/tests/test_v18_native_subghz_tx_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_onewire_slave_exti_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_nfc_irq_exti_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_serial_expansion_exti_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_ext_cc1101_rx_lease.py momentum-src
+          python3 labmate/tests/test_v18_extended_dma_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_iso15693_irq_restore_busy.py momentum-src
+          python3 labmate/tests/test_v18_signal_reader_iso15693_route_audit.py momentum-src
+          python3 labmate/tests/test_v18_native_signal_reader_e11_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_ext_cc1101_tx_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_wiegand_exti_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_imu_fifo_exti_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_js_gpio_callback_cleanup.py momentum-src
+          python3 labmate/tests/test_v18_subghz_ext_rx_status_bridge.py momentum-src
+          echo "E11 matched external CC1101 RX BUSY signal C PASS; old unknown v1 remains unverified"
