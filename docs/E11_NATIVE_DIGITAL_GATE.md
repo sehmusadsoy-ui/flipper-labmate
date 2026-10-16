@@ -46,7 +46,7 @@ all native feature flows are safely migrated.
   MNTM-012 radio/option-byte comparison **PASS; CI only**.
 - Final candidate with extra debug-pin fail-closed change:
   [CI #38833710815](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38833710815);
-  check the completed workflow before claiming it PASS. No physical
+  **SUCCESS** (full paired build and package audit, CI only). No physical
   DigitalSequence, RFID, radio or cross-app measurements were run.
 
 ## E11 still OPEN — no unsafe shortcut
