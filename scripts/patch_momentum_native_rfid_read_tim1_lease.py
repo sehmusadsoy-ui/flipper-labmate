@@ -55,8 +55,8 @@ def patch(h:str,r:str,source:str,header:str,api:str):
         "/* RFID read carrier uses TIM1 (native internal output, not PA7). */\n"
         "#define FURI_HAL_LEASE_NATIVE_RFID_READ_TIM1 (FuriHalLeaseTim1)\n")
     r=once(r,
-        "           mask == FURI_HAL_LEASE_NATIVE_IR_DETECT_PA7 ||\n",
-        "           mask == FURI_HAL_LEASE_NATIVE_IR_DETECT_PA7 ||\n"
+        "           mask == FURI_HAL_LEASE_NATIVE_IR_TX_EXT_PA7 ||\n",
+        "           mask == FURI_HAL_LEASE_NATIVE_IR_TX_EXT_PA7 ||\n"
         "           mask == FURI_HAL_LEASE_NATIVE_RFID_READ_TIM1 ||\n")
     source=once(source,
         "void furi_hal_rfid_tim_read_start(float freq, float duty_cycle) {",
