@@ -62,3 +62,26 @@ writes does not make the race atomic against noncooperating code.
 A global resource-interposition or proven coordinated caller
 migration, real-C fault-injection and device acceptance are
 required to mark firmware-wide v1.6 resource management **COMPLETE**.
+
+## Verified CI evidence (2026-10-16, CI ONLY)
+
+- Final host-only, exact patched native iButton C and actual firmware
+  allocator with denied START, legacy already-active TIM1, ISR,
+  retune, STOP, failed lease release and clock loss:
+  [run #38835788840](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38835788840)
+  **SUCCESS** at source `4d7f2600717c1ab382fefc118d699d27bcbecf74`.
+- Exact production firmware code and single integrated LabMate FAP,
+  JS module, complete updater, APPCHK, and the official MNTM-012
+  radio/option-byte source/archive comparison:
+  [run #38835126596](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38835126596)
+  **SUCCESS** at source `ae7b3de3d470aa13a61fcc6e86b07c7f41e19349`.
+- **CI-only** `firmware.dfu` SHA256:
+  `1b29e91ea03d1d6c42bd9250d4d54784e4ad8177a56f63b4db7d4089641299b3`
+- Matching **CI-only** `labmate.fap` SHA256:
+  `94d023db7ce50a712d6fcf77d8e19d9fcb2554aca80c2a30170fdc0cf297aff9`
+- Review-only complete firmware/FAP/JS package artifact ID:
+  `12019730086`, **DO NOT FLASH**.
+
+A full SDK/firmware compile and mocked runtime test are not evidence
+that all independent native services comply with E11, or that Flipper
+hardware tested/approved the new firmware. **Global E11 remains OPEN.**
