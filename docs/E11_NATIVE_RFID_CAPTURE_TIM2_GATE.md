@@ -38,18 +38,23 @@ normal STOP/re-entry, double STOP and lost-clock cases, and then
 executed the actual firmware C resource mask allocator. These are
 **host tests**, not device or RF signal validation.
 
-The new full updater workflow must also apply this exact native stage
-after the TIM1 read stage, run this actual C gate, pass the strict
-remaining-mode safety audit and build one matching firmware, FAP,
-native JS GPIO and MNTM-012 package with APPCHK/comparison. Its final
-status is a **separate CI gate**; never infer PASS from host success.
+[Capture-only full matched Momentum firmware/FAP/JS/updater
+CI #38904996042 — SUCCESS](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38904996042).
+That workflow applied the exact stage after READ TIM1, compiled a matched
+firmware + one LabMate FAP + JS plugin + MNTM-012 updater and checked
+APPCHK and official package policy; no device/SD/USB writes. This
+preceded native LFRFID worker and UI BUSY stages, which have **separate
+later exact-source full build gates**.
 
 ## Explicit unfinished paths
 
-1. Existing higher-level RFID consumers still call the *void* capture
-   START API. The new bool variant is available but its BUSY handling
-   is **not yet routed through all real protocol/app call sites**.
-   A rejected hardware start must not leave callers awaiting data.
+1. The normal LFRFID READ and RAW recording consumers have now been
+   migrated in later stages to bool STARTs with distinct BUSY, STOP
+   cleanup and native scene warnings (see
+   [READ/RAW worker gate](E11_NATIVE_RFID_CALLER_BUSY_GATE.md)).
+   These host gates **do not** prove all native RFID clients, user
+   UI scheduling or physical recording acceptance; latest combined
+   full firmware candidate requires its own successful CI conclusion.
 2. RFID TIM2+DMA2 emulation and TIM1+TIM2+DMA2 field detection
    remain uncoordinated; their DMA/ISR and GPIO lifecycles need
    atomic composite claims and real production C fault testing.
