@@ -1239,3 +1239,57 @@ result is received. Previous full preflight PASS text typed after a
 PowerShell exception remains invalid. Recovery/restore rehearsal
 is **still unverified even if the archive check later passes**.
 No device write, firmware update, Stable change or app replacement.
+
+
+## 2026-10-17 — Located qFlipper archive passes actual local read-only integrity audit
+
+**USER-REPORTED LOCAL VALIDATION PASS (NO FLASH).** The operator ran
+a local Python `tarfile` audit via a temporary `.py` file for the
+previously discovered Desktop
+`Uybelav-backup-20261014-201804.tgz` (1,550 bytes).
+The validator opened the TGZ as gzip TAR, rejected traversal/absolute
+or unsafe archive member paths, duplicate names and unsupported
+non-file/non-directory members, read all regular members to completion
+and checked the expected shape. Terminal output:
+
+```
+SETTINGS ARCHIVE STRUCTURE PASS
+FILES: 14
+DIRECTORIES: 1
+SHA256: a0487ede35b8cec4cef505faf57363768fc1bc02d5d7c1dd3a8dcfa282c00ef2
+SETTINGS BACKUP VERIFIED - NO FLASH
+```
+
+**Exact evidence classification:** this now proves that the found
+local Desktop file is structurally readable, has the same recorded
+14-file/1-directory *shape* as the earlier backup review, and has the
+above local SHA256. No independent 2026-10-14 archived SHA256 reference
+is available to assert byte-identity with the older reviewed copy.
+The content of settings, restoration success and contemporaneous
+device state are not proven. The local backup/rollback *existence,
+readability and available pinned digest* checks can now be marked
+**LOCAL BACKUP PREFLIGHT PASS (LIMITED SCOPE)**, superseding the
+earlier *missing Downloads pathname* blocker. Historical reports
+that the file was missing refer specifically to its old presumed
+Downloads location; do not delete or rewrite them.
+
+**Verified before this step:**
+- Published official MNTM-012 rollback TGZ and preserved Stable FAP
+  each matched their pinned external SHA256s.
+- The read-back installed EXITFIX FAP matched the known EXITFIX SHA256.
+- The separate LabMate data backup had 14 nonzero readable files.
+- The new no-flash full review artifact #38966248325 had four exact
+  binary SHA256 matches on Windows, separately verified inside CI.
+
+**Remaining gates:** restore has **never been rehearsed**; settings
+archive is not a full microSD backup; no proof that all contemporary
+on-device data equals those historical copies; native E11 resource
+contention, real peripheral hardware and new candidate firmware/FAP
+have **not** had final physical acceptance. Current firmware
+`mntm-dev` base `d3f89dfe` with `dirty=true` does not authenticate
+an exact new E11 patch. The older installer script is pinned to a
+different FAP/DFU/TGZ, so **must not** be used against this newer
+review artifact. Draft PR #13 remains unmerged; main/Stable unchanged.
+No future Flipper firmware/FAP write is authorized by these read-only
+checks; separate exact-pair install planning, review, and explicit
+operator approval remain required.
