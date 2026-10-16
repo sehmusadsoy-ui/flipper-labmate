@@ -120,3 +120,42 @@ only; third-party `apps_data`, global SD card, recovery/restore
 rehearsal and new E11 firmware resource physical compatibility
 remain OPEN. The existing E11 review artifacts remain
 **DO NOT FLASH**; PR #13 DRAFT; main/Stable unchanged.
+
+
+## 2026-10-17 — Operator completed real 10-file PC-only readback
+
+**REAL DEVICE RESULTS — operator PowerShell terminal**:
+
+```
+snapshot_files_verified: 10
+snapshot_file_bytes: 1791
+new_device_files_preserved: 5
+changed_device_files_preserved: 2
+historical_files_not_on_device: 9
+old_backup_preserved: YES
+flipper_files_modified: NO
+snapshot_full_microSD: NO
+restore_rehearsed: NO
+firmware_flash_authorized: NO
+LIVE LABMATE PC READBACK SNAPSHOT VERIFIED - NO FLASH / NO RESTORE
+CURRENT LABMATE SNAPSHOT VERIFIED - PC ONLY
+```
+
+**This supersedes the above operator-pending status**: current
+LabMate-only 10-file snapshot **PASS** with 1,791 bytes copied to
+a new Windows local folder and locally re-read SHA256 verification.
+The previous historical 14-file folder is preserved separately,
+including historical files not currently found on the Flipper;
+there was **no restore, merge, delete, overwrite, firmware flash or
+FAP install**. Both copies should be kept intact. The exact
+randomized new Windows folder name was not emitted in the posted
+short transcript; the operator can locate it among
+`Downloads/LabMate-LiveSnapshot-*`, including
+`PC_SNAPSHOT_MANIFEST.json` and
+`READ_ONLY_SNAPSHOT_VERIFIED.txt`.
+
+**Still NOT PROVEN**: independent SHA256 directly computed by
+the Flipper firmware, complete non-LabMate microSD content
+preservation, independent restore rehearsal, installed
+firmware identity, new E11 live ownership/refusal tests. The
+formal firmware installation decision remains **NO-GO**.
