@@ -13,6 +13,8 @@ on:
       - "tests/test_v18_e11_external_sd_ro.py"
       - "scripts/backup_v18_e11_sd_reader_to_pc.py"
       - "tests/test_v18_e11_full_sd_pc_copy.py"
+      - "scripts/backup_v18_e11_usb_sd_to_pc.py"
+      - "tests/test_v18_e11_usb_sd_backup.py"
   workflow_dispatch:
 
 permissions:
