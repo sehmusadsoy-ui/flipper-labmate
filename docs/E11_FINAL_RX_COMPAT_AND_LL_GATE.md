@@ -159,13 +159,21 @@ A separate lifecycle audit found that the original external radio
 `subghz_device_cc1101_ext_free` would deinitialize SPI and free the
 radio object even after a denied START/STOP left an RX/TX lease or
 callback/DMA context retained. That would violate the sticky-fault
-no-use-after-free policy. The RX patch now refuses free while RX owns or
+no-use-after-free policy. The same pinned native driver had an asserting allocation
+path: after a deliberately retained sticky-fault object, re-opening
+the radio could assert instead of returning BUSY, and an allocation
+failure was not checked before dereferencing the object. The RX patch now refuses free while RX owns or
 is faulted, and the subsequent TX patch extends that refusal to TX;
-a NULL/free-again case is a harmless no-op. A NEW original-production-C
-`test_v18_native_ext_cc1101_free_lease.py` host test exercises the
-actual patched free function for idle release, duplicate free, live
-RX/TX owner and sticky RX/TX fault with zero borrowed cleanup. All RX,
-TX and full paired workflows now require this gate before continuing.
+a NULL/free-again case is a harmless no-op. The same native patch chain now rejects second/re-entrant allocation,
+returns false while any retained RX/TX owner or fault remains, and
+checks out-of-memory before peripheral initialization. The NEW
+`test_v18_native_ext_cc1101_free_lease.py` harness executes the actual
+patched allocation **and** free functions with fault injection: null
+free, OOM, repeated allocation, idle release, live RX/TX lease,
+sticky RX/TX fault and zero foreign SPI/GPIO cleanup. RX and TX
+workflows require it, and the full no-flash workflow executes it
+**twice** (after RX patch and again after TX patch) to prevent an
+untested state transition between those stages.
 This deliberately retains the radio object on exceptional faults;
 it does not claim automatic recovery or guarantee all upper plugin
 callers handle the retained state correctly. The repository-level acceptance guard
