@@ -124,6 +124,9 @@ static void reset_case(void) {
  e11_rfid_field_handle=0U;e11_rfid_field_fault=false;
 }
 int main(void) {
+ /* Mocked register macros must still exercise the actual timer objects. */
+ (void)&counter_timer;
+ (void)&timeout_timer;
  uint32_t freq=999U;
  reset_case();
  assert(!furi_hal_rfid_field_detect_try_start());
