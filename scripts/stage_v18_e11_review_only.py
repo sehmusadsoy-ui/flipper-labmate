@@ -98,6 +98,17 @@ def write_review_stage(output: Path, files: dict[str, bytes]) -> Path:
     return dest
 
 
+def require_isolated_output(output: Path, protected: tuple[Path, ...]) -> None:
+    """Never stage INSIDE an input artifact or backup directory."""
+    destination = output.resolve(strict=False)
+    for item in protected:
+        root = item.resolve(strict=False)
+        if destination == root or root in destination.parents:
+            raise ValueError("review stage would modify a protected input directory")
+    if output.is_symlink() or output.exists():
+        raise ValueError("review output must be a brand-new local directory")
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--candidate", type=Path, required=True)
@@ -109,6 +120,10 @@ def main() -> int:
                    help="brand-new LOCAL review directory; never a Flipper storage path")
     args = p.parse_args()
     try:
+        # Prevent staging under a verified artifact or backup directory.
+        require_isolated_output(
+            args.output, (args.candidate, args.rollback, args.data_backup),
+        )
         # Prevent any output before ALL upstream provenance/backup checks pass.
         preflight(args.candidate, args.rollback, args.installed_fap_copy,
                   args.data_backup, args.settings_archive)
