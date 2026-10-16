@@ -380,3 +380,28 @@ on-device coexistence and exceptional recovery are `HARDWARE PENDING`.
 This checkpoint neither rewrites the older milestone-history rows nor
 authorizes v1.8 Stable replacement, a new FAP variant, or v1.9.
 The final integrated v1.8 device/release checklist still applies.
+
+
+## 2026-10-16 — Final integrated v1.5–v1.8 portable software regression
+
+**DONE / VERIFIED SOURCE-C HOST PASS:** The new branch-only single gate
+[`check-v18-final-integrated-host.yml`](../.github/workflows/check-v18-final-integrated-host.yml)
+ran all existing critical portable production-C models and source checks
+for Profiles, CSV codec/History, tool menu, Frequency/Pulse, PWM,
+Counter, Button, Alerts, UART, I²C, 1-Wire, COMM ownership and
+deferred-I/O cleanup. GitHub Actions
+[#38958856924](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38958856924)
+ended **completed / SUCCESS** on source
+`111372c4772bfaa1e4579f583c931dde822808ff`. Earlier pinned
+full firmware/FAP build #38955881504 remains applicable to unchanged
+production source, but is not a newer hardware test. The exact domains,
+reproduction command, CI provenance and remaining device/release gates
+are in [V1_8_FINAL_SOFTWARE_ACCEPTANCE_2026-10-16.md](V1_8_FINAL_SOFTWARE_ACCEPTANCE_2026-10-16.md).
+
+The old unchecked Release Gate R list above remains **historically open**
+for operator physical acceptance, restored `v1.8` production badge,
+verified final paired artefact and an explicitly approved Stable asset
+update. The *software-only* regression task from that gate now passes;
+physical device/SD data integrity, Excel and equipment-dependent
+acceptance are still **NOT PASSED**. Do not merge, publish, flash or
+start v1.9 merely from this integrated host success.
