@@ -96,13 +96,27 @@ reported COM7 device, use this SINGLE PowerShell block:
 summary fields only; do not upload whole Manifest or other
 application paths. Do not run any updater after a PASS.
 
+Final complete test replay after the multi-chunk binary-receive
+fixture was corrected: [pinned upstream source gate
+#38982699788](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38982699788)
+**SUCCESS**, [native Windows fake-COM
+#38982699841](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38982699841)
+**SUCCESS** (12 old-Manifest tests; 1 unrelated NTFS
+collision fixture skipped in the earlier generic suite), and
+[full host regressions
+#38982699802](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38982699802)
+**SUCCESS**. Earlier run #38982669322 failed from our test
+fixture writing literal backslash+n instead of actual newline;
+repaired without weakening production parser.
+
 ## Verified sources / simulations
 
 - [Pinned actual Momentum update worker #38982495403](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38982495403):
-  SUCCESS, 10 source semantics tests + 11 manifest risk/USB
-  transfer tests; confirmed old cleanup before new unpack.
+  SUCCESS, 10 source semantics tests + 12 manifest risk/USB
+  transfer tests, including multi-chunk readback; confirmed old cleanup before new unpack.
 - [Windows simulated serial/Manifest #38982495374](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38982495374):
-  SUCCESS; all 11 new manifest protocol tests passed.
+  SUCCESS; all 12 manifest protocol tests passed at the
+  final simulated-version/large-stream test commit.
 - [Full native/host v1.8 regression #38982495377](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38982495377):
   SUCCESS.
 
