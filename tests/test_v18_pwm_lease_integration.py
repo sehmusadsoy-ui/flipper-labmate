@@ -21,9 +21,12 @@ MOCK=r"""
 #define LABMATE_PWM_CUSTOM_INDEX 15U
 #define LABMATE_PWM_PRESET_COUNT 15U
 #define FuriHalPwmOutputIdTim1PA7 7
-#ifdef HAS_LEASE
+#if defined(HAS_LEASE) || defined(HAS_LEASE_ONLY)
 #define FURI_HAL_RESOURCE_LEASE_API_V1 1
 #define FURI_HAL_LEASE_PWM_PA7 3U
+#endif
+#ifdef HAS_LEASE
+#define FURI_HAL_PWM_NATIVE_LEASE_API_V1 1
 #endif
 typedef struct {
     bool generator_running, generator_state, generator_editing;
@@ -191,7 +194,7 @@ int main(void){
     return 0;
 }
 """
-def one_test(has_lease:bool)->None:
+def one_test(has_lease:bool,lease_only:bool=False)->None:
     with tempfile.TemporaryDirectory(prefix="labmate_e11_pwm_") as temp:
         folder=Path(temp)
         (folder/"mock.h").write_text(MOCK)
@@ -202,6 +205,7 @@ def one_test(has_lease:bool)->None:
         cmd=[os.environ.get("CC","cc"),"-std=c11","-Wall","-Wextra","-Werror",
              "-pedantic","-O0","-I",str(folder)]
         if has_lease:cmd.append("-DHAS_LEASE=1")
+        if lease_only:cmd.append("-DHAS_LEASE_ONLY=1")
         binary=folder/"test"
         subprocess.run(cmd+[str(folder/"harness.c"),"-o",str(binary)],check=True)
         subprocess.run([str(binary)],check=True)
@@ -220,7 +224,8 @@ def guard_sources()->None:
 if __name__=="__main__":
     guard_sources()
     one_test(False)
+    one_test(False,lease_only=True)
     one_test(True)
     print("E11 PWM TRUE HAL OWNER ACTUAL GEN C HOST PASS:")
-    print("stock fail closed; no FAP preclaim; real native denied START; no false RUN")
+    print("stock and generic-lease-only SDK fail closed; native PWM owner alone claims")
     print("retune & STOP verification detect sticky HAL release faults; CI only.")
