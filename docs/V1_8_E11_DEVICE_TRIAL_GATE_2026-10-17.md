@@ -115,3 +115,41 @@ firmware version, device abnormal boot, radio recovery or SD trouble:
 flash or restore anything. Preserve logs and report exact failing stage
 before a separate recovery decision. Never overwrite the original
 Stable `v1.8` tag/assets or merge PR #13 based only on CI.
+
+
+## 2026-10-17 — Separate no-device review staging tool
+
+`scripts/stage_v18_e11_review_only.py` is a **NEW, stage-only** helper.
+It MUST NOT be confused with the old historical
+`install-v18-full012-dev-firmware.ps1`, and it does not contain an
+`-Apply`/firmware upload/FAP install code path.
+
+Before writing any local staging output, it repeats the **actual
+Windows-operator input preflight**: four pinned candidate checksums,
+exact CI run/source and updater proof, previously verified installed
+EXITFIX FAP, official old MNTM-012 rollback, Stable FAP, 14+ LabMate
+backup files and the 14-file/1-directory qFlipper Desktop settings TGZ
+with SHA256 `a0487ede35b8cec4cef505faf57363768fc1bc02d5d7c1dd3a8dcfa282c00ef2`.
+It then validates a strict one-root, **seven-file updater allowlist**,
+bounded regular TAR entries only, correct embedded DFU SHA256 and
+original official radio SHA256. Unexpected, missing, duplicated, linked
+or mismatched files fail closed. It writes the seven staged updater
+files and prominent **STAGING_REVIEW_ONLY.txt / DO NOT FLASH** marker to
+an operator-selected **new local folder**. Pre-existing output folders
+and output paths within original verified artifact, rollback or data
+backup directories are refused. It has no USB/COM path or hardware API.
+
+The helper has synthetic positive/negative Python tests in
+`tests/test_v18_e11_review_stage.py`. An additional Windows CI workflow
+`check-v18-e11-review-stage-windows.yml` checks adversarial rejects,
+downloads only public pinned CI #38966248325 review data, verifies the
+exact artifact provenance and performs a review-only stage in a runner
+temporary folder. **The CI stage tests public data only; it CANNOT
+verify private PC backups**. Report completed workflow results before
+considering any Windows local invocation.
+
+**Important:** staging is not a firmware update rehearsal. Stage folder
+contents are not approved for flash and no firmware/FAP application
+will be recommended on the basis of staging PASS alone. Full-updater
+radio, SD resources and option-byte policy remain a physical
+risk, and recovery is not proven.
