@@ -1839,3 +1839,44 @@ a complete verified copy; even then
 compatibility and `E11_PHYSICAL_RESOURCE_ACCEPTANCE` remain
 OPEN. E11 experimental firmware files remain **DO NOT FLASH**;
 Stable/main unchanged.
+
+
+## 2026-10-17 — Optional no-reader USB /ext backup path prepared (NOT DEVICE PASS)
+
+**Owner preference update:** after the 14 historical and 10
+current LabMate files had been preserved, the owner indicated
+that the **remaining microSD data is not important to them**,
+and preferred not to require a separate microSD card reader.
+This changes the **data-backup priority**, NOT firmware flash
+authorization or recovery requirements.
+
+New [`scripts/backup_v18_e11_usb_sd_to_pc.py`](../scripts/backup_v18_e11_usb_sd_to_pc.py)
+implements a separate optional **COM7 USB /ext filesystem file-content**
+inventory/copy path, documented in
+[`V1_8_E11_USB_SD_OPTIONAL_HANDOFF.md`](V1_8_E11_USB_SD_OPTIONAL_HANDOFF.md).
+Default operation inventories the complete directory tree with
+read-only device `storage list` + MD5, reports counts/size and
+does NOT create a PC backup. Explicit `--copy` creates a NEW
+PC-only folder after bounded inventory, checks each device
+file size/MD5 and PC SHA256 after write and a second full source
+inventory, with `INCOMPLETE-DO-NOT-RESTORE.txt` retained on failure.
+It refuses unsupported names/USB budget, never silently skips them,
+and has **no Flipper write/format/restore/update calls**.
+
+Source pinned at `62d73df5765169b4482f25228ed9e78723b0130e`:
+[Windows USB fake-device #38980845491](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38980845491)
+**SUCCESS** (11 new USB tests and earlier read-only coverage suites).
+[Integrated host #38980820652](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38980820652)
+**SUCCESS**.
+**No actual full-SD USB backup or inventory has yet been attempted
+on the owner's device with this new tool**; do not mark whole SD PASS.
+
+**Risk distinction:** A full /ext data snapshot is an optional
+preservation precaution when the owner elects not to preserve
+non-LabMate app data. The owner has NOT explicitly approved losing
+specific app settings, flashing review-only builds, waiver of
+radio/recovery safety or promotion. The E11 full and split
+experimental updater artifacts are still **DO NOT FLASH**.
+Firmware installation risk review, recovery procedure and separately
+authorized physical resource acceptance are **OPEN**. Keep
+Stable/main and the existing working EXITFIX unchanged.
