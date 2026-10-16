@@ -12,6 +12,11 @@ on:
       - "scripts/backup_v18_e11_usb_sd_to_pc.py"
       - "scripts/audit_v18_e11_live_labmate_sd.py"
       - "scripts/survey_v18_e11_external_sd_ro.py"
+      - "scripts/check_v18_e11_split_trial_gate.py"
+      - "tests/test_v18_e11_split_trial_gate.py"
+      - "docs/evidence/V1_8_E11_LIVE_OLD_MANIFEST_OPERATOR_2026-10-17.txt"
+      - "scripts/derive_v18_e11_split_review.py"
+      - "tests/test_v18_e11_split_review.py"
   workflow_dispatch:
 
 permissions:
