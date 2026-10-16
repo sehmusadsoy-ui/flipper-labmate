@@ -30,7 +30,8 @@ an authenticated SHA256 readback**. It is not a full microSD snapshot.
 ## Real device procedure — proposed, not yet run
 
 The operator must choose to run the command with qFlipper and any other
-COM7 consumer closed. The auditor additionally refuses any import of a different `flipper.storage` module.\nThe pinned trusted raw scripts are downloaded
+COM7 consumer closed. The auditor additionally refuses any import of a different `flipper.storage` module.
+The pinned trusted raw scripts are downloaded
 into a **brand-new PC temporary folder only**, with no overwrite of
 old backups and no device modification. Python3 and `pyserial` are
 required (they were previously used successfully for the installed
@@ -40,7 +41,7 @@ and independent Momentum base for the library.
 ```powershell
 & {
     $ErrorActionPreference = 'Stop'
-    $auditSource = '864dcfe924903c63dc0433de52483f497050a38c'
+    $auditSource = '0f0a5f2d636809bbc529d4e34b2f964ee5051967'
     $momentumSource = 'd3f89dfe2ef6b01839201598e9be1590cba80322'
     $work = Join-Path $env:TEMP ('LabMate-E11-SD-READONLY-' + [guid]::NewGuid().ToString('N'))
     $transport = Join-Path $work 'flipper'
@@ -125,3 +126,56 @@ files where required, unattended updater impacts on user/custom
 firmware/FAP physical E11 trial and separate owner approval. New split
 review artifact still says `DO NOT FLASH`, PR #13 stays DRAFT;
 main/Stable untouched.
+
+
+## 2026-10-17 — First operator COM7 run refused the CLI listing; fixed
+
+**ACTUAL OPERATOR DEVICE ATTEMPT:** The operator ran the original
+read-only COM7 audit against the current installed EXITFIX firmware
+and received:
+
+```
+LABMATE LIVE SD AUDIT REFUSED: unrecognized Flipper storage-list response
+READ-ONLY AUDIT FAILED - NO FLASH
+```
+
+No matched-count/GAP result is available from that attempt. **It
+was a safe parser rejection, not evidence of lost SD files**, and the
+audit sent only `device_info` and `storage list` before refusal.
+
+**Root cause confirmed from upstream EXACT Momentum source**
+`Next-Flip/Momentum-Firmware` pinned commit
+`d3f89dfe2ef6b01839201598e9be1590cba80322`,
+`applications/services/storage/storage_cli.c`,
+`storage_cli_list()`. The firmware emits:
+
+```c
+printf("\\t[F] %s %lub\\r\\n", name, (uint32_t)(fileinfo.size));
+```
+
+That means file listings include the **literal `b` suffix** after
+decimal byte count, e.g. `[F] log_0050.csv 116b`. The first
+audit's file regex incorrectly required no suffix, so it rejected
+legitimate Momentum output. Fixed `FILE` regex to require the actual
+trailing `b`, with tab/CRLF output fixture and multiple negative
+cases for suffix-less or malformed units, without changing the
+allowed read-only CLI command set.
+
+**CI validation after the fix:**
+
+- [Windows real host simulation #38976590206](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38976590206)
+  **SUCCESS**, 19 tests: 18 pass + one impossible Windows
+  case-sensitive NTFS collision fixture skipped. The real CLI
+  tab/`b`/CRLF sample and fail-closed incorrect units are covered.
+- [Full integrated no-flash host #38976590323](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38976590323)
+  **SUCCESS**, testing updated parser and all prior v1.5–v1.8
+  host regressions.
+- Pinned corrected local audit script source:
+  `0f0a5f2d636809bbc529d4e34b2f964ee5051967`.
+  Momentum transport source and its fixed SHA commit are unchanged.
+
+**RETRY STATUS: NOT YET RUN ON THE REAL DEVICE**. User should repeat
+the single read-only handoff with corrected audit source. A parser
+success only allows **the data parity check to proceed**, not firmware
+installation. Never claim current live SD is fully backed up or
+prior disappeared logs were recovered based on the CI tests.
