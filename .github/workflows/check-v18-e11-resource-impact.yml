@@ -6,6 +6,8 @@ on:
     paths:
       - ".github/workflows/check-v18-e11-resource-impact.yml"
       - "scripts/audit_v18_e11_resource_impact.py"
+      - "scripts/derive_v18_e11_split_review.py"
+      - "tests/test_v18_e11_split_review.py"
       - "tests/test_v18_e11_resource_impact.py"
       - "scripts/check_v18_full_vs_mntm012.py"
       - "scripts/check_v18_full_update_bundle.py"
@@ -35,6 +37,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m unittest discover -v -s tests -p test_v18_e11_resource_impact.py
+          python3 -m unittest discover -v -s tests -p test_v18_e11_split_review.py
       - name: Fetch exact independently known official MNTM-012 rollback
         shell: bash
         run: |
@@ -61,6 +64,18 @@ jobs:
             --official-rollback "$RUNNER_TEMP/e11-risk/official-012.tgz" \
             --candidate "$RUNNER_TEMP/e11-risk/full"
           echo 'PUBLIC REVIEW-ONLY BYTES; NO REAL DEVICE OR USER SD BACKUP ANALYZED.'
+      - name: Generate isolated FAP-excluded REVIEW derivative and compare radio/OB
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/derive_v18_e11_split_review.py \
+            --official-rollback "$RUNNER_TEMP/e11-risk/official-012.tgz" \
+            --candidate "$RUNNER_TEMP/e11-risk/full" \
+            --output "$RUNNER_TEMP/e11-risk/split-review-only"
+          python3 scripts/check_v18_full_vs_mntm012.py \
+            "$RUNNER_TEMP/e11-risk/official-012.tgz" \
+            "$RUNNER_TEMP/e11-risk/split-review-only/firmware-full-update-SPLIT-REVIEW-DO-NOT-FLASH.tgz"
+          echo 'FAP-excluded derivative has NO INSTALL AUTHORIZATION, no SDK rebuild and NO FLASH.'
       - name: Boundary declaration
         run: |
           echo 'NO DEVICE ACCESS, NO USB, NO FLASH, NO FAP INSTALL, NO REPAIR, NO RESTORE, NO RELEASE.'
