@@ -148,14 +148,21 @@ int main(void) {
  assert(!subghz_device_cc1101_ext_try_start_async_rx(capture,&instance));
  assert(!claims && !writes);
  reset();lease_allowed=true;
- instance.async_mirror_pin=&gpio_ext_pa7;
+ /* Exercise the actual patched public setter, not direct struct mutation. */
+ subghz_device_cc1101_ext_set_async_mirror_pin(&gpio_ext_pa7);
+ assert(instance.async_mirror_pin==&gpio_ext_pa7);
  assert(!subghz_device_cc1101_ext_try_start_async_rx(capture,&instance));
  assert(!claims && !writes);
+ subghz_device_cc1101_ext_set_async_mirror_pin(NULL);
+ assert(instance.async_mirror_pin==NULL);
  reset();lease_allowed=true;
  assert(subghz_device_cc1101_ext_try_start_async_rx(capture,&instance));
  assert(e11_ext_rx_owner==247U && bus_on && rx_switches==1);
  assert(instance.state==SubGhzDeviceCC1101ExtStateAsyncRx);
  assert(active_cb==subghz_device_cc1101_ext_capture_ISR);
+ /* An in-flight RX lease must freeze the mirror pin until owned STOP. */
+ subghz_device_cc1101_ext_set_async_mirror_pin(&gpio_ext_pa7);
+ assert(instance.async_mirror_pin==NULL);
  int c=claims;
  assert(!subghz_device_cc1101_ext_try_start_async_rx(capture,&instance) &&
         claims==c);
@@ -190,6 +197,8 @@ int main(void) {
  subghz_device_cc1101_ext_capture_ISR(NULL);
  subghz_device_cc1101_ext_stop_async_rx();
  assert(e11_ext_rx_fault && e11_ext_rx_owner && writes==before);
+ subghz_device_cc1101_ext_set_async_mirror_pin(&gpio_ext_pa7);
+ assert(instance.async_mirror_pin==NULL); /* Sticky fault forbids retarget. */
  puts("E11 ext CC1101 original RX TIM17 PB2 EXTI2 C deny/ISR/STOP PASS");
  return 0;
 }
@@ -239,11 +248,18 @@ def main():
         ):
             assert definition in helper
             helper=helper.replace(definition,"")
+    setter=s[s.index("void subghz_device_cc1101_ext_set_async_mirror_pin("):
+             s.index("const GpioPin* subghz_device_cc1101_ext_get_data_gpio(")]
+    # On later TX-integrated source the setter also checks TX state;
+    # this RX-only native extraction provides those otherwise unrelated tokens.
+    if "e11_ext_tx_owner" in setter:
+        helper+="\nstatic uint32_t e11_ext_tx_owner;\nstatic bool e11_ext_tx_fault;\n"
+        setter=setter.replace("e11_ext_tx_owner || e11_ext_tx_fault", "e11_ext_tx_owner || e11_ext_tx_fault")
     isr=s[s.index("static void subghz_device_cc1101_ext_capture_ISR("):
           s.index("bool subghz_device_cc1101_ext_try_start_async_rx(")]
     with tempfile.TemporaryDirectory(prefix="e11_ext_cc1101_") as temp:
         d=Path(temp);exe=d/"test"
-        (d/"native.c").write_text(STUB+"\n"+helper+"\n"+isr+"\n"+start+"\n"+RUN)
+        (d/"native.c").write_text(STUB+"\n"+helper+"\n"+setter+"\n"+isr+"\n"+start+"\n"+RUN)
         subprocess.run(["cc","-std=c11","-Wall","-Wextra","-Werror",
                         "-pedantic",str(d/"native.c"),"-o",str(exe)],check=True)
         subprocess.run([str(exe)],check=True)
