@@ -37,6 +37,7 @@ def patch(h,r,s,wh,app):
         "           mask == FURI_HAL_LEASE_NATIVE_SERIAL_EXP_LPUART1 ||\n",
         "           mask == FURI_HAL_LEASE_NATIVE_SERIAL_EXP_LPUART1 ||\n"
         "           mask == FURI_HAL_LEASE_NATIVE_WIEGAND_PA4_PA7 ||\n")
+    wh=once(wh,"#pragma once\n","#pragma once\n\n#include <stdint.h>\n")
     wh=once(wh,
         "    void begin(void);\n    void end(void);",
         "    void begin(void);\n    /* E11 true only after BOTH inputs and callback slots are owned. */\n"
