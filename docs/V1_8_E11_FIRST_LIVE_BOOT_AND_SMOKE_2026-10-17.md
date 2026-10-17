@@ -978,3 +978,74 @@ engine execution, the C plugin's constructor/ABI behavior, or native
 resource collision denial. Next step only after owner-supplied
 READ-ONLY checksum report; leave previous scripts unmodified and
 H1/H2 on HOLD.
+
+## 2026-10-17 — H native JS runtime file parity PASS; stage-separated H0 v3 prepared (DEVICE PENDING)
+
+Operator read-only COM7 result:
+
+```text
+E11 H JS RUNTIME CHECK: READ-ONLY device_info + 3 storage md5; NO JS/RUN/FLASH.
+E11 H JS EVENT_LOOP FAL: EXACT FULL-BUNDLE MD5 MATCH
+E11 H JS GPIO FAL + LABMATE FAP: EXACT PINNED PAIR MD5 MATCH
+E11 H JS RUNTIME FILE-INTEGRITY SCREEN PASS - JS EXECUTION NOT TESTED
+H0/H1/H2 REMAIN NOT PASSED.
+```
+
+**What this proves:** on the real currently matched E11 unit, the
+**installed** native JS `js_event_loop.fal` file matches the exact
+SHA256-pinned FULL E11 bundle resource bytes by device MD5, and the
+installed `js_gpio.fal` / production LabMate FAP match their
+pin-paired local files. This check issued only read-only CLI commands
+and DID NOT execute any JavaScript or GPIO operation. It **does not**
+attest to JS module loading/ABI functionality, `gpio.get`,
+`read()`, free PA7 claims, or real native lease contention.
+A–G functional PASS: **36/36**. H0: **NOT PASS/INCOMPLETE**;
+H1/H2: **NOT TESTED**. No firmware/sd user data changes.
+
+**Why previous JS error is still unclassified:** H0 v2 script printed
+`E11_H_PA7_BEGIN` and threw some JS error before
+`E11_H_PA7_READ_OK`, with `gpio_busy=NO`. Source allows errors
+during `require("event_loop")`, `require("gpio")`, `gpio.get` or
+`gpio.read`. The fixed boolean flags do not expose which. No
+device-log-level root cause can be claimed from file parity.
+
+**Prepared a single specifically bounded H0 v3 diagnostic, NOT yet
+installed or run:**
+
+- `tests/device/e11_h0_stage_v3.js`, expected exact SHA256
+  `295312109620552b1669533ec644f4fe9f7d150055d5859883e38ddcd849f190`;
+  only prints sequential **fixed** markers at script begin, AFTER
+  event_loop import, AFTER gpio import, AFTER `gpio.get("PA7")`,
+  and AFTER a single `pa7.read()`. No output write, pin
+  `init()`, mode change, PWM start/stop, IRQ, peripheral
+  voltage test, app-data mutation or firmware action.
+- `scripts/check_v18_e11_h0_stage_v3.py` fails closed on wrong
+  local script SHA, wrong pinned exact FULL firmware bundle
+  candidate, unmatched on-device app/GPIO/event_loop MD5,
+  absent/unmatched separately copied V3 script, non-unique or
+  out-of-order completion markers, or any JS error/trace.
+  Its result displays only `H3_FLAGS` booleans (begin,
+  event_loop, gpio, pin, read, launched, error, trace, done,
+  gpio_busy). No raw CLI/serial/private storage identifiers.
+  One script invocation, no automatic retry.
+- `tests/test_v18_e11_h0_stage_v3.py` host-only test guarantees
+  script exact bytes, order, no pin reconfiguration, strict
+  marker acceptance and privacy. `.gitattributes` pins v3 JS
+  LF to preserve source SHA across Windows. E11 H Windows
+  [CI #39030524525](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/39030524525)
+  is **SUCCESS**, a host-only safety result, not an on-device
+  H0 acceptance result.
+
+**Next controlled operator action:** manually copy ONLY the new
+`e11_h0_stage_v3.js` into a new
+`/ext/apps/Scripts/e11_h0_stage_v3.js` path via qFlipper
+(File Manager), with the device idle and previous V1/V2 test
+files untouched; close qFlipper and confirm. Then, while LabMate
+closed / PWM STOP / no external GPIO wires, run the
+v3-helper **exactly once** and report its sanitized output.
+Do NOT interpret any stage marker alone as H0 PASS; FULL marker
+chain + `Script done!` with no error is required. First
+ambiguous/error diagnostic stops testing, with H1/H2 blocked.
+
+**No stable branch merge, tag, firmware or radio flash, restore,
+updater, data deletion, or v1.9 transition authorized.**
