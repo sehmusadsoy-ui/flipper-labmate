@@ -140,7 +140,7 @@ static const LabMateHelpPage labmate_help[LabMateToolCount] = {
         "Open or delete one", "UD FILE LR MODE OK",
     },
     [LabMateToolAbout] = {
-        "ABOUT / GUIDE", "16 pages, 14 tools",
+        "ABOUT / GUIDE", "17 pages, 15 tools",
         "3.3V GPIO only", "<> PAGE  BK EXIT",
     },
     [LabMateToolProfiles] = {
@@ -171,6 +171,10 @@ static const LabMateHelpPage labmate_help[LabMateToolCount] = {
         "I2C EXPLORER", "PC0 SCL / PC1 SDA",
         "3.3V OWNED BUS", "OK SCAN BK EXIT",
     },
+    [LabMateToolScope] = {
+        "LOGIC SCOPE", "PC1 3.3V DIGITAL",
+        "Measured edges only", "OK RUN/STOP BK EXIT",
+    },
 };
 
 void draw_about(Canvas* canvas, LabMateApp* app) {
@@ -185,7 +189,7 @@ void draw_about(Canvas* canvas, LabMateApp* app) {
     if(page == 0U) {
         canvas_draw_str(canvas, 3, 23, "LabMate " LABMATE_VERSION_TEXT);
         canvas_draw_str(canvas, 3, 33, "SauronLAB / Sehmus");
-        canvas_draw_str(canvas, 3, 43, "12 instrument guides");
+        canvas_draw_str(canvas, 3, 43, "15 tool guides");
         canvas_draw_str(canvas, 3, 51, "3.3V GPIO ONLY");
     } else if(page == 1U) {
         canvas_draw_str(canvas, 3, 23, "Source / releases:");
