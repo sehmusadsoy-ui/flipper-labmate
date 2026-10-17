@@ -454,3 +454,40 @@ TIM2 refusal or native owner race test; no positive I2C ACK or 1-Wire
 DS18B20, no byte-comparable full SD snapshot. Existing hardware
 deferred checklist remains open where equipment unavailable.
 No further firmware update, SD mutation, Stable/main merge or tag.
+
+### Next Round F — native Momentum service sequential regression (no fixtures)
+
+**Purpose:** catch basic post-E11 changes that prevent the patched
+native firmware's other built-in services opening/exiting. This is
+**SEQUENTIAL** and does not prove simultaneous TIM1/TIM2/EXTI
+contention or all native lease participants.
+
+Starting condition: LabMate completely exited; PA7→PB3 wire
+disconnected only after STOP, no GPIO peripherals attached. Keep
+saved NFC/RFID/IR/SubGHz/SD data intact. Never select Emulate,
+Transmit, Send, save, delete, write, repair, force-reset or
+firmware update. No need to deliberately create RF emissions.
+
+- F1 native **NFC Read**: enter briefly without a tag, wait for
+  normal reader status then BACK; no hang, forced reboot or fatal error.
+  NFC produces its normal localized field in read mode; no card or
+  credential data are needed.
+- F2 native **125 kHz RFID Read**: enter briefly with no tag,
+  verify the reader opens and BACK safely; no emulator or writable tag.
+- F3 native **Infrared Learn**: open receiver screen with no remote
+  pointing at it, then BACK without saving; no IR transmission.
+- F4 optional native **Sub-GHz Read (RX ONLY)**: if available and
+  permitted locally, open receiver interface and BACK; **never press
+  TX/SEND**, even for a learned signal. SKIP if uncertain.
+- F5 open production **Apps > Tools > LabMate** after these native
+  services. PWM Studio must be STOP; Event Counter must enter STOP,
+  briefly OK RUN/STOP with **no wire** and BACK, then app exits
+  normally. This is source-release *sequential* recovery, not a
+  simultaneously held native TIM2 owner test.
+
+Treat any service absent from this Momentum build as **SKIP**, not
+FAIL. Report exact unexpected BUSY/ERR or hang and stop at the first
+failure. Do not over-claim RF protocol compatibility or shared
+resource lease coverage based on UI-only smoke. Later exact native
+RFID TIM2 vs Counter and native PWM vs LabMate TIM1 contention
+require a reviewed concurrency fixture/scenario and are still OPEN.
