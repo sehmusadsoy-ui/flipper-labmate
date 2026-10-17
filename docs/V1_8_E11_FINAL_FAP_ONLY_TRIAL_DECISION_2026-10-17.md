@@ -891,3 +891,88 @@ PC old/new pair, and real device post-abort/native CLI read-only
 PASS; corrected stage procedure HOST PASS. **Third actual stage
 upload not yet executed**, no new final-label app installed,
 all final functional acceptance and release gates PENDING.
+
+## 2026-10-17 — ACTUAL PHASE 2A FULL STAGED FAP PASS; PHASE 2B PREPARED IN HOST CI
+
+Owner's exact E11 device report following the pinned echo-first,
+Ready-second one-shot staged transfer:
+
+```text
+stage_fap: SHA-BACKED DEVICE MD5 / SIZE MATCH
+stage_path: /ext/apps/Tools/labmate.e11-new-stage
+stage_md5: 8d44e6ecce500036a8314a8c0e961806
+stage_bytes: 81528
+active_old_labmate: PINNED OLD MD5 + SIZE UNCHANGED
+native_js_manifest: PINNED RESOURCE MD5 UNCHANGED
+old_pc_backup: PINNED VERIFIED
+new_v18_fap_installed: NO
+firmware_flash: NO
+stage_update: ONLY EXISTING EMPTY NONAPP SIDECAR
+automatic_retry_or_cleanup: NEVER
+E11 v1.8 EXISTING EMPTY STAGE FULL VERIFIED PASS - OLD APP PRESERVED
+STOP; PHASE 2B APPLICATION PROMOTION NOT PERFORMED
+```
+
+This is the first REAL DEVICE stage acceptance. The on-device
+81,528-byte staged FAP MD5 `8d44e6ecce500036a8314a8c0e961806`
+was compared independently with the byte-verified PC candidate
+81,528-byte SHA256
+`393fe3e52aa710162a42d7299aa053f538b2ee1ad6542755cf402b83c1931b61`
+and MD5 `8d44e6ecce500036a8314a8c0e961806`.
+The original 81,532-byte active E11 `labmate.fap` remains
+unchanged by device MD5/size; verified original FAP PC backup
+exists. No original active app file rename, app load, firmware
+update, old data mutation, Stable release or v1.9 start.
+
+**Phase 2B source-only groundwork, NOT executed on user Flipper:**
+Reviewed installed pinned Momentum C source
+`storage_cli_rename()` uses
+`storage_common_rename_safe()`; refuses destinations that
+already exist, and handles same-filesystem renaming.
+`storage_cli.c` prints no payload on successful rename, and
+native shell appends CRLF before prompt. Flipper's
+`send_and_wait_eol()` receives the exact echoed command
+first. Proposed `scripts/prepare_v18_e11_phase2b_safe_promote.py`
+with 12 negative and success host-only mock tests
+`tests/test_v18_e11_phase2b_safe_promote.py`.
+[Dedicated host phase2B review CI #39048792386](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/39048792386)
+**PASS**; [integrated host regression #39048792395](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/39048792395)
+**PASS**. These are *simulations* and do not prove
+device 2B success.
+
+Phase 2B is **not an atomic transaction** and there
+is a real temporary interval when the LabMate app path
+does not exist. Intended narrowly scoped two steps,
+subject to separate operator acceptance:
+
+1. After rechecking old FAP, full verified staged FAP,
+   unchanged native resources, exact local backup and
+   **absent** reserved backup target, rename only
+   `/ext/apps/Tools/labmate.fap` to
+   `/ext/apps/Tools/labmate.e11-pre-final.bak`.
+   Verify old backup SHA-backed MD5 + 81,532-byte
+   size, old path absent, staged final still intact.
+2. Rename only
+   `/ext/apps/Tools/labmate.e11-new-stage` to
+   `/ext/apps/Tools/labmate.fap`, target now
+   absent; verify new installed 81,528-byte
+   FAP MD5, previous old backup 81,532-byte
+   MD5, staged file absent, native GPIO/Event
+   Loop/Manifest unchanged. No FAP app run here.
+
+**Interruption semantics:** If any step times out
+or fails after old app is renamed, the app may be
+temporarily absent from its normal menu path even
+though its original contents remain preserved
+in the on-device `.bak` and original PC backup.
+NO automatic retry, rollback, delete or reflash:
+record exact new state with bounded read-only
+diagnostics, then separately decide next action.
+If both renames succeed, this is only a file identity
+PASS; actual v1.8 GUI/About version, lifecycle,
+PWM STOP, UART, Logger and profile tests still PENDING.
+
+Phase 2B device run / operator-specific handoff
+**not yet authorized or performed** as of this
+document. Maintain DRAFT PR #13, main/tag/Stable
+unchanged and v1.9 HOLD.
