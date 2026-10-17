@@ -20,6 +20,18 @@ static void check_refusal_matrix(void) {
         assert(labmate_scope_gate_pc1(&c, &s) ==
                (pin == 1 ? LabMateScopeGateReady : LabMateScopeGateBusy));
     }
+    /* Scope must have its OWN owner; it cannot alias FrequencyLow. */
+    assert(labmate_capture_pin_allowed(LabMateCaptureScope, 1U));
+    for(uint8_t pin = 0; pin < 8U; ++pin) {
+        assert(labmate_capture_pin_allowed(LabMateCaptureScope, pin) == (pin == 1U));
+        assert(labmate_capture_can_acquire(
+            LabMateCaptureNone, LabMateCaptureScope, pin,
+            false, false, false) == (pin == 1U));
+    }
+    assert(labmate_capture_owner_after_stop(
+        LabMateCaptureFrequencyLow, LabMateCaptureScope) == LabMateCaptureFrequencyLow);
+    assert(labmate_capture_owner_after_stop(
+        LabMateCaptureScope, LabMateCaptureScope) == LabMateCaptureNone);
     c.selected_pin = 8;
     assert(labmate_scope_gate_pc1(&c, &s) == LabMateScopeGateInvalid);
     c = ready(); c.firmware_lease_api = false;
@@ -31,7 +43,7 @@ static void check_refusal_matrix(void) {
     c.comm_owner = LabMateCommOneWirePa4;
     assert(labmate_scope_gate_pc1(&c, &s) == LabMateScopeGateBusy);
     c = ready();
-    for(int owner = LabMateCaptureFrequencyLow; owner <= LabMateCaptureButton; ++owner) {
+    for(int owner = LabMateCaptureFrequencyLow; owner <= LabMateCaptureScope; ++owner) {
         c.capture_owner = (LabMateCaptureOwner)owner;
         assert(labmate_scope_gate_pc1(&c, &s) == LabMateScopeGateBusy);
     }
