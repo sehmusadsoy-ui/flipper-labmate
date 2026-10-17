@@ -52,6 +52,7 @@ class FakeE11:
         self.stage_already_present=False
         self.backup_already_present=False
         self.corrupt_md5=False
+        self.malformed_first_ready=False
         self.untouched={
           stage.APP_REMOTE:b"original old FAP",
           "/ext/apps_data/js_app/plugins/js_gpio.fal":b"js_gpio",
@@ -82,7 +83,9 @@ class FakeE11:
             self.last="write"
             if self.stage_already_present:
                 raise AssertionError("cannot write into preexisting stage")
-            return b""
+            # Pinned Momentum's write_chunk() first line is Ready, consumed
+            # and returned directly by send_and_wait_eol(). No second EOL.
+            return b"not-ready" if self.malformed_first_ready else b"Ready"
         raise AssertionError("FORBIDDEN command: "+cmd)
     def hash_flipper(self,path):
         self.calls.append(("MD5",path))
@@ -160,6 +163,21 @@ class StageOnlyTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"incomplete"):
             stage.stage_one_file(self.existing,self.blob,self.post,self.js)
         self.assertEqual(self.existing.untouched[stage.APP_REMOTE],b"original old FAP")
+
+    def test_real_momentum_first_line_ready_and_no_second_line_read(self):
+        self.existing.read=ReadQueue(self.existing)
+        result=stage.stage_one_file(self.existing,self.blob,self.post,self.js)
+        self.assertEqual(result["final_swap_performed"],"NO")
+        self.assertEqual(bytes(self.existing.stage_data),self.blob)
+        self.assertTrue(all("write_chunk" not in x[1] or x[1].startswith("storage write_chunk \""+stage.STAGE+"\"")
+                            for x in self.existing.calls if x[0]=="CMD"))
+
+    def test_refuse_unexpected_first_ready_without_binary_send(self):
+        self.existing.malformed_first_ready=True
+        with self.assertRaisesRegex(ValueError,"first response line"):
+            stage.stage_one_file(self.existing,self.blob,self.post,self.js)
+        self.assertEqual(len(self.existing.stage_data),0)
+        self.assertFalse(any(x[0]=="USB-stage-bytes" for x in self.existing.calls))
 
     def test_refuse_stage_wrong_device_md5(self):
         self.existing.corrupt_md5=True
