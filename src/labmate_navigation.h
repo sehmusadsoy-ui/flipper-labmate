@@ -21,6 +21,7 @@ typedef enum {
     LabMateToolUart, /* v1.8: append, never renumber existing tools */
     LabMateToolOneWire, /* append AFTER UART; historical IDs preserved */
     LabMateToolI2c, /* appended; root menu displays it before OneWire */
+    LabMateToolScope, /* v1.9 append; historical profile/menu IDs preserved */
     LabMateToolCount,
     LabMateToolInvalid = 255
 } LabMateTool;
@@ -34,7 +35,7 @@ typedef enum {
     LabMateGroupCount
 } LabMateMenuGroup;
 
-#define LABMATE_NAV_MAX_CHILDREN 5U
+#define LABMATE_NAV_MAX_CHILDREN 6U
 
 uint8_t labmate_nav_group_size(uint8_t group);
 uint8_t labmate_nav_tool_at(uint8_t group, uint8_t index);
