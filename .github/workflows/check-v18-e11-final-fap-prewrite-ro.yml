@@ -1,0 +1,34 @@
+name: E11 v1.8 final FAP prewrite read-only device gate (HOST MOCK ONLY)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - ".github/workflows/check-v18-e11-final-fap-prewrite-ro.yml"
+      - "scripts/check_v18_e11_final_fap_prewrite_ro.py"
+      - "tests/test_v18_e11_final_fap_prewrite_ro.py"
+      - "scripts/check_v18_e11_postupdate_readonly.py"
+      - "scripts/check_v18_e11_h_js_runtime_ro.py"
+      - "scripts/audit_v18_e11_live_labmate_sd.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  readonly_prewrite_mock:
+    name: Refuse unsafe prewrite and backup states (NO SERIAL / NO FLASH)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout verified prewrite source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Python syntax and mocked live transport negative paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/check_v18_e11_final_fap_prewrite_ro.py
+          python3 -m unittest discover -v -s tests -p test_v18_e11_final_fap_prewrite_ro.py
+          echo "E11 FAP PREWRITE MOCK PASS - NO DEVICE ACCESS, NO DEPLOY, NO RELEASE."
