@@ -19,7 +19,7 @@ class MockRead:
 
 class MockFlipper:
     CLI_PROMPT=">: "
-    def __init__(self,app,*,tamper=False,second_change=False):
+    def __init__(self,app,*,tamper=False,second_change=False,short_read=False,as_bytes=False,bad_type=False):
         self.app=app
         self.read=MockRead(b"firmware: mntm-dev / commit d3f89dfe\n")
         self.first_pass={}
@@ -27,6 +27,9 @@ class MockFlipper:
         self.changed=second_change
         self.n=0
         self.tamper=tamper
+        self.short_read=short_read
+        self.as_bytes=as_bytes
+        self.bad_type=bad_type
         for path,contents in [
             (pre.APP_REMOTE,app),
             ("/ext/apps_data/js_app/plugins/js_gpio.fal",b"js-gpio"),
@@ -47,9 +50,15 @@ class MockFlipper:
     def read_file(self,path):
         assert path==pre.APP_REMOTE
         self.calls.append("storage read_chunks: "+path)
+        if self.bad_type:
+            return "not binary"
+        if self.short_read:
+            return bytearray(self.app[:-1])
         if self.tamper:
-            return self.app+b"tampered"
-        return self.app
+            # Corrupt one byte WITHOUT changing length, so SHA must fail.
+            return bytearray(b"X"+self.app[1:])
+        # Actual pinned Momentum FlipperStorage.read_file() returns bytearray.
+        return bytes(self.app) if self.as_bytes else bytearray(self.app)
 
 
 class PrewriteTests(unittest.TestCase):
@@ -79,7 +88,7 @@ class PrewriteTests(unittest.TestCase):
     def test_exact_device_identity_and_one_fap_pc_backup(self):
         mock=MockFlipper(self.app)
         result=pre.check_and_copy(mock,self.post,self.js,self.output)
-        self.assertIn("PASS" if False else "PINNED E11",result["device_identity"])
+        self.assertIn("PINNED E11",result["device_identity"])
         self.assertEqual((self.output/pre.BACKUP_NAME).read_bytes(),self.app)
         self.assertTrue((self.output/"READ_ONLY_PC_FAP_BACKUP_VERIFIED.txt").is_file())
         self.assertFalse((self.output/"INCOMPLETE-DO-NOT-RESTORE.txt").exists())
@@ -90,9 +99,32 @@ class PrewriteTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"identity changed"):
             pre.check_and_copy(mock,self.post,self.js,self.output)
         self.assertFalse(self.output.exists())
-    def test_rejects_incomplete_app_readback(self):
+    def test_readback_returns_real_momentum_bytearray(self):
+        mock=MockFlipper(self.app)
+        self.assertIsInstance(mock.read_file(pre.APP_REMOTE), bytearray)
+        pre.check_and_copy(mock,self.post,self.js,self.output)
+        self.assertEqual((self.output/pre.BACKUP_NAME).read_bytes(),self.app)
+
+    def test_accepts_explicit_bytes_if_future_api_changes(self):
+        mock=MockFlipper(self.app,as_bytes=True)
+        pre.check_and_copy(mock,self.post,self.js,self.output)
+        self.assertEqual((self.output/pre.BACKUP_NAME).read_bytes(),self.app)
+
+    def test_rejects_short_serial_read(self):
+        mock=MockFlipper(self.app,short_read=True)
+        with self.assertRaisesRegex(ValueError,"incomplete/oversized"):
+            pre.check_and_copy(mock,self.post,self.js,self.output)
+        self.assertFalse(self.output.exists())
+
+    def test_rejects_same_length_corrupt_serial_read(self):
         mock=MockFlipper(self.app,tamper=True)
-        with self.assertRaisesRegex(ValueError,"readback"):
+        with self.assertRaisesRegex(ValueError,"SHA256 differs"):
+            pre.check_and_copy(mock,self.post,self.js,self.output)
+        self.assertFalse(self.output.exists())
+
+    def test_rejects_nonbinary_return_without_creating_backup(self):
+        mock=MockFlipper(self.app,bad_type=True)
+        with self.assertRaisesRegex(ValueError,"nonbinary"):
             pre.check_and_copy(mock,self.post,self.js,self.output)
         self.assertFalse(self.output.exists())
     def test_rejects_wrong_firmware_before_fap_readback(self):
