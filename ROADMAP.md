@@ -34,6 +34,22 @@
 > Do not silently promote Draft PR #13 or start restored-scope v1.9
 > work merely because host CI is green.
 >
+
+> **Operator-approved physical-test deferral — 2026-10-17:** Tests
+> requiring unavailable 3.3V fixtures, independent scope,
+> DS18B20/I²C peripherals, mechanical buttons or a safe native
+> parallel H1 contender will be completed on the owner's Flipper
+> later, as equipment/method becomes available. These are
+> **DEFERRED / NOT PASSED**; supported E11 software source and
+> actual A–G/H0/H2 functional smoke have their separate
+> documented PASS evidence. The approval is *not* permission to
+> bypass production candidate version/firmware compatibility,
+> paired UART/persistence acceptance or the final Stable release
+> decision. The audit's release readiness is **NO-GO** until
+> those non-fixture conditions are met. See
+> [v1.8 final E11 release readiness](docs/V1_8_E11_RELEASE_READINESS_2026-10-17.md)
+> and [physical queue](docs/DEFERRED_HARDWARE_TESTS.md).
+>
 **Status:** Updated 2026-10-14: **[LabMate v1.8 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8) is PUBLISHED**, not a draft. Modular coordinator (PR #5), Counter STOP/RESUME (PR #6), and real UART Terminal (PR #7) are integrated into the actual single `labmate.fap`. RC1 15/15 and exact final v1.8 FAP 4/4 operator-reported on-device PASS; Momentum/Windows CI, COM7 USB installer and published-asset SHA256 all PASS. I²C Explorer and optional 1-Wire were EXCLUDED from that historical published FAP. The operator has since reopened original v1.8 targets on PR #13, so v1.9 is now HOLD; Draft PR #10 remains unmerged.  
 **Current published Stable:** [v1.8 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8), tag source `02b05639364d6dd71f5eb70456eca379c59218cb`, exact published FAP SHA256 `119c44bb854030a73a60fa205d38770bf77f048bb166ab379a03135c1de5f3b0`, published 2026-10-14. CI [38546662091](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38546662091) and final functional device tests 4/4 PASS following RC1 15/15.  
 **Previous Stable fallback:** [v1.7 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7) (original v1.7 tag `d0e1bc6a95b257841533f0aa8745e3a79bbc8dcd`, later PWM Studio label asset adjustment remains untouched), [v1.6.1 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1), [v1.6 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6), and older unchanged releases.  
