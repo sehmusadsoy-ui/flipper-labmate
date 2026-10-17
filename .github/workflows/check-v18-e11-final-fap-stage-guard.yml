@@ -1,0 +1,31 @@
+name: E11 single-FAP guarded non-app staging host mocks (NO DEVICE)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - ".github/workflows/check-v18-e11-final-fap-stage-guard.yml"
+      - "scripts/stage_v18_final_fap_on_device_one_file.py"
+      - "tests/test_v18_final_fap_on_device_stage.py"
+      - "scripts/check_v18_e11_final_fap_prewrite_ro.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  one_stage_only_mock:
+    name: E11 stage only one nonapp SD sidecar; original FAP never written (HOST MOCK)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Python compiler and synthetic USB commands only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/stage_v18_final_fap_on_device_one_file.py
+          python3 -m unittest discover -v -s tests -p test_v18_final_fap_on_device_stage.py
+          echo "STAGE-ONLY MOCK PASS. NO USER USB, NO FAP REPLACEMENT, NO FIRMWARE."
