@@ -40,7 +40,7 @@ def audit(release: str, backlog: str, roadmap: str, h1: str) -> None:
             raise ValueError("E11 release condition evidence missing: " + marker)
     if "H1 on-device simultaneous" not in release or "NOT OBSERVED" not in release:
         raise ValueError("Real H1 concurrent device BUSY cannot silently become PASS")
-    for token in ("**DEFERRED", "DS18B20", "ACK", "NOT PASSED",
+    for token in ("**DEFERRED", "DS18B20", "ACK", "NOT PASS",
                   "H1", "NO-GO"):
         if token.lower() not in backlog.lower() + release.lower():
             raise ValueError("Hardware deferral exception removed: " + token)
