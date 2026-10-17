@@ -1,0 +1,29 @@
+name: E11 aborted FAP stage read-only state audit (HOST ONLY)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - ".github/workflows/check-v18-e11-final-stage-abort-ro.yml"
+      - "scripts/check_v18_final_stage_after_abort_ro.py"
+      - "tests/test_v18_final_stage_abort_readonly.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline_fake_transport:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Test only read-only commands; never connect device or delete staging
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/check_v18_final_stage_after_abort_ro.py
+          python3 -m unittest discover -v -s tests -p test_v18_final_stage_abort_readonly.py
+          echo "E11 ABORTED FAP STAGE READ-ONLY AUDIT MOCK PASS - NO USB, NO WRITE, NO RETRY"
