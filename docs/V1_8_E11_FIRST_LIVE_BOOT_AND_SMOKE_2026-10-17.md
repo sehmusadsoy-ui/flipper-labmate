@@ -260,3 +260,68 @@ use History delete mode.
 Require exact operator PASS/FAIL/SKIP + the actual I²C and 1-Wire
 displayed status for C3/C4. A missing physical peripheral is not
 positive protocol-test evidence.
+
+## 2026-10-17 — Operator-reported paired E11 Round C: **6/6 PASS**
+
+The operator replied **`C1–C6 PASS`**, following the six cases
+listed immediately above. Preserve the result scope exactly:
+
+| Case | Operator verdict | What was requested |
+|---|---|---|
+| C1 | PASS | Read-only Log History list and open older CSV, BACK |
+| C2 | PASS | Existing S1 profile visibly present, browse without mutating |
+| C3 | PASS | Unconnected I2C Explorer scan, BACK and re-entry |
+| C4 | PASS | Unconnected 1-Wire Temp READ, BACK and re-entry |
+| C5 | PASS | Normal app exit, reboot-free reopening and responsive menu |
+| C6 | PASS | No lingering PWM/Counter/Button/COMM operation, safe STOP |
+
+**Important evidence limit:** the user did **not** separately state the
+literal final on-screen badges for C3/C4 in this short response.
+The prior test instructions expected `NONE` for an empty bus/no sensor
+and asked for the labels, but no independent exact label text was
+provided. Do NOT manufacture an observed `NONE` string.
+Interpret as user-reported six workflow PASSs only; the standalone
+I2C/OneWire UI negative-path smoke is covered at reported level.
+A real positive 7-bit ACK or valid DS18B20 measurement was NOT tested.
+Old logs/profile visible in UI does NOT imply byte-for-byte preservation
+or verified restore. No user-owned files were intentionally changed.
+
+**Cumulative matched real-device A+B+C:** **18/18 operator-reported
+GUI/function/lifecycle PASS** (A6+B6+C6), separate from firmware
+CLI boot/MD5 screen PASS. Remain DRAFT; no Stable or main mutation,
+no firmware reflash or rollback. Physical safety/peripheral cases
+HW-01..HW-19 remain only as actually covered by new evidence.
+
+### Next Round D — optional previously documented SAME-Flipper 3.3 V loopback
+
+Use the documented `docs/wiring_example.md` verified path **PA7 /
+physical pin 2 → PC1 / physical pin 15** ONLY if the operator still
+has a suitable jumper and can unambiguously confirm both pin labels
+on their current Flipper. The sole loop connects one current device's
+PA7 output to its own PC1 input. **No 5 V, OTG 5 V, external supply,
+second GPIO output, ground/power rails or unknown wires.** Stop
+the LabMate PWM and all captures, leave the app, and unplug any
+other GPIO attachment BEFORE installing/removing this wire.
+Check physical labels twice, and only then reenter LabMate.
+
+- **D1** with no PWM RUN, set PWM Studio to 100 Hz/50% duty, start RUN,
+  then BACK to menu without stopping.
+- **D2** `MEASURE > Frequency Meter` select LOW **PC1** using LEFT.
+  Observe a reasonably stable reading near 100 Hz (not necessarily
+  exactly 100.00) and no BUSY/ERR; BACK.
+- **D3** `MEASURE > Pulse Analyzer` on PC1; read HIGH, LOW, PERIOD,
+  DUTY near 5 ms, 5 ms, 10 ms, 50% (functional comparison
+  only, not oscilloscope calibration); BACK.
+- **D4** return PWM Studio -> OK STOP, leave LabMate, verify app
+  can relaunch, with all tools stopped. Only then remove wire while
+  stopped. If anything ERR/BUSY/frozen, cease and note screen,
+  no forced GPIO ownership or reboot-based workaround.
+- **D5 deferred separately** repeat known-safe alternate path PA7
+  to PB3 for actual TIM2 Event Counter and HIGH Frequency Meter.
+  Do not connect PC1/PB3 simultaneously unless separately reviewed.
+
+If no safe jumper or labels uncertain, record D1–D4 **SKIP,
+hardware unavailable**; do not improvise. Independently calibrated
+waveform/OFF state remains HW-02 NOT TESTED either way.
+Native foreign-service conflicts remain a separate next gate, not
+proved by the same-app loopback.
