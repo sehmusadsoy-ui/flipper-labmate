@@ -12,11 +12,10 @@ LabMateScopeGate labmate_scope_gate_pc1(
        e->comm_owner != LabMateCommNone || e->monitor_active ||
        e->logger_active || e->uart_active || e->counter_active || e->button_active ||
        !labmate_capture_can_acquire(
-           e->capture_owner, LabMateCaptureFrequencyLow, e->selected_pin,
+           e->capture_owner, LabMateCaptureScope, e->selected_pin,
            e->frequency_irq_active, e->frequency_hw_active, e->pulse_irq_active))
         return LabMateScopeGateBusy;
-    /* FrequencyLow is the existing PC1 EXTI1 allowlist; a future Scope
-     * enum/IRQ driver must only be added in a separate reviewed change. */
+    /* Scope is an independent, append-only capture owner on PC1/EXTI1. */
     return LabMateScopeGateReady;
 }
 
