@@ -63,11 +63,19 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $out = Join-Path $env:RUNNER_TEMP 'Full-MNTM012-Candidate'
           $nonexistent = Join-Path $env:RUNNER_TEMP 'Missing-MNTM012-rollback'
-          & ./scripts/install-v18-full012-dev-firmware.ps1 -BundleDirectory $out -RollbackDirectory $nonexistent -Apply
-          if ($LASTEXITCODE -eq 0) {
-            throw 'DANGEROUS: Firmware trial APPLY accepted missing official rollback.'
+          $rejected = $false
+          try {
+            & ./scripts/install-v18-full012-dev-firmware.ps1 -BundleDirectory $out -RollbackDirectory $nonexistent -Apply
+          } catch {
+            if ($_.Exception.Message -match 'REJECTED: legacy updater is pinned to an older firmware/FAP') {
+              $rejected = $true
+            } else {
+              throw
+            }
           }
-          $global:LASTEXITCODE = 0
-          Write-Host 'APPLY FAIL-CLOSED PASS; NO COM/USB/FLASH WAS ATTEMPTED.'
+          if (-not $rejected) {
+            throw 'DANGEROUS: Legacy APPLY did not throw the expected safety rejection.'
+          }
+          Write-Host 'LEGACY APPLY QUARANTINE PASS; NO COM/USB/FLASH WAS ATTEMPTED.'
 
 
