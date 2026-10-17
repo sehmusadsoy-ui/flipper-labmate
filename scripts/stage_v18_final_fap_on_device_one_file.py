@@ -124,12 +124,14 @@ def append_staged_chunk(client, blob: bytes) -> None:
         raise ValueError("unsafe stage byte count")
     # Upstream Momentum storage write_chunk is FSOM_OPEN_APPEND; NEVER target
     # the installed FAP. Filename fixed to initially nonexistent staging.
-    header=client.send_and_wait_eol(f'storage write_chunk "{STAGE}" {len(blob)}\r')
-    if header not in (b"",):
-        raise ValueError("unexpected staging write command echo")
-    ready=client.read.until(client.CLI_EOL)
+    # Pinned Momentum FlipperStorage.send_and_wait_eol() RETURNS THE
+    # FIRST LINE IT CONSUMES. storage_cli_write_chunk() prints Ready\\r\\n
+    # as that first line; there is NO preceding blank command echo.
+    # A previous version incorrectly expected b"" then read a second line.
+    # It aborted before sending binary and may have created an EMPTY sidecar.
+    ready=client.send_and_wait_eol(f'storage write_chunk "{STAGE}" {len(blob)}\r')
     if ready!=b"Ready":
-        raise ValueError("stage write did not provide exact Ready line")
+        raise ValueError("stage CLI not Ready on first response line; STOP, do not retry")
     count=client.port.write(blob)
     if count!=len(blob):
         raise ValueError("USB stage write incomplete: STOP; no automatic retry")
