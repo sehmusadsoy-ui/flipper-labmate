@@ -4,11 +4,14 @@
 **Stable asset today:** Existing v1.8 from 2026-10-14 remains authoritative
 until a separately accepted new exact paired firmware/FAP release.
 **Source branch:** `dev/v1.8-completion` · Draft PR #13.
-**Candidate label:** `v1.8` in a disposable CI copy of the
-production-version header; repository source and currently installed
-E11 trial retain `v1.8DEV`. Candidate artifacts, if their build
-completes, are **DO NOT FLASH / DO NOT INSTALL** until the separate
-review and approval process is finished.
+**Current exact final-label acceptance (2026-10-17):** A single
+SHA256-pinned `v1.8` final-label E11 FAP has now been installed and
+physically tested on the owner's already-matched custom E11 Momentum
+firmware after a separate guarded FAP-only authorization. Repository
+production source retains the `v1.8DEV` macro; the label was built in
+disposable CI staging. This is not a stock-Momentum/general Stable
+download or permission to flash a firmware updater. Historical public
+`v1.8` assets remain unchanged.
 
 ## Features present in the current integrated development app
 
@@ -58,11 +61,18 @@ review and approval process is finished.
   Excel import and exact firmware rollback remain
   **DEFERRED/UNVERIFIED**, not PASS. See
   [equipment backlog](DEFERRED_HARDWARE_TESTS.md).
-- Earlier ESP32-S2 UART physical checks and v1.8 Stable UART
-  regression are valid history, **not an exact new E11
-  paired external-UART smoke result**.
-  Round C History/Profile **read-only** success is not an
-  intentional new write-and-readback test on the current pair.
+- **Exact installed final-label FAP UART 115200:** ESP32-S2
+  `ESP32_READY`, `ESP32_OK`, ST2 command/stress trigger,
+  `BURST_END` and UART STOP/BACK/resource return were operator-reported
+  PASS. The most recent `ESP32_OK` was not independently
+  timestamp-linked to the last AT and no new byte-loss benchmark exists.
+- **Exact final FAP PWM:** PA7→PC1 digital loopback at 100 Hz / 50% and
+  1 kHz / 50%, Frequency/Pulse, STOP/RESTART/BACK user-reported PASS.
+  This is not independently calibrated output or a voltmeter OFF check.
+- **Exact final FAP storage:** new short CSV Logger capture opened from
+  History, backed-up empty-slot Profile SAVE/reopen/LOAD and preservation
+  of old S1/CSV reported ALL PASS by operator. No file-by-file restore
+  rehearsal or independent hash transcript was supplied.
 
 ## Installation and compatibility — IMPORTANT
 
@@ -84,10 +94,11 @@ v1.8 Stable, v1.7 release, existing CSV/Profile data and PC backups.
 - Check production candidate `v1.8` badge, exact FAP/firmware/native
   plugin hash/provenance, one-app packaging, source equivalence and
   test-only artifact identity.
-- Separately accept an actual exact candidate on device and
-  feasible core UART and scratch-only Logger/Profile persistence,
-  or explicitly scope unresolved requirements without mislabeling
-  them hardware equipment deferrals.
+- Exact-candidate core UART, digital PWM and isolated Logger/Profile
+  functional device acceptance is now operator-reported PASS. The H1
+  native concurrent ownership, real I2C ACK/DS18B20, instrument-grade
+  calibration, exceptional SD recovery and firmware rollback remain
+  OPEN / deferred, not PASS.
 - Obtain the owner's specific in-place v1.8 Stable update and
   immutable history/source-tag policy approval, with an evaluated
   firmware/resource compatibility and fallback plan.
@@ -127,11 +138,10 @@ References:
   **not** a public Stable download, installer, or authorized
   firmware write.
 
-Safest *potential* next device trial is to verify current
-running E11 native resources and existing app backup
-read-only, then request separate operator consent to
-replace **only** the installed LabMate FAP with the exact
-hash-matched final-label candidate on the already tested
-E11 custom firmware. Even this is a **device write, not
-authorized** in this draft. It must never be repurposed as
-a generic stock Momentum/MNTM-012 app installer.
+**Subsequent device outcome (2026-10-17):** The owner separately
+authorized a guarded FAP-only replacement against the working,
+already-matched E11 custom firmware. It completed; the previous FAP
+and PC backups were retained. The final-label UART/PWM/storage device
+observations above followed. This does NOT authorize a full firmware
+update, rollback, public Stable edit, PR merge or tag move. This
+device-specific route cannot be repurposed for stock MNTM-012.
