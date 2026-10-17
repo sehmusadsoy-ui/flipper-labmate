@@ -234,3 +234,94 @@ require its independent source/run+SHA checks and
 the preserved old FAP backup, then use a separate
 one-shot app-only command. This is **not** a
 full firmware update.
+
+## 2026-10-17 — First operator prewrite attempt **INCOMPLETE**, Python return-type defect corrected (no device write)
+
+Operator ran the previously SHA-pinned read-only PowerShell
+helper on COM7 after stopping and exiting LabMate.
+Original paired E11 folder was discovered under the
+user's TEMP `LabMate-E11-Trial-*/E11-FULL`.
+The pinned native FAP, JS GPIO/Event Loop and Manifest
+MD5 identity evaluations reached the backup phase.
+The device-to-PC transfer displayed
+`>100%, chunk 10 of 10`; the leading `>`
+is upstream Momentum's **download direction
+character**, not **more than 100 percent** progress.
+
+The actual prewrite helper then emitted:
+
+```text
+E11 FINAL PREWRITE NOT ACCEPTED: incomplete/oversized FAP readback
+NO FAP UPLOAD AUTHORIZED FROM THIS OUTPUT. DO NOT RETRY BLINDLY.
+E11 PREWRITE REFUSED - NO DEVICE WRITE.
+```
+
+**Root cause confirmed from exact pinned Momentum
+`scripts/flipper/storage.py`:**
+`FlipperStorage.read_file()` builds a `bytearray()`
+and **returns a `bytearray`** even after a complete
+read. Our prewrite verifier (first issued in
+`d57f71f10636a927621519ea51f70862dfaf6b67`)
+erroneously required `isinstance(content, bytes)`,
+making this rejection unconditional for any ordinary
+successful upstream transfer. The emitted error did
+**not** distinguish a wrong file length from the
+return-type mismatch, and **no actual final received
+byte count was logged**. This incident is **not**
+evidence that the installed FAP was damaged.
+
+Important secondary upstream risk: its
+`read_file` uses a single `port.read(chunk_size)`
+per chunk, counts requested rather than actual
+received bytes, and could return short data after
+serial timeout. Therefore the new verifier still
+requires **exact 81,532 bytes, pinned SHA256, pinned
+device MD5** and a second MD5 screen before it writes
+a PC-only copy. It accepts only `bytes` and
+`bytearray` as input and freezes a validated
+`bytes(content)` value prior to writing. It rejects
+short reads or even same-length tampering; no
+USB retry occurs automatically.
+
+**Actual status of first attempt:**
+
+- No FAP backup folder with an accepted copy was
+  created by the Python helper; only the parent
+  PC backup collection folder may exist.
+- Existing Flipper app, firmware, SD
+  data and resource files were **not changed by
+  this read-only helper**; no new FAP was uploaded.
+- **E11 final-label prewrite on actual device:
+  INCOMPLETE**, not PASS. H1 and previously accepted
+  A–G/H0/H2 evidence unchanged.
+- Operator was told not to rerun the old command
+  blindly.
+
+**Corrected source:** `scripts/check_v18_e11_final_fap_prewrite_ro.py`
+commit `c39e791051cfb1108507fbaa372a4a7f91cbcb65`,
+with strict synthetic actual-`bytearray`, `bytes`,
+short read, corrupt equal-length read, wrong type,
+wrong manifest, changed-MD5 and backup-overwrite tests
+commit `cf4f911437f8930643c01ef2b0a3d0959b89293f`.
+Mock CI
+[#39042895162](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/39042895162)
+**SUCCESS**; all integrated software regressions
+[#39042895193](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/39042895193)
+**SUCCESS**. Operator handoff was repinned to
+the exact fixed helper revision
+`cf4f911437f8930643c01ef2b0a3d0959b89293f`,
+with additional PowerShell-parse-only CI
+[#39042932931](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/39042932931)
+**SUCCESS**.
+
+**Next action:** One *new* explicitly reviewed
+**read-only prewrite attempt**, using the
+corrected handoff (never old discarded version),
+only if Flipper remains stopped/unwired and qFlipper
+closed; first copy goes into a NEW empty PC
+backup folder. Any new mismatch or timeout
+is **STOP/no automatic retry**. Do not proceed
+to phase-2 FAP-only replacement until this
+actual prewrite copy, live resource hash screens
+and local provenance all pass. No firmware/full updater
+authorization is implied.
