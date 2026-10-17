@@ -418,3 +418,39 @@ independently calibrated frequency/duty standard; **HW-02 independent
 scope/frequency calibration stays NOT TESTED**. Do not count this as
 new D test cases or as a TIM2/PB3 Round E result. Round E1–E5 remain
 **NOT TESTED** until separately reported. No device write performed.
+
+## 2026-10-17 — Operator-reported actual E11 Round E: **5/5 PASS**
+
+The operator returned **`E1–E5 pass counter 100hz 50% count 508 5
+saniye +3 saniye 832`** in the immediately preceding Round E
+PA7→PB3 test, after the 22/22 confirmed earlier A–D functional
+reports. This is **on-device operator report** for the matched FULL
+E11 firmware/FAP pair, and must be scoped as such.
+
+| Step | Operator verdict | Expected exercise | Actual additional observation |
+|---|---|---|---|
+| E1 | PASS | PWM PA7 100 Hz, 50% RUN then BACK | Source settings stated as 100 Hz / 50% |
+| E2 | PASS | PB3/TIM2 Counter STOP→RUN ~5 s→STOP | 508 counted after approximately 5 s |
+| E3 | PASS | RESUME ~3 more s→STOP and STOP-only RESET | cumulative 832 counted; **324 more edges** after resuming |
+| E4 | PASS | Frequency Meter HIGH PB3 after Counter release | User says PASS, but **no independent displayed PB3 Hz number** supplied |
+| E5 | PASS | PWM STOP, app exit and disconnect lead after STOP | User says PASS; no external instrument OFF capture |
+
+**Timing interpretation:** human keypress intervals "~5 seconds" and
+"~3 seconds" are approximate, **not** independently measured gates.
+508 ≈ 500 expected edges over nominal 5 s from a 100 Hz waveform,
+and delta 324 ≈ 300 nominal over another 3 s, consistent with
+unspecified start/stop reaction timing and capture start phase.
+Do not derive an accuracy percentage, a calibrated clock correction
+or a "108 Hz real frequency" claim from those rough durations.
+The clear increased cumulative total validates observable hardware
+edge counting and **nonresetting software accumulation after RESUME**
+at this functional scope. Cumulative **A 6 + B 6 + C 6 + D 4 +
+E 5 = 27/27 user-reported matched E11 functional device PASS**.
+
+**Boundaries:** no independently measured PWM output frequency/duty
+or OFF voltage; no known calibrated edge generator/timing gate;
+no measured PB3 HIGH Hz screenshot; no actual foreign firmware-owned
+TIM2 refusal or native owner race test; no positive I2C ACK or 1-Wire
+DS18B20, no byte-comparable full SD snapshot. Existing hardware
+deferred checklist remains open where equipment unavailable.
+No further firmware update, SD mutation, Stable/main merge or tag.
