@@ -1049,3 +1049,34 @@ ambiguous/error diagnostic stops testing, with H1/H2 blocked.
 
 **No stable branch merge, tag, firmware or radio flash, restore,
 updater, data deletion, or v1.9 transition authorized.**
+
+## 2026-10-17 — H0 V3 actual on-device native JavaScript FREE PA7 read: **PASS**
+
+Operator submitted actual USB CLI return after the pinned
+`tests/device/e11_h0_stage_v3.js` was copied via qFlipper,
+and the `scripts/check_v18_e11_h0_stage_v3.py` helper ran
+with the source-attested E11 native firmware label/base,
+FAP, GPIO and event_loop plugin hashes, and exact remote JS MD5:
+
+```text
+E11 H0 v3 FREE PA7 JS READ PASS - H3_FLAGS begin=YES event_loop=YES gpio=YES pin=YES read=YES launched=YES error=NO trace=NO done=YES gpio_busy=NO
+Only H0 proves native JS free-state read, not cross-service overlap.
+E11 H0 V3 PASS
+```
+
+**H0 PASS (1/1, operator-supplied actual device functional observation):**
+native JS event_loop and GPIO plugins load in the CLI JS thread,
+`gpio.get("PA7")` succeeds, and the actual `pa7.read()` in the
+PWM-STOP state succeeds, with clean completion. This is also evidence
+that the v1/v2 probe errors were not a reason to modify/reflash the
+matched firmware: the diagnosed staged v3 path runs without JS
+error. Their **exact** earlier exception messages were never captured,
+so neither earlier error's precise cause can be assigned retroactively.
+
+**Scope limit:** H0 was a sequential FREE-pin positive test, NOT
+second-client contention while native PWM owns PA7. Do not claim
+native firmware-global lease BUSY or even an H1 attempt.
+Cumulative separately: A–G **36/36** matched functional checks,
+plus H0 **1/1** free-state native JS GPIO check.
+H1/H2 **NOT TESTED**. No change to Stable/main/production app,
+firmware flash, cleanup, or other SD data.
