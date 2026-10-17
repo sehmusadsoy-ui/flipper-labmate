@@ -2,6 +2,7 @@
 #include <input/input.h>
 #include "labmate_input.h"
 #include "labmate_input_tools.h"
+#include "labmate_scope_bridge.h"
 
 /* Furi InputTypeShort handles PWM on release; the other tools retain
  * the v1.7 InputTypePress policy. No hardware/SD work is done here.
@@ -59,6 +60,9 @@ void labmate_input_dispatch(LabMateApp* app, FuriStatus status,
         break;
     case LabMateScreenI2c:
         labmate_input_i2c(app, event, work);
+        break;
+    case LabMateScreenScope:
+        labmate_scope_bridge_input(app, event);
         break;
     default:
         if(event.key == InputKeyBack) app->screen = LabMateScreenMenu;
