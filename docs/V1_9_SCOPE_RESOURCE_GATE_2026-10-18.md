@@ -526,6 +526,41 @@ but **1.9 FAP COMPILE/LINK remains UNVERIFIED**, no 1.9 binary SHA256
 exists and device installation stays **NO-GO**. No main/Stable/E11
 publication, S1, CSV, firmware or device files were modified.
 
+## Phase 1I — historical E11 failures triaged; 128-pixel UI hardening (2026-10-18)
+
+User screenshots showed two **historical Oct 17 v1.8 E11 CI failures**
+on `dev/v1.8-completion`, NOT a v1.9 build failure. Subsequent
+runs of the SAME respective workflows were verified via GitHub:
+- Safe two-rename audit failed on `8a5ad1e...`, then completed
+  **SUCCESS** at run **39048792386** (`d68cafb...`), with a
+  still later SUCCESS at run **39049675255** (`452fd48...`).
+- Guarded non-app staging / CLI handshake failed on
+  `34b0c87...`, then the same host-mocks workflow completed
+  **SUCCESS** at run **39046391251** (`7867945...`).
+These outcomes resolve the specific pictured red-history concerns,
+**not** a claim all untested firmware/hardware conditions passed.
+
+Also updated the new `src/labmate_scope_display.c` and
+`tests/test_labmate_scope_display.c` in the v1.9 DRAFT branch:
+- Short `NO TRG` / `UNSUP` indicators keep the longest possible
+  live footer within 128 pixels even with `LAST64`; the OK/BACK
+  hint is also width-bounded. The longest real status line
+  (`E:256 NO TRG LAST64`) uses 19 × 6 + x=3 = **117 pixels**.
+- Reject impossible total count >256, negative/invalid state tags,
+  more than 64 visible entries, more than 126 line segments,
+  READY plots missing any observed edge/transition, and stale
+  non-READY line geometry **before drawing any pixel**.
+- The mock Canvas now asserts string-cell bounds, not merely
+  in-bounds start coordinates. Added negative tests for inconsistent
+  edge counts, underflowed enums and stale geometry, and reinforced
+  the host workflow's source-policy assertions.
+
+**No new real Actions build result has been observed for v1.9.**
+The UI changes are committed and host test code is in place; a fresh
+post-change GCC/ASAN execution result still requires a run. The
+prior v1.8 E11 public FAP, v1.8 Stable, `main`, and device data
+remain unchanged.
+
 ## Objective acceptance before exposing the scope in menu
 
 1. Existing FAP menu and old screen identifiers stay unchanged until
