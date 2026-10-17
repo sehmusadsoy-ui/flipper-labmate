@@ -48,9 +48,11 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 $verifier = Join-Path $repoRoot 'scripts\verify_v18_full_review_pair.py'
 $transition = Join-Path $repoRoot 'scripts\audit_v18_e11_full_transition.py'
 $backupGate = Join-Path $repoRoot 'scripts\verify_v18_e11_pc_backup_gate.py'
+$liveIdentity = Join-Path $repoRoot 'scripts\check_v18_e11_live_preflash_identity.py'
 if (-not (Test-Path -LiteralPath $verifier -PathType Leaf) -or
     -not (Test-Path -LiteralPath $transition -PathType Leaf) -or
-    -not (Test-Path -LiteralPath $backupGate -PathType Leaf)) {
+    -not (Test-Path -LiteralPath $backupGate -PathType Leaf) -or
+    -not (Test-Path -LiteralPath $liveIdentity -PathType Leaf)) {
     throw 'Exact v1.8 E11 source audit scripts missing'
 }
 $bundle = (Resolve-Path -LiteralPath $CandidateDirectory).ProviderPath
@@ -128,6 +130,12 @@ if ($LASTEXITCODE -ne 0 -or $changedTransport.Count -gt 0) {
     throw 'E11 Apply REFUSED: modified update transport script/tree'
 }
 foreach ($item in @($envCmd,$selfUpdate,$manifest)) { Assert-SafeArg $item }
+# This is the LAST pre-write gate. Read-only commands only; port is closed
+# before the typed confirmation and BEFORE the updater is called.
+& py -3 $liveIdentity --port $Port --momentum-scripts (Join-Path $fw 'scripts') --installed-exitfix-copy $InstalledExitfixCopy
+if ($LASTEXITCODE -ne 0) {
+    throw 'E11 Apply REFUSED: live firmware/EXITFIX identity changed or USB unavailable - NO FLASH'
+}
 Write-Host 'EXPERIMENTAL FULL FIRMWARE REPLACEMENT — NOT GUARANTEED BOOT/ROLLBACK' -ForegroundColor Yellow
 Write-Host 'Must close qFlipper, disconnect external GPIO devices, use stable power and USB.'
 Write-Host 'Do not attempt if current dirty firmware is irreplaceable.'
