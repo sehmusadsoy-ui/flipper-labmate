@@ -79,17 +79,20 @@ def is_production_file(path):
 def check_source_freeze(comparison, expected_head):
     require(isinstance(comparison, dict), "Malformed compare JSON")
     base = comparison.get("base_commit")
-    head = comparison.get("head_commit")
     require(isinstance(base, dict) and base.get("sha") == FROZEN_SOURCE,
             "Frozen E11 binary source base changed")
-    require(isinstance(head, dict) and head.get("sha") == expected_head,
-            "Compared branch head differs from checked-out revision")
     require(comparison.get("status") in ("ahead", "identical")
             and comparison.get("behind_by") == 0,
             "Frozen base is not an ancestor of candidate")
     count = comparison.get("total_commits")
     require(type(count) is int and 0 <= count < 250,
             "Compare pagination limit; refuse incomplete commit evidence")
+    history = comparison.get("commits")
+    require(isinstance(history, list) and len(history) == count,
+            "Missing or paginated compare commit history")
+    actual_head = history[-1].get("sha") if count and isinstance(history[-1], dict) else FROZEN_SOURCE
+    require(actual_head == expected_head,
+            "Compared branch head differs from checked-out revision")
     files = comparison.get("files")
     require(isinstance(files, list) and len(files) < 300,
             "Compare file pagination limit; refuse incomplete diff")
