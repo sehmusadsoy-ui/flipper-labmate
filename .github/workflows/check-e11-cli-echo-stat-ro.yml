@@ -1,0 +1,30 @@
+name: E11 live CLI read-only echo framing proof (HOST MOCK ONLY)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - ".github/workflows/check-e11-cli-echo-stat-ro.yml"
+      - "scripts/probe_e11_cli_echo_stat_ro.py"
+      - "tests/test_e11_cli_echo_stat_ro.py"
+      - "scripts/run-e11-cli-echo-stat-ro.ps1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cli_readonly_echo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Syntax and pure host simulator test no device or upload
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/probe_e11_cli_echo_stat_ro.py
+          python3 -m unittest discover -v -s tests -p test_e11_cli_echo_stat_ro.py
+          echo "E11 CLI ECHO READ-ONLY MOCK PASS - NO SERIAL, NO WRITE"
