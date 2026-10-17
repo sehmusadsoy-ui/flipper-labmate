@@ -325,3 +325,51 @@ to phase-2 FAP-only replacement until this
 actual prewrite copy, live resource hash screens
 and local provenance all pass. No firmware/full updater
 authorization is implied.
+
+## 2026-10-17 — Final-label trial phase 1 **ACTUAL DEVICE PREWRITE PASS**
+
+Following correction of the pinned Momentum `FlipperStorage.read_file()`
+`bytearray` acceptance bug, the operator ran the strictly hash-attested
+corrected read-only PowerShell helper **once** on their own COM7 Flipper,
+with LabMate fully exited, PWM STOP, external GPIO leads removed and
+qFlipper closed. The new read-only device / PC backup checkpoint succeeded:
+
+```text
+DUZELTILMIS BETIK DOGRULANDI
+E11 V1.8 FINAL PREWRITE: PINNED DEVICE IDENTITY + PC FAP BACKUP ONLY
+NO INSTALL/FLASH/SD WRITE/APP RUN/RESET, AND NO AUTOMATIC RETRY.
+>100%, chunk 10 of 10 @ 123.95 kb/s
+E11 FINAL PREWRITE IDENTITY AND PC FAP BACKUP PASS - DEVICE READ ONLY
+old_fap_sha256: 2b31ec3fa9050580dc3c3ff80138578ed185d70811aa8124ebd2d00b8d981af0
+new_candidate_sha256_not_installed: 393fe3e52aa710162a42d7299aa053f538b2ee1ad6542755cf402b83c1931b61
+device_identity: PINNED E11 LABEL/APP/JS/EVENT_LOOP/MANIFEST MATCH
+E11 FINAL PREWRITE PC FAP BACKUP PASS; DEVICE READ ONLY.
+BURADA DUR: Yeni FAP henuz yuklenmedi.
+```
+
+**Confirmed by operator evidence:** pinned custom Momentum label and base,
+the exact installed E11 old FAP, native JS GPIO and Event Loop plugins,
+and resource Manifest matched the original paired E11 package MD5.
+The source verifier accepted the byte-exact **81,532-byte** actual old
+FAP readback against the pinned old SHA256, screened its MD5 twice,
+and created a **new PC-only backup**:
+
+```text
+C:\Users\sehmu\Documents\LabMate-FAP-PC-Backups\E11-before-v18-final-b7370882610140aa871dbdf8b61cf53d\installed_E11_v18DEV_before_final_label.fap
+```
+
+The directory includes `PREWRITE_READONLY_REPORT.json` and
+`READ_ONLY_PC_FAP_BACKUP_VERIFIED.txt`; no historical data, firmware
+or SD files were modified by the helper. The `>` progress prefix
+comes from the pinned Momentum read/download tool; `>100%` is NOT
+a claimed greater-than-100% transfer.
+
+**Scope:** FINAL FAP **PREWRITE PHASE 1 ACTUAL DEVICE PASS**.
+This is not a `v1.8` app installation, not an independent
+firmware-image readback, and not final-label UI/UART/CSV/Profile
+acceptance. The old `v1.8DEV` binary is still installed. Next gate
+is offline validation/staging of **exact new candidate**
+`393fe3e52aa710162a42d7299aa053f538b2ee1ad6542755cf402b83c1931b61`
+with preserved immutable PC backup, followed only by a separately
+reviewed one-FAP on-device update step. Do not run a full firmware
+updater, touch other apps/recordings or mark Stable published yet.
