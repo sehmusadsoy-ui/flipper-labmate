@@ -71,6 +71,23 @@ static void invalid_and_timeguard(void) {
     LabMateScopeMetrics absent={0};
     assert(!labmate_scope_compare_metrics(&absent,&absent).comparable);
 }
+static void clock_normalization_and_jitter(void) {
+    LabMateScopeEdge a[5], b[5];
+    capture(a, 2, 10U, 320000U, 320000U); /* 100 Hz / 50%, 64 MHz */
+    capture(b, 2, 10U, 160000U, 160000U); /* same real 100 Hz, 32 MHz */
+    LabMateScopeMetrics ma = labmate_scope_metrics_from_edges(a, 5, 64000000U);
+    LabMateScopeMetrics mb = labmate_scope_metrics_from_edges(b, 5, 32000000U);
+    LabMateScopeCompare cmp = labmate_scope_compare_metrics(&ma, &mb);
+    assert(cmp.comparable && cmp.frequency_delta_millihz == 0 &&
+           cmp.duty_delta_permille == 0);
+    b[3].tick += 10000U; /* second HIGH duration is longer */
+    b[3].delta_ticks += 10000U;
+    b[4].delta_ticks -= 10000U; /* second LOW duration is shorter */
+    mb = labmate_scope_metrics_from_edges(b, 5, 32000000U);
+    assert(mb.status == LabMateScopeMetricsReady && mb.completed_cycles == 2);
+    assert(mb.frequency_millihz == 100000U && mb.duty_permille == 516U);
+    assert(mb.min_period_ticks == 320000U && mb.max_period_ticks == 320000U);
+}
 static void saturated_bounds(void) {
     LabMateScopeEdge e[255];
     capture(e,127,100U,1U,1U);
@@ -81,6 +98,7 @@ static void saturated_bounds(void) {
 }
 int main(void) {
     nominal_and_delta(); wrap_and_partial(); invalid_and_timeguard(); saturated_bounds();
+    clock_normalization_and_jitter();
     puts("v1.9 Signal Compare sequential actual 3.3V PC1 captures PASS");
     return 0;
 }
