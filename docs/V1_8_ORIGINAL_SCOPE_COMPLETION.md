@@ -444,3 +444,26 @@ an in-place Stable update, Draft PR merge, new firmware flash,
 tag move, profile/CSV mutation, or v1.9 work. Keep the existing
 published v1.8 Stable artifact untouched until a separate
 release/scope decision.
+
+## 2026-10-17 — Operator agreed to E11 hardware-method/fixture deferral; release still gated
+
+The operator explicitly accepted making **H1 simultaneous
+second-client PA7 BUSY**, calibrated electrical/physical checks
+and available-later peripheral tests **DEFERRED/HARDWARE PENDING**,
+to be performed on their own Flipper with proper safe equipment.
+No test result has been fabricated and supported software tests
+remain PASS only at their actually exercised level.
+
+A separate [v1.8 E11 release-readiness audit](V1_8_E11_RELEASE_READINESS_2026-10-17.md)
+found the paired E11 trial's **101** production file records and
+native patch source unmodified relative to the current
+`dev/v1.8-completion` branch, but the in-place public
+Stable update is still **NO-GO**. The deployed working app is
+a DEV candidate and the old reduced-scope v1.8 Stable release
+binary is different. Do not treat untested external UART/new E11
+CSV/profile persistence as proven merely from earlier
+devices or C/CI simulation; safe scratch-only data and final
+exact-pair acceptance plus new production-badge release build
+remain to review. Original release checklist R remains open;
+this documented deferral is not approval to replace FAP assets,
+run updater or start v1.9.
