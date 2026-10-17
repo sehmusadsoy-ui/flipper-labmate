@@ -242,6 +242,72 @@ backed-up FAP-only Flipper test may follow **after** those pass and the
 owner has reviewed the exact artifact/hash. No full firmware flash
 is required or authorized as part of this host-only phase.
 
+## Phase 1D — staged real E11 PC1/EXTI1 native adapter (2026-10-18)
+
+**Source implementation committed, not yet linked into the app UI or
+verified by a matched-Firmware FAP build.** This is an explicit
+engineering checkpoint, not a physical-test PASS.
+
+- `src/labmate_resource_policy.[ch]`: appended the distinct
+  `LabMateCaptureScope` owner **after** all historical enum values.
+  PC1 is the only permitted pin. Legacy Frequency, Pulse, Counter and
+  Button ownership rules and indexes remain unchanged.
+- `src/labmate_scope_gate.c` now checks
+  `LabMateCaptureScope`, not a fake `LabMateCaptureFrequencyLow`
+  request. A foreign Frequency/Pulse/Button/Counter capture blocks
+  Scope acquisition; no owner is stolen.
+- `src/labmate_scope_native.[ch]` stages a real PC1 callback using
+  `furi_hal_resource_lease_try_acquire(FURI_HAL_LEASE_IRQ_PC1)`,
+  `furi_hal_gpio_try_add_int_callback`, the owned GPIO's
+  `GpioModeInterruptRiseFall`, and the actual `DWT->CYCCNT`
+  timestamp. **Both patched E11 ABI compile-time feature macros
+  are mandatory**. There is **NO** call to the old asserting GPIO
+  callback API and **NO** safe stock-Momentum fallback.
+- Callback uses only O(1) edge capture on the ISR thread. No screen,
+  file, heap, locks or logging calls in the callback.
+- Before starting, validates actual DWT cycle counter enablement and
+  `SystemCoreClock` against the full **5-second** capture window.
+  Capture duration must remain shorter than 32-bit DWT half-wrap.
+  Application-thread watchdog receives IRQ-excluded snapshots.
+- Source reserves **256 events** in a state object that must be
+  allocated as **zero-initialized static/heap storage**, not as a
+  local 3 KiB stack temporary. Native STOP quiesces the owned callback,
+  clears the PC1 EXTI1 trigger, restores analog mode and releases the
+  **matching** lease handle. A failed lease release remains sticky
+  and cannot be erased by repeated initialization.
+- `tests/mock_v19/` adds header-mocked Momentum/Furi/EXTI
+  functions and intentionally injected native failures. Tests cover
+  successful two-edge capture + timing, STOP/RESTART, 1-second no-trigger
+  auto-STOP, 256-edge saturation auto-STOP, foreign callback, busy native
+  lease, I2C ownership refusal, disabled DWT, unsafe DWT frequency,
+  unsuccessful lease release and stable sticky failure. Separate
+  **UNPATCHED SDK** test verifies no HAL pin mutation or IRQ
+  callback registration when the native ABI is absent.
+- `.github/workflows/check-v19-scope-buffer-host.yml` includes strict
+  C11 and sanitizers for the matched mocked native adapter and a
+  separate stock/unpatched negative build.
+
+**Evidence classification:** GitHub *source files and test definitions*
+are committed and readable on branch `dev/v1.9-logic-scope` (Draft
+PR #15). **There is NO confirmed CI run on this current head.**
+Do not claim mock native test PASS, matched Momentum SDK compile PASS,
+GUI visibility or Flipper physical PASS until each independent gate
+has been observed. The original E11 Custom prerelease, v1.8 Stable,
+source tags, ordinary `main` and physical device contents are
+unchanged.
+
+**Remaining gates before asking the owner to install a new FAP:**
+1. CI job actual conclusion for native fake HAL including unpatched ABI.
+2. Matched Momentum SDK/FAP build including the new source module with
+   `application.fam` `src/*.c`, and reproduce binary SHA256.
+3. Integrate dedicated guarded local owner into old STOP/BACK/exit flow,
+   128×64 live timeline renderer, START/BUSY/ERROR status and UI tests;
+   keep INFO/About last.
+4. Verify on-device no-signal/edge/STOP with a **separately approved,
+   FAP-only** reversible test, never a forced full firmware updater.
+5. Later independent waveform accuracy at the university with instructor
+   and the remaining real BME280/DS18B20/SD tests as material arrives.
+
 ## Objective acceptance before exposing the scope in menu
 
 1. Existing FAP menu and old screen identifiers stay unchanged until
