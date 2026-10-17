@@ -8,6 +8,10 @@
 [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 ![GPIO](https://img.shields.io/badge/GPIO-3.3%20V%20only-red?style=flat-square)
 
+![LabMate digital signal diagnostics — Flipper Zero, PWM waveforms and 3.3 V breadboard illustration](assets/labmate-hero.webp)
+
+*LabMate concept artwork — the depicted interface is illustrative, not an actual application screenshot. Check the [release notes](https://github.com/sehmusadsoy-ui/flipper-labmate/releases) for real supported features and firmware compatibility.*
+
 **Measure · Generate · Record · Diagnose**
 
 LabMate turns a Flipper Zero into a compact, offline toolkit for **3.3 V digital signals**. It combines frequency and pulse measurements, GPIO state inspection, real edge counting, PWM output, button timing, microSD logging, saved profiles and UART diagnostics in **one application**.
