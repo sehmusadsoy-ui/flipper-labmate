@@ -1268,3 +1268,54 @@ hardware is not connected/prepared, defer live UART
 and proceed with other read-only tests. Stable/main,
 device old `.bak`, original old PC FAP backup, Draft
 PR #13 and v1.9 HOLD unchanged.
+
+## 2026-10-17 — New E11 final v1.8 FAP external ESP32-S2 at 115200: E1 PASS / one AT-induced ST2 stress, E3 unobserved
+
+Operator report verbatim after the first real external UART test on the
+**new installed** E11 final-label v1.8 FAP:
+
+```text
+E1 ESP32_READY: PASS / E2-E3 AT→ESP32_OK: FAIL / UART STOP-BACK: PASS
+Notlar: fail bastım çünkü karta tx geçince stress test yaptı ama ondandan sona da ESP32_ready geldi sorun olmadı ?
+```
+
+**Source-based cause, not an established LabMate defect:** The
+currently plausible installed ESP32 firmware is the prior ST2 test
+fixture `tests/esp32_s2_wrover_uart_stress_115200/esp32_s2_wrover_uart_stress_115200.ino`,
+not the simpler interoperable echo-only firmware
+`tests/esp32_s2_wrover_uart_peer/esp32_s2_wrover_uart_peer.ino`.
+The actual ST2 sketch's `handleLine()` on exact `AT`
+responds `ESP32_OK\r\nSTRESS_ARMED\r\n`, arms a burst after
+1200ms and emits `BURST_BEGIN` / up to 20,480 ASCII bytes /
+`BURST_END` in a bounded transfer. Once idle it again
+sends `ESP32_READY` about every 3s. Thus user-observed
+AT-induced stress plus later READY is exactly **consistent**
+with the ST2 sketch's intended behavior.
+
+**Evidence rating (do not invent unseen RX):**
+- E1 PASS (explicitly saw periodic `ESP32_READY`).
+- Flipper STOP/BACK PASS (explicitly reported).
+- E2 TX-to-peer **strong functional evidence** from AT specifically
+  arming the ST2 sender (assuming this known flashed sketch).
+- E3 `ESP32_OK` on the new app is **NOT OBSERVED / not yet PASS**
+  because the operator did not report seeing that exact response;
+  it may have scrolled out during the stress data burst.
+- The original combined E2/E3 check must be listed
+  **INCOMPLETE/FAIL to confirm exact string**, not diagnosed as
+  broken TX without evidence.
+- No numeric `R/D/E`, burst sizes, independent timing or
+  error counts were supplied for this *new* E11 v1.8 run;
+  old v1.8DEV ST2 R=20569/41281 D=0 E=0 belongs to the
+  previous FAP and must NOT be copied into this record.
+
+**Safe continuation:** Do not repeatedly send `AT`
+just to seek `ESP32_OK` with the ST2 firmware, because
+each `AT` arms another load event. No ESP32 reflash,
+USB double-power, FAP change or GPIO reconnection
+has been requested/approved. If the user later wants an
+isolated E2/E3 text assertion, first identify/choose a safe
+nonstress peer firmware and obtain independent explicit
+approval for any ESP32 firmware overwrite; alternatively
+a scoped one-shot burst test with a prearranged visual
+capture could be considered but is not required now.
+Maintain Draft PR #13, stable and v1.9 HOLD.
