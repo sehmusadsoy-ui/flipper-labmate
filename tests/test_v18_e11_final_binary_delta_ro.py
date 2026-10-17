@@ -124,8 +124,8 @@ class BinaryPairAuditTests(unittest.TestCase):
     @staticmethod
     def dfu_fixture(date: bytes, extra: bytes=b"safe"):
         import zlib
-        data=b"DfuSe" + (b"\\x00"*40) + b"HEAD\\x00" + date + b"\\x00" + extra
-        suffix=b"\\x00"*12
+        data=b"DfuSe" + (b"\x00"*40) + b"HEAD\x00" + date + b"\x00" + extra
+        suffix=b"\x00"*12
         crc=(~zlib.crc32(data+suffix)) & 0xFFFFFFFF
         return data+suffix+crc.to_bytes(4,"little")
 
