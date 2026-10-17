@@ -1,5 +1,15 @@
 # LabMate Master Roadmap — v1.0 to v2.0
 
+**Two complementary planning documents:** This is the **canonical feature roadmap**
+and has precedence for version goals. The
+[Master Roadmap V2 quality and firmware-compatibility addendum](docs/MASTER_ROADMAP_V2_ADDENDUM.md)
+provides supplementary safety/verification requirements; it never
+silently replaces Logic Scope/Signal Compare (v1.9) or Signal Doctor
+(v2.0). See [the dated pre-v1.9 reconciliation](docs/V1_9_PRESTART_TWO_ROADMAP_AUDIT_2026-10-17.md)
+for what's complete, what is blocked in software, and what waits for
+physical equipment/university oscilloscope checks.
+
+
 > **Current development update — 2026-10-17:** The original
 > [v1.8 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8)
 > remains GitHub's ordinary **Latest** release, while the expanded
