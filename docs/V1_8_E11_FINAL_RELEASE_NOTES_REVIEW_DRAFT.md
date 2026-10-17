@@ -98,3 +98,40 @@ References:
 [E11 paired device evidence](V1_8_E11_FIRST_LIVE_BOOT_AND_SMOKE_2026-10-17.md),
 [H1 exact accepted boundary](V1_8_E11_H1_CLOSEOUT_DECISION_2026-10-17.md),
 [release readiness and mandatory gates](V1_8_E11_RELEASE_READINESS_2026-10-17.md).
+
+## Exact final-label **review-only** candidate evidence (2026-10-17)
+
+- Full matched Momentum + single FAP / JS module and update
+  archive [Actions #39035056937](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/39035056937)
+  completed **SUCCESS**, commit
+  `99cb65d0194dc59d423cfa439c90618ac6b9f114`.
+- Candidate `labmate.fap` SHA256:
+  `393fe3e52aa710162a42d7299aa053f538b2ee1ad6542755cf402b83c1931b61`.
+  Candidate `firmware.dfu` SHA256:
+  `e7460ab56d72a77bca1c096496ee6dd6d59044bd314ad4cb78559c3aeff72c8b`.
+  Native `js_gpio.module` SHA256:
+  `fff2ab8ad8e5b320b669283fc611216da99e9cda4dc03428fcd8e8a130ecca0a`.
+- Independently downloaded historical device-tested E11 bundle and
+  new candidate bundle, [read-only compare Actions #39040017389](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/39040017389)
+  **SUCCESS** (13/13 negative/positive fixtures): native JS
+  plugin bytes identical; the old and candidate DFUs differ only
+  at embedded build date `16-10-2026` → `17-10-2026`
+  and the validated inverted CRC suffix. This is a strict
+  offline DFU bytewise-delta finding, **not actual on-device
+  firmware binary readback**. Candidate FAP differs as expected
+  from the original `v1.8DEV` trial and requires its own
+  bounded on-device acceptance.
+- The reviewed final-label archive is
+  `v18-FINAL-LABEL-E11-PAIRED-REVIEW-DO-NOT-FLASH`
+  (Actions artifact ID `12101802257`, temporary). It is
+  **not** a public Stable download, installer, or authorized
+  firmware write.
+
+Safest *potential* next device trial is to verify current
+running E11 native resources and existing app backup
+read-only, then request separate operator consent to
+replace **only** the installed LabMate FAP with the exact
+hash-matched final-label candidate on the already tested
+E11 custom firmware. Even this is a **device write, not
+authorized** in this draft. It must never be repurposed as
+a generic stock Momentum/MNTM-012 app installer.
