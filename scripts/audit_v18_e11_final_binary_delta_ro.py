@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import zlib
 from pathlib import Path
 
 FILES = ("labmate.fap", "firmware.dfu", "js_gpio.module", "firmware-full-update.tgz")
@@ -157,6 +158,10 @@ def main() -> int:
         end=min(firmware_payload_end,pos+15)
         print(f"E11 DFU payload delta at {pos} trial-context-hex={left[start:end].hex()}")
         print(f"E11 DFU payload delta at {pos} final-context-hex={right[start:end].hex()}")
+    for label,dfu in (("trial",left),("candidate",right)):
+        stored=int.from_bytes(dfu[-4:],"little")
+        crc=zlib.crc32(dfu[:-4])
+        print(f"E11 DFU {label} checksum: stored=0x{stored:08x} calculated=0x{crc:08x} standard_crc_match={'YES' if stored==crc else 'NO'}")
     print("Unchanged source and small byte delta do NOT by themselves prove unchanged firmware behavior.")
     print("E11 PINNED PAIR IDENTITIES PASS; BINARY DIFFERENCE REPORT ONLY")
     print("DO NOT INFER DFU RUNTIME EQUIVALENCE, DEVICE PASS, SAFE FAP-ONLY MIX, OR RELEASE APPROVAL")
