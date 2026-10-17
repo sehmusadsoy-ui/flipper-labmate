@@ -1,0 +1,29 @@
+name: E11 final v1.8 phase 2B two safe rename audit (HOST MOCK ONLY)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - ".github/workflows/check-v18-e11-phase2b-promote-mock.yml"
+      - "scripts/prepare_v18_e11_phase2b_safe_promote.py"
+      - "tests/test_v18_e11_phase2b_safe_promote.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source_based_two_safe_moves:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Simulated pinned E11 safe rename + interrupted states only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/prepare_v18_e11_phase2b_safe_promote.py
+          python3 -m unittest discover -v -s tests -p test_v18_e11_phase2b_safe_promote.py
+          echo "E11 PHASE2B FAP-ONLY HOST MOCK PASS - NO SERIAL/RENAME/WRITE"
