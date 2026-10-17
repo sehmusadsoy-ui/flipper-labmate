@@ -19,12 +19,13 @@ static const char* const tool_titles[LabMateToolCount] = {
     "UART Terminal",
     "1-Wire Temp",
     "I2C Explorer",
+    "Logic Scope",
 };
 
 /* Each instrument remains reachable once, with its previous tool ID. */
-static const uint8_t group_sizes[LabMateGroupCount] = {5U, 2U, 3U, 3U, 1U};
+static const uint8_t group_sizes[LabMateGroupCount] = {6U, 2U, 3U, 3U, 1U};
 static const uint8_t group_tools[LabMateGroupCount][LABMATE_NAV_MAX_CHILDREN] = {
-    {LabMateToolGpio, LabMateToolFrequency, LabMateToolPulse, LabMateToolCounter, LabMateToolButton},
+    {LabMateToolGpio, LabMateToolFrequency, LabMateToolPulse, LabMateToolCounter, LabMateToolButton, LabMateToolScope},
     {LabMateToolGenerator, LabMateToolAlerts, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
     {LabMateToolLogger, LabMateToolHistory, LabMateToolProfiles, LabMateToolInvalid, LabMateToolInvalid},
     {LabMateToolUart, LabMateToolI2c, LabMateToolOneWire, LabMateToolInvalid, LabMateToolInvalid},
