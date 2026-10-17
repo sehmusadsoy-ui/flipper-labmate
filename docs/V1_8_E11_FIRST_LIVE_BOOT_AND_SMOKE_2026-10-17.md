@@ -845,3 +845,62 @@ one-shot H0 repeat should only occur after host CI succeeds,
 PWM STOP + no external GPIO wiring + qFlipper closed + exact E11
 FAP/JS/plugin checks. If free state remains BUSY or an unknown JS
 error appears, suspend H1 and investigate before retrying.
+
+## 2026-10-17 — H0 SAFE CLI flags point to JS exception; source identifies missing event_loop prerequisite
+
+Operator's third H0 attempt with the one-shot boolean diagnostic produced:
+
+```text
+launched=YES begin=YES read_ok=NO gpio_busy=NO
+error=YES trace=YES done=NO missing_script=NO usage=NO
+```
+
+This **proves a JavaScript exception**, **not** `GPIO pin BUSY`.
+The preflight had already attested installed E11 FAP/native JS GPIO
+plugin/remote test script via local SHA256 and device MD5.
+Exact runtime exception text was intentionally not collected to
+avoid exposing raw CLI/trace or device paths.
+
+**Source-review discovery:** pinned Momentum
+`applications/system/js_app/modules/js_gpio.c`,
+`js_gpio_create()`, first calls
+`js_module_get(modules, "event_loop")` and **returns NULL if
+that dependency is not initialized**. Pinned
+`applications/system/js_app/js_modules.c` only instantiates
+modules on explicit `require()` and reports `"gpio" module load fail`
+when its constructor returns no object. The earlier v1 diagnostic
+JS did only `require("gpio")`, omitting the required
+`require("event_loop")`; the upstream shipped
+`examples/apps/Scripts/Examples/gpio.js` explicitly starts
+with `let eventLoop = require("event_loop");` and THEN
+`let gpio = require("gpio");`. This explains the observed
+not-BUSY JS error strongly and is a definite **probe script
+precondition defect**, not established evidence of native E11
+firmware allocator malfunction. The exact prior runtime error
+string was not captured, so do not claim its precise text.
+
+**Non-overwriting v2 fix:**
+`tests/device/e11_h_pa7_read_only_v2.js` inserts the explicit
+event_loop require *before* gpio; it keeps ONLY a read-only PA7
+`gpio.get().read()`, never changes pin modes or PWM.
+Its SHA256 is independently pinned:
+`82c2a71aac69fefe6a7e71cdce386d9c2d0a9c23074dcbc0c576e5ade4bdde5f`.
+New `scripts/check_v18_e11_h_pa7_cli_v2.py`
+uses EXACT `/ext/apps/Scripts/e11_h_pa7_read_only_v2.js`
+(remote MD5) and the pinned existing FAP/plugin MD5 checks;
+original v1 probe/test remain unchanged for provenance.
+`.gitattributes` pins v2 to LF on Windows. New host
+`tests/test_v18_e11_h_pa7_cli_v2.py` locks module dependency
+order, script byte SHA, denied and allowed result classification.
+Windows [CI #39027945767](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/39027945767)
+**SUCCESS**. This is **host safety PASS, not on-device H0**.
+
+**Next on-device gate:** user copies the *new* v2 JS test file
+to a **new path** under `apps/Scripts`; never overwrite/delete
+the historical v1 file or saved user data. Then close qFlipper,
+ensure Flipper PWM STOP / app closed / no wiring, and execute
+only the pinned v2 `--expect free` helper once. Do not run H1
+until H0 provides an unambiguous PASS. No update, reflash, reset,
+GPIO init/write or uncontrolled retry. Current on-device H0 is
+**NOT PASSED / prior v1 script invalid for this test**;
+H1/H2 remain **NOT RUN** and cumulative A–G **36/36 PASS**.
