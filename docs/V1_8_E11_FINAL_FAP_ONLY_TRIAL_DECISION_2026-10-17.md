@@ -1362,3 +1362,36 @@ rewire, data mutation or device image replacement was
 requested by this follow-up. Avoid further `AT` triggers
 until a deliberate separate performance test is designed.
 Keep Draft PR #13, published Stable/main and v1.9 HOLD.
+
+## 2026-10-17 — Final E11 v1.8 UART STOP and subsequent non-peer tools: OPERATOR PASS
+
+After the live ESP32-S2 UART/ST2 session above, the operator was
+asked to STOP UART and exit LabMate, power down before safely
+removing the Wi-Fi Devboard, then re-open PWM Studio (STOP),
+Counter, Frequency Meter, Log History and Profiles S1 without
+modifying existing data. Initial operator message was the
+literal template `UART sonrası kaynak bırakma: PASS/FAIL`,
+which was **NOT** a result. On explicit clarification
+`Sonuç PASS mı, FAIL mi?`, the operator replied
+**`PASS`**.
+
+**Accepted E11 final FAP result:** UART STOP/BACK followed
+by normal no-peer operation of PWM Studio with STOP default,
+Counter, Frequency, Log History and Profiles S1 **PASS
+(user-reported)**. The test indicates no persistent
+UI-level UART resource lock was observed after the
+stop/exit/disconnect sequence. It does **not** prove
+simultaneous firmware-service ownership arbitration,
+TIM1/TIM2/EXTI pin-conflict refusal, ISR teardown
+under load, quantitative frequency accuracy or a new
+CSV/Profile write.
+
+The existing device original-FAP `.bak`, verified
+original PC backup, installed exact final v1.8 FAP,
+native resources, firmware, CSV/Profiles and published
+Stable are not known to have been changed during
+these post-UART checks. No install/flash/cleanup
+operation was requested. **H1 true simultaneous
+resource BUSY proof and bench-only electrical trials
+remain OPEN / equipment deferred** as applicable.
+Draft PR #13 remains DRAFT; v1.9 HOLD.
