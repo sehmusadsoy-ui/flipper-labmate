@@ -121,5 +121,36 @@ class BinaryPairAuditTests(unittest.TestCase):
             delta.bounded_changed_offsets(self.trial/"offset.dfu",self.final/"offset.dfu",limit=2)
 
 
+    @staticmethod
+    def dfu_fixture(date: bytes, extra: bytes=b"safe"):
+        import zlib
+        data=b"DfuSe" + (b"\\x00"*40) + b"HEAD\\x00" + date + b"\\x00" + extra
+        suffix=b"\\x00"*12
+        crc=(~zlib.crc32(data+suffix)) & 0xFFFFFFFF
+        return data+suffix+crc.to_bytes(4,"little")
+
+    def test_strict_dfu_date_and_dfu_suffix_crc_accepts_only_expected_change(self):
+        old=self.dfu_fixture(b"16-10-2026")
+        new=self.dfu_fixture(b"17-10-2026")
+        pos=delta.check_dfu_date_only_difference(old,new)
+        self.assertEqual(old[pos:pos+1],b"6")
+        self.assertEqual(new[pos:pos+1],b"7")
+
+    def test_strict_dfu_rejects_additional_payload_difference_with_valid_crc(self):
+        old=self.dfu_fixture(b"16-10-2026")
+        new=self.dfu_fixture(b"17-10-2026",extra=b"code")
+        with self.assertRaisesRegex(ValueError,"unexpected DFU payload"):
+            delta.check_dfu_date_only_difference(old,new)
+
+    def test_strict_dfu_rejects_corrupt_suffix_crc_and_missing_stamp(self):
+        old=self.dfu_fixture(b"16-10-2026")
+        new=self.dfu_fixture(b"17-10-2026")
+        damaged=new[:-1]+bytes([new[-1] ^ 0x01])
+        with self.assertRaisesRegex(ValueError,"invalid DFU CRC"):
+            delta.check_dfu_date_only_difference(old,damaged)
+        with self.assertRaisesRegex(ValueError,"build-date"):
+            delta.check_dfu_date_only_difference(old,self.dfu_fixture(b"18-10-2026"))
+
+
 if __name__=="__main__":
     unittest.main()
