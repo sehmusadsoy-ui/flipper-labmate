@@ -633,3 +633,41 @@ general guarantee against runtime data mutations. Protect the
 verified old/current LabMate PC copies. No repeat device scan
 or backup is required by this finding. [Detailed real-device
 evidence](V1_8_E11_LIVE_UPDATER_MANIFEST_HANDOFF.md).
+
+
+## 2026-10-17 — Packed NEW resource Manifest validated: FAP-SPLIT has stale FAP reference
+
+After the earlier real-device old-resource Manifest confirmed
+`apps/Tools/labmate.fap` is in the CLEANUP list,
+a new [actual E11 packed resources
+comparison](V1_8_E11_PACKED_MANIFEST_VERIFICATION_2026-10-17.md)
+checked separately pinned original FULL and FAP-excluded derivative
+`resources.tar.gz` binaries against their OWN embedded
+`Manifest` MD5 and byte-size records.
+
+**Original FULL archive:** 2,115 resource files (not counting
+Manifest); 2,114 correctly declared resource records,
+`dolphin/firstboot.bin` is the only explicitly accepted
+Momentum-generated file outside the Manifest; **0 mismatched
+MD5/size records, 0 missing declared files**, E11 FAP and native
+JS binary SHA256 match independently pinned review files.
+This is PACKAGING PASS, NOT firmware/device acceptance.
+
+**FAP-separated derivative:** 2,114 resource files (excluding
+Manifest), but the unchanged new Manifest still declares
+2,114 files INCLUDING the now-absent LabMate FAP:
+**exactly one declared orphan, the removed E11 LabMate FAP**.
+That is a SECOND independent reason for `SPLIT_TRIAL=REJECTED`
+beyond the actual installed old Manifest targeting EXITFIX for
+deletion. Do not repack/retag this derivative as a functional
+installer. Original FULL also remains NO-GO pending firmware
+recovery/native device trials and explicit owner install permission.
+
+Test evidence: [full actual archive reconciliation
+#38984202194](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38984202194)
+**SUCCESS**; [native integrated
+#38984217069](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38984217069)
+**SUCCESS**. The risk workflow has been changed not to
+upload fresh downloadable binaries for the known-rejected
+SPLIT derivative. Source provenance, external accessories,
+device/SD and working EXITFIX all remain untouched.
