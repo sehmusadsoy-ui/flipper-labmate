@@ -10,6 +10,8 @@ on:
       - "tests/test_labmate_scope_timeguard.c"
       - "src/labmate_scope_plot.[ch]"
       - "tests/test_labmate_scope_plot.c"
+      - "src/labmate_scope_compare.[ch]"
+      - "tests/test_labmate_scope_compare.c"
       - "src/labmate_scope_display.[ch]"
       - "tests/test_labmate_scope_display.c"
       - "src/labmate_scope_bridge.[ch]"
@@ -42,6 +44,8 @@ on:
       - "tests/test_labmate_scope_timeguard.c"
       - "src/labmate_scope_plot.[ch]"
       - "tests/test_labmate_scope_plot.c"
+      - "src/labmate_scope_compare.[ch]"
+      - "tests/test_labmate_scope_compare.c"
       - "src/labmate_scope_display.[ch]"
       - "tests/test_labmate_scope_display.c"
       - "src/labmate_scope_bridge.[ch]"
@@ -146,6 +150,26 @@ jobs:
             -o "$RUNNER_TEMP/v19-scope-timeguard-san"
           ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 \
             UBSAN_OPTIONS=halt_on_error=1 "$RUNNER_TEMP/v19-scope-timeguard-san"
+
+      - name: Compare sequential actual PC1 captures (strict GCC C11)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -O2 \
+            -Isrc src/labmate_scope_compare.c tests/test_labmate_scope_compare.c \
+            -o "$RUNNER_TEMP/v19-compare"
+          "$RUNNER_TEMP/v19-compare"
+
+      - name: Compare A/B real measurements (ASAN UBSAN)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -O1 -g \
+            -fsanitize=address,undefined -fno-omit-frame-pointer \
+            -Isrc src/labmate_scope_compare.c tests/test_labmate_scope_compare.c \
+            -o "$RUNNER_TEMP/v19-compare-sanitize"
+          ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 \
+            UBSAN_OPTIONS=halt_on_error=1 "$RUNNER_TEMP/v19-compare-sanitize"
 
       - name: Render real bounded waveform coordinates (GCC strict C11)
         shell: bash
@@ -295,6 +319,12 @@ jobs:
           assert "max_session_ms" in timeguard
           for forbidden in ("furi_hal_", "LL_EXTI_", "storage_file_", "gpio_init(", "malloc(", "free("):
               assert forbidden not in timeguard, forbidden
+          compare = Path("src/labmate_scope_compare.c").read_text()
+          assert "LabMateScopeMetricsInsufficient" in compare
+          assert "LABMATE_SCOPE_MAX_SAFE_DELTA" in compare
+          assert "frequency_delta_millihz" in compare
+          for forbidden in ("furi_hal_", "LL_EXTI_", "storage_file_", "gpio_init(", "malloc(", "free("):
+              assert forbidden not in compare, forbidden
           plot = Path("src/labmate_scope_plot.c").read_text()
           assert "LabMateScopePlotTimebaseError" in plot
           assert "window_cycles" in plot
