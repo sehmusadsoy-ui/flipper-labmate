@@ -21,7 +21,7 @@
 #include "labmate_scope_plot.h"
 #include "labmate_scope_display.h"
 
-#define LABMATE_VERSION_TEXT "v1.8DEV"
+#define LABMATE_VERSION_TEXT "v1.9DEV"
 /* Shared menu/pin counts: UI and input handling must agree. */
 #define MENU_COUNT LabMateToolCount
 #define GPIO_COUNT LABMATE_MONITOR_PIN_COUNT
