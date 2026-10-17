@@ -183,8 +183,7 @@ def main() -> None:
             (target/header).write_text('#include "mock_hal.h"\n')
         (target/"native_pwm.c").write_text(native)
         (target/"labmate_generator.c").write_text(APP_FILE.read_text())
-        (target/"native_stub.c").write_text(stubs)
-        (target/"joint.c").write_text(JS_RUN+helper+"\n"+TEST_RUN)
+        # Native HAL stub-private counters must live in the SAME C unit as\n        # the original JS claim so H1 asserts shared ownership state.\n        (target/"joint.c").write_text(stubs+"\n"+JS_RUN+helper+"\n"+TEST_RUN)
         exe=target/"joint"
         subprocess.run(["cc","-std=c11","-Wall","-Wextra","-Werror","-pedantic",
                         "-Wno-unused-variable","-I",str(target),
