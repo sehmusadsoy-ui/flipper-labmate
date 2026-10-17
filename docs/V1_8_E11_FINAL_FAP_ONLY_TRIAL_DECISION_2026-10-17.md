@@ -709,3 +709,72 @@ not executed, public Stable/main/v1.9 untouched.
 The existing conditional operator consent covers
 only this narrow app-only trial path, not cleanup,
 firmware update or release publication.
+
+## 2026-10-17 — SECOND real stage NO-GO, CLI echo-model error; ALL DEVICE WRITES PAUSED
+
+Operator independently hash-checked the approved one-shot helper, but
+the stage attempt **again aborted before FAP payload transfer**:
+
+```text
+E11 BOS STAGE BETIGI DOGRULANDI
+E11 v1.8 2A: ONE-SHOT APPEND INTO VERIFIED EXISTING ZERO-BYTE NONAPP STAGE
+E11 v1.8 EXISTING-EMPTY-STAGE NO-GO: stage CLI not Ready on first response line; STOP, do not retry
+E11 ZERO-SIDECAR STAGE NOT VERIFIED. STOP. Do not retry.
+```
+
+**Status:** Real device stage transfer **NO-GO**, NOT PASS.
+The new helper accepted the old-app/native/checkpoint preflight and reached
+the first `storage write_chunk`. It rejected the first CLI response before
+sending application payload. This does **not** prove the stage remains empty
+now, and the old FAP/native post-abort state has **not** yet been re-read.
+No hardware update/retry/cleanup is authorized on these observations.
+
+**The exact source-backed defect, not guesswork:**
+Pinned Momentum
+`lib/toolbox/cli/shell/cli_shell_line.c::cli_shell_line_input_normal`
+prints each typed character with `printf("%c", combo.key)`.
+`cli_shell_line_input_cr` then emits `printf("\r\n")` *before*
+dispatching the command. Therefore the first CRLF-delimited line contains
+the **echoed command text**. The storage CLI
+`storage_cli_write_chunk` then emits `printf("Ready\r\n")`
+as a SECOND line after opening the sidecar, and
+`FlipperStorage.send_and_wait_eol()` **returns the first line**.
+Pinned upstream `FlipperStorage.send_file()` already calls
+`send_and_wait_eol()` once without interpreting that first returned line,
+then reads the next CRLF-delimited line to detect errors and send bytes.
+
+Both our first host mocked script (incorrectly expecting first response
+empty) and second host mocked script (incorrectly expecting Ready first)
+misrepresented the actual CLI shell's echoed-command line. This is a
+test-fixture defect as well as an implementation defect. **Do not silently
+count the previously green mocks as evidence the real-device protocol
+was right.** The failure is confined to the transfer-handshake tool based
+on the available evidence and is not a demonstrated LabMate GPIO/timer
+firmware bug.
+
+**Corrective offline source/test work completed:**
+`scripts/stage_v18_final_fap_on_device_one_file.py::append_staged_chunk`
+now requires the full **EXACT echoed command text** on first EOL,
+then literal `Ready` on second EOL, and sends **NO binary bytes**
+unless BOTH match. Host simulator mocks in
+`tests/test_v18_final_fap_on_device_stage.py` and
+`tests/test_v18_resume_empty_stage_once.py` now faithfully
+simulate two native CRLF lines, with adversarial malformed-command
+echo, malformed Ready and short transport tests. Latest
+independent [stage host CI #39046391251](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/39046391251),
+[repaired one-shot host CI #39046421535](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/39046421535),
+[final integrated host CI #39046421523](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/39046421523)
+are **SUCCESS**. These are **HOST-only** and NOT a new device acceptance.
+
+**Operator safety instruction for now:** STOP all new device writes,
+do not rerun either previous stage script or any amended script,
+do not reset, delete/rename/recover a sidecar, install a FAP,
+or flash firmware. Keep the old verified PC FAP backup immutable.
+When the owner is ready, first establish a fresh USB CLI session
+and run the already approved, fixed-path **read-only aborted-stage
+inventory and MD5 check** again to establish whether the existing
+sidecar is still empty and the old app/native hashes unchanged.
+Only after the exact resulting state is recorded should any future
+one-shot stage write be separately reviewed; no third upload
+attempt is being requested in this response. Phase 2B app promotion,
+Stable publication and v1.9 remain HOLD.
