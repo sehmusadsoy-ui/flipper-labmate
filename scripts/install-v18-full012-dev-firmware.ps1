@@ -13,6 +13,15 @@ param(
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+# SAFETY QUARANTINE — this legacy loader pins an OLD v1.8 candidate
+# (firmware 5e3267..., app 9a276e...), NOT the E11-reviewed pair
+# (firmware 11ed3c..., app 2b31ec...). It also wrongly suggests that
+# post-update resource cleanup cannot remove the current EXITFIX.
+# Real COM7 /ext/Manifest: apps/Tools/labmate.fap IS in old deletion list.
+# Never call selfupdate.py from this legacy script, even with -Apply/YUKLE.
+if ($Apply) {
+    throw 'REJECTED: legacy updater is pinned to an older firmware/FAP; current E11 source and old Manifest require a separately reviewed procedure. NO FLASH.'
+}
 $expected = @{
     'firmware-full-update.tgz' = '5e3267d780a56178e8ff40cb81ca2f6562e81d4d07daf703ab1c7db34e967d0d'
     'firmware.dfu' = 'e69f717df28f2ff5a417a69ac212f242cf2725a48ce8c4e31296ceb4a0157ec0'
