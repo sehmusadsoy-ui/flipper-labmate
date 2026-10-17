@@ -904,3 +904,40 @@ until H0 provides an unambiguous PASS. No update, reflash, reset,
 GPIO init/write or uncontrolled retry. Current on-device H0 is
 **NOT PASSED / prior v1 script invalid for this test**;
 H1/H2 remain **NOT RUN** and cumulative A–G **36/36 PASS**.
+
+## 2026-10-17 — H0 v2 actual runtime still ERROR, NO GPIO BUSY: investigation widened
+
+Operator copied the distinct v2 JS with `require("event_loop")` preceding
+`require("gpio")` and ran the checksum-pinned, remote-MD5-attested
+`check_v18_e11_h_pa7_cli_v2.py --expect free` once with PWM instructed
+STOP. Output:
+
+```text
+E11 H PA7 PROBE INCOMPLETE/FAIL: free-state PA7 read did not succeed unambiguously;
+CLI_FLAGS launched=YES begin=YES read_ok=NO gpio_busy=NO error=YES
+trace=YES done=NO missing_script=NO usage=NO
+```
+
+**Result:** JS CLI started the v2 script (begin marker), but JavaScript
+raised an unclassified error before `READ_OK`, with **NO literal
+`GPIO pin BUSY`**. This does not establish native timer/GPIO lease
+collision, nor does it prove the exact exception is unchanged between
+v1 and v2. The prior v1 missing `event_loop` prerequisite was a real
+probe defect, but v2 shows it was not sufficient to establish H0
+operation. **H0 remains INCOMPLETE/BLOCKED. H1 and H2 NOT RUN. A–G
+36/36 preserved. Do not blindly retry v2 or perform new GPIO access.**
+
+Exact pinned Momentum `applications/system/js_app/js_modules.c`
+loads both `event_loop` and `gpio` externally from
+`/ext/apps_data/js_app/plugins/js_<module>.fal`. Only the installed
+`js_gpio.fal` was previously SHA/MD5-attested as part of the E11
+pair; the separate `js_event_loop.fal` was **not** validated.
+Next **safe, read-only** scope: check the exact script runtime plugin
+file presence/MD5 against the pinned FULL E11 resource bundle, plus
+the exact known FAP+GPIO plugin, without running JavaScript or changing
+the device. A presence mismatch or failure is a packaging/runtime
+blocker, not a reason to overwrite plugin files automatically.
+If both modules verify, further investigation must distinguish JS
+module-load / syntax / `gpio.get` / `gpio.read` errors by a
+separately source-reviewed, sanitized one-shot diagnostic plan
+instead of guessing from the old boolean flags.
