@@ -5,11 +5,13 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import sys
 from pathlib import Path
 import tempfile
 import unittest
 
 ROOT=Path(__file__).resolve().parents[1]
+sys.path.insert(0,str(ROOT/"scripts"))
 spec=importlib.util.spec_from_file_location("final_pc_only",ROOT/"scripts/stage_v18_final_fap_pc_only.py")
 assert spec and spec.loader
 m=importlib.util.module_from_spec(spec)
