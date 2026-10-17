@@ -365,6 +365,74 @@ historical persisted IDs or moving INFO/About from the last group.
 The available exact-matched native SDK build is the next essential
 gate; **do not ask the owner to replace the working E11 FAP yet**.
 
+## Phase 1F — app menu / input / owned STOP / Canvas routing (2026-10-18)
+
+**Latest source-stage status: integrated on Draft PR #15, NOT built as a
+matched E11 firmware FAP, NOT installed or accepted on device.**
+
+- Added `src/labmate_scope_bridge.[ch]` as an **application-thread-only**
+  adapter. Source pin PC1 is fixed for the first channel; OK starts/
+  stops the matched-native lease/callback, BACK stops the *owned* callback
+  before returning to menu, and the existing app poll calls the native
+  watchdog with actual `furi_get_tick()` converted to milliseconds by
+  `furi_kernel_get_tick_frequency()`. Zero tick frequency denies start.
+  Underlying edge/plot functions remain pure C. No direct GPIO/SD
+  operations happen from Canvas or the bridge.
+- The app mutex protects the cached screen state, and the native
+  `FURI_CRITICAL_ENTER/EXIT` section takes a bounded **copy of the latest
+  at most 64 IRQ-recorded edges** before the pure C plot projection.
+  `scope_recent`, `scope_lines` and the 256-edge native storage are
+  **embedded in `LabMateApp` allocated on heap**; not on the 4 KiB
+  application call stack. Exact heap/SRAM budget still needs a real
+  matched-SDK build and on-device instrumentation.
+- `src/labmate_internal.h` **appends** `LabMateScreenScope` after
+  legacy screens. `src/labmate_navigation.[ch]` **appends**
+  `LabMateToolScope=14` after existing ID 13; the MEASURE group
+  now has six tools and root **INFO/About is still last**.
+  `src/labmate_input_menu.c`, `src/labmate_input.c`,
+  `src/labmate_view.c` route dedicated navigation, key presses and
+  Canvas. The About guide has a Scope entry; no historical Profile
+  bytes or menu IDs are renumbered.
+- `src/labmate_capture_session.c` calls Scope's own STOP **before**
+  resetting generic capture ownership. A failed/unreleased lease
+  remains sticky and blocks others; safe STOP preserves previously
+  observed waveform in HOLD. The root app exit also calls the
+  existing shared capture STOP, so a Scope-owned IRQ must be detached
+  before application state can be freed.
+- The **development-only** UI label is `v1.9DEV`, manifest FAP
+  version `1.9`; the public v1.8 Stable and E11 prerelease bytes,
+  tags and manifest remain entirely untouched.
+- `tests/test_labmate_scope_navigation.c` pins historical IDs 0..13,
+  requires Scope ID 14, checks all 15 tools occur once and verifies
+  Measure scroll and final INFO/About. The development host workflow
+  now compiles this test and includes explicit source-link checks
+  for menu, run/poll, IRQ copy, BACK/STOP and version labeling.
+  **GitHub Actions conclusion is not available** (zero visible
+  runs for this development branch at the time of writing).
+
+**Review classification:** An independent readback of current GitHub
+source blobs passed **19/19 text-and-routing invariant checks** for
+the staged integration, including no SD operations in the bridge and
+backward-stable navigation indices. Those checks are **static code
+consistency**, not a firmware build, a passed device test, a dynamic
+on-device BUSY/STOP proof, or a claim all patched Momentum APIs link.
+
+**Do NOT replace the owner's working E11 FAP yet.** Mandatory before
+first FAP-only hardware installation:
+1. Real Actions strict-GCC/mocked-native/Canvas/navigation tests PASS
+   (not just authored workflow YAML).
+2. Real **exact matched E11 Momentum patched SDK** compile + linkage,
+   no ABI/API mismatches, FAP SHA256 and a complete provenance record.
+3. Native ownership/live IRQ/draw regression plus memory/stack budgets
+   independently reviewed; verify backing up current FAP, occupied
+   Profile S1 and historical CSV. If a source issue is found, fix in
+   Draft PR and re-run both gates.
+4. First device trial: a distinct **v1.9DEV FAP-only** replacement on
+   the existing verified matched firmware, PA7→PC1 at safe 100 Hz
+   and 1 kHz/50% (or independent 3.3 V source), LOW/NO TRIGGER,
+   buffer FULL, STOP/RESTART/BACK with no BUSY/ERR and data intact.
+   No full firmware flash, no automatic SD migration.
+
 ## Objective acceptance before exposing the scope in menu
 
 1. Existing FAP menu and old screen identifiers stay unchanged until
