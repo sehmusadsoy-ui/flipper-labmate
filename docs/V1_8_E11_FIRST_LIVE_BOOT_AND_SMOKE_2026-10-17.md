@@ -512,3 +512,79 @@ cumulative matched E11 device functional checks **27/27**.
 
 Round F native firmware service screens are still **NOT REPORTED**;
 do not claim any F PASS from this E4 clarification.
+
+## 2026-10-17 — Matched E11 native-service sequential Round F: **5/5 PASS** (operator report)
+
+The operator responded **`F1–F5 PASS`** to the specific **no-wiring,
+sequential native Momentum service regression** immediately above:
+
+| ID | Operator-reported result | Precisely exercised |
+|---|---|---|
+| F1 | PASS | NFC Read screen (no tag), normal BACK |
+| F2 | PASS | 125 kHz RFID Read screen (no tag), normal BACK |
+| F3 | PASS | Infrared Learn/receive (no remote), normal BACK without save/transmit |
+| F4 | PASS | Sub-GHz receiver (RX-only) screen, normal BACK without TX |
+| F5 | PASS | Production LabMate reenter, PWM STOP, no-wire Counter RUN/STOP/BACK, app exit |
+
+**Combined actual matched E11 operator-reported functional checks:
+A6 + B6 + C6 + D4 + E5 + F5 = 32/32 PASS.**
+
+**Evidence limits:** This shows native applications can be entered, the
+specified receive/read views used, and returned from **one after another**;
+not actual NFC/RFID/IR/Sub-GHz protocol reception/decoding with a physical
+fixture, not simultaneous claims for TIM1, TIM2, DMA or EXTI, and not
+proof that uninstrumented native clients honor the lease. In
+particular, NFC/RFID Read is a reader operation, whereas Sub-GHz was
+explicitly receiver-only. Do not count foreign-service contention
+as PASS. Hardware backlog HW-08..HW-19 remains open for exact
+overlapping native ownership where not explicitly measured.
+Round F PASS is based on the operator's short verdict, not independent
+diagnostic traces. Published v1.8 Stable/main remain unchanged;
+PR #13 stays draft and no new firmware FAP image was installed.
+
+### Optional Round G — controlled live PWM retune with PC1 capture (no added modules)
+
+Rationale: A–F prove baseline 100 Hz/50% PA7 → PC1 and PB3
+loopback, but do **not** prove the new E11 native TIM1 PWM retunes
+duty/frequency *while running* and then re-enters PC1 EXTI capture
+cleanly. This round is **same-Flipper functional validation** only;
+it does not establish scope-calibrated timing or firmware-wide
+arbitration. Avoid any extra periphery or external supply.
+
+**Safety prerequisite:** Finish LabMate with PWM STOP, no input or
+COMM owners running, remove any previous PB3 jumper. With the app
+closed and GPIO activity stopped, install **one known-good 3.3 V-safe
+PA7 output → PC1 input** jumper per `docs/wiring_example.md`.
+Double-check actual GPIO labels: physical PA7 pin 2 and PC1 pin 15.
+Never attach GPIO to 5V/OTG or a second driven output; no extra
+power. If unable to identify connectors reliably, **SKIP**.
+
+- **G1 — baseline:** Set PWM 100 Hz, duty 50%, OK RUN, BACK, check
+  Pulse Analyzer PC1 once: expected HIGH ~5 ms, LOW ~5 ms,
+  PERIOD ~10 ms, DUTY ~50%. Record actual screen values, BACK.
+- **G2 — live duty retune:** Reopen PWM Studio and verify **RUN**;
+  using DOWN in 5% steps change duty to **25% while RUN** (don't
+  STOP); BACK and reopen Pulse Analyzer PC1. Approximate expected
+  HIGH ~2.5 ms, LOW ~7.5 ms, PERIOD ~10 ms, DUTY ~25%.
+  Record values and any ERR/BUSY, BACK.
+- **G3 — live frequency/duty retune:** Return to still-running PWM
+  and select preset **200 Hz** and duty **75%** using normal
+  LEFT/RIGHT and UP/DOWN while RUN. BACK, observe Pulse Analyzer
+  PC1: approximate HIGH ~3.75 ms, LOW ~1.25 ms, PERIOD ~5 ms,
+  DUTY ~75%; record values, BACK. Do not use CUSTOM editing,
+  external peripherals, or high-frequency stress in this round.
+- **G4 — stop/release:** Return to PWM Studio, explicitly press
+  OK STOP, leave LabMate, verify ordinary application re-entry;
+  with LabMate exited and all GPIO owners stopped, remove jumper.
+  No forced reset or unplug while RUN.
+
+**Fail-closed rule:** First unexpected BUSY/ERR, freeze, loss of
+control or significant unexpected readings => stop test, preserve
+visible status and do not repeatedly force START or reflash. Never
+unplug jumper under RUN. The separate native IRQ/PulseReader/RFID
+resource collision tests need a *specific reviewed concurrent
+ownership scenario* and must not be claimed from this UI retune.
+
+**Result collection:** operator PASS/FAIL/SKIP for G1–G4,
+and actual Pulse Analyzer HIGH/LOW/PERIOD/DUTY for G2 and G3.
+Targets above are theoretical; don't log them as measured values.
