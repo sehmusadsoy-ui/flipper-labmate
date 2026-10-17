@@ -36,6 +36,7 @@ typedef enum {
 
 typedef struct {
     LabMateScopeOwnerPhase phase;
+    LabMateScopeOwnerPhase fault_cleanup_phase; /* last confirmed owned resources */
     uint32_t handle; /* nonzero only after successful native lease acquire */
 } LabMateScopeOwnerState;
 
