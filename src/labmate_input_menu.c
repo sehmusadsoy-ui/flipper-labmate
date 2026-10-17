@@ -24,6 +24,7 @@
 
 #include "labmate_input_tools.h"
 #include "labmate_uart.h"
+#include "labmate_scope_bridge.h"
 void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork* work) {
 
                 /* One navigation source defines both renderer and key map.
@@ -130,6 +131,11 @@ void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                     case LabMateToolUart:
                         app->screen = LabMateScreenUart;
                         labmate_uart_reenter(&app->uart);
+                        break;
+
+                    case LabMateToolScope:
+                        app->screen = LabMateScreenScope;
+                        labmate_scope_bridge_enter(app);
                         break;
 
                     case LabMateToolI2c:
