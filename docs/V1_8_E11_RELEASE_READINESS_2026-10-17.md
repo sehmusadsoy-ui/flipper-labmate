@@ -1,6 +1,10 @@
 # LabMate v1.8 original-scope completion — E11 release readiness audit (2026-10-17)
 
 **Decision:** **E11 SOURCE / SUPPORTED-SOFTWARE PHASE ACCEPTED; FULL STABLE UPDATE NOT READY.**
+
+**Latest storage gate update (2026-10-17):** On the actually installed E11 final-label v1.8 FAP, the operator reported **ALL PASS** for new scratch CSV Logger recording, open from Log History, backed-up empty-slot Profile SAVE, reopen/LOAD persistence, preservation of occupied S1 and historical CSV files. This supersedes earlier lines below describing new Logger/Profile persistence as still pending; those remain historic snapshots at the time originally written. Exact file IDs/row counts/hashes and physical backup restore were not supplied; no independent file attestation is inferred. The storage **normal functional acceptance is CLOSED at operator-report level**. **Full public Stable update is still NO-GO** until safe matched Momentum firmware/native resources distribution and actual rollback, final provenance/change control and owner release authorization. See [current authoritative release gate](V1_8_E11_FINAL_RELEASE_GATE_2026-10-17.md).
+
+
 **Branch:** `dev/v1.8-completion` — [Draft PR #13](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/13).
 **Current published Stable:** `v1.8` (2026-10-14) is preserved, released from
 `02b05639364d6dd71f5eb70456eca379c59218cb` with
