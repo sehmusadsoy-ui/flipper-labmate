@@ -218,8 +218,16 @@ script must be invoked with both explicit
 `-AcceptNonExactFirmwareRollback` switches; it then
 requires **all** individual paths to a checked official
 MNTM-012 rollback archive, **matching actual EXITFIX FAP PC
-readback copy**, local historical 14-file LabMate backup, verified
-internal-settings TGZ and a pinned Momentum source tree. It
+readback copy**, local historical 14-file LabMate backup, **separate
+verified current 10-file / 1,791-byte PC readback snapshot**,
+internal-settings TGZ and a pinned Momentum source tree.
+The offline-only `verify_v18_e11_pc_backup_gate.py` checks the
+current snapshot's completion marker, manifest and every local
+file size, MD5 and SHA256 against its saved readback record; it
+refuses incomplete, altered, extra or missing files, symlinks,
+noncanonical paths or an invalid historical 14-file copy.
+These are **PC-to-record** checks, NOT live on-device revalidation,
+restoration rehearsal, data integrity guarantee or install consent. It
 refuses modified updater transport scripts, validates the
 source commit and prompts for typed `YUKLE-E11`. Only
 then can its sole `selfupdate.py` call attempt device writing.
@@ -245,3 +253,26 @@ firmware recovery could affect internal settings/app compatibility;
 E11 real GPIO/TIM1/TIM2/EXTI STOP/BACK/lease tests remain OPEN.
 Until explicit informed approval: firmware install status
 **NO-GO**, PR #13 remains DRAFT and Stable/main unchanged.
+
+
+## 2026-10-17 — Additional pre-Apply backup parity fail-close gate
+
+The original trial launcher accepted a historical backup directory with
+at least 14 local files, but it did **not** require the separate, now
+preserved 10-file current-device snapshot. A stale historical-only copy
+cannot recover the five newer-only and two modified live paths.
+The revised launcher therefore requires **both**
+`-HistoricalLabmateBackupDirectory` and
+`-CurrentLabmateSnapshotDirectory` before even considering its only
+firmware writer. The current snapshot must come from the previously
+READ-ONLY 10-file/1,791-byte copy with `PC_SNAPSHOT_MANIFEST.json` and
+`READ_ONLY_SNAPSHOT_VERIFIED.txt`; it cannot be replaced by the historical
+folder, a fabricated empty folder, a settings TGZ or a whole-SD inventory.
+The manifest is local backup evidence, not a signed statement from the
+device. A successful offline check must never be recorded as a physical
+restore or an install authorization. Adversarial synthetic checks are in
+`tests/test_v18_e11_pc_backup_gate.py` and the Windows NO-FLASH workflow.
+
+**Remaining blocker:** explicit informed user approval of EXITFIX replacement
+and possible non-exact rollback, plus subsequent real E11 physical tests.
+No change to Stable/main, no device or SD write, and no v1.9 work.
