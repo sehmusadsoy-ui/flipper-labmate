@@ -132,3 +132,70 @@ must be handled separately after evidence review, not guessed.
 **Status:** No report of demo deletion yet. Deletion software's
 synthetic/CI PASS, when it arrives, is NOT a live microSD delete PASS.
 Final E11 functional acceptance remains OPEN; Stable/main unchanged.
+
+## 2026-10-17 — FIRST operator-reported E11 live GUI Round A: **6/6 PASS**
+
+**Exact setup context:** actual COM7-installed matched E11 full trial firmware
+`mntm-dev / d3f89dfe`, app FAP
+`2b31ec3fa9050580dc3c3ff80138578ed185d70811aa8124ebd2d00b8d981af0`
+(verified from independently SHA256-pinned candidate and live SD MD5).
+Operator personally ran Round A on real Flipper with no external GPIO
+fixture and submitted the complete following results in conversation:
+
+```text
+A1 — Menu order and INFO last: PASS
+A2 — About and BACK operate correctly: PASS
+A3 — PWM UI RUN/STOP twice: PASS
+A4 — With LabMate PWM running, I2C scan request -> BUSY: PASS
+A5 — With LabMate PWM running, 1-Wire read request -> BUSY: PASS
+A6 — Return to PWM and stop: PASS
+```
+
+**Scope accepted:** GUI app launched, root menu/Info ordering and BACK;
+PWM native TIM1/PA7 HAL RUN/STOP lifecycle *at observed UI level* with
+two repetitions; LabMate-local I²C/1-Wire concurrent-use BUSY refusal
+while PWM active; PWM returned to STOP. No unexpected failure was reported.
+User-provided PASS is evidence of observed UI control flow, not an
+independently instrumented measurement or a full timer lease trace.
+Do not conclude calibrated PA7 waveform OFF state, exact timer/EXTI
+register release, cross-firmware/third-party contention, physical
+positive I²C ACK or DS18B20 CRC from these six results.
+
+**Not included in user's explicit A1–A6 report:** Log History/Profiles
+read-only inspection; app full exit/reopen; no-sensor I²C/OneWire
+standalone scan; Event Counter TIM2; Button Analyzer EXTI; external
+device/3.3 V loopback and native firmware-service contention. Preserve
+all as not yet tested on current pair.
+
+### Next requested device Round B — no GPIO wiring
+
+Require prior PWM STOP; no firmware changes, external GPIO connections,
+data deletions or saved-profile writes. Event Counter and Button Analyzer
+use the real E11 production FAP:
+
+- **B1:** `MEASURE > Event Counter`: initial STOP; OK -> RUN; wait ~3 s;
+  OK -> STOP. Counter input PB3 is unconnected, so its number is **not**
+  an accuracy verdict.
+- **B2:** After B1, bottom action should offer RESUME if elapsed time
+  accumulated (the Counter UI uses elapsed ticks or count). OK ->
+  RUN again; then OK -> STOP. Verify no unintended reset across resume.
+- **B3:** Press UP only while STOP; counter/time resets. BACK -> menu;
+  reenter Counter shows STOP.
+- **B4:** `MEASURE > Button Analyzer`: STOP on entry; OK -> RUN;
+  OK -> STOP; OK -> RESUME/RUN; OK -> STOP again; no unexpected BUSY.
+- **B5:** Button DOWN toggles MORE/MAIN details without rearming;
+  LEFT/RIGHT changes quiet/debounce time among displayed options.
+  UP while STOP resets statistics (no external mechanical button).
+- **B6:** BACK to menu; reenter Button shows STOP and works;
+  leave app entirely then reopen and confirm regular menu
+  navigates without hang.
+- **B7 optional/next stage:** `COMM > I2C Explorer` after PWM stopped:
+  OK scan no connected devices, NONE/ERR with exact observed status;
+  BACK/reenter without hanging. `COMM > 1-Wire Temp`: OK no sensor,
+  expect NONE; this is only a missing-device smoke, **not** positive
+  ACK or valid temperature proof.
+
+On any ERR, BUSY, hang, unexpected edge count or inability to STOP,
+record screen and stop test. Mark each PASS/FAIL/SKIP; do not run
+firmware install or automatic recovery. Records/Profiles
+preservation remains Round C.
