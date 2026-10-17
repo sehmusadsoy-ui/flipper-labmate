@@ -165,7 +165,7 @@ def main() -> None:
     js_cli=(root/"applications/system/js_app/js_app.c").read_text()
     flags=(root/"lib/toolbox/cli/cli_command.h").read_text()
     shell=(root/"lib/toolbox/cli/shell/cli_shell.c").read_text()
-    if not re.search(r"CLI_COMMAND_INTERFACE\\(js,\\s*js_cli_execute,\\s*CliCommandFlagDefault",js_cli):
+    if "CLI_COMMAND_INTERFACE(js, js_cli_execute, CliCommandFlagDefault" not in js_cli:
         raise ValueError("pinned native JS CLI app concurrency flag has changed; review H1")
     if "CliCommandFlagDefault = 0" not in flags or "CliCommandFlagParallelSafe = (1 << 0)" not in flags:
         raise ValueError("pinned native JS CLI safety flag contract changed")
