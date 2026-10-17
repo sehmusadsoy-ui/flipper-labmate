@@ -778,3 +778,71 @@ Only after the exact resulting state is recorded should any future
 one-shot stage write be separately reviewed; no third upload
 attempt is being requested in this response. Phase 2B app promotion,
 Stable publication and v1.9 remain HOLD.
+
+## 2026-10-17 — Second actual abort FOLLOW-UP LIVE READ-ONLY PASS; serial echo preflight staged (NO FAP writes)
+
+Owner performed the previously trusted, immutable, read-only COM7
+`run-v18-e11-stage-abort-readonly.ps1` **once after the second failed
+staging attempt**, using a fresh USB connection. Exact reported outcome:
+
+```text
+E11 SALT OKUNUR KONTROL DOGRULANDI
+active_old_fap: PINNED E11 SHA-BACKED MD5 + SIZE MATCH
+js_gpio_eventloop_manifest: PINNED E11 MD5 MATCH
+reserved_backup_target: ABSENT
+stage_status: PRESENT EMPTY 0 BYTES
+stage_md5: d41d8cd98f00b204e9800998ecf8427e
+safe_to_retry_old_stage_script: NO
+final_v18_fap_installed: NO
+device_writes_performed_by_this_check: NONE
+E11 STAGE ABORT READ-ONLY STATE RECORDED — NO RETRY OR FAP PROMOTION
+```
+
+This *second* live readback independently confirms the installed
+operator-tested v1.8DEV FAP and its paired native JS/event loop/manifest
+are unchanged, and the sidecar remained completely empty after the
+second aborted CLI attempt. It is **not** proof of any new v1.8 FAP
+write or application boot; no stage bytes transferred. The preserved
+PC backup remains the only accepted recovery artifact for the old FAP.
+**No automatic repeated upload** is permitted.
+
+The serial source review found our two false host assumptions about
+`send_and_wait_eol()` command echoes. We now have native-source evidence
+of CLI character echo, command-finalizing CRLF, and separate
+`write_chunk` Ready, but **no actual device capture of this precise
+two-line framing before starting a new write**.
+
+To replace that missing evidence without another append attempt,
+created **read-only** `scripts/probe_e11_cli_echo_stat_ro.py`. It
+sends **only** a fixed harmless `storage stat` of the already known
+empty sidecar and measures the first echoed command line and
+second size line, validates prompt framing, and rechecks old FAP,
+native resource MD5, stage empty-size/empty-MD5 and absent future
+backup target. It never sends a `storage write_chunk`, append,
+rename, remove, launch, reset or firmware command. This probe can
+verify the live CLI command echo for a *stat command*; it does NOT
+directly validate the write_chunk Ready handshake and does not by
+itself authorize staging.
+
+Source:
+`scripts/probe_e11_cli_echo_stat_ro.py`;
+mock/negative tests:
+`tests/test_e11_cli_echo_stat_ro.py`;
+PowerShell handoff:
+`scripts/run-e11-cli-echo-stat-ro.ps1`.
+[Host-mock+PowerShell syntax CI #39046959395](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/39046959395)
+**SUCCESS**. No serial hardware access was made by the CI.
+The immutable checked operator wrapper is at commit
+`e34926ef2a1354e2ebad7fe12a6ee02234a91d10`,
+SHA256
+`6e9407c78577d45e515275acd8ab4358e30ecd06382e600b6c6341067ba05f48`.
+Internally it pins Python source
+`b150466978a3f8735f78de974b76a4a740010881`.
+No operator execution of this *new* echo probe has yet been reported.
+
+**Gate:** all device writes remain PAUSED; a read-only live
+command-echo probe is the only proposed next operator action.
+If framing differs or CLI hangs, STOP and report, no repeat,
+cleanup, reboot or FAP swap. Old `v1.8DEV` stays active, final
+`v1.8` FAP PC-only, Draft PR #13 not merged, Stable unchanged,
+v1.9 HOLD.
