@@ -1,0 +1,32 @@
+name: E11 final-label single FAP PC-only + verified old backup (NO USB)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - ".github/workflows/check-v18-final-fap-pc-only.yml"
+      - "scripts/stage_v18_final_fap_pc_only.py"
+      - "tests/test_v18_final_fap_pc_only.py"
+      - "scripts/verify_v18_full_review_pair.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  assert_pc_only:
+    name: Synthetic old FAP readback / review new FAP (NO DEVICE)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout LabMate dev tests
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate offline PC-only staged FAP fail-closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/stage_v18_final_fap_pc_only.py
+          python3 -m unittest discover -v -s tests -p test_v18_final_fap_pc_only.py
+          echo "E11 PC-ONLY STAGING TEST PASS; ZERO USB, SERIAL, FAP INSTALL OR FLASH"

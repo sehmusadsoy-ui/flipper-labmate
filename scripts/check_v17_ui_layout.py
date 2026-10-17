@@ -42,21 +42,25 @@ for left_key, left_action, right_key, right_action in footer_pairs:
         width = len(key) * GLYPH + 6 + 3 + len(action) * GLYPH
         assert width <= 60, f"Footer overlaps adjacent cell: {key} {action}"
         assert key.isalpha() and action.isalpha(), "Avoid cryptic glyph/arrow footers"
-# Dynamic Button STOP/START strings share equal/smaller widths.
+# Dynamic Button footer keeps STOP/START/RESUME inside the original zones.
 for fragment in ('"DOWN", "MAIN"', '"DOWN", "MORE"',
-                 'app->button_active ? "STOP" : "START"'):
+                 'app->button_active ? "STOP" :',
+                 'app->button_session_started ? "RESUME" : "START"',
+                 'ui_footer_pair(canvas, "DOWN", "MAIN", "OK", button_action);',
+                 'ui_footer_pair(canvas, "DOWN", "MORE", "OK", button_action);'):
     assert fragment in UI, f"Missing Button footer mode: {fragment}"
+assert len("OK") * GLYPH + 9 + len("RESUME") * GLYPH <= 60
 
 # Stable version text fits the same badge used by RC1; do not alter UI layout.
 assert 'ui_badge(canvas, 70, 1, 56, LABMATE_VERSION_TEXT, false);' in UI
-assert len("v1.8") * GLYPH + 8 <= 56
+assert len("v1.8DEV") * GLYPH + 8 <= 56
 
 # Entire help guide and its safety/credit page must remain readable.
 pages = re.findall(
     r'\[LabMateTool\w+\]\s*=\s*\{\s*"([^"]+)",\s*"([^"]+)",'
     r'\s*"([^"]+)",\s*"([^"]+)",\s*\}', UI,
 )
-assert len(pages) == 12, f"Expected 12 About tool guides; got {len(pages)}"
+assert len(pages) == 14, f"Expected 14 About tool guides; got {len(pages)}"
 assert '"PWM Studio"' in NAV, "Menu must display PWM Studio"
 assert '"Signal Generator"' not in NAV, "Obsolete menu label returned"
 assert '"PWM STUDIO"' in UI, "About tool guide must say PWM STUDIO"
@@ -173,7 +177,7 @@ assert "app->about_page = labmate_nav_wrap(" in APP
 assert 'canvas_draw_line(canvas, 0, 52, 127, 52);' in PRIMITIVES
 
 for tool in ("Gpio", "Frequency", "Pulse", "Generator", "Logger",
-             "History", "About", "Profiles", "Counter", "Button", "Alerts", "Uart"):
+             "History", "About", "Profiles", "Counter", "Button", "Alerts", "Uart", "OneWire"):
     assert f"case LabMateTool{tool}:" in PRIMITIVES, f"Missing icon {tool}"
 
 print(f"LabMate v1.7 final UI polish PASS: {len(footer_pairs)} context footers, "

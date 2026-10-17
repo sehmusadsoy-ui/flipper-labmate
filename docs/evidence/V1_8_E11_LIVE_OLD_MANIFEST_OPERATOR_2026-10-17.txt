@@ -1,0 +1,23 @@
+# Source: operator-provided PowerShell terminal output, real Flipper COM7,
+# read-only /ext/Manifest audit at source a67f0238948bb6b71535cd401dccd1e83b6ff698.
+# This is operator-reported data, not a signed on-device attestation.
+# Device MD5 used for consistency screening, not cryptographic authenticity.
+# No private manifest paths or file contents reproduced.
+old_manifest_resource_files: 2114
+old_manifest_directories: 165
+old_manifest_metadata_lines: 2
+old_cleanup_lists_installed_labmate_fap: YES
+old_cleanup_labmate_data_files: 0
+old_cleanup_non_labmate_apps_data_files: 156
+old_cleanup_app_fap_files: 268
+old_cleanup_lists_apps_tools_parent: YES
+manifest_total_records: 2281
+current_installed_manifest_provenance: READ_FROM_DEVICE_NOT_AUTHENTICATED
+old_resource_cleanup_behavior: REMOVES_OLD_MANIFEST_FILE_ENTRIES
+split_new_bundle_excludes_labmate_fap: YES_REVIEW_ONLY
+split_updater_guarantees_exitfix_survival: NO
+exact_prior_firmware_restore_tested: NO
+trial_write_authorized: NO
+live_manifest_readback_md5_screen: MATCH
+E11 OLD RESOURCE CLEANUP SCOPE AUDIT PASS - FIRMWARE TRIAL NO-GO
+E11 RESOURCE MANIFEST CHECK PASS - NO FLASH

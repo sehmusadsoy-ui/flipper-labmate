@@ -1,0 +1,47 @@
+name: E11 final v1.8 phase 2B two safe rename audit (HOST MOCK ONLY)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - ".github/workflows/check-v18-e11-phase2b-promote-mock.yml"
+      - "scripts/prepare_v18_e11_phase2b_safe_promote.py"
+      - "tests/test_v18_e11_phase2b_safe_promote.py"
+      - "scripts/run-v18-e11-phase2b-promote-two-fap-renames.ps1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source_based_two_safe_moves:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Simulated pinned E11 safe rename + interrupted states only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/prepare_v18_e11_phase2b_safe_promote.py
+          python3 -m unittest discover -v -s tests -p test_v18_e11_phase2b_safe_promote.py
+          echo "E11 PHASE2B FAP-ONLY HOST MOCK PASS - NO SERIAL/RENAME/WRITE"
+      - name: Parse pinned operator PowerShell wrapper without execution
+        shell: pwsh
+        run: |
+          $tokens=$null
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'scripts/run-v18-e11-phase2b-promote-two-fap-renames.ps1').Path,
+            [ref]$tokens, [ref]$errors) | Out-Null
+          if ($errors.Count -ne 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            throw 'E11 2B operator PowerShell syntax invalid'
+          }
+          $source=Get-Content -Raw 'scripts/run-v18-e11-phase2b-promote-two-fap-renames.ps1'
+          if ($source -notmatch '086275b82205ad16750fca893e6aa66300f985b4') {
+            throw 'Immutable exact source pin missing from operator wrapper'
+          }
+          Write-Host 'E11 PHASE 2B OPERATOR WRAPPER PARSE/PIN PASS - NO DEVICE COMMAND RUN'

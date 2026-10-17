@@ -54,6 +54,13 @@ int32_t labmate_app(void* p) {
     labmate_button_capture_reset(app);
     labmate_threshold_init(&app->threshold);
     labmate_uart_reset(&app->uart);
+    labmate_onewire_hw_init(&app->thermometer);
+    app->comm_owner = LabMateCommNone;
+    app->i2c = labmate_i2c_runtime_alloc();
+    if(!app->i2c) {
+        free(app);
+        return -1;
+    }
     app->screen = LabMateScreenMenu;
     app->capture_owner = LabMateCaptureNone;
     app->capture_pin_index = GPIO_COUNT;
@@ -63,6 +70,7 @@ int32_t labmate_app(void* p) {
             FuriMutexTypeNormal);
 
     if(!app->mutex) {
+        labmate_i2c_runtime_free(app->i2c);
         free(app);
         return -1;
     }
@@ -73,6 +81,7 @@ int32_t labmate_app(void* p) {
             sizeof(InputEvent));
 
     if(!queue) {
+        labmate_i2c_runtime_free(app->i2c);
         furi_mutex_free(app->mutex);
         free(app);
         return -1;
@@ -82,6 +91,7 @@ int32_t labmate_app(void* p) {
         view_port_alloc();
 
     if(!viewport) {
+        labmate_i2c_runtime_free(app->i2c);
         furi_message_queue_free(queue);
         furi_mutex_free(app->mutex);
         free(app);
@@ -137,6 +147,8 @@ int32_t labmate_app(void* p) {
         }
         threshold_update_from_measurement(app);
         if(app->screen == LabMateScreenUart) labmate_uart_poll(&app->uart);
+        if(app->screen == LabMateScreenOneWire) labmate_onewire_hw_poll(&app->thermometer);
+        if(app->i2c) labmate_i2c_runtime_poll(app->i2c);
 
         labmate_input_dispatch(app, status, event, &work);
         labmate_deferred_prepare(app, &work);
@@ -148,6 +160,9 @@ int32_t labmate_app(void* p) {
 
     /* Defensive cleanup even if a future route exits while UART RUN. */
     labmate_uart_stop(&app->uart);
+    labmate_onewire_hw_stop(&app->thermometer);
+    labmate_i2c_runtime_free(app->i2c);
+    app->i2c = NULL;
 
     if(app->generator_running) {
         labmate_generator_stop(app);
@@ -158,13 +173,20 @@ int32_t labmate_app(void* p) {
     }
     labmate_history_close(app);
 
-    if(labmate_screen_uses_gpio(app->screen)) {
-        labmate_capture_stop_all(app);
+    /* Teardown must not depend on which screen was visible on exit.
+     * A stale capture owner must never survive a future menu route.
+     * Snapshot the armed pin before stop_all resets capture_pin_index. */
+    const uint8_t captured_gpio_index = app->capture_pin_index;
+    labmate_capture_stop_all(app);
+    if(captured_gpio_index < GPIO_COUNT) {
+        labmate_monitor_gpio_release(app, captured_gpio_index);
+    }
+    /* GPIO Monitor has no capture owner; release its selected input too.
+     * Avoid releasing the same GPIO twice for capture screens. */
+    if(labmate_screen_uses_gpio(app->screen) &&
+       app->gpio_index != captured_gpio_index) {
         labmate_monitor_gpio_release(app, app->gpio_index);
     }
-    /* Defensive cleanup even if a future navigation path leaves counter RUN. */
-    labmate_event_counter_stop(app);
-    labmate_button_capture_stop(app);
 
     gui_remove_view_port(
         gui,

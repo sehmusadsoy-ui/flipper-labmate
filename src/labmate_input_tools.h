@@ -18,3 +18,5 @@ void labmate_input_logger(LabMateApp* app, InputEvent event, LabMateDeferredWork
 void labmate_input_gpio(LabMateApp* app, InputEvent event, LabMateDeferredWork* work);
 void labmate_input_generator(LabMateApp* app, InputEvent event, LabMateDeferredWork* work);
 void labmate_input_uart(LabMateApp* app, InputEvent event, LabMateDeferredWork* work);
+void labmate_input_onewire(LabMateApp* app, InputEvent event, LabMateDeferredWork* work);
+void labmate_input_i2c(LabMateApp* app, InputEvent event, LabMateDeferredWork* work);

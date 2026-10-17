@@ -60,7 +60,8 @@ void labmate_capture_stop_all(LabMateApp* app) {
            app->pulse_irq_active)) {
         app->capture_owner = LabMateCaptureNone;
         app->capture_pin_index = GPIO_COUNT;
-        app->capture_blocked = false;
+        /* Never erase an unresolved lease failure during generic STOP. */
+        app->capture_blocked = app->capture_release_fault;
     } else {
         app->capture_blocked = true;
     }
@@ -133,7 +134,10 @@ void labmate_gpio_change(
      * selectable while Signal Generator keeps its PWM output active.
      */
     app->gpio_index =
-        labmate_monitor_next_pin(app->gpio_index, direction, app->generator_running);
+        labmate_monitor_next_pin(
+            app->gpio_index, direction,
+            app->generator_running || app->generator_blocked ||
+                app->generator_release_fault);
     labmate_gpio_activate(app);
 }
 

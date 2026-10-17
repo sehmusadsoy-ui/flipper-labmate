@@ -1,0 +1,31 @@
+name: v1.8 E11.1a actual firmware primitive host behavior (NO DEVICE)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - "tests/test_v18_firmware_lease_primitive.py"
+      - "scripts/patch_momentum_resource_lease.py"
+      - ".github/workflows/check-v18-firmware-lease-runtime.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  actual_lease_primitive:
+    name: Compile and exercise exact patched C lease claim/release functions
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout LabMate DEV source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Generate host stubs and compile exact firmware C API
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile tests/test_v18_firmware_lease_primitive.py
+          python3 tests/test_v18_firmware_lease_primitive.py
+          echo "SOURCE-CODE RUNTIME TEST ONLY. No device/firmware write."

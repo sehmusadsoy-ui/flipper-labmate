@@ -1,0 +1,43 @@
+name: v1.8 final integrated host regression (NO FLASH)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - ".github/workflows/check-v18-final-integrated-host.yml"
+      - "scripts/run_v18_final_host_regressions.sh"
+      - "scripts/verify_v18_full_review_pair.py"
+      - "src/**"
+      - "tests/**"
+      - "scripts/check_v16_boundaries.py"
+      - "scripts/check_v17_ui_layout.py"
+      - "scripts/check_repo_layout.py"
+      - "scripts/check_v18_*.py"
+      - "application.fam"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  integrated_host:
+    name: All v1.5–v1.8 features, storage and COMM host models
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact development source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Compile and execute entire integrated portable production-C regression
+        shell: bash
+        run: bash scripts/run_v18_final_host_regressions.sh
+      - name: Preserve physical and release boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${{ github.ref_name }}" = "dev/v1.8-completion"
+          test -f docs/DEFERRED_HARDWARE_TESTS.md
+          test -f docs/E11_SUPPORTED_SOFTWARE_SIGNOFF_2026-10-16.md
+          test -f docs/V1_8_PHYSICAL_ACCEPTANCE_GATE.md
+          echo "HOST REGRESSION ONLY. NO USB, MICROSD, FLASH, RELEASE OR PHYSICAL PASS."

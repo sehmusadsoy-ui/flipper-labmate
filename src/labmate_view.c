@@ -48,6 +48,14 @@ void labmate_view_render_callback(
         draw_uart(canvas, app);
         break;
 
+    case LabMateScreenOneWire:
+        draw_onewire(canvas, app);
+        break;
+
+    case LabMateScreenI2c:
+        draw_i2c(canvas, app);
+        break;
+
     case LabMateScreenHistory:
         draw_history(canvas, app);
         break;

@@ -1,0 +1,61 @@
+name: E11 public Stable preservation audit (READ ONLY / NO RELEASE)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - "scripts/check_v18_e11_public_release_preservation_ro.py"
+      - "tests/test_v18_e11_public_release_preservation_ro.py"
+      - ".github/workflows/check-v18-e11-public-release-preservation-ro.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  historical_release_and_source:
+    name: Protect v1.4/v1.8 tags, assets, frozen E11 code (NO PUBLISH)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout full source history, without persistent credentials
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Run synthetic positive and adversarial checks (no device)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -v -s tests -p 'test_v18_e11_public_release_preservation_ro.py'
+
+      - name: Verify frozen production and native firmware patches using local Git
+        shell: bash
+        run: |
+          set -euo pipefail
+          FROZEN=99cb65d0194dc59d423cfa439c90618ac6b9f114
+          git cat-file -e "$FROZEN^{commit}"
+          git diff --exit-code "$FROZEN" "$GITHUB_SHA" -- \
+            src/ application.fam labmate_10px.png ':(glob)scripts/patch_momentum_*.py'
+          echo "FROZEN PRODUCTION SOURCE MATCH (READ ONLY)."
+
+      - name: Independently fetch exact historical tags, releases and diff
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v1.4" > "$RUNNER_TEMP/tag14.json"
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/v1.4" > "$RUNNER_TEMP/release14.json"
+          gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v1.8" > "$RUNNER_TEMP/tag18.json"
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/v1.8" > "$RUNNER_TEMP/release18.json"
+          gh api "repos/$GITHUB_REPOSITORY/compare/99cb65d0194dc59d423cfa439c90618ac6b9f114...$GITHUB_SHA" > "$RUNNER_TEMP/compare.json"
+          python3 scripts/check_v18_e11_public_release_preservation_ro.py \
+            --tag14 "$RUNNER_TEMP/tag14.json" \
+            --release14 "$RUNNER_TEMP/release14.json" \
+            --tag18 "$RUNNER_TEMP/tag18.json" \
+            --release18 "$RUNNER_TEMP/release18.json" \
+            --comparison "$RUNNER_TEMP/compare.json" \
+            --expected-head "$GITHUB_SHA"
+          echo "AUDIT PASS ONLY. NOT CUSTOM FIRMWARE COMPATIBILITY, NOT ROLLBACK, NOT STABLE APPROVAL."

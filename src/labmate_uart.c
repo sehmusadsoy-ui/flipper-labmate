@@ -119,8 +119,10 @@ void labmate_uart_reenter(LabMateUart* uart) {
 void labmate_uart_poll(LabMateUart* uart) {
     if(!uart->active || !uart->stream) return;
     uint8_t batch[64];
-    /* Bounded per-frame work; service RX faster than the 10Hz redraw. */
-    for(uint8_t round = 0; round < 4U; ++round) {
+    /* Drain up to one full 1024-byte RX queue per app iteration. Keep
+     * bounded processing and preserve genuine ISR drop reporting if the
+     * peer outruns the UART consumer. UI repaint remains throttled. */
+    for(uint8_t round = 0; round < 16U; ++round) {
         size_t n = furi_stream_buffer_receive(uart->stream, batch, sizeof(batch), 0U);
         for(size_t i = 0U; i < n; ++i) {
             labmate_uart_text_push(&uart->terminal, batch[i]);

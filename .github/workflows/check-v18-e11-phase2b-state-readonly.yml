@@ -1,0 +1,48 @@
+name: E11 phase2B read-only pre/mid/post FAP state screens (HOST MOCK ONLY)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - ".github/workflows/check-v18-e11-phase2b-state-readonly.yml"
+      - "scripts/check_v18_e11_phase2b_state_readonly.py"
+      - "tests/test_v18_e11_phase2b_state_readonly.py"
+      - "scripts/run-v18-e11-phase2b-state-readonly.ps1"
+      - "scripts/run-v18-e11-phase2b-state-readonly.ps1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  read_only_recovery_states:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Confirm three exact FAP states and all mismatch STOP (NO SERIAL)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/check_v18_e11_phase2b_state_readonly.py
+          python3 -m unittest discover -v -s tests -p test_v18_e11_phase2b_state_readonly.py
+          echo "E11 PHASE2B READONLY RESCUE SCREEN HOST PASS - NO DEVICE/RENAME"
+      - name: Parse pinned operator PowerShell wrapper without execution
+        shell: pwsh
+        run: |
+          $tokens=$null
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'scripts/run-v18-e11-phase2b-state-readonly.ps1').Path,
+            [ref]$tokens, [ref]$errors) | Out-Null
+          if ($errors.Count -ne 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            throw 'E11 2B operator PowerShell syntax invalid'
+          }
+          $source=Get-Content -Raw 'scripts/run-v18-e11-phase2b-state-readonly.ps1'
+          if ($source -notmatch '086275b82205ad16750fca893e6aa66300f985b4') {
+            throw 'Immutable exact source pin missing from operator wrapper'
+          }
+          Write-Host 'E11 PHASE 2B OPERATOR WRAPPER PARSE/PIN PASS - NO DEVICE COMMAND RUN'

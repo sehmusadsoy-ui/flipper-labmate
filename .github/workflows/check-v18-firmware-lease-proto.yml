@@ -1,0 +1,55 @@
+name: v1.8 E11 firmware-wide ownership contract prototype (NO DEVICE)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - "tests/v18_firmware_lease_proto.c"
+      - "scripts/check_v18_lease_preconditions.py"
+      - ".github/workflows/check-v18-firmware-lease-proto.yml"
+      - "src/labmate_frequency_tim2.c"
+      - "src/labmate_button_capture.c"
+      - "src/labmate_generator.c"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  e11_host_contract:
+    name: E11 host-only atomic lease and pinned HAL source audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Exact LabMate development source
+        uses: actions/checkout@v4
+        with:
+          path: labmate
+          persist-credentials: false
+
+      - name: Exact installed Momentum source, read-only inspection
+        uses: actions/checkout@v4
+        with:
+          repository: Next-Flip/Momentum-Firmware
+          ref: d3f89dfe2ef6b01839201598e9be1590cba80322
+          path: momentum-src
+          persist-credentials: false
+
+      - name: Confirm known firmware HAL contracts (NO PATCH)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 labmate/scripts/check_v18_lease_preconditions.py \
+            momentum-src --labmate-root labmate
+
+      - name: Compile and run HOST-ONLY lease design prototype
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/lease-prototype"
+          gcc -std=c11 -O2 -Wall -Wextra -Werror -pthread \
+            labmate/tests/v18_firmware_lease_proto.c \
+            -o "$RUNNER_TEMP/lease-prototype/lease_proto"
+          "$RUNNER_TEMP/lease-prototype/lease_proto"
+          echo "HOST-ONLY MODEL PASS is NOT firmware API integration."
+          echo "No DFU/FAP build, no Flipper USB, no Stable assets touched."

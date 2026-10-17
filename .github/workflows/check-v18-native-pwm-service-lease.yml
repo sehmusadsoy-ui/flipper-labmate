@@ -1,0 +1,85 @@
+name: v1.8 E11 native Momentum PWM service lease (NO DEVICE)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - "scripts/patch_momentum_native_pwm_lease.py"
+      - "tests/test_v18_native_pwm_lease.py"
+      - "tests/test_v18_pwm_native_joint.py"
+      - ".github/workflows/check-v18-native-pwm-service-lease.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native_pwm:
+    name: Source preflight, real native PWM C host cases and full paired firmware FAP
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: LabMate DEV checkout
+        uses: actions/checkout@v4
+        with:
+          path: labmate
+          persist-credentials: false
+      - name: Exact pinned upstream Momentum checkout
+        uses: actions/checkout@v4
+        with:
+          repository: Next-Flip/Momentum-Firmware
+          ref: d3f89dfe2ef6b01839201598e9be1590cba80322
+          path: momentum-src
+          persist-credentials: false
+      - name: Prepare approved additive resource APIs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 labmate/scripts/patch_momentum_i2c_timeout.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_resource_lease.py momentum-src --allow-timed-i2c --apply
+          python3 labmate/scripts/patch_momentum_gpio_tryadd.py momentum-src --allow-prepatched --apply
+      - name: Review native PWM exact-source patch preflight and apply
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 labmate/scripts/patch_momentum_native_pwm_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_pwm_lease.py momentum-src --apply
+          git -C momentum-src diff --check
+          git -C momentum-src diff -- targets/f7/furi_hal/furi_hal_pwm.c
+      - name: Execute actual patched native PWM C on fake firmware HAL
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 labmate/tests/test_v18_native_pwm_lease.py momentum-src
+          python3 labmate/tests/test_v18_pwm_native_joint.py momentum-src
+          echo "HOST ONLY: HAL denial tests, not real GPIO/timer behavior."
+      - name: Stage exactly one LabMate application
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p momentum-src/applications_user/labmate/src
+          cp labmate/application.fam labmate/labmate_10px.png momentum-src/applications_user/labmate/
+          cp labmate/src/*.c labmate/src/*.h momentum-src/applications_user/labmate/src/
+      - name: Build exact patched firmware and real integrated FAP
+        shell: bash
+        working-directory: momentum-src
+        timeout-minutes: 40
+        env:
+          FBT_GIT_SUBMODULE_SHALLOW: "1"
+        run: |
+          set -euo pipefail
+          ./fbt firmware_all fap_labmate
+          test -s build/f7-firmware-C/firmware.dfu
+          test -s build/f7-firmware-C/.extapps/labmate.fap
+          readelf -Ws build/f7-firmware-C/firmware.elf | awk '
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_resource_lease_try_acquire" {claim=1}
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_resource_lease_release" {release=1}
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_i2c_external_acquire_timeout" {i2c=1}
+            END {exit !(claim && release && i2c)}
+          '
+          sha256sum build/f7-firmware-C/firmware.dfu build/f7-firmware-C/.extapps/labmate.fap
+          echo "E11 NATIVE PWM SERVICE PAIRED FIRMWARE AND FAP APPCHK PASS (CI ONLY)."
+          echo "NO USB, FLASH, STABLE, CROSS-HAL GLOBAL GUARANTEE OR PHYSICAL SIGNAL VALIDATION."

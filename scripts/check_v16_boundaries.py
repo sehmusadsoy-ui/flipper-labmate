@@ -21,7 +21,8 @@ SCREEN_HANDLERS = "\n".join(
     (SRC / filename).read_text(encoding="utf-8") for filename in (
         "labmate_input_menu.c", "labmate_input_profiles.c",
         "labmate_input_history.c", "labmate_input_measure.c",
-        "labmate_input_output.c"))
+        "labmate_input_output.c", "labmate_input_onewire.c",
+        "labmate_input_i2c.c"))
 MAIN = "\n".join((COORDINATOR, INPUT_DISPATCH, SCREEN_HANDLERS,
                   CAPTURE_SESSION, VIEW_COORDINATOR, DEFERRED_IO))
 MEASUREMENTS = (SRC / "labmate_measurements.c").read_text(encoding="utf-8")
@@ -229,9 +230,20 @@ expect(
     "void labmate_logger_capture_stop(LabMateApp* app) {\n    labmate_capture_stop_all(app);" in MAIN,
     "Logger stop must call shared teardown",
 )
+# The v1.8 exit safeguard intentionally runs capture STOP regardless of
+# the visible screen, including MENU, then releases the snapshotted IRQ pin.
+# Do not accidentally require the old screen-gated teardown in this guard.
+EXIT = COORDINATOR.split(
+    "/* Teardown must not depend on which screen was visible on exit.", 1
+)
 expect(
-    "if(labmate_screen_uses_gpio(app->screen)) {\n        labmate_capture_stop_all(app);" in MAIN,
-    "App exit must call shared teardown",
+    len(EXIT) == 2 and
+    "const uint8_t captured_gpio_index = app->capture_pin_index;" in EXIT[1] and
+    "labmate_capture_stop_all(app);" in EXIT[1] and
+    "labmate_monitor_gpio_release(app, captured_gpio_index);" in EXIT[1] and
+    EXIT[1].index("labmate_capture_stop_all(app);") <
+    EXIT[1].index("if(labmate_screen_uses_gpio(app->screen)"),
+    "App exit must unconditionally stop capture before any screen-gated release",
 )
 
 expect("static void frequency_gpio_callback(" in FREQ_CAPTURE and
@@ -457,7 +469,7 @@ expect((ROOT / "tests/test_pwm_settings.c.inc").is_file()
 # dedicated modules. Exclusive capture ownership still belongs to the app.
 for fn in ("configure", "enable", "read", "shutdown"):
     name = f"labmate_frequency_tim2_{fn}"
-    expect(len(re.findall(rf"(?m)^(?:void|uint32_t)\s+{name}\s*\(", TIM2_CAPTURE)) == 1,
+    expect(len(re.findall(rf"(?m)^(?:void|uint32_t|bool)\s+{name}\s*\(", TIM2_CAPTURE)) == 1,
            f"TIM2 driver missing exactly one {name} implementation")
     expect(f"{name}(void);" in TIM2_CAPTURE_H,
            f"TIM2 driver header missing {name}")
@@ -480,9 +492,14 @@ expect("FURI_CRITICAL_ENTER()" in EXTI_CAPTURE
        and "LL_EXTI_ClearFlag_0_31(line)" in EXTI_CAPTURE,
        "EXTI trigger release must retain tested critical-section sequence")
 expect("LL_EXTI_Disable" not in MAIN and "LL_EXTI_ClearFlag" not in MAIN
-       and FREQ_CAPTURE.count("labmate_capture_exti_clear(") == 1
-       and PULSE_CAPTURE.count("labmate_capture_exti_clear(") == 1,
-       "LOW/PC1 pre-arm and Pulse stop must use common EXTI cleanup")
+       and FREQ_CAPTURE.count("labmate_capture_exti_clear(") == 2
+       and PULSE_CAPTURE.count("labmate_capture_exti_clear(") == 1
+       and FREQ_CAPTURE.split("void labmate_frequency_low_start(", 1)[1].index(
+           "furi_hal_gpio_try_add_int_callback(")
+       < FREQ_CAPTURE.split("void labmate_frequency_low_start(", 1)[1].index(
+           "labmate_capture_exti_clear("),
+       "PC1 STOP/pre-arm and Pulse STOP must use common EXTI cleanup,"
+       " only AFTER a successful callback claim")
 
 HISTORY = (SRC / "labmate_history.c").read_text(encoding="utf-8")
 HISTORY_H = (SRC / "labmate_history.h").read_text(encoding="utf-8")
@@ -575,7 +592,7 @@ expect(
     "labmate_logger_storage_stop(" not in SCREENS,
     "CSV app capture and drawing must remain separate from SD I/O",
 )
-expect('"v1.8"' in INTERNAL_H, "v1.8 final LCD label required")
+expect('"v1.8DEV"' in INTERNAL_H, "v1.8 completion development LCD label required")
 expect('fap_version="1.8"' in MANIFEST, "v1.8 dev manifest version required")
 expect(
     'sources=["src/*.c"]' in MANIFEST,
@@ -618,16 +635,26 @@ expect("void threshold_update_from_measurement(LabMateApp* app)" in ALERT_BRIDGE
 # A background TIM1 PWM output owns PA7. The GPIO Monitor must not
 # reconfigure that pin (including on entry with a stale PA7 selection).
 expect(
-    "labmate_monitor_entry_pin(app->gpio_index, app->generator_running)" in MONITOR_GPIO,
-    "GPIO Monitor entry must respect background PA7 ownership",
+    "const bool pa7_reserved =" in MONITOR_GPIO and
+    "app->generator_running || app->generator_blocked ||" in MONITOR_GPIO and
+    "app->generator_release_fault;" in MONITOR_GPIO and
+    "labmate_monitor_entry_pin(app->gpio_index, pa7_reserved)" in MONITOR_GPIO and
+    MONITOR_GPIO.index("furi_hal_resource_lease_try_acquire(mask)") <
+    MONITOR_GPIO.index("furi_hal_gpio_init_simple(pin, GpioModeInput)"),
+    "Monitor pin-only lease required before GPIO configuration and PA7 exclusion",
 )
 expect(
-    "labmate_monitor_next_pin(app->gpio_index, direction, app->generator_running)" in MAIN,
-    "GPIO Monitor navigation must skip reserved PA7",
+    "labmate_monitor_next_pin(" in MAIN and
+    "app->generator_running || app->generator_blocked ||" in MAIN and
+    "app->generator_release_fault);" in MAIN,
+    "GPIO Monitor navigation must skip PA7 on RUN, BUSY or release fault",
 )
 expect(
-    "labmate_monitor_pin_allowed(index, app->generator_running)" in MONITOR_GPIO,
-    "GPIO release must not reconfigure a reserved PA7 PWM output",
+    "index != labmate_monitor_lease_index" in MONITOR_GPIO and
+    "if(labmate_monitor_lease_handle == 0U) return;" in MONITOR_GPIO and
+    "furi_hal_resource_lease_release(" in MONITOR_GPIO and
+    "app->monitor_release_fault = true;" in MONITOR_GPIO,
+    "Monitor RELEASE must only clear its owned GPIO and retain failed leases",
 )
 expect(
     "void labmate_monitor_gpio_release(LabMateApp* app, uint8_t index)" in MONITOR_GPIO,
@@ -637,7 +664,9 @@ expect("furi_hal_gpio_read(" not in MAIN and
        "furi_hal_gpio_init_simple(" not in MAIN and
        "labmate_monitor_gpio_activate(app)" in MAIN and
        "labmate_monitor_gpio_release(app" in MAIN and
-       "labmate_monitor_gpio_read(app->gpio_index)" in MAIN,
+       "labmate_monitor_gpio_read(" in MAIN and
+       "bool current = false;" in MEASUREMENTS and
+       "labmate_monitor_gpio_read(app, app->gpio_index, &current)" in MEASUREMENTS,
        "GPIO polling/release operations must be delegated from app")
 for name in ("activate", "release", "read"):
     expect(f"labmate_monitor_gpio_{name}(" in MONITOR_GPIO and

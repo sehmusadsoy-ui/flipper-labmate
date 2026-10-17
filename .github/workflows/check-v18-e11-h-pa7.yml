@@ -1,0 +1,49 @@
+name: E11 H native JS PA7 read-only probe safety (HOST ONLY)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - ".github/workflows/check-v18-e11-h-pa7.yml"
+      - ".gitattributes"
+      - "scripts/check_v18_e11_h_pa7_cli.py"
+      - "scripts/check_v18_e11_h_pa7_cli_v2.py"
+      - "scripts/check_v18_e11_h_js_runtime_ro.py"
+      - "scripts/check_v18_e11_h0_stage_v3.py"
+      - "tests/device/e11_h_pa7_read_only.js"
+      - "tests/device/e11_h_pa7_read_only_v2.js"
+      - "tests/device/e11_h0_stage_v3.js"
+      - "tests/test_v18_e11_h_pa7_cli.py"
+      - "tests/test_v18_e11_h_pa7_cli_v2.py"
+      - "tests/test_v18_e11_h_js_runtime_ro.py"
+      - "tests/test_v18_e11_h0_stage_v3.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pa7_probe_host_safety:
+    name: Fixed script SHA, FAP/JS identity and negative CLI cases — NO USB
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m unittest discover -v -s tests -p test_v18_e11_h_pa7_cli.py
+          if ($LASTEXITCODE -ne 0) { throw 'E11 JS PA7 probe host tests failed' }
+          python -m unittest discover -v -s tests -p test_v18_e11_h_pa7_cli_v2.py
+          if ($LASTEXITCODE -ne 0) { throw 'E11 H v2 event_loop dependency host tests failed' }
+          python -m unittest discover -v -s tests -p test_v18_e11_h_js_runtime_ro.py
+          if ($LASTEXITCODE -ne 0) { throw 'E11 H event_loop read-only bundle attestation tests failed' }
+          python -m unittest discover -v -s tests -p test_v18_e11_h0_stage_v3.py
+          if ($LASTEXITCODE -ne 0) { throw 'E11 H0 stage v3 safety gate failed' }
+          Write-Host 'E11 H PA7 HOST SOFTWARE SAFETY PASS - NO DEVICE OR SERIAL'
+          Write-Host 'Native PA7 BUSY, STOP release and real cross-service overlap remain NOT TESTED.'

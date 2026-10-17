@@ -237,6 +237,17 @@ void measurement_update(LabMateApp* app) {
          * PB3 / TIM2_CH2 counts edges without GPIO interrupts.
          */
         if(app->frequency_hw_active) {
+            if(!labmate_frequency_tim2_capture_valid()) {
+                /* A formerly owned TIM2 may have been disabled by a
+                 * legacy native driver. Do not publish a fabricated 0 Hz
+                 * or sample an unclocked/corrupted counter register.
+                 */
+                app->capture_release_fault = true;
+                app->capture_blocked = true;
+                app->frequency_valid = false;
+                app->frequency_hw_gate_started = false;
+                return;
+            }
             const uint32_t current_cycle = DWT->CYCCNT;
 
             /* Poll hardware at ~100 ms to keep high-rate responsiveness.
@@ -478,8 +489,12 @@ void measurement_update(LabMateApp* app) {
         return;
     }
 
-    /* GPIO Monitor retains its simple state/edge polling path. */
-    bool current = labmate_monitor_gpio_read(app->gpio_index);
+    /* A busy/unowned pin must never be sampled or counted as logic LOW.
+     * Other tools have no reason to poll a GPIO Monitor lease.
+     */
+    if(app->screen != LabMateScreenGpio) return;
+    bool current = false;
+    if(!labmate_monitor_gpio_read(app, app->gpio_index, &current)) return;
     if(current != app->gpio_previous_state) {
         app->edges++;
         app->gpio_previous_state = current;

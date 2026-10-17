@@ -2,7 +2,7 @@ name: LabMate Source CI (v1.7 baseline / v1.8 dev)
 
 on:
   push:
-    branches: [main, dev/v1.8-coordinator-refactor, dev/v1.8-counter-resume, dev/v1.8-uart-terminal, v1.8-stable-candidate, v1.7-rc1, v1.7-profiles-ux-fix, v1.7-stable-candidate, v1.7-stable-final]
+    branches: [main, dev/v1.8-completion, dev/v1.8-coordinator-refactor, dev/v1.8-counter-resume, dev/v1.8-uart-terminal, v1.8-stable-candidate, v1.7-rc1, v1.7-profiles-ux-fix, v1.7-stable-candidate, v1.7-stable-final]
     paths:
       - "src/*.c"
       - "src/*.h"
@@ -10,8 +10,26 @@ on:
       - "scripts/check_v17_ui_layout.py"
       - "scripts/check_repo_layout.py"
       - "scripts/check_v18_coordinator.py"
+      - "scripts/prepare-v18-exitfix-fap.ps1"
+      - "scripts/check_v18_exitfix_stage.py"
       - "scripts/check_v18_counter_resume.py"
+      - "scripts/check_v18_button_resume.py"
+      - "scripts/check_v18_i2c.py"
+      - "scripts/check_v18_i2c_control_model.py"
+      - "scripts/check_v18_i2c_present.py"
+      - "scripts/check_v18_i2c_runtime.py"
+      - "tests/test_i2c_scan.c.inc"
+      - "tests/test_i2c_control.c.inc"
+      - "tests/test_i2c_present.c.inc"
+      - "tests/test_i2c_session.c.inc"
+      - "tests/test_i2c_momentum_hal.c"
+      - "tests/i2c_hal_stubs/**"
+      - "scripts/check_v18_onewire_codec.py"
+      - "tests/test_onewire_ds18b20.c.inc"
+      - "tests/test_onewire_hw.c"
+      - "tests/onewire_host_stubs/**"
       - "tests/test_resource_policy.c.inc"
+      - "tests/test_comm_resource.c.inc"
       - "tests/test_navigation.c.inc"
       - "tests/test_profiles.c.inc"
       - "tests/test_frequency_gate.c.inc"
@@ -28,6 +46,10 @@ on:
       - "scripts/install-labmate.ps1"
       - "scripts/install-v17-from-github.ps1"
       - "scripts/test-v17-installer-mock.ps1"
+      - "scripts/verify-v18-matched-pair.ps1"
+      - "scripts/prepare-v18-dev-test.ps1"
+      - "scripts/prepare-v18-full012-test.ps1"
+      - "scripts/test-v18-pair-verify-mock.ps1"
       - "scripts/install-from-github.ps1"
       - "application.fam"
       - "src/labmate_generator.c"
@@ -64,8 +86,76 @@ jobs:
       - name: Guard v1.8 coordinator and deferred I/O boundaries
         run: python3 scripts/check_v18_coordinator.py
 
+      - name: Guard pinned stage-only v1.8 FAP preparation (no USB)
+        run: python3 scripts/check_v18_exitfix_stage.py
+
       - name: Guard v1.8 Counter STOP/RESUME semantics
         run: python3 scripts/check_v18_counter_resume.py
+
+      - name: Native DS18B20 decoder, real PA4 owner and no-auto-power source gates
+        run: |
+          set -euo pipefail
+          python3 scripts/check_v18_onewire_codec.py
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc -x c \
+            src/labmate_onewire_ds18b20.c tests/test_onewire_ds18b20.c.inc \
+            -o /tmp/labmate-onewire-codec
+          /tmp/labmate-onewire-codec
+          cc -std=c11 -Wall -Wextra -Werror -pedantic \
+            -Itests/onewire_host_stubs -Isrc -x c \
+            src/labmate_comm_resource.c src/labmate_onewire_ds18b20.c \
+            src/labmate_onewire_hw.c tests/test_onewire_hw.c \
+            -o /tmp/labmate-onewire-hw
+          /tmp/labmate-onewire-hw
+
+      - name: Validate integrated I2C worker, STOP and truthful firmware requirement
+        run: python3 scripts/check_v18_i2c_runtime.py
+
+      - name: Native I2C bounded address scan, control and result page models
+        run: |
+          set -euo pipefail
+          python3 scripts/check_v18_i2c.py
+          python3 scripts/check_v18_i2c_control_model.py
+          python3 scripts/check_v18_i2c_present.py
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc -x c \
+            src/labmate_i2c_scan.c tests/test_i2c_scan.c.inc \
+            -o /tmp/labmate-i2c-scan
+          /tmp/labmate-i2c-scan
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc -x c \
+            src/labmate_i2c_scan.c src/labmate_i2c_control.c \
+            tests/test_i2c_control.c.inc -o /tmp/labmate-i2c-control
+          /tmp/labmate-i2c-control
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc -x c \
+            src/labmate_i2c_scan.c src/labmate_i2c_control.c \
+            src/labmate_i2c_present.c tests/test_i2c_present.c.inc \
+            -o /tmp/labmate-i2c-present
+          /tmp/labmate-i2c-present
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc -x c \
+            src/labmate_i2c_scan.c src/labmate_i2c_control.c \
+            src/labmate_i2c_session.c tests/test_i2c_session.c.inc \
+            -o /tmp/labmate-i2c-session
+          /tmp/labmate-i2c-session
+          # Default stock firmware FAP: real adapter MUST fail closed.
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc \
+            -Itests/i2c_hal_stubs \
+            src/labmate_i2c_scan.c src/labmate_i2c_control.c \
+            src/labmate_i2c_session.c src/labmate_i2c_momentum.c \
+            tests/test_i2c_momentum_hal.c -o /tmp/labmate-i2c-bridge-stock
+          /tmp/labmate-i2c-bridge-stock
+          # Patched firmware API contract: ACK comes from real HAL callback.
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc \
+            -Itests/i2c_hal_stubs -DLABMATE_MOMENTUM_TIMED_I2C_API=1 -DLABMATE_TEST_LEASE_API=1 \
+            src/labmate_i2c_scan.c src/labmate_i2c_control.c \
+            src/labmate_i2c_session.c src/labmate_i2c_momentum.c \
+            tests/test_i2c_momentum_hal.c -o /tmp/labmate-i2c-bridge-timed
+          /tmp/labmate-i2c-bridge-timed
+
+      - name: Test v1.8 COMM application-local I2C / 1-Wire ownership exclusions
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc -x c \
+            src/labmate_comm_resource.c tests/test_comm_resource.c.inc \
+            -o /tmp/labmate-comm-resource-tests
+          /tmp/labmate-comm-resource-tests
 
       - name: Test portable GPIO / PA7 ownership policy
         run: |
@@ -153,6 +243,9 @@ jobs:
 
       - name: Guard v1.8 UART serial ownership, menus, and ISR separation
         run: python3 scripts/check_v18_uart.py
+
+      - name: Guard v1.8 Button STOP/RESUME state lifecycle
+        run: python3 scripts/check_v18_button_resume.py
 
       - name: Test Button Analyzer bounce, settling and tick-wrap logic
         run: |
@@ -286,6 +379,59 @@ jobs:
           $ErrorActionPreference = 'Stop'
           & ./scripts/test-v17-installer-mock.ps1
           if ($LASTEXITCODE -ne 0) { throw 'v1.7 installer mock regressions failed' }
+
+      - name: Verify v1.8 matched firmware-FAP pair WITHOUT USB or firmware changes
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & ./scripts/test-v18-pair-verify-mock.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'Development-pair preflight mock failed' }
+
+      - name: Refuse unverified missing v1.8 development candidate (offline-only)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $fixture = Join-Path $env:RUNNER_TEMP 'LabMate-Empty-Test-Bundle'
+          New-Item -ItemType Directory -Path $fixture -Force | Out-Null
+          & ./scripts/prepare-v18-dev-test.ps1 -VerifyOnly -Directory $fixture
+          if ($LASTEXITCODE -eq 0) { throw 'Empty firmware/FAP download was accepted.' }
+          $text = Get-Content -Raw ./scripts/prepare-v18-dev-test.ps1
+          foreach($forbidden in @('selfupdate.py', 'flash_usb', 'runfap.py')) {
+            if ($text.Contains($forbidden)) { throw "Preparation script unexpectedly installs: $forbidden" }
+          }
+          Write-Host 'One-command PowerShell download/verify-only negative gate PASS; NO USB.'
+          # The deliberate rejection leaves LASTEXITCODE=1; reset it after the assertion.
+          $global:LASTEXITCODE = 0
+
+      - name: Parse and fail-closed test PowerShell full Momentum candidate preparer (NO USB)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path ./scripts/prepare-v18-full012-test.ps1).Path,
+            [ref]$null,
+            [ref]$errors
+          ) | Out-Null
+          if ($errors.Count -ne 0) {
+            throw "PowerShell syntax failed: $($errors | Out-String)"
+          }
+          $none = Join-Path $env:RUNNER_TEMP 'Missing-Full-Pair'
+          New-Item -ItemType Directory -Path $none -Force | Out-Null
+          & ./scripts/prepare-v18-full012-test.ps1 -VerifyOnly -Directory $none
+          if ($LASTEXITCODE -eq 0) {
+            throw 'PowerShell preparer incorrectly accepted missing full development package.'
+          }
+          $scriptText = Get-Content -Raw ./scripts/prepare-v18-full012-test.ps1
+          foreach ($bad in @('selfupdate.py', 'runfap.py', 'flash_usb')) {
+            # A warning/comment about lack of install is permitted, but code
+            # must NEVER invoke the dangerous direct commands.
+            if ($scriptText -match ('(?im)^\s*(&|cmd\.exe|python)\s+.*' + [regex]::Escape($bad))) {
+              throw "Preparer contains firmware/app install command: $bad"
+            }
+          }
+          $global:LASTEXITCODE = 0
+          Write-Host 'PowerShell FULL candidate parser/fail-closed PASS; NO USB OR FLASH.'
 
   publish_v17_stable:
     name: Finalize verified v1.7 draft as Stable

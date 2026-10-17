@@ -1,0 +1,81 @@
+name: Verify FULL MNTM-012 artifact with REAL Windows PowerShell (NO FLASH)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - ".github/workflows/check-v18-full-windows-powershell-preflight.yml"
+      - "scripts/prepare-v18-full012-test.ps1"
+      - "scripts/install-v18-full012-dev-firmware.ps1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  verify_real_candidate:
+    name: Real full candidate Windows SHA256 verification (NO USB)
+    runs-on: windows-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout exact PowerShell preparer
+        uses: actions/checkout@v4
+
+      - name: Verify REAL full firmware / FAP artifact on Windows
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $out = Join-Path $env:RUNNER_TEMP 'Full-MNTM012-Candidate'
+          & ./scripts/prepare-v18-full012-test.ps1 -Directory $out
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Windows REAL candidate preflight failed.'
+          }
+          $expected = @('labmate.fap','firmware.dfu','firmware-full-update.tgz')
+          foreach ($name in $expected) {
+            if ((Get-Item -LiteralPath (Join-Path $out $name)).Length -le 0) {
+              throw "Empty checked candidate file: $name"
+            }
+          }
+          Write-Host 'ACTUAL MNTM012 FULL FIRMWARE AND FAP VERIFIED ON WINDOWS: PASS.'
+          Write-Host 'NO USB, NO FIRMWARE FLASH, NO INSTALL, NO RELEASE.'
+
+      - name: Test real full updater Windows TAR extraction and checks (STAGE ONLY)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $out = Join-Path $env:RUNNER_TEMP 'Full-MNTM012-Candidate'
+          & ./scripts/install-v18-full012-dev-firmware.ps1 -BundleDirectory $out
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Real full updater extraction / manifest validation failed.'
+          }
+          $stages = @(Get-ChildItem -LiteralPath $out -Directory | Where-Object { $_.Name -like 'full-updater-stage-*' })
+          if ($stages.Count -ne 1) {
+            throw 'Full updater staging did not create exactly one new folder.'
+          }
+          Write-Host 'REAL FULL UPDATER STAGE/VERIFY PASS: NO COM, NO FLASH.'
+
+      - name: Assert APPLY refuses missing rollback before any USB activity
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $out = Join-Path $env:RUNNER_TEMP 'Full-MNTM012-Candidate'
+          $nonexistent = Join-Path $env:RUNNER_TEMP 'Missing-MNTM012-rollback'
+          $rejected = $false
+          try {
+            & ./scripts/install-v18-full012-dev-firmware.ps1 -BundleDirectory $out -RollbackDirectory $nonexistent -Apply
+          } catch {
+            if ($_.Exception.Message -match 'REJECTED: legacy updater is pinned to an older firmware/FAP') {
+              $rejected = $true
+            } else {
+              throw
+            }
+          }
+          if (-not $rejected) {
+            throw 'DANGEROUS: Legacy APPLY did not throw the expected safety rejection.'
+          }
+          Write-Host 'LEGACY APPLY QUARANTINE PASS; NO COM/USB/FLASH WAS ATTEMPTED.'
+
+

@@ -1,0 +1,187 @@
+name: Verify optional Momentum timed-I2C source patch (NO FLASH)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - "scripts/patch_momentum_i2c_timeout.py"
+      - "scripts/check_v18_minimal_update_bundle.py"
+      - "scripts/verify-v18-matched-pair.ps1"
+      - "tests/test_v18_minimal_update_bundle.py"
+      - ".github/workflows/check-v18-momentum-timed-i2c-patch.yml"
+      # Production adapter, runtime and manifest changes must be compiled
+      # against the exact patched SDK, not just against the stock SDK.
+      - "src/labmate_i2c_*"
+      - "src/labmate_comm_resource.*"
+      - "application.fam"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source_patch:
+    name: Check exact Momentum source and bounded owner patch
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout LabMate source (patch script only)
+        uses: actions/checkout@v4
+        with:
+          path: labmate
+
+      - name: Checkout exact tested Momentum SDK firmware source
+        uses: actions/checkout@v4
+        with:
+          repository: Next-Flip/Momentum-Firmware
+          ref: d3f89dfe2ef6b01839201598e9be1590cba80322
+          path: momentum-src
+          persist-credentials: false
+
+      - name: Check script and verify read-only patch preconditions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile labmate/scripts/patch_momentum_i2c_timeout.py
+          python3 -m unittest discover -s labmate/tests -p test_v18_minimal_update_bundle.py
+          python3 labmate/scripts/patch_momentum_i2c_timeout.py momentum-src
+
+      - name: Apply proof patch to ephemeral CI checkout ONLY
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 labmate/scripts/patch_momentum_i2c_timeout.py momentum-src --apply
+          git -C momentum-src diff --check
+          test "$(git -C momentum-src diff --name-only | wc -l)" -eq 3
+          grep -q "bool furi_hal_i2c_external_acquire_timeout" momentum-src/targets/furi_hal_include/furi_hal_i2c.h
+          grep -q "#define FURI_HAL_I2C_HAS_EXTERNAL_ACQUIRE_TIMEOUT 1" momentum-src/targets/furi_hal_include/furi_hal_i2c.h
+          grep -q "furi_mutex_acquire(furi_hal_i2c_bus_external_mutex" momentum-src/targets/f7/furi_hal/furi_hal_i2c.c
+          grep -q 'Function,+,furi_hal_i2c_external_acquire_timeout,_Bool,uint32_t' momentum-src/targets/f7/api_symbols.csv
+          echo "Source patch applicability PASS. This does NOT compile, flash or confirm the firmware API at runtime."
+
+      # This is deliberately NOT an installation or firmware update. Both the
+      # patched firmware and LabMate FAP remain inside ephemeral CI storage.
+      - name: Stage real integrated LabMate app into exact patched tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f labmate/application.fam
+          test -f labmate/labmate_10px.png
+          test -d labmate/src
+          mkdir -p momentum-src/applications_user/labmate/src
+          cp labmate/application.fam labmate/labmate_10px.png momentum-src/applications_user/labmate/
+          cp labmate/src/*.c labmate/src/*.h momentum-src/applications_user/labmate/src/
+          test -f momentum-src/applications_user/labmate/src/labmate_i2c_momentum.c
+          echo "Only the actual LabMate integrated app staged. No demo FAP."
+
+      - name: Compile patched Momentum firmware and integrated FAP (NO FLASH)
+        shell: bash
+        working-directory: momentum-src
+        timeout-minutes: 35
+        env:
+          FBT_GIT_SUBMODULE_SHALLOW: "1"
+        run: |
+          set -euo pipefail
+          # Firmware compilation, not just source-patch applicability.
+          # fbt provisions its own supported toolchain and git submodules.
+          ./fbt firmware_all
+          # Compiling the real app against this exact patched firmware
+          # must resolve its new exported bounded external I2C API.
+          ./fbt fap_labmate
+          FAP="$(find build -type f -name labmate.fap -print -quit)"
+          test -n "$FAP" && test -s "$FAP"
+          echo "Patched firmware + matching integrated LabMate FAP COMPILE PASS."
+          sha256sum "$FAP"
+          echo "NO FLASH, NO USB INSTALL, NO RELEASE ASSET UPLOAD."
+
+      - name: Verify bounded I2C API is really defined in compiled firmware ELF
+        shell: bash
+        run: |
+          set -euo pipefail
+          FW_ELF="momentum-src/build/f7-firmware-C/firmware.elf"
+          test -s "$FW_ELF"
+          # A header declaration and API CSV entry alone do not prove
+          # the firmware actually defines the callable function.
+          readelf -Ws "$FW_ELF" | awk '
+            $4 == "FUNC" && $5 == "GLOBAL" && $7 != "UND" &&
+            $8 == "furi_hal_i2c_external_acquire_timeout" { found = 1 }
+            END { exit !found }
+          '
+          echo "Bounded external I2C function is DEFINED in the firmware ELF (CI ONLY)."
+          # This checks the on-disk symbol, not its runtime lock behavior.
+          # Real I2C contention, transfer, STOP and rollback require device tests.
+
+      - name: Build minimal updater and audit bundled DFU identity (NO FLASH)
+        shell: bash
+        working-directory: momentum-src
+        run: |
+          set -euo pipefail
+          FAP="build/f7-firmware-C/.extapps/labmate.fap"
+          FW="build/f7-firmware-C/firmware.dfu"
+          before_fap="$(sha256sum "$FAP" | cut -d ' ' -f 1)"
+          before_fw="$(sha256sum "$FW" | cut -d ' ' -f 1)"
+          # Unlike updater_package, the minimal target does not request
+          # an accompanying C2 radio stack, SD resources or option-byte data.
+          # The target BUILDS only; it cannot connect to a physical Flipper.
+          ./fbt updater_minpackage
+          test "$before_fap" = "$(sha256sum "$FAP" | cut -d ' ' -f 1)"
+          test "$before_fw" = "$(sha256sum "$FW" | cut -d ' ' -f 1)"
+          mapfile -t bundles < <(find dist -type f -name '*.tgz' -print)
+          test "${#bundles[@]}" -eq 1
+          python3 ../labmate/scripts/check_v18_minimal_update_bundle.py "${bundles[0]}" "$FW"
+          echo "MINIMAL UPDATE FILE CONTENTS VERIFIED. NO FIRMWARE FLASHED."
+
+      - name: Record checksummed matching firmware and LabMate pair (CI ONLY)
+        shell: bash
+        run: |
+          set -euo pipefail
+          PAIR="ci-matching-test-pair"
+          FAP="momentum-src/build/f7-firmware-C/.extapps/labmate.fap"
+          FW="momentum-src/build/f7-firmware-C/firmware.dfu"
+          test -s "$FAP"
+          test -s "$FW"
+          mkdir -p "$PAIR"
+          cp "$FAP" "$PAIR/labmate.fap"
+          cp "$FW" "$PAIR/firmware.dfu"
+          mapfile -t bundles < <(find momentum-src/dist -type f -name '*.tgz' -print)
+          test "${#bundles[@]}" -eq 1
+          cp "${bundles[0]}" "$PAIR/firmware-update.tgz"
+          python3 labmate/scripts/check_v18_minimal_update_bundle.py             "$PAIR/firmware-update.tgz" "$PAIR/firmware.dfu"
+          (
+            cd "$PAIR"
+            sha256sum labmate.fap firmware.dfu firmware-update.tgz > SHA256SUMS.txt
+            sha256sum -c SHA256SUMS.txt
+          )
+          printf 'LabMate commit: %s\n' "$(git -C labmate rev-parse HEAD)" > "$PAIR/PROVENANCE.txt"
+          printf 'Momentum base commit: %s\n' "$(git -C momentum-src rev-parse HEAD)" >> "$PAIR/PROVENANCE.txt"
+          printf 'Patched HAL source diff SHA256: %s\n' "$(git -C momentum-src diff -- targets/f7/furi_hal/furi_hal_i2c.c targets/furi_hal_include/furi_hal_i2c.h targets/f7/api_symbols.csv | sha256sum | cut -d ' ' -f 1)" >> "$PAIR/PROVENANCE.txt"
+          printf 'GitHub Actions run: %s\n' "$GITHUB_RUN_ID" >> "$PAIR/PROVENANCE.txt"
+          cat > "$PAIR/READ_ME_FIRST.txt" <<'EOF'
+          LABMATE v1.8 DEVELOPMENT — NOT AN APPROVED INSTALL PACKAGE.
+          This pair is archived ONLY to prove the exact firmware/FAP
+          compilation relationship and provide checksums for later review.
+          Do NOT flash/install the firmware, minimal TGZ or FAP yet.
+          Stock Momentum firmware does NOT export the timed external I2C API;
+          this paired LabMate FAP must NOT be mixed with stock firmware.
+          No real Flipper or external I2C/1-Wire hardware acceptance exists.
+          No automatic firmware flashing, USB install, or Stable publication.
+          EOF
+          echo "Checksum/provenance-only CI test pair prepared; NOT approved for installation."
+
+      - name: Reverify ACTUAL built pair with read-only Windows-compatible preflight
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $source = (git -C labmate rev-parse HEAD).Trim()
+          & ./labmate/scripts/verify-v18-matched-pair.ps1 -PairDirectory ./ci-matching-test-pair -ExpectedSourceSha $source -RequireUpdater
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Actual matched firmware/FAP preflight rejected the CI archive.'
+          }
+
+      - name: Archive matching development pair (NOT A RELEASE)
+        uses: actions/upload-artifact@v4
+        with:
+          name: v18DEV-minimal-updater-FAP-UNTESTED-DO-NOT-FLASH
+          path: ci-matching-test-pair/
+          retention-days: 7
+          if-no-files-found: error

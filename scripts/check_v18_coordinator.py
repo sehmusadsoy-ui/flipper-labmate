@@ -32,6 +32,8 @@ screens = {
     "Pulse": "labmate_input_measure.c",
     "Generator": "labmate_input_output.c",
     "Uart": "labmate_input_uart.c",
+    "OneWire": "labmate_input_onewire.c",
+    "I2c": "labmate_input_i2c.c",
 }
 handlers = [read(p) for p in sorted(set(screens.values()))]
 assert len(main.splitlines()) < 250, "labmate.c must be a thin coordinator"
@@ -44,12 +46,30 @@ assert 'labmate_generator_stop(app);' in main
 assert 'labmate_logger_storage_stop(app);' in main
 assert 'labmate_history_close(app);' in main
 
+# Exit cleanup must release capture even if the visible screen is MENU.
+# STOP resets capture_pin_index, so retain the physical pin before STOP.
+# GPIO Monitor has no capture owner and needs separate selected-pin cleanup.
+teardown = main.split("/* Teardown must not depend on which screen was visible on exit.", 1)
+assert len(teardown) == 2, "Missing unconditional application teardown"
+teardown = teardown[1].split("gui_remove_view_port(", 1)[0]
+assert "const uint8_t captured_gpio_index = app->capture_pin_index;" in teardown
+assert "labmate_capture_stop_all(app);" in teardown
+assert "labmate_monitor_gpio_release(app, captured_gpio_index);" in teardown
+assert "app->gpio_index != captured_gpio_index" in teardown
+assert "labmate_monitor_gpio_release(app, app->gpio_index);" in teardown
+assert teardown.index("const uint8_t captured_gpio_index") < teardown.index(
+    "labmate_capture_stop_all(app);"
+), "Snapshot armed pin before STOP clears identity"
+assert teardown.index("labmate_capture_stop_all(app);") < teardown.index(
+    "if(labmate_screen_uses_gpio(app->screen)"
+), "Capture STOP must not depend on displayed screen"
+
 # One and only one physical tool entry mapping per original enum value.
 for name in screens:
     needle = f"case LabMateScreen{name}:"
     assert router.count(needle) == 1, f"Unrouted screen {name}"
 for name in ("Gpio", "Frequency", "Pulse", "Counter", "Button", "Alerts",
-             "Generator", "Logger", "History", "About", "Profiles", "Uart"):
+             "Generator", "Logger", "History", "About", "Profiles", "Uart", "OneWire", "I2c"):
     assert sum(x.count(f"case LabMateTool{name}:") for x in handlers) == 1, (
         f"Missing or duplicate tool launch: {name}"
     )
@@ -106,5 +126,5 @@ for forbidden in ("storage_file_write(", "storage_file_open(", "storage_file_clo
         f"SD operation leaked into mutex-protected input handling: {forbidden}"
     )
 
-print("LabMate v1.8 coordinator PASS: 14 screen routes, 12 tools, ownership, "
-      "PWM safeguards, deferred I/O, bounded coordinator")
+print("LabMate v1.8 coordinator PASS: 16 screen routes, 14 tools, ownership, "
+      "unconditional capture/pin exit cleanup, PWM safeguards, deferred I/O")

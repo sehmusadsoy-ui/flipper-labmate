@@ -19,6 +19,8 @@ typedef enum {
     LabMateToolButton, /* PC1 contact bounce/settle analyzer */
     LabMateToolAlerts, /* v1.7: configurable visual threshold alerts */
     LabMateToolUart, /* v1.8: append, never renumber existing tools */
+    LabMateToolOneWire, /* append AFTER UART; historical IDs preserved */
+    LabMateToolI2c, /* appended; root menu displays it before OneWire */
     LabMateToolCount,
     LabMateToolInvalid = 255
 } LabMateTool;
@@ -27,8 +29,8 @@ typedef enum {
     LabMateGroupMeasure = 0,
     LabMateGroupOutput,
     LabMateGroupRecords,
-    LabMateGroupInfo,
-    LabMateGroupComm, /* add after original four groups */
+    LabMateGroupComm, /* communication tools immediately above INFO */
+    LabMateGroupInfo, /* final root entry: About always at bottom */
     LabMateGroupCount
 } LabMateMenuGroup;
 

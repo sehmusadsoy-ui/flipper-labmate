@@ -1,4 +1,4 @@
-/* Portable navigation tests: exhaustive access to all 12 tools.
+/* Portable navigation tests: exhaustive access to all 14 tools.
  * Do not include this host test in the firmware FAP build.
  */
 #include "labmate_navigation.h"
@@ -7,14 +7,29 @@
 #include <stdio.h>
 
 int main(void) {
-    const uint8_t expected_sizes[] = {5U, 2U, 3U, 1U, 1U};
+    const uint8_t expected_sizes[] = {5U, 2U, 3U, 3U, 1U};
     const uint8_t expected_tools[][LABMATE_NAV_MAX_CHILDREN] = {
         {LabMateToolGpio, LabMateToolFrequency, LabMateToolPulse, LabMateToolCounter, LabMateToolButton},
         {LabMateToolGenerator, LabMateToolAlerts, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
         {LabMateToolLogger, LabMateToolHistory, LabMateToolProfiles, LabMateToolInvalid, LabMateToolInvalid},
+        {LabMateToolUart, LabMateToolI2c, LabMateToolOneWire, LabMateToolInvalid, LabMateToolInvalid},
         {LabMateToolAbout, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
-        {LabMateToolUart, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
     };
+    /* User-mandated ROOT order: COMM above INFO; About absolutely last.
+     * Tool IDs stay stable for Profiles; only root group positions change. */
+    assert(LabMateGroupMeasure == 0);
+    assert(LabMateGroupOutput == 1);
+    assert(LabMateGroupRecords == 2);
+    assert(LabMateGroupComm == 3);
+    assert(LabMateGroupInfo == 4);
+    assert(LabMateGroupInfo == LabMateGroupCount - 1);
+    assert(strcmp(labmate_nav_group_title(LabMateGroupInfo), "INFO") == 0);
+    assert(strcmp(labmate_nav_group_title(LabMateGroupComm), "COMM") == 0);
+    assert(labmate_nav_tool_at(LabMateGroupInfo, 0U) == LabMateToolAbout);
+    assert(labmate_nav_tool_at(LabMateGroupComm, 0U) == LabMateToolUart);
+    assert(labmate_nav_tool_at(LabMateGroupComm, 1U) == LabMateToolI2c);
+    assert(labmate_nav_tool_at(LabMateGroupComm, 2U) == LabMateToolOneWire);
+    assert(LabMateToolOneWire == LabMateToolUart + 1);
     uint8_t visits[LabMateToolCount] = {0};
     for(uint8_t group = 0U; group < LabMateGroupCount; ++group) {
         assert(labmate_nav_group_size(group) == expected_sizes[group]);
@@ -76,6 +91,6 @@ int main(void) {
             assert(start <= selected && selected < (uint8_t)(start + 3U));
         }
     }
-    puts("LabMate v1.6 navigation mapping/wrap: all 12 tools reachable once");
+    puts("LabMate v1.6 navigation mapping/wrap: all 14 tools reachable once");
     return 0;
 }

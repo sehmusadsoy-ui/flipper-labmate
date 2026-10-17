@@ -1,0 +1,85 @@
+name: v1.8 E11 native Momentum JavaScript GPIO ownership (NO DEVICE)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - "scripts/patch_momentum_native_js_gpio_lease.py"
+      - "scripts/patch_momentum_native_pwm_lease.py"
+      - "tests/test_v18_native_js_gpio_lease.py"
+      - ".github/workflows/check-v18-native-js-gpio-lease.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native_js_gpio:
+    name: Native JS GPIO source patch, actual helper host and paired firmware FAP
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: labmate
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: Next-Flip/Momentum-Firmware
+          ref: d3f89dfe2ef6b01839201598e9be1590cba80322
+          path: momentum-src
+          persist-credentials: false
+      - name: Apply pinned prerequisite firmware API and native PWM updates
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 labmate/scripts/patch_momentum_i2c_timeout.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_resource_lease.py momentum-src --allow-timed-i2c --apply
+          python3 labmate/scripts/patch_momentum_gpio_tryadd.py momentum-src --allow-prepatched --apply
+          python3 labmate/scripts/patch_momentum_native_pwm_lease.py momentum-src --apply
+      - name: Exact native JavaScript GPIO preflight, apply and tested claim helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 labmate/scripts/patch_momentum_native_js_gpio_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_js_gpio_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_js_gpio_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_pwm_lease.py momentum-src
+          git -C momentum-src diff --check
+          git -C momentum-src diff -- applications/system/js_app/modules/js_gpio.c
+          echo "REAL JS C CLAIM HELPER HOST PASS; NOT JS DEVICE ENGINE OR ALL GPIO SERVICES."
+      - name: Stage only one integrated LabMate app
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p momentum-src/applications_user/labmate/src
+          cp labmate/application.fam labmate/labmate_10px.png momentum-src/applications_user/labmate/
+          cp labmate/src/*.c labmate/src/*.h momentum-src/applications_user/labmate/src/
+      - name: Build Momentum native JS/PWM and real LabMate FAP; verify ABI and checksums
+        shell: bash
+        working-directory: momentum-src
+        timeout-minutes: 40
+        env:
+          FBT_GIT_SUBMODULE_SHALLOW: "1"
+        run: |
+          set -euo pipefail
+          ./fbt firmware_all fap_labmate fap_js_gpio
+          test -s build/f7-firmware-C/firmware.dfu
+          test -s build/f7-firmware-C/.extapps/labmate.fap
+          mapfile -t jsbins < <(find build -type f \( -name 'js_gpio.fal' -o -name 'js_gpio.fap' \) -print)
+          test "${#jsbins[@]}" -ge 1
+          for jsfile in "${jsbins[@]}"; do test -s "$jsfile"; sha256sum "$jsfile"; done
+          echo "Native JS GPIO plugin compiled, not just firmware and LabMate."
+          readelf -Ws build/f7-firmware-C/firmware.elf | awk '
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_resource_lease_try_acquire" {claim=1}
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_resource_lease_release" {release=1}
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_gpio_try_add_int_callback" {gpio=1}
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_i2c_external_acquire_timeout" {i2c=1}
+            END {exit !(claim && release && gpio && i2c)}
+          '
+          sha256sum build/f7-firmware-C/firmware.dfu build/f7-firmware-C/.extapps/labmate.fap
+          echo "E11 NATIVE JS GPIO + PWM FIRMWARE/FAP/APPCHK PASS (CI ONLY, NO FLASH)."

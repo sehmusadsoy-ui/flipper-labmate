@@ -14,8 +14,11 @@
 #include "labmate_button_logic.h"
 #include "labmate_threshold.h"
 #include "labmate_uart.h"
+#include "labmate_comm_resource.h"
+#include "labmate_onewire_hw.h"
+#include "labmate_i2c_runtime.h"
 
-#define LABMATE_VERSION_TEXT "v1.8"
+#define LABMATE_VERSION_TEXT "v1.8DEV"
 /* Shared menu/pin counts: UI and input handling must agree. */
 #define MENU_COUNT LabMateToolCount
 #define GPIO_COUNT LABMATE_MONITOR_PIN_COUNT
@@ -43,6 +46,8 @@ typedef enum {
     LabMateScreenButton, /* append: preserve original 0..10 */
     LabMateScreenAlerts, /* configuration: no extra GPIO ownership */
     LabMateScreenUart, /* v1.8 UART: append, preserve stable screen IDs */
+    LabMateScreenOneWire, /* append only; previous screen IDs preserved */
+    LabMateScreenI2c, /* real I2C only on a firmware with bounded HAL API */
 } LabMateScreen;
 
 typedef enum {
@@ -78,6 +83,11 @@ typedef struct {
     uint8_t capture_pin_index;
     /* Software-policy denial only; not low-level hardware fault detection. */
     bool capture_blocked;
+    /* Sticky firmware lease release failure; no new capture until app restart. */
+    bool capture_release_fault;
+    bool monitor_active; /* true only after a successful GPIO pin-only lease */
+    bool monitor_blocked; /* missing/busy firmware lease, no sample */
+    bool monitor_release_fault; /* sticky: refuse reuse after failed release */
 
     bool gpio_state;
     bool gpio_previous_state;
@@ -131,6 +141,7 @@ typedef struct {
      * PC1 EXTI1 with internal pull-up, LOW = pressed contact.
      */
     bool button_active;
+    bool button_session_started; /* STOP preserves results; OK RESUMEs */
     bool button_details_view; /* alternate compact 128x64 metrics page */
     uint8_t button_quiet_index; /* 0..3: 5/10/20/50 ms */
     uint8_t button_quiet_ms;
@@ -195,6 +206,8 @@ typedef struct {
      */
     bool generator_running;
     bool generator_state;
+    bool generator_blocked; /* firmware TIM1 claim denied or ownership unresolved */
+    bool generator_release_fault; /* sticky failed lease release; no retry */
     uint8_t generator_freq_index; /* 0..14 presets, 15 = CUSTOM */
     uint8_t generator_duty_percent; /* 5..95; default 50 */
     uint32_t generator_custom_hz; /* committed custom frequency */
@@ -247,6 +260,10 @@ typedef struct {
     uint8_t history_first_row_len;
 
     LabMateUart uart; /* USART external GPIO 13/14, no TIM1/TIM2 ownership */
+    LabMateCommOwner comm_owner; /* local exclusive I2C/1Wire sessions */
+    LabMateOneWireHw thermometer; /* external PA4, no OTG auto-power */
+    LabMateI2cRuntime* i2c; /* worker-owned timed external PC0/PC1 bus */
+    uint8_t i2c_page;
 
     LabMateProfileStore profiles;
     uint8_t profile_active_copy; /* 0=a, 1=b, 255=none */

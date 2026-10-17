@@ -33,7 +33,7 @@ void labmate_input_button(LabMateApp* app, InputEvent event, LabMateDeferredWork
                         labmate_button_capture_start(app);
                     }
                 } else if(event.key == InputKeyUp) {
-                    /* Preserve measurements during RUN; clear them while stopped. */
+                    /* RESET works only during STOP; RUN cannot erase counters. */
                     labmate_button_capture_reset(app);
                 } else if(event.key == InputKeyLeft) {
                     labmate_button_capture_change_quiet(app, -1);
@@ -111,8 +111,16 @@ void labmate_input_gpio(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                     } else {
                         app->hold = !app->hold;
                         if(!app->hold) {
-                            app->gpio_state = labmate_monitor_gpio_read(app->gpio_index);
-                            app->gpio_previous_state = app->gpio_state;
+                            /* HOLD resume cannot treat an unowned GPIO
+                             * as a valid electrical LOW sample. */
+                            if(app->screen == LabMateScreenGpio) {
+                                bool level = false;
+                                if(labmate_monitor_gpio_read(
+                                       app, app->gpio_index, &level)) {
+                                    app->gpio_state = level;
+                                    app->gpio_previous_state = level;
+                                }
+                            }
                             measurement_reset(app);
                             if(app->screen == LabMateScreenFrequency &&
                                app->frequency_hw_active) {

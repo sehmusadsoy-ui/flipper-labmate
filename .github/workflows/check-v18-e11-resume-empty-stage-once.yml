@@ -1,0 +1,63 @@
+name: E11 one-shot v1.8 FAP into verified EMPTY nonapp stage (HOST MOCK ONLY)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - ".github/workflows/check-v18-e11-resume-empty-stage-once.yml"
+      - "scripts/resume_v18_final_fap_from_empty_stage_once.py"
+      - "tests/test_v18_resume_empty_stage_once.py"
+      - "scripts/run-v18-e11-resume-verified-empty-stage.ps1"
+      - "scripts/run-v18-e11-empty-stage-echo-verified-once.ps1"
+      - "scripts/stage_v18_final_fap_on_device_one_file.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exact_zero_stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Test strict first Ready and zero-stage-only preflight (NO DEVICE)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/resume_v18_final_fap_from_empty_stage_once.py
+          python3 -m unittest discover -v -s tests -p test_v18_resume_empty_stage_once.py
+          echo "E11 EXISTING EMPTY SIDE-CAR HOST GUARD PASS - NO DEVICE/SD/RELEASE"
+      - name: Parse exact operator PowerShell handoff (NEVER run device commands)
+        shell: pwsh
+        run: |
+          $t=$null
+          $e=$null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'scripts/run-v18-e11-resume-verified-empty-stage.ps1').Path,
+            [ref]$t,[ref]$e) | Out-Null
+          if ($e.Count -ne 0) {
+            $e | ForEach-Object { Write-Error $_.Message }
+            throw 'Exact E11 empty-stage operator handoff parse rejected'
+          }
+          Write-Host 'ONE-TIME ZERO-SIDECAR OPERATOR POWERSHELL PARSE PASS, NO SERIAL'
+      - name: Parse NEW source-pinned echo-first operator stage wrapper (NO EXECUTION)
+        shell: pwsh
+        run: |
+          $tokens=$null
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'scripts/run-v18-e11-empty-stage-echo-verified-once.ps1').Path,
+            [ref]$tokens, [ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            throw 'NEW E11 echo-first staging wrapper syntax rejected'
+          }
+          $source = Get-Content 'scripts/run-v18-e11-empty-stage-echo-verified-once.ps1' -Raw
+          if ($source -notmatch "8f35e5a782743cc1019f322dfcd53445ac61cd3a" -or
+              $source -match "3aff361687d57e11dae8b0a7c2cc989bb1ad8d02") {
+            throw 'Expected fixed helper pin missing or retired Ready-first version present'
+          }
+          Write-Host 'NEW E11 CLI ECHO-FIRST STAGE PS SYNTAX AND PIN PASS; NO USB'

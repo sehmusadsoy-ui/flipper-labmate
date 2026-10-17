@@ -140,7 +140,7 @@ static const LabMateHelpPage labmate_help[LabMateToolCount] = {
         "Open or delete one", "UD FILE LR MODE OK",
     },
     [LabMateToolAbout] = {
-        "ABOUT / GUIDE", "14 pages, 12 tools",
+        "ABOUT / GUIDE", "16 pages, 14 tools",
         "3.3V GPIO only", "<> PAGE  BK EXIT",
     },
     [LabMateToolProfiles] = {
@@ -162,6 +162,14 @@ static const LabMateHelpPage labmate_help[LabMateToolCount] = {
     [LabMateToolUart] = {
         "UART TERMINAL", "13 TX / 14 RX 3.3V",
         "9600-115200 8N1", "OK RUN DN EDIT TX",
+    },
+    [LabMateToolOneWire] = {
+        "1-WIRE TEMP", "PA4 DQ / 3.3V VDD",
+        "External sensor VDD", "OK READ  BK EXIT",
+    },
+    [LabMateToolI2c] = {
+        "I2C EXPLORER", "PC0 SCL / PC1 SDA",
+        "3.3V OWNED BUS", "OK SCAN BK EXIT",
     },
 };
 
@@ -375,7 +383,11 @@ void draw_gpio(Canvas* canvas, LabMateApp* app) {
     /* Compact instrument header, consistent with Frequency and Pulse screens. */
     ui_draw_header(canvas, "GPIO");
     ui_badge(canvas, 35, 1, 34, labmate_gpio_names[app->gpio_index], false);
-    ui_badge(canvas, 91, 1, 35, app->hold ? "HOLD" : "LIVE", !app->hold);
+    ui_badge(canvas, 91, 1, 35,
+             app->monitor_release_fault ? "ERR" :
+                 app->monitor_blocked ? "BUSY" :
+                     app->hold ? "HOLD" : "LIVE",
+             !app->hold && !app->monitor_blocked);
 
     /* Separate the live logic level from the transition counter. */
     canvas_set_font(canvas, FontSecondary);
@@ -646,12 +658,12 @@ void draw_button(Canvas* canvas, LabMateApp* app) {
         canvas_draw_str(canvas, 67, 51, value);
     }
 
+    const char* button_action = app->button_active ? "STOP" :
+        (app->button_session_started ? "RESUME" : "START");
     if(app->button_details_view) {
-        ui_footer_pair(canvas, "DOWN", "MAIN", "OK",
-                       app->button_active ? "STOP" : "START");
+        ui_footer_pair(canvas, "DOWN", "MAIN", "OK", button_action);
     } else {
-        ui_footer_pair(canvas, "DOWN", "MORE", "OK",
-                       app->button_active ? "STOP" : "START");
+        ui_footer_pair(canvas, "DOWN", "MORE", "OK", button_action);
     }
 }
 
@@ -730,8 +742,11 @@ void draw_generator(Canvas* canvas, LabMateApp* app) {
     canvas_set_font(canvas, FontPrimary);
     canvas_draw_str(canvas, 2, 10, "PWM");
     ui_badge(canvas, 34, 1, 55, "OUT PA7", false);
-    ui_badge(canvas, 91, 1, 35, app->generator_running ? "RUN" : "STOP",
-             app->generator_running);
+    ui_badge(canvas, 91, 1, 35,
+             app->generator_release_fault ? "ERR" :
+                 app->generator_blocked ? "BUSY" :
+                     app->generator_running ? "RUN" : "STOP",
+             app->generator_running && !app->generator_blocked);
     canvas_draw_line(canvas, 0, 13, 127, 13);
 
     if(freq >= 1000U && (freq % 1000U) == 0U) {
