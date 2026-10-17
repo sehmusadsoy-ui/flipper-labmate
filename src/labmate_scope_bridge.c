@@ -84,6 +84,10 @@ bool labmate_scope_bridge_stop(LabMateApp* a) {
     } else {
         a->scope_display.state = LabMateScopeDisplayStopped;
     }
+    if(!a->scope_native.active && !a->scope_native.owner.handle &&
+       a->capture_owner == LabMateCaptureNone) {
+        a->capture_pin_index = GPIO_COUNT;
+    }
     labmate_scope_bridge_refresh(a);
     return !a->scope_native.owner.handle;
 }
@@ -107,6 +111,16 @@ void labmate_scope_bridge_poll(LabMateApp* a) {
         default:
             a->scope_display.state = LabMateScopeDisplayError; break;
         }
+        if(state == LabMateScopeGuardInvalid && a->scope_native.active) {
+            /* A lost/mismatched app owner may not leave an IRQ running while
+             * the UI displays ERROR. Attempt ONLY owned callback teardown. */
+            (void)labmate_scope_bridge_stop(a);
+            a->scope_display.state = LabMateScopeDisplayError;
+        }
+        if(!a->scope_native.active &&
+           !a->scope_native.owner.handle &&
+           a->capture_owner == LabMateCaptureNone)
+            a->capture_pin_index = GPIO_COUNT;
         if(a->scope_native.fault_sticky) {
             a->capture_release_fault = true;
             a->capture_blocked = true;
@@ -131,6 +145,10 @@ void labmate_scope_bridge_input(LabMateApp* a, InputEvent event) {
     if(a->scope_native.fault_sticky || a->capture_release_fault) {
         a->scope_display.state = LabMateScopeDisplayError;
         return;
+    }
+    if(furi_kernel_get_tick_frequency() == 0U) {
+        a->scope_display.state = LabMateScopeDisplayError;
+        return; /* no trustworthy watchdog clock */
     }
     const LabMateScopePc1Environment env = labmate_scope_bridge_environment(a);
     const LabMateScopeNativeStatus state = labmate_scope_native_start(
