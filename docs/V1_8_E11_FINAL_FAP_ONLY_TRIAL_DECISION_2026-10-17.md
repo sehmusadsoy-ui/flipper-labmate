@@ -1221,3 +1221,50 @@ cleanup or Stable publication occurred in these 3 new
 screen-level tests.** Preserve the device old-FAP `.bak`
 and original verified PC backup, retain Draft PR #13,
 existing public Stable/main unchanged, v1.9 HOLD.
+
+## 2026-10-17 — Final E11 v1.8 no-signal instrument screens/exit: 4/4 USER PASS
+
+After actual final-label candidate file activation, operator GUI smoke
+5/5 and read-only History/S1/UART screen checks 3/3, the operator
+completed the proposed no-wire instrument screen/open/STOP-BACK
+checks on that same installed FAP and returned **verbatim**:
+
+```text
+Frequency: PASS / Pulse: PASS / Counter: PASS / Button: PASS
+```
+
+**Acceptance scope:** Frequency Meter, Pulse Analyzer,
+Counter and Button Analyzer were opened and exited safely
+on the actual new E11 v1.8 FAP with no externally supplied
+signal. Operator-reported UI/lifecycle checks now total
+**12/12 PASS** across the separately scoped 5/5, 3/3
+and 4/4 groups. This validates safe instrument screen
+navigation/return, **not** electrical signal capture,
+frequency/pulse timing, TIM2 counter accuracy,
+button bounce interpretation, GPIO exclusivity or true
+cross-service release/ownership arbitration. A no-signal
+readout is not a calibration test.
+
+**Still pending for this exact FAP:** real 3.3V input
+measurements and bounded PWM generator with STOP,
+Counter/Button electrical tests, real ESP32-S2 UART
+peer (the earlier v1.8DEV E1–E6 pass is NOT reused),
+native H1 simultaneous competing-resource BUSY,
+independent calibration, and backed-up disposable
+CSV/Profile write persistence. Sensor I2C ACK and
+DS18B20/switch physical positives remain deferred
+until appropriate equipment. No new FAP install,
+firmware or data alteration is claimed from these
+screen-only tests.
+
+**Next recommended scoped gate:** use only previously
+verified 3.3V hardware wiring and proven ESP32-S2
+UART test peer when actually available; never assume
+it is connected or consent to modify its firmware.
+Check RX `ESP32_READY`, bounded explicit TX
+`AT` → `ESP32_OK`, and repeated STOP/BACK without
+unsafe GPIO wiring, at the peer's known baud. If
+hardware is not connected/prepared, defer live UART
+and proceed with other read-only tests. Stable/main,
+device old `.bak`, original old PC FAP backup, Draft
+PR #13 and v1.9 HOLD unchanged.
