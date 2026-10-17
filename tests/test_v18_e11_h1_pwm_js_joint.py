@@ -175,6 +175,23 @@ def main() -> None:
     dispatch=shell.index("command_data.execute_callback(", refusal)
     if not lock < claim < refusal < dispatch:
         raise ValueError("pinned CLI loader-lock refusal no longer precedes command dispatch")
+    # The built-in gpio CLI is no better as an H1 contender: it too
+    # requires an exclusive loader, and its plain read bypasses
+    # the native cooperative resource-lease API entirely.
+    gpio_cli=(root/"applications/services/cli/cli_main_commands.c").read_text()
+    gpio_impl=(root/"applications/services/cli/cli_command_gpio.c").read_text()
+    if "CLI_COMMAND_INTERFACE(gpio, cli_command_gpio, CliCommandFlagDefault" not in gpio_cli:
+        raise ValueError("pinned GPIO CLI concurrency flag changed; review required")
+    if "LL_GPIO_GetPinMode(" not in gpio_impl or "furi_hal_gpio_read(" not in gpio_impl:
+        raise ValueError("native gpio CLI read path changed; review required")
+    gpio_read=gpio_impl[gpio_impl.index("void cli_command_gpio_read("):
+                        gpio_impl.index("void cli_command_gpio_set(")]
+    if "furi_hal_resource_lease_try_acquire" in gpio_read:
+        raise ValueError("GPIO CLI lease semantics changed; existing H1 limitation needs review")
+    if not ("LL_GPIO_GetPinMode(" in gpio_read and "furi_hal_gpio_read(" in gpio_read):
+        raise ValueError("GPIO CLI read path no longer matches audit")
+    if "furi_hal_gpio_init_simple(" not in gpio_impl or "furi_hal_gpio_write(" not in gpio_impl:
+        raise ValueError("GPIO CLI mode/set hazard audit source changed")
     if "native_pwm_try_claim" not in native or "FURI_HAL_PWM_NATIVE_LEASE_API_V1" not in resources:
         raise ValueError("native PWM lease firmware source not patched")
     if "labmate_pwm_pa7_lease_handle" in APP_FILE.read_text():
