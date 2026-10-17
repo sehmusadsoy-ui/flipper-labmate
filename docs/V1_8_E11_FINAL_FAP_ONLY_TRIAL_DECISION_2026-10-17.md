@@ -1395,3 +1395,47 @@ operation was requested. **H1 true simultaneous
 resource BUSY proof and bench-only electrical trials
 remain OPEN / equipment deferred** as applicable.
 Draft PR #13 remains DRAFT; v1.9 HOLD.
+
+## 2026-10-17 — ACTUAL E11 FINAL v1.8 PA7 → PC1 100 Hz / 50% PWM DIGITAL LOOPBACK: PASS
+
+Operator report on the newly installed, already checksum-verified
+E11 final-label v1.8 FAP (verbatim):
+
+```text
+E11 final v1.8 PA7→PC1 100 Hz / %50 loopback gerçek cihaz sonucu: Frequency LOW PC1=100.00; Pulse HIGH=5.00, LOW=5.00, PERIOD=10 MS, DUTY=50.0%; PWM STOP=PASS; Hata/BUSY/ERR=bildirilmedi.
+```
+
+**Accepted physical on-device function:** a known-safe previously
+tested Flipper 3.3V digital jumper PA7 PWM output → PC1 input
+was used; selected PWM stimulus 100 Hz / 50%,
+Frequency Meter PC1 observed 100.00 Hz; Pulse Analyzer
+observed HIGH 5.00 ms, LOW 5.00 ms, PERIOD 10 ms,
+DUTY 50.0%; generator STOP was explicitly reported PASS.
+These observed measurements agree with 1/100Hz = 10 ms
+and half-cycle 5 ms, providing strong *same-device
+digital loopback functional* evidence for this exact final
+E11 FAP, beyond prior 12/12 no-signal screen navigation.
+
+**Limits:** this is *NOT independently calibrated electrical
+frequency/duty accuracy*, a physical low-voltage/off-state
+voltmeter check, signal-generator characterization across
+all presets, TIM2 PB3 Counter input accuracy, a separate
+external signal source, or an E11 simultaneous resource
+BUSY/conflict test. `Hata/BUSY/ERR=bildirilmedi` means no
+specific error was **reported**, NOT proof that all error
+counters were observed to be zero. Previous firmware/FAP
+hardware results remain historical for different binaries.
+No firmware or FAP update, persistence write, new USB
+transfer or data cleanup occurred in this reported loopback.
+
+**Next scoped check:** with the verified PA7→PC1 jumper
+unchanged and a confirmed all-tools STOP baseline, use
+the existing PWM 1000 Hz / 50% preset and check PC1
+Frequency 1000 Hz plus Pulse HIGH ≈0.5 ms, LOW ≈0.5 ms,
+PERIOD ≈1.0 ms, DUTY ≈50% and generator STOP;
+always stop captures and PWM when leaving; if abnormal
+STOP, document as FAIL and do not improvise wiring.
+A no-wire navigation or single loopback PASS must not
+clear any postponed H1 / DS18B20 / I2C ACK / calibration
+or SD-failure equipment test. PR #13 remains DRAFT,
+stable/main unchanged and v1.9 HOLD.
