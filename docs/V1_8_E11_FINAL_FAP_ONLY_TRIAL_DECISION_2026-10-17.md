@@ -846,3 +846,7 @@ If framing differs or CLI hangs, STOP and report, no repeat,
 cleanup, reboot or FAP swap. Old `v1.8DEV` stays active, final
 `v1.8` FAP PC-only, Draft PR #13 not merged, Stable unchanged,
 v1.9 HOLD.
+
+## E11 native echo probe operator result — 2026-10-17
+
+Actual COM7 read-only check returned `EXACT_COMMAND_ECHO`, `EXPECTED_EMPTY_FILE`, pinned old active FAP size 81532 and MD5 PASS, native resources MD5 PASS, stage PRESENT EMPTY 0 bytes with verified empty MD5, reserved backup target absent. `write_chunk_ready_probed: NO`; no FAP upload, app replacement or firmware/data change. The real first CLI line is the command echo for a stat command. This result is not a successful binary upload test. Previous faulty stage scripts remain prohibited.
