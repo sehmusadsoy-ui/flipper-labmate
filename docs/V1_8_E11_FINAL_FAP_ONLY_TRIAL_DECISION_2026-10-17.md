@@ -1319,3 +1319,46 @@ approval for any ESP32 firmware overwrite; alternatively
 a scoped one-shot burst test with a prearranged visual
 capture could be considered but is not required now.
 Maintain Draft PR #13, stable and v1.9 HOLD.
+
+## 2026-10-17 — External UART ST2 follow-up clarified by operator: AT-controlled burst and response present
+
+Following the first combined E2/E3 check being conservatively recorded
+FAIL/unconfirmed, the operator provided additional **actual new E11
+final v1.8 FAP** observations, verbatim:
+
+```text
+ESP32_OK vardı sonra ben AT Batım steres armed yazdı uzunca bir yazı kaydı ve brust end dedi sonra esp32 ready dedi
+```
+
+Interpretation limited to evidence:
+- ESP32 peer's `ESP32_OK` text **was visibly observed in the
+  Flipper UART RX display** during the session. The reported
+  chronology places this displayed string **before** the user's
+  specifically described last `AT` press; don't assert it was
+  unambiguously that last command's reply.
+- `AT` then produced `STRESS_ARMED`, a long stream of data,
+  `BURST_END` and a return to periodic `ESP32_READY`,
+  matching the checked
+  `tests/esp32_s2_wrover_uart_stress_115200/esp32_s2_wrover_uart_stress_115200.ino`
+  firmware behavior: only its exact `AT` parser arms the
+  bounded one-shot stress burst; it also sends
+  `ESP32_OK\r\nSTRESS_ARMED\r\n` on an accepted command.
+- **E1 RX PASS**, **E2 peer-command reception/TX PASS**, **UART
+  STOP/BACK PASS** on installed final E11 v1.8. **E3 observed
+  response-string reception PASS in the same session** subject
+  to the noted timing limitation; do not present a separately
+  timestamp-correlated last-`AT` E3 result.
+- The bounded ST2 behavior was visibly completed but there is
+  no R/D/E counter log, duration instrumentation, buffer DROP
+  proof or exact byte total for this new binary; hence the
+  quantitative high-rate/loss-free ST2 gate stays OPEN.
+
+This additional observation **supersedes the previous record's
+'E3 exact string never observed' uncertainty**, not the
+broader concern that the first test response selected FAIL
+because it unexpectedly invoked the existing ST2 firmware.
+No additional transmission, peer firmware flash, GPIO
+rewire, data mutation or device image replacement was
+requested by this follow-up. Avoid further `AT` triggers
+until a deliberate separate performance test is designed.
+Keep Draft PR #13, published Stable/main and v1.9 HOLD.
