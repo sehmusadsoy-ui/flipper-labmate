@@ -15,6 +15,8 @@ on:
       - "tests/test_v18_e11_full_transition.py"
       - "scripts/verify_v18_e11_pc_backup_gate.py"
       - "tests/test_v18_e11_pc_backup_gate.py"
+      - "scripts/check_v18_e11_live_preflash_identity.py"
+      - "tests/test_v18_e11_live_preflash_identity.py"
   workflow_dispatch:
 
 permissions:
@@ -45,6 +47,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Windows E11 review-stage tests FAILED' }
           python -m unittest discover -v -s tests -p test_v18_e11_pc_backup_gate.py
           if ($LASTEXITCODE -ne 0) { throw 'Windows E11 two-state PC backup gate tests FAILED' }
+          python -m unittest discover -v -s tests -p test_v18_e11_live_preflash_identity.py
+          if ($LASTEXITCODE -ne 0) { throw 'Windows E11 live COM identity model tests FAILED' }
       - name: Fetch independently pinned actual full candidate for PUBLIC-only review
         shell: pwsh
         run: |
