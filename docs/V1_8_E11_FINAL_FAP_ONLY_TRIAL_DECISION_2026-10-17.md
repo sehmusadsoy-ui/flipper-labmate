@@ -166,3 +166,71 @@ Nothing is published, retagged, merged to
 READY FOR **READ-ONLY OPERATOR PREFLIGHT REVIEW**,
 not authorized for a FAP write or v1.8 Stable
 publication. v1.9 remains HOLD.
+
+## 2026-10-17 — Owner **explicitly authorizes the controlled app-only trial**, conditioned on preflight
+
+The operator replied **"onay veriyorum"** to the explicitly
+described one-file `/ext/apps/Tools/labmate.fap` final-label
+device trial: first read-only firmware/app/native-plugin/
+resource identity checks and preserved current FAP PC
+backup, then **only after those PASS**, a possible
+narrow FAP-only replacement (no firmware/radio/option
+bytes, no overwrite of CSV, Profiles or any other apps).
+This supersedes this memorandum's earlier
+"not authorized" wording **for the named conditional
+FAP-only trial only**; it is NOT blanket permission
+for an updater, USB recovery, install against an
+unverified firmware, backup deletion, Stable
+publication or v1.9 promotion.
+
+**Phase 1 host implementation prepared, not yet run on the owner device:**
+
+- `scripts/check_v18_e11_final_fap_prewrite_ro.py`
+  verifies exact locally pinned original E11 FULL review
+  bundle source/run/firmware/FAP/JS hashes, extracts
+  expected Event Loop and new Manifest hashes, compares
+  `device_info` and remote MD5s of exact
+  `/ext/apps/Tools/labmate.fap`,
+  `/ext/apps_data/js_app/plugins/js_gpio.fal`,
+  `/ext/apps_data/js_app/plugins/js_event_loop.fal`
+  and `/ext/Manifest`. It then uses
+  `storage read_chunks` **only** to copy the installed
+  81,532-byte FAP to a brand-new PC backup folder,
+  asserts independently pinned SHA256
+  `2b31ec3fa9050580dc3c3ff80138578ed185d70811aa8124eb2d00b8d981af0`,
+  re-reads remote identity MD5s and writes a
+  PC-only SHA/provenance status with an incomplete marker
+  preserved on any failure. There is NO Flipper write,
+  rename, upload, JavaScript run or reset in phase 1.
+- `scripts/run-v18-e11-final-fap-prewrite-ro.ps1`
+  discovers the operator's previous H0 V3 PASS
+  transport and SHA-pinned original local E11 bundle,
+  retrieves only the read-only helper sources from
+  fixed commit `7e49d33ea0020f79afbdec21679521c3a10e0bac`,
+  and runs the prewrite check exactly once, with no
+  retry and a new PC backup output. Its own
+  PowerShell syntax was parsed only on CI, never
+  executed against any device by the project agent.
+- Strict mock transport negative tests in
+  `tests/test_v18_e11_final_fap_prewrite_ro.py`,
+  CI [#39040942746](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/39040942746)
+  ended **SUCCESS**, including PowerShell parser.
+  CI proves safety test logic in mocks, **not a
+  physical prewrite PASS**.
+
+**Operator action currently pending:** run phase 1
+on own stopped, unwired, USB-connected Flipper with
+qFlipper closed and post the exact prewrite summary
+and new PC backup path (not device identifiers
+or private file contents). In a mismatch or
+timeout, **STOP**. No new app file has been
+loaded to the Flipper yet and no upgrade is
+automatically triggered.
+
+Once phase 1 PASS is reviewed, stage separately
+the exact offline final-label FAP
+`393fe3e52aa710162a42d7299aa053f538b2ee1ad6542755cf402b83c1931b61`,
+require its independent source/run+SHA checks and
+the preserved old FAP backup, then use a separate
+one-shot app-only command. This is **not** a
+full firmware update.
