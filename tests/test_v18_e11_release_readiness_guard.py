@@ -48,7 +48,7 @@ def audit(release: str, backlog: str, roadmap: str, h1: str) -> None:
         raise ValueError("Agreed roadmap hardware deferral status missing")
     if "**NOT OBSERVED / BLOCKED**" not in h1:
         raise ValueError("H1 concurrent device result was not PASS")
-    if "published Stable tag" not in release:
+    if "Current published Stable" not in release:
         raise ValueError("Published v1.8 Stable immutability not described")
 
 
