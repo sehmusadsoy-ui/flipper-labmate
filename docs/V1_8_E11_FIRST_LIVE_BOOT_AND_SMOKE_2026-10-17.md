@@ -325,3 +325,71 @@ hardware unavailable**; do not improvise. Independently calibrated
 waveform/OFF state remains HW-02 NOT TESTED either way.
 Native foreign-service conflicts remain a separate next gate, not
 proved by the same-app loopback.
+
+## 2026-10-17 — Operator-reported matched E11 Round D: **4/4 PASS**
+
+After physical Round A–C 18/18 PASS, the operator reported **`D1-D4
+PASS`** for the previously defined **same Flipper's PA7 → PC1 3.3 V
+single-wire loopback**. Record this solely as the operator's four
+functional test verdicts on the current exact firmware/FAP pair:
+
+| Case | Operator verdict | Requested actual hardware activity |
+|---|---|---|
+| D1 | PASS | PWM 100 Hz/50% UI START, background RUN |
+| D2 | PASS | Frequency Meter LOW PC1 captures actual loopback, no BUSY/ERR |
+| D3 | PASS | Pulse Analyzer PC1 captures HIGH/LOW/PERIOD/DUTY functional loopback |
+| D4 | PASS | PWM STOP, app exit/re-entry and safely remove wire while stopped |
+
+**Numerical evidence caveat:** operator did not supply the actual frequency
+readout, HIGH/LOW/PERIOD/DUTY screen values, nor an independent scope
+capture. The previously prescribed *approximate reference targets*
+100 Hz / 5 ms / 5 ms / 10 ms / 50% must **not** be quoted as real
+observed measurements. Functional loopback PASS is real hardware
+integration evidence, not independent measurement calibration and not
+an instrument-grade output/OFF proof (HW-02 still NOT TESTED for that).
+
+**Cumulative new matched E11 on-device checks:** A=6, B=6, C=6, D=4,
+**22/22 operator-reported PASS**; original physical deferred test
+exceptions, native service coexistence and true sensor/ACK tests remain
+unproven unless separately documented. GUI and firmware MD5 postupdate
+screen are separate evidence categories; no Stable promotion.
+
+### Next Round E — controlled PA7 to PB3 TIM2 event count/high-frequency test
+
+Review gate: earlier `docs/V1_8_COUNTER_RESUME_TEST.md` describes real
+same-device 3.3 V **PA7 → PB3** loopback, and production
+`src/labmate_frequency_tim2.c` configures PB3/TIM2_CH2 in rising-edge
+external-clock mode; Counter cannot run simultaneously with HIGH
+Frequency Meter because **both require TIM2**. Use one jumper ONLY.
+Verify the `PA7` and `PB3` physical connector markings against
+the present Flipper. If ambiguous, STOP and SKIP; never guess a numeric
+GPIO header position. Never connect to 5 V, power rails, ground or
+another output; do not connect both PC1 and PB3 at once.
+
+- **E0 (precondition)** finish LabMate, ensure PWM STOP and all capture
+  STOP, disconnect the prior PC1 jumper and all other attachments.
+  With device and app safely idle, install the single PA7→PB3 jumper.
+- **E1** open `OUTPUT > PWM Studio`, select 100 Hz, 50% duty,
+  press OK to start RUN, press BACK to keep background RUN.
+- **E2** open `MEASURE > Event Counter`: initial STOP 0; OK
+  RUN, wait roughly 5 seconds, record actual PB3 rising-edge COUNT
+  and elapsed time, OK STOP. Approximately 100 count/s expected
+  from a 100 Hz source; avoid asserting an exact five-second count
+  based on human keypress timing. Frozen total should remain stable
+  during STOP.
+- **E3** OK RESUME for roughly 3 seconds, observe count increases
+  from prior value, STOP; UP RESET during STOP clears count/time.
+  BACK must release the TIM2 owner.
+- **E4** open `MEASURE > Frequency Meter`, select HIGH PB3
+  using RIGHT (if not already high); verify functional reading
+  reasonably near configured 100 Hz without unexpected BUSY/ERR;
+  record the **actual displayed value**. BACK.
+- **E5** go back to PWM Studio and explicitly STOP; exit LabMate.
+  Then and only then remove PA7→PB3 jumper; subsequent app
+  launch behaves normally. If ERROR/BUSY/freeze, do not force
+  resource recovery; preserve observed evidence and cease.
+
+Accept operator's actual E1–E5 PASS/FAIL/SKIP individually, actual
+COUNT/time for E2 and actual frequency for E4 when available.
+Do not infer calibrated timing, native RFID/SubGHz conflicting lease
+denial or cross-firmware resource ownership from this loopback.
