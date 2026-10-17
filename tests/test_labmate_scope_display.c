@@ -6,6 +6,9 @@ struct Canvas {uint16_t lines; uint16_t labels; bool found_wait; bool found_live
 void canvas_set_font(Canvas* c, Font f) {(void)c; assert(f == FontSecondary);}
 void canvas_draw_str(Canvas* c, int32_t x, int32_t y, const char* text) {
     assert(x >= 0 && x < 128 && y >= 0 && y < 64 && text);
+    /* FontSecondary glyphs have 6px cell width. Fail on text clipping,
+     * not merely illegal start coordinates. The menu must fit 128x64. */
+    assert((size_t)x + strlen(text) * 6U <= 128U);
     ++c->labels;
     if(strstr(text, "WAIT REAL EDGE")) c->found_wait = true;
     if(strstr(text, "LIVE")) c->found_live = true;
@@ -43,6 +46,19 @@ int main(void) {
     d.state = LabMateScopeDisplayRunning;
     lines[0].x0 = 255;
     assert(!labmate_scope_display_draw(&c,&d) && c.lines==0 && c.labels==0);
+    lines[0].x0 = LABMATE_SCOPE_PLOT_X_LEFT;
+    c = (struct Canvas){0};
+    d.total_edges = LABMATE_SCOPE_MAX_EDGES + 1U;
+    assert(!labmate_scope_display_draw(&c,&d) && c.lines==0 && c.labels==0);
+    d.total_edges = LABMATE_SCOPE_MAX_EDGES;
+    d.plot.cropped_old_edges = true;
+    d.state = LabMateScopeDisplayNoTrigger;
+    assert(labmate_scope_display_draw(&c,&d));
+    assert(c.labels > 0 && c.lines == 4); /* 128px-safe long terminal footer */
+    c = (struct Canvas){0};
+    d.state = LabMateScopeDisplayUnsupported;
+    assert(labmate_scope_display_draw(&c,&d));
+    assert(c.lines == 2); /* no stale signal while SDK is unsupported */
     assert(!labmate_scope_display_draw(NULL,&d));
     assert(!labmate_scope_display_draw(&c,NULL));
     puts("v1.9 Logic Scope view-only Canvas mock PASS");
