@@ -34,6 +34,7 @@ typedef enum {
     LabMateCapturePulse,
     LabMateCaptureCounter, /* PB3 / TIM2 external hardware rising-edge count */
     LabMateCaptureButton, /* PC1 / EXTI1 active-low dry-contact analyzer */
+    LabMateCaptureScope, /* v1.9 PC1 / EXTI1; append-only to preserve legacy IDs */
 } LabMateCaptureOwner;
 
 // Reject invalid capture inputs (Pulse only permits PC0/PC1/PB2/PA4).
