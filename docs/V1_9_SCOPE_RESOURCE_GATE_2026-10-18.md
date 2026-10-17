@@ -561,6 +561,58 @@ post-change GCC/ASAN execution result still requires a run. The
 prior v1.8 E11 public FAP, v1.8 Stable, `main`, and device data
 remain unchanged.
 
+## Phase 1J — Signal Compare pure C engine, exact host PASS (2026-10-18)
+
+The v1.9 roadmap requires **Logic Scope + Signal Compare**.
+First comparison stage now exists as standalone, **software-only** files
+`src/labmate_scope_compare.[ch]` and
+`tests/test_labmate_scope_compare.c`. It has **NOT** been linked to
+a real A/B selection flow in the Flipper UI; that next step requires
+a reviewed, consistent snapshot and matched-FAP build.
+
+- A and B are **sequential captures of one PC1 3.3V digital
+  channel**, explicitly **NOT simultaneous two-channel sampling**.
+  No offline comparator should describe unmeasured transitions or
+  voltage amplitudes.
+- Requires at least one truly observed `HIGH → LOW → HIGH`
+  cycle from three consecutive real edges; discards unmatched start
+  or end half cycles. Computes integer frequency (milli-Hz precision),
+  duty (0.1% steps), completed cycle count, min/max full-cycle
+  period ticks and aggregate measured high/low times.
+- A separate supplied/validated `timebase_hz` on each capture
+  prevents comparing meaningless raw DWT ticks when capture clocks
+  differ. Rejects missing clock, duplicate levels, inconsistent
+  edge deltas, zero-length intervals, 32-bit halfwrap ambiguity,
+  more than 256 edges or insufficient completed cycles.
+- Emits **signed B−A frequency and duty differences** only when
+  both source metrics are valid. No invented "PASS"/"FAIL" label,
+  tolerance policy, defect verdict or oscilloscope-equivalent claim.
+- New host regressions cover synthetic 100 Hz / 50% against 1 kHz
+  / 25%, reverse-signed deltas, 32-bit CYCCNT wrap, LOW-leading
+  incomplete cycle, malformed inputs and cumulative halfwrap,
+  full 127 observed cycles (255 edges), normalized **same actual
+  signal captured at 64 MHz and 32 MHz**, and a duty-change case
+  whose frequency does not change.
+- **Actual executable local PASS**: exact source and test files
+  compiled/run via strict GCC C11, strict Clang C11, and GCC with
+  ASAN/UBSAN (three separate processes). The **exact SHA1 blobs
+  verified against the current GitHub draft branch** are:
+  header `7af95389074f2b362be542ef47127c87eecdefb5`,
+  implementation `d465a694c37a6707954a355a89222801065740d9`,
+  updated test `dc20198288121ffd16404adda08af6f5628eba64`.
+- `.github/workflows/check-v19-scope-buffer-host.yml` now
+  compiles the Signal Compare test in both strict C11 and
+  ASAN/UBSAN and forbids GPIO/HAL/SD/heap calls in the pure engine.
+  **The workflow is authored but no successful v1.9 Actions run
+  is currently visible through the connector.**
+
+**Next gates:** With a real matched E11 SDK/FAP build passing, add
+an application-thread STOP→copy-full-bounded-edges→save-reference
+A→capture-B→compare navigation with explicit invalid/no-data
+labels. Do not read mutable ISR data without a critical-section
+copy or pretend independent simultaneous inputs are present.
+Do not overwrite occupied Profile S1 or old CSV history.
+
 ## Objective acceptance before exposing the scope in menu
 
 1. Existing FAP menu and old screen identifiers stay unchanged until
