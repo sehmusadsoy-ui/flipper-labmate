@@ -7,6 +7,7 @@ on:
       - ".github/workflows/check-v18-e11-final-fap-stage-guard.yml"
       - "scripts/stage_v18_final_fap_on_device_one_file.py"
       - "tests/test_v18_final_fap_on_device_stage.py"
+      - "scripts/run-v18-e11-final-one-fap-stage.ps1"
       - "scripts/check_v18_e11_final_fap_prewrite_ro.py"
   workflow_dispatch:
 
@@ -29,3 +30,16 @@ jobs:
           python3 -m py_compile scripts/stage_v18_final_fap_on_device_one_file.py
           python3 -m unittest discover -v -s tests -p test_v18_final_fap_on_device_stage.py
           echo "STAGE-ONLY MOCK PASS. NO USER USB, NO FAP REPLACEMENT, NO FIRMWARE."
+      - name: Syntax-parse one-file operator PowerShell wrapper without execution
+        shell: pwsh
+        run: |
+          $t = $null
+          $e = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'scripts/run-v18-e11-final-one-fap-stage.ps1').Path,
+            [ref]$t, [ref]$e) | Out-Null
+          if ($e.Count -ne 0) {
+            $e | ForEach-Object { Write-Error $_.Message }
+            throw 'E11 FAP-only stage PowerShell syntax rejected'
+          }
+          Write-Host 'E11 ONE-FAP STAGE PS SYNTAX PASS - NO DEVICE OPERATIONS'
