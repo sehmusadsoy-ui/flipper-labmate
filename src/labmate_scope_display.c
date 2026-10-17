@@ -17,11 +17,21 @@ static const char* scope_state_label(LabMateScopeDisplayState s) {
 }
 
 bool labmate_scope_display_draw(Canvas* c, const LabMateScopeDisplay* d) {
-    if(!c || !d || d->state > LabMateScopeDisplayError ||
+    if(!c || !d || d->state < LabMateScopeDisplayArmed ||
+       d->state > LabMateScopeDisplayError ||
        d->total_edges > LABMATE_SCOPE_MAX_EDGES ||
+       d->plot.result < LabMateScopePlotReady ||
        d->plot.result > LabMateScopePlotTimebaseError ||
        d->plot.line_count > LABMATE_SCOPE_PLOT_MAX_LINES ||
+       d->plot.visible_edges > LABMATE_SCOPE_PLOT_MAX_EDGES ||
+       d->plot.visible_edges > d->total_edges ||
        (d->plot.line_count && !d->lines)) return false;
+    /* Disallow inconsistent "READY" geometry and any retained segments
+     * in a non-READY projection BEFORE drawing the first pixel. */
+    if(d->plot.result == LabMateScopePlotReady) {
+        if(d->plot.visible_edges < 2U ||
+           d->plot.line_count != 2U * (d->plot.visible_edges - 1U)) return false;
+    } else if(d->plot.line_count) return false;
 
     /* Validate the WHOLE geometry before painting any part of a waveform. */
     for(uint16_t i = 0; i < d->plot.line_count; ++i) {
