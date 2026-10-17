@@ -405,3 +405,42 @@ update. The *software-only* regression task from that gate now passes;
 physical device/SD data integrity, Excel and equipment-dependent
 acceptance are still **NOT PASSED**. Do not merge, publish, flash or
 start v1.9 merely from this integrated host success.
+
+## 2026-10-17 — E11 trial closeout review (supported software versus live native contention)
+
+The new, actually installed matched E11 pair has operator-evidenced
+A–G **36/36** real-device functional checks, **H0** free-state
+native JS PA7 read PASS, PWM RUN persistence and explicit STOP
+UI PASS, and **H2** post-STOP native JS PA7 read PASS. The
+supporting full operator log is
+[V1_8_E11_FIRST_LIVE_BOOT_AND_SMOKE_2026-10-17.md](V1_8_E11_FIRST_LIVE_BOOT_AND_SMOKE_2026-10-17.md).
+
+**NOT accepted on device:** H1 simultaneous *second native client*
+read denial while PWM owns PA7. The actual JS CLI attempt was
+rejected before JS started because Momentum's default-flagged
+`js` handler is blocked by the foreground app loader lock;
+the built-in `gpio` command shares this restriction and its
+raw read path does not even acquire E11 GPIO leases. A new
+[original-C joint integration host CI #39033957528](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/39033957528)
+completed **SUCCESS**, proving the supported PWM/JS C claims
+do not coexist or alter another owner's registers under the
+host HAL lease model. That is **software evidence, not an
+on-device BUSY observation**.
+
+The formal, separately controlled decision matrix and future
+H1 requirements are in
+[V1_8_E11_H1_CLOSEOUT_DECISION_2026-10-17.md](V1_8_E11_H1_CLOSEOUT_DECISION_2026-10-17.md).
+The same HOST workflow includes negative ledger checks: removing
+this native-live exception invalidates its guard. This is
+not a GitHub branch-protection rule and not an automatic release
+authorization.
+
+**Decision:** Supported/default native software remains
+conditionally accepted, with explicit H1 hardware/live-transport,
+unreviewed legacy third parties, physical fixtures and recovery
+retained as unverified/deferred. This does not complete the
+stronger firmware-global ownership objective or authorize
+an in-place Stable update, Draft PR merge, new firmware flash,
+tag move, profile/CSV mutation, or v1.9 work. Keep the existing
+published v1.8 Stable artifact untouched until a separate
+release/scope decision.
