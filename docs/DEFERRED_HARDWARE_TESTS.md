@@ -29,6 +29,54 @@ when suitable equipment becomes available.
 | HW-19 | E11 matched external CC1101 v1 RX BUSY handshake and exceptional shared-IRQ recovery | Operator-approved matched Momentum+single LabMate bundle and separately known-good CC1101 plugin binary; 3.3 V-safe IRQ fixture, legal RF test setup and verified recovery | Real native plugin+firmware C sidechannel host [#38945208905](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38945208905) PASS; direct LL audit [#38945742437](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38945742437) PASS; full no-flash software gate [#38945772528](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38945772528) PASS; **NO DEVICE RF OR RECOVERY PASS** | Verify official external CC1101 reports BUSY when EXTI2/TIM17 already held, no worker/speaker after refused start, old v1 plugin unknown status UX, pointer-safe result in concurrent start, unusual GPIO/mirror rejection, STOP/BACK, legal RF receive and controlled reboot after sticky fault without tampering with foreign owner | **DEFERRED / HARDWARE PENDING** |
 | QA-01 | **Microsoft Excel CSV compatibility and analysis** | Access to Microsoft Excel on a compatible computer (can be later; no paid license is required now) | LabMate CSV generation, old/new History and **LibreOffice Calc CSV import PASS** | Open a real LabMate CSV in Microsoft Excel; verify 9 columns/headers, delimiters, decimal numbers, units and non-empty / invalid-data rows; check basic filtering or chart analysis | **NOT TESTED — deferred until Excel is available** |
 
+
+## 2026-10-17 — Operator-approved equipment-based verification deferral (E11)
+
+The operator explicitly accepts keeping **true fixture-dependent tests**
+and the H1 *actual second native-client simultaneous BUSY observation*
+OPEN until safe equipment/a separately approved test mechanism becomes
+available on their own Flipper. The reason is **scope and method**,
+not a claim of an observed firmware error or that untested behavior PASSed.
+
+On the same checksum-matched E11 trial pair, operator reported
+A–G **36/36 functional matches/PASS**, independent native JS GPIO
+PA7 free read H0 PASS and post-STOP re-read H2 PASS, with PWM UI
+RUN persistence and deliberate STOP PASS. The dedicated three-source
+native PWM + LabMate + JS C host lease-integration tests PASS; the
+JS CLI `js` command cannot run concurrently with LabMate foreground
+because of Momentum's loader lock and has **not** produced native
+`GPIO pin BUSY` under active PWM on a device. No GPIO register
+contender/parallel CLI workaround is authorized.
+
+**E11-specific refinements to the historical per-item table below:**
+HW-06/07 **empty-bus/no-sensor UI on the current matched E11 pair
+was user-reported PASS** in Round C, but this is not an ACK
+or DS18B20 temperature/CRC PASS. HW-02 same-Flipper PWM loopback
+functional readbacks were given for 100Hz 50%/25% and 200Hz 75%,
+but an independent calibrated instrument and OFF voltage were NOT
+tested. HW-08 has **supported cooperative software host evidence**,
+H0 and H2 real native JS sequential evidence, and separate H1
+live overlap NOT OBSERVED. Sub-GHz/NFC/RFID/IR Round F performed only
+sequential no-fixture UI smoke; it does not validate HW-09..HW-19
+RF, timer, DMA, callback, ISR interaction or unsupported third-party
+services. See
+[V1_8_E11_H1_CLOSEOUT_DECISION_2026-10-17.md](V1_8_E11_H1_CLOSEOUT_DECISION_2026-10-17.md)
+and
+[V1_8_E11_RELEASE_READINESS_2026-10-17.md](V1_8_E11_RELEASE_READINESS_2026-10-17.md)
+for the release scope distinction.
+
+**Do not blanket-waive production acceptance.** After deferring the
+fixture cases, a release still needs production UI/version badge
+and matching firmware/FAP artifact build, checksum and compatibility,
+a controlled candidate smoke where applicable (including real
+COMM/UART and safe persistence tests), and an explicit separate
+Stable publication/scope decision. Legacy unknown firmware-global
+owners and direct-register paths stay UNVERIFIED; this is an
+unsupported/general-coverage exception, not a mathematical
+guarantee or an old bug declared fixed. No purchase is required
+solely to close backlog. Never use actual user profile/history
+data or unknown GPIO voltages as a test fixture.
+
 ## Evidence entry template
 
 - **ID / test:** 
