@@ -189,7 +189,7 @@ def main() -> None:
         subprocess.run(["cc","-std=c11","-Wall","-Wextra","-Werror","-pedantic",
                         "-Wno-unused-variable","-I",str(target),
                         str(target/"native_pwm.c"),str(target/"labmate_generator.c"),
-                        str(target/"native_stub.c"),str(target/"joint.c"),
+                        str(target/"joint.c"),
                         "-o",str(exe)],check=True)
         subprocess.run([str(exe)],check=True)
 
