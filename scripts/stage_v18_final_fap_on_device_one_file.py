@@ -124,14 +124,19 @@ def append_staged_chunk(client, blob: bytes) -> None:
         raise ValueError("unsafe stage byte count")
     # Upstream Momentum storage write_chunk is FSOM_OPEN_APPEND; NEVER target
     # the installed FAP. Filename fixed to initially nonexistent staging.
-    # Pinned Momentum FlipperStorage.send_and_wait_eol() RETURNS THE
-    # FIRST LINE IT CONSUMES. storage_cli_write_chunk() prints Ready\\r\\n
-    # as that first line; there is NO preceding blank command echo.
-    # A previous version incorrectly expected b"" then read a second line.
-    # It aborted before sending binary and may have created an EMPTY sidecar.
-    ready=client.send_and_wait_eol(f'storage write_chunk "{STAGE}" {len(blob)}\r')
+    # PINNED Momentum native cli_shell_line_input_normal() echoes EACH
+    # printable command byte. cli_shell_line_input_cr() then prints CRLF
+    # BEFORE executing storage_cli_write_chunk(), which emits Ready+CRLF.
+    # FlipperStorage.send_and_wait_eol() consumes and RETURNS the echoed
+    # command line, not Ready. Therefore require BOTH exact lines before
+    # sending any binary bytes; do not guess or discard unknown lines.
+    command=f'storage write_chunk "{STAGE}" {len(blob)}'
+    echo=client.send_and_wait_eol(command+"\r")
+    if echo!=command.encode("ascii"):
+        raise ValueError("unexpected echoed CLI command; STOP before payload")
+    ready=client.read.until(client.CLI_EOL)
     if ready!=b"Ready":
-        raise ValueError("stage CLI not Ready on first response line; STOP, do not retry")
+        raise ValueError("expected exact second-line Ready; STOP before payload")
     count=client.port.write(blob)
     if count!=len(blob):
         raise ValueError("USB stage write incomplete: STOP; no automatic retry")
