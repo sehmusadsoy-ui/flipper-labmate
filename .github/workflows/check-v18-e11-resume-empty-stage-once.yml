@@ -7,6 +7,7 @@ on:
       - ".github/workflows/check-v18-e11-resume-empty-stage-once.yml"
       - "scripts/resume_v18_final_fap_from_empty_stage_once.py"
       - "tests/test_v18_resume_empty_stage_once.py"
+      - "scripts/run-v18-e11-resume-verified-empty-stage.ps1"
       - "scripts/stage_v18_final_fap_on_device_one_file.py"
   workflow_dispatch:
 
@@ -28,3 +29,16 @@ jobs:
           python3 -m py_compile scripts/resume_v18_final_fap_from_empty_stage_once.py
           python3 -m unittest discover -v -s tests -p test_v18_resume_empty_stage_once.py
           echo "E11 EXISTING EMPTY SIDE-CAR HOST GUARD PASS - NO DEVICE/SD/RELEASE"
+      - name: Parse exact operator PowerShell handoff (NEVER run device commands)
+        shell: pwsh
+        run: |
+          $t=$null
+          $e=$null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'scripts/run-v18-e11-resume-verified-empty-stage.ps1').Path,
+            [ref]$t,[ref]$e) | Out-Null
+          if ($e.Count -ne 0) {
+            $e | ForEach-Object { Write-Error $_.Message }
+            throw 'Exact E11 empty-stage operator handoff parse rejected'
+          }
+          Write-Host 'ONE-TIME ZERO-SIDECAR OPERATOR POWERSHELL PARSE PASS, NO SERIAL'
