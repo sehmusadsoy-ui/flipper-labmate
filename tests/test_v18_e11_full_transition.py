@@ -39,7 +39,7 @@ class E11FullTransitionTest(unittest.TestCase):
         self.assertEqual(r["exact_previous_custom_firmware_rollback_proven"],"NO")
 
     def test_split_derivative_without_fap_refused(self):
-        with self.assertRaisesRegex(ValueError,"absent"):
+        with self.assertRaisesRegex(ValueError,"paired resource not unique|absent"):
             self.check(self.fixture.resource(omit_fap=True))
 
     def test_no_real_old_fap_cleanup_evidence_refused(self):
@@ -72,7 +72,7 @@ class E11FullTransitionTest(unittest.TestCase):
     def test_legacy_installer_apply_is_disabled_before_possible_writer(self):
         src=(root/"scripts"/"install-v18-full012-dev-firmware.ps1").read_text(encoding="utf-8")
         guard=src.index("if ($Apply) {")
-        writer=src.index("selfupdate.py")
+        writer=src.index("$selfUpdate = Join-Path")
         self.assertLess(guard,writer)
         self.assertIn("legacy updater is pinned to an older firmware/FAP",src)
         self.assertIn("NO FLASH",src)
