@@ -18,6 +18,7 @@
 #include "labmate_logger_storage.h"
 #include "labmate_uart.h"
 #include "labmate_monitor_gpio.h"
+#include "labmate_scope_bridge.h"
 
 /* App coordinator: lifecycle, sampling, dispatch and teardown only. */
 int32_t labmate_app(void* p) {
@@ -34,6 +35,12 @@ int32_t labmate_app(void* p) {
         app,
         0,
         sizeof(LabMateApp));
+    /* Scope's 256-edge buffer belongs to heap-allocated app state,
+     * not the Flipper's 4 KiB application call stack. */
+    if(!labmate_scope_bridge_init(app)) {
+        free(app);
+        return -1;
+    }
 
     app->running = true;
     app->hold = false;
@@ -144,6 +151,9 @@ int32_t labmate_app(void* p) {
         }
         if(app->screen == LabMateScreenButton) {
             labmate_button_capture_poll(app);
+        }
+        if(app->screen == LabMateScreenScope) {
+            labmate_scope_bridge_poll(app);
         }
         threshold_update_from_measurement(app);
         if(app->screen == LabMateScreenUart) labmate_uart_poll(&app->uart);
