@@ -799,3 +799,49 @@ after verifying qFlipper is closed, PWM STOP and the patched helper
 is the expected source. No blind retries, no H1 until clean H0.
 Do not bypass MD5 or change GPIO pin settings, firmware, installed
 application, SD historical data or scripts.
+
+## 2026-10-17 — H0 second operator attempt: authenticated device JS response ambiguous, **H0 BLOCKED**
+
+After the earlier host-only script-location mistake was corrected,
+the operator ran the EXACT fixed H0 `--expect free` helper with PWM
+instructed STOP. The helper output was:
+
+```text
+E11 H PA7 PROBE: ONLY ONE NATIVE JS gpio.read(); NO FLASH OR PIN MODE CHANGES.
+Operator must verify PWM STOP on the device UI.
+E11 H PA7 PROBE INCOMPLETE/FAIL: free-state PA7 read did not succeed unambiguously
+Do not retry blindly; preserve screen state and report CLI status.
+H0 henuz PASS degil. H1 testine gecme.
+```
+
+**What can be inferred from helper control flow:** unlike the first
+attempt, this output is thrown by `evaluate_output()`, AFTER
+`expected_md5()` SHA256-gated local JS/FAP/plugin files,
+`device_info` firmware label/base checks, live MD5 of FAP/plugin/
+remote JS, AND a single `js <pinned file>` CLI invocation. The
+`E11_H_PA7_BEGIN` marker was present (else the helper would have
+shown `test marker missing`). But the combination
+`READ_OK / GPIO pin BUSY / ---- ERROR ----` did **not**
+satisfy the strict PWM-STOP free criterion.
+**Do not infer which branch triggered from the generic message**.
+It is not an accepted H0 result, yet also not enough evidence
+to classify native lease regression.
+
+**Fail-safe state:** H0 = `INCOMPLETE / NEEDS_DIAGNOSTICS`;
+H1 and H2 = `NOT RUN`; cumulative A–G = **36/36** unchanged.
+No script reinstallation, firmware update, SD deletion or unsafe
+repeated testing authorized.
+
+**Remediation scoped to host tooling, not device:** updated
+`scripts/check_v18_e11_h_pa7_cli.py` `safe_cli_flags()`
+to report ONLY fixed boolean presence flags (launched, begin,
+read_ok, gpio_busy, error, trace, done, missing_script, usage)
+on otherwise-rejected CLI output; no raw stdout, device identifiers,
+file paths, or data values are printed. Host-only tests in
+`tests/test_v18_e11_h_pa7_cli.py` require no identifier/path
+leakage and reject ambiguous error scenarios. Do not weaken
+acceptance criteria, hide errors or make GPIO writes. Any future
+one-shot H0 repeat should only occur after host CI succeeds,
+PWM STOP + no external GPIO wiring + qFlipper closed + exact E11
+FAP/JS/plugin checks. If free state remains BUSY or an unknown JS
+error appears, suspend H1 and investigate before retrying.
