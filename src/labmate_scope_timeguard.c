@@ -9,8 +9,8 @@ bool labmate_scope_timeguard_init(
     uint32_t max_poll_gap_ms) {
     if(!guard || !trigger_timeout_ms || !quiet_timeout_ms ||
        !max_session_ms || !max_poll_gap_ms ||
-       max_session_ms > LABMATE_SCOPE_MAX_SAFE_DELTA ||
-       max_poll_gap_ms > LABMATE_SCOPE_MAX_SAFE_DELTA ||
+       max_session_ms > LABMATE_SCOPE_GUARD_MAX_SESSION_MS ||
+       max_poll_gap_ms > LABMATE_SCOPE_GUARD_MAX_POLL_GAP_MS ||
        trigger_timeout_ms > max_session_ms ||
        quiet_timeout_ms > max_session_ms ||
        max_poll_gap_ms > trigger_timeout_ms ||
