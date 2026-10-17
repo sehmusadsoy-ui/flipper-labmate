@@ -410,6 +410,17 @@ matched E11 firmware FAP, NOT installed or accepted on device.**
   **GitHub Actions conclusion is not available** (zero visible
   runs for this development branch at the time of writing).
 
+**Additional independent execution evidence:** The three **exact GitHub blob
+bytes** for the navigation header `8e2a3cd99f364bbce6930e639640313fcc2371b0`,
+navigation implementation `762571cb1b03d168330a99194929ba79a994a527`,
+and navigation regression `7fce8dd497da1534ca03a1544205032b828967a4`
+were reproduced in a separate local host directory, compared using
+`git hash-object` (all 3 matched), then **actually compiled and run**
+with GCC strict `-std=c11 -Wall -Wextra -Werror -Wpedantic -O2`
+and with **ASAN/UBSAN**: BOTH **LOCAL HOST PASS**.
+This is a real compiled test of the v1.9 menu ID and INFO order policy.
+No Flipper firmware files or user data were written.
+
 **Review classification:** An independent readback of current GitHub
 source blobs passed **19/19 text-and-routing invariant checks** for
 the staged integration, including no SD operations in the bridge and
