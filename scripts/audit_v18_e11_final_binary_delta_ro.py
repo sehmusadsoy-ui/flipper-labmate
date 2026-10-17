@@ -107,6 +107,17 @@ def difference_count(left: Path, right: Path) -> tuple[int,int,int]:
     return n,length_left,length_right
 
 
+def bounded_changed_offsets(left: Path, right: Path, limit: int = 16) -> list[int]:
+    """Actual changed byte offsets for small identical-length DFUs, never interpret semantics."""
+    a,b=left.read_bytes(),right.read_bytes()
+    if len(a)!=len(b) or len(a)>2_000_000:
+        raise ValueError("DFU lengths differ or exceed small review bound")
+    offsets=[i for i,(x,y) in enumerate(zip(a,b)) if x!=y]
+    if len(offsets)>limit:
+        raise ValueError("too many DFU changed bytes to report bounded offsets")
+    return offsets
+
+
 def audit(trial: Path, final: Path, first: dict[str,str] = TRIAL,
           second: dict[str,str] = FINAL) -> dict[str,tuple[int,int,int]]:
     if trial.resolve() == final.resolve():
@@ -131,6 +142,10 @@ def main() -> int:
     result=audit(options.trial,options.final)
     for name,(changed,old,new) in result.items():
         print(f"E11 BYTE DELTA {name}: changed-by-position={changed} trial-bytes={old} candidate-bytes={new}")
+    offsets=bounded_changed_offsets(options.trial/"firmware.dfu", options.final/"firmware.dfu")
+    print("E11 DFU byte offsets of changes: " + ", ".join(map(str, offsets)))
+    print("E11 DFU last-16-byte suffix start: " + str(result["firmware.dfu"][1]-16))
+    print("Unchanged source and small byte delta do NOT by themselves prove unchanged firmware behavior.")
     print("E11 PINNED PAIR IDENTITIES PASS; BINARY DIFFERENCE REPORT ONLY")
     print("DO NOT INFER DFU RUNTIME EQUIVALENCE, DEVICE PASS, SAFE FAP-ONLY MIX, OR RELEASE APPROVAL")
     return 0
