@@ -198,7 +198,7 @@ def main() -> int:
     for label,dfu in (("trial",left),("candidate",right)):
         stored=int.from_bytes(dfu[-4:],"little")
         crc=zlib.crc32(dfu[:-4])
-        print(f"E11 DFU {label} checksum: stored=0x{stored:08x} calculated=0x{crc:08x} standard_crc_match={'YES' if stored==crc else 'NO'}")
+        print(f"E11 DFU {label} suffix checksum: stored=0x{stored:08x} expected-inverted=0x{(~crc & 0xFFFFFFFF):08x} inverse_crc_match={'YES' if stored==((~crc)&0xFFFFFFFF) else 'NO'}")
     print("Unchanged source and small byte delta do NOT by themselves prove unchanged firmware behavior.")
     print("E11 PINNED PAIR IDENTITIES PASS; STRICT DFU DATE/CRC DIFF ONLY; NO DEVICE PASS")
     print("DO NOT INFER DFU RUNTIME EQUIVALENCE, DEVICE PASS, SAFE FAP-ONLY MIX, OR RELEASE APPROVAL")
