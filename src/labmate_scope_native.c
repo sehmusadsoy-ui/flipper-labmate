@@ -50,7 +50,8 @@ static bool labmate_scope_edge_timebase_safe(void) {
 
 bool labmate_scope_native_init(LabMateScopeNative* session) {
     if(!session || session->active || session->owner.handle ||
-       session->owner.phase != LabMateScopeOwnerIdle) return false;
+       session->owner.phase != LabMateScopeOwnerIdle ||
+       session->fault_sticky) return false;
     memset(session, 0, sizeof(*session));
     if(!labmate_scope_buffer_init(
            &session->buffer, session->storage, LABMATE_SCOPE_MAX_EDGES)) return false;
