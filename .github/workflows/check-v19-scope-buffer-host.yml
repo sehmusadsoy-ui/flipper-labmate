@@ -6,12 +6,20 @@ on:
     paths:
       - "src/labmate_scope_buffer.[ch]"
       - "tests/test_labmate_scope_buffer.c"
+      - "src/labmate_scope_gate.[ch]"
+      - "tests/test_labmate_scope_gate.c"
+      - "src/labmate_resource_policy.[ch]"
+      - "src/labmate_comm_resource.[ch]"
       - ".github/workflows/check-v19-scope-buffer-host.yml"
   pull_request:
     branches: [dev/v1.8-completion]
     paths:
       - "src/labmate_scope_buffer.[ch]"
       - "tests/test_labmate_scope_buffer.c"
+      - "src/labmate_scope_gate.[ch]"
+      - "tests/test_labmate_scope_gate.c"
+      - "src/labmate_resource_policy.[ch]"
+      - "src/labmate_comm_resource.[ch]"
       - ".github/workflows/check-v19-scope-buffer-host.yml"
   workflow_dispatch:
 
@@ -39,6 +47,28 @@ jobs:
             -o "$RUNNER_TEMP/v19-scope-host"
           "$RUNNER_TEMP/v19-scope-host"
 
+      - name: Compile PC1 preflight and STOP/BACK pure model against REAL existing E11 resource policies
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -O2 \
+            -Isrc src/labmate_scope_gate.c src/labmate_resource_policy.c \
+            src/labmate_comm_resource.c tests/test_labmate_scope_gate.c \
+            -o "$RUNNER_TEMP/v19-scope-gate"
+          "$RUNNER_TEMP/v19-scope-gate"
+
+      - name: PC1 ownership model ASAN and UBSAN regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -g -O1 \
+            -fsanitize=address,undefined -fno-omit-frame-pointer \
+            -Isrc src/labmate_scope_gate.c src/labmate_resource_policy.c \
+            src/labmate_comm_resource.c tests/test_labmate_scope_gate.c \
+            -o "$RUNNER_TEMP/v19-scope-gate-sanitize"
+          ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 \
+            UBSAN_OPTIONS=halt_on_error=1 "$RUNNER_TEMP/v19-scope-gate-sanitize"
+
       - name: AddressSanitizer and UndefinedBehaviorSanitizer host tests
         shell: bash
         run: |
@@ -62,6 +92,11 @@ jobs:
           assert "LABMATE_SCOPE_MAX_EDGES 256U" in h
           assert "LABMATE_SCOPE_MAX_SAFE_DELTA" in h
           assert "labmate_scope_buffer_push_edge" in c
+          scope = Path("src/labmate_scope_gate.c").read_text()
+          assert "labmate_capture_can_acquire" in scope
+          assert "LabMateScopeOwnerReleaseFault" in scope
+          for forbidden in ("furi_hal_", "LL_EXTI_", "gpio_init(", "malloc(", "free(", "storage_file_"):
+              assert forbidden not in scope, forbidden
           for forbidden in ("furi_hal_", "gpio_init", "gpio_add_int_callback",
                             "LL_EXTI_", "storage_file_", "malloc(", "calloc(",
                             "realloc(", "free("):
