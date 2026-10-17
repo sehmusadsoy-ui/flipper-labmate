@@ -17,6 +17,32 @@
 [Acceptance record](docs/V1_8_STABLE_CANDIDATE.md) ·
 [Roadmap](ROADMAP.md)
 
+## Public download choices — 2026-10-17
+
+Choose a build **by firmware compatibility**, not simply by the highest tag number:
+
+| Channel | Download | Firmware scope |
+| --- | --- | --- |
+| **Latest ordinary Stable: v1.8** | [v1.8 Stable + SHA256](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8) | Compatible Momentum SDK/API; not guaranteed to load on official Flipper firmware or every third-party build |
+| **v1.8 E11 — Custom Momentum Edition** | [E11 compatibility-limited pre-release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8-e11-custom-momentum) | **Only matching E11-patched Momentum firmware and native resources**; do not install its FAP on stock/unpatched Momentum |
+| **Historical versions** | [All published Releases](https://github.com/sehmusadsoy-ui/flipper-labmate/releases) | v1.0, v1.2, v1.3, v1.4, v1.5, v1.6, v1.6.1, v1.7, v1.8 remain downloadable; v1.1 was a development milestone without an independent public v1.1 tag/release |
+
+The E11 pre-release contains the integrated application (including I2C
+Explorer and optional 1-Wire features) and a **separately marked expert-review
+matched firmware package**. Owner-reported on-device UART, digital PWM,
+STOP/RESTART, fresh CSV Logger and Profile SAVE/reopen/LOAD passed on one
+already-matched E11 setup. Actual external I2C ACK, DS18B20 temperature,
+independent calibration, global third-party peripheral coexistence and exact
+firmware rollback **remain unverified**. The full updater may replace
+firmware, SD resources/apps and settings; read the release's warnings
+before any installation. It is **not** a universal one-click update.
+The ordinary `v1.8` Stable remains GitHub's **Latest**.
+
+Older FAPs were built against their respective Momentum API/SDK versions:
+**Stable means tested for the documented environment, not compatible with
+every official/custom firmware or with every later SDK**. Preserve CSV and
+profile backups before changing versions.
+
 Previous [v1.7 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7), [v1.6.1 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1) and older published releases remain preserved for rollback. No change was made to their tags or binaries. Real hardware observations do not constitute independent electrical or timing calibration.
 
 > [!IMPORTANT]
@@ -232,9 +258,12 @@ and [deferred checks](docs/DEFERRED_HARDWARE_TESTS.md).
 
 ## Build from source
 
-The v1.7 app is modular: keep `application.fam`, the app icon and
-**all** root-level `labmate*.c` / `labmate*.h` files together.
-Do not copy only `labmate.c`; it depends on the other modules.
+The **current v1.8 source on `main`** is modular: keep
+`application.fam`, `labmate_10px.png` and the entire `src/` folder
+together; `application.fam` compiles `src/*.c`. Historical
+`v1.7` instructions can describe an older file layout. The
+published E11 Custom Momentum binary requires a **matched patched firmware
+ABI** and must not be rebuilt against an unrelated stock SDK.
 
 In a matching Momentum Firmware checkout, place the sources at
 `applications_user/labmate/` and build with:
