@@ -4,6 +4,7 @@
 #include <input/input.h>
 #include "labmate_view.h"
 #include "labmate_ui_screens.h"
+#include "labmate_scope_display.h"
 
 /* ---------- DRAWING (stateful screens) ---------- */
 
@@ -78,6 +79,9 @@ void labmate_view_render_callback(
         break;
     case LabMateScreenAlerts:
         draw_alerts(canvas, app);
+        break;
+    case LabMateScreenScope:
+        (void)labmate_scope_display_draw(canvas, &app->scope_display);
         break;
     }
 
