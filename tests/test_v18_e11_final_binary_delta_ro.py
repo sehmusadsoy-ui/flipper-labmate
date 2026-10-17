@@ -105,5 +105,21 @@ class BinaryPairAuditTests(unittest.TestCase):
         self.assertEqual(delta.difference_count(self.trial/"test.bin",self.final/"test.bin"),(3,4,6))
 
 
+    def test_bounded_offsets_identifies_dfu_payload_delta(self):
+        (self.trial/"offset.dfu").write_bytes(b"abcdef")
+        (self.final/"offset.dfu").write_bytes(b"abcXef")
+        self.assertEqual(
+            delta.bounded_changed_offsets(self.trial/"offset.dfu",self.final/"offset.dfu"),[3])
+
+    def test_bounded_offsets_rejects_mutated_length_or_large_change(self):
+        (self.trial/"offset.dfu").write_bytes(b"abcdef")
+        (self.final/"offset.dfu").write_bytes(b"abcd")
+        with self.assertRaisesRegex(ValueError,"lengths differ"):
+            delta.bounded_changed_offsets(self.trial/"offset.dfu",self.final/"offset.dfu")
+        (self.final/"offset.dfu").write_bytes(b"ZZZZZZ")
+        with self.assertRaisesRegex(ValueError,"too many"):
+            delta.bounded_changed_offsets(self.trial/"offset.dfu",self.final/"offset.dfu",limit=2)
+
+
 if __name__=="__main__":
     unittest.main()
