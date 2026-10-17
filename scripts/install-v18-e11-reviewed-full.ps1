@@ -10,6 +10,7 @@ param(
     [string]$RollbackTgz,
     [string]$InstalledExitfixCopy,
     [string]$HistoricalLabmateBackupDirectory,
+    [string]$CurrentLabmateSnapshotDirectory,
     [string]$SettingsBackupTgz,
     [string]$FirmwareRoot,
     [ValidatePattern('^COM[1-9][0-9]{0,2}$')][string]$Port = 'COM7'
@@ -46,8 +47,10 @@ if ($Apply -and (-not $AcceptExitfixReplacement -or -not $AcceptNonExactFirmware
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $verifier = Join-Path $repoRoot 'scripts\verify_v18_full_review_pair.py'
 $transition = Join-Path $repoRoot 'scripts\audit_v18_e11_full_transition.py'
+$backupGate = Join-Path $repoRoot 'scripts\verify_v18_e11_pc_backup_gate.py'
 if (-not (Test-Path -LiteralPath $verifier -PathType Leaf) -or
-    -not (Test-Path -LiteralPath $transition -PathType Leaf)) {
+    -not (Test-Path -LiteralPath $transition -PathType Leaf) -or
+    -not (Test-Path -LiteralPath $backupGate -PathType Leaf)) {
     throw 'Exact v1.8 E11 source audit scripts missing'
 }
 $bundle = (Resolve-Path -LiteralPath $CandidateDirectory).ProviderPath
@@ -95,20 +98,18 @@ if (-not $Apply) {
 # The following checks are intentionally required ONLY for -Apply and must
 # fail BEFORE any Flipper serial/USB writer is opened.
 foreach ($argument in @($RollbackTgz, $InstalledExitfixCopy,
-                        $HistoricalLabmateBackupDirectory, $SettingsBackupTgz,
-                        $FirmwareRoot)) {
+                        $HistoricalLabmateBackupDirectory, $CurrentLabmateSnapshotDirectory,
+                        $SettingsBackupTgz, $FirmwareRoot)) {
     if ([string]::IsNullOrWhiteSpace($argument)) {
-        throw 'E11 Apply REFUSED: explicit rollback, working EXITFIX, historical data, settings and Momentum-root paths REQUIRED'
+        throw 'E11 Apply REFUSED: explicit rollback, working EXITFIX, historical AND current LabMate data snapshots, settings and Momentum-root paths REQUIRED'
     }
 }
 Assert-ExactSha $RollbackTgz '1d9e1e600c8680172ff6f6913ca0b12484e7d45adbc72a66552e534784c8c1a7'
 Assert-ExactSha $InstalledExitfixCopy '7a76f626f34a65059d9536fa2cd52b2639f4d1038a9b5c69291fa28d5e4f63be'
 Assert-ExactSha $SettingsBackupTgz 'a0487ede35b8cec4cef505faf57363768fc1bc02d5d7c1dd3a8dcfa282c00ef2'
-if (-not (Test-Path -LiteralPath $HistoricalLabmateBackupDirectory -PathType Container)) {
-    throw 'E11 Apply REFUSED: historical LabMate copy directory unavailable'
-}
-if (@(Get-ChildItem -LiteralPath $HistoricalLabmateBackupDirectory -Recurse -File).Count -lt 14) {
-    throw 'E11 Apply REFUSED: historical LabMate copy has fewer than 14 files'
+& py -3 $backupGate --historical $HistoricalLabmateBackupDirectory --current $CurrentLabmateSnapshotDirectory
+if ($LASTEXITCODE -ne 0) {
+    throw 'E11 Apply REFUSED: two-state LabMate PC backup checksum gate FAILED; NO DEVICE WRITE'
 }
 $fw = (Resolve-Path -LiteralPath $FirmwareRoot).ProviderPath
 $head = (& git -C $fw rev-parse HEAD)
