@@ -23,6 +23,8 @@ static void test_init_validation(void) {
     assert(!labmate_scope_timeguard_init(&g, 0, 100, 50, 500, 51));
     assert(!labmate_scope_timeguard_init(&g, 0, 100, 50, 500, 0x80000000U));
     assert(!labmate_scope_timeguard_init(&g, 0, 100, 50, 0x80000000U, 10));
+    assert(!labmate_scope_timeguard_init(&g, 0, 100, 50, 5001, 10));
+    assert(!labmate_scope_timeguard_init(&g, 0, 200, 200, 500, 101));
     assert(labmate_scope_timeguard_poll(NULL, 0, snap(LabMateScopeArmed, 0)) == LabMateScopeGuardInvalid);
     g = (LabMateScopeTimeguard){0};
     assert(labmate_scope_timeguard_poll(&g, 0, snap(LabMateScopeArmed, 0)) == LabMateScopeGuardInvalid);
