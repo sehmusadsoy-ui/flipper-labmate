@@ -444,6 +444,44 @@ first FAP-only hardware installation:
    buffer FULL, STOP/RESTART/BACK with no BUSY/ERR and data intact.
    No full firmware flash, no automatic SD migration.
 
+## Phase 1G — reproducible exact E11 FAP-only review CI (2026-10-18)
+
+New workflow:
+`.github/workflows/build-v19-e11-fap-review-only.yml`
+
+- Checks out **only** the v1.9 Draft application source and the exact
+  already-used Momentum source commit
+  `d3f89dfe2ef6b01839201598e9be1590cba80322`.
+  Both checkouts disable persisted Git credentials.
+- Reuses the **115 lines of real E11 source patch/testing steps**
+  from the previous matched-firmware build (no floating Momentum
+  `main`, no arbitrary ABI upgrade, no unreviewed firmware patch).
+- Stages `application.fam`, the genuine icon and every
+  `src/*.c`/`src/*.h` into
+  `momentum-src/applications_user/labmate` and asserts both v1.9
+  version labels and the git source SHA.
+- Requests only `./fbt fap_labmate`, then independently hashes the
+  non-empty `.extapps/labmate.fap`. It **does not** request a
+  firmware updater, DFU, SD resource pack, USB, serial connection,
+  installation, flash or any GitHub Release tag mutation.
+- A successful build would create an expiring 7-day **REVIEW ONLY**
+  Actions artifact with the FAP, SHA256SUMS, exact source+Momentum
+  provenance and an explicit `DO NOT INSTALL` warning. A nonzero
+  compiler/link result prevents artifact upload.
+- This is **not** a tested or authorized release/install path.
+  As of this document update, the live v1.9 Actions run count
+  **remains 0 in the connected GitHub Actions listing**, even though
+  a separate older E11 Actions job (run `39035056937`) can still be
+  inspected as completed/success. The exact new FAP build and SHA256
+  therefore remain **UNVERIFIED / NO-GO**.
+
+**Operator gate:** Do not use the review FAP on the Flipper merely
+because the YAML exists. First obtain actual build logs, successful
+host/mocked-IRQ tests, binary hash and matched ABI review. Only
+after that, back up the installed E11 FAP and preserve S1/CSV, then
+authorize a reversible **FAP-only** trial. Full firmware flash is
+out of scope.
+
 ## Objective acceptance before exposing the scope in menu
 
 1. Existing FAP menu and old screen identifiers stay unchanged until
