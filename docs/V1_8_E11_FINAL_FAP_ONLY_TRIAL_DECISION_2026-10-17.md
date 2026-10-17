@@ -1123,3 +1123,58 @@ appropriate physical setup.
 and existing public Stable tag/assets unchanged, v1.9 HOLD.
 Do not infer a new Stable release from this private E11
 app-only final-label file promotion.
+
+## 2026-10-17 — REAL installed E11 final-label v1.8 GUI smoke: 5/5 USER PASS
+
+After actual phase 2A candidate FAP staging and phase 2B
+protected same-directory two-rename activation passed exact
+device MD5/size checks, the operator performed the requested
+limited *newly installed final v1.8* no-GPIO-wiring
+startup/lifecycle test and reported verbatim:
+
+```text
+Açılış: PASS / Menü: PASS / About v1.8: PASS / PWM STOP: PASS / EXIT-REOPEN: PASS
+```
+
+**Accepted real physical E11 FAP runtime acceptance, limited scope 5/5:**
+new active `/ext/apps/Tools/labmate.fap` successfully launched;
+root UI navigation/menu-order inspection passed
+(`MEASURE → OUTPUT → RECORDS → COMM → INFO`, with INFO last
+as previously requested); INFO/About reports `v1.8`
+not `v1.8DEV`; PWM enters **STOP** by default; BACK/complete
+EXIT and reopen/exit worked. No GPIO wiring was requested
+for this smoke test; no PWM RUN, Logger START, Profile SAVE/DELETE
+or destructive SD steps were part of the requested checks.
+The operator returned all five PASS, not a video or an independent
+digital-capture trace.
+
+Previously proven **file identities remain as recorded in
+phase 2B** (new candidate MD5
+`8d44e6ecce500036a8314a8c0e961806`
+at active FAP, old original E11 FAP MD5
+`edc86bf6ccb2e9b0215f2903b6f6725f`
+retained in `labmate.e11-pre-final.bak` and a verified PC backup).
+This runtime pass is **not** a new post-launch SD MD5 readback.
+No firmware, native resources, user CSV or profile write
+is authorized or claimed here.
+
+**Pending for this exact new final FAP:** passive navigation
+and safe screen-exit tests beyond the five-item smoke;
+read-only Log History/Profile review preserving data;
+separately authorized disposable scratch CSV/logger and
+empty-slot Profile persistence only after backups;
+real ESP32-S2 UART peer / STOP/BACK;
+Button Analyzer, Counter and PWM under bounded safe loopback;
+native JS GPIO/Timer1/Timer2/EXTI owner conflict
+including H1 simultaneous BUSY still not proven;
+bench calibration, DS18B20 positive, I2C ACK, switch bounce
+and fault-path physical cases remain deferred when equipment
+is absent. An earlier `v1.8DEV` hardware PASS or the
+historically published v1.8 Stable PASS does not replace
+the new final E11 FAP acceptance.
+
+**Release boundaries unchanged:** This is a private custom
+patched E11 device's accepted file activation + 5/5 GUI smoke,
+not a new public Stable artifact, main/PR merge,
+cross-firmware compatibility sign-off or v1.9 opening.
+Draft PR #13 still DRAFT, Stable/main unchanged.
