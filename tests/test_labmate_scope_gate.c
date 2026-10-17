@@ -88,6 +88,13 @@ static void check_rollback_and_sticky_fault(void) {
     assert(labmate_scope_owner_lease_acquired(&s, 19));
     assert(labmate_scope_owner_stop_confirmed(&s, false, false, true));
     assert(s.handle == 0 && s.phase == LabMateScopeOwnerIdle); /* failed callback, lease released */
+    assert(labmate_scope_owner_lease_acquired(&s, 20));
+    assert(!labmate_scope_owner_stop_confirmed(&s, false, false, false));
+    LabMateScopeReleasePlan lease_only = labmate_scope_owner_stop_plan(&s);
+    assert(!lease_only.detach_callback && !lease_only.restore_pin && lease_only.release_lease);
+    assert(labmate_scope_owner_stop_confirmed(&s, false, false, true));
+    assert(s.handle == 0 && s.phase == LabMateScopeOwnerIdle);
+    assert(s.fault_cleanup_phase == LabMateScopeOwnerIdle);
     assert(labmate_scope_owner_lease_acquired(&s, 21));
     assert(labmate_scope_owner_callback_added(&s));
     assert(labmate_scope_owner_pin_configured(&s));
