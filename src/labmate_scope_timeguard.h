@@ -16,6 +16,11 @@
 #include <stdint.h>
 #include "labmate_scope_buffer.h"
 
+/* Conservative v1.9 short capture windows; real DWT frequency must still
+ * be checked by the native driver before any IRQ mode is enabled. */
+#define LABMATE_SCOPE_GUARD_MAX_SESSION_MS UINT32_C(5000)
+#define LABMATE_SCOPE_GUARD_MAX_POLL_GAP_MS UINT32_C(100)
+
 typedef enum {
     LabMateScopeGuardRunning = 0,
     LabMateScopeGuardNoTrigger,
