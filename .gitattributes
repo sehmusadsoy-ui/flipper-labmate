@@ -3,3 +3,5 @@
 tests/device/e11_h_pa7_read_only.js text eol=lf
 
 tests/device/e11_h_pa7_read_only_v2.js text eol=lf
+
+tests/device/e11_h0_stage_v3.js text eol=lf
