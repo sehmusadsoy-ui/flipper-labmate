@@ -976,3 +976,74 @@ Phase 2B device run / operator-specific handoff
 **not yet authorized or performed** as of this
 document. Maintain DRAFT PR #13, main/tag/Stable
 unchanged and v1.9 HOLD.
+
+## 2026-10-17 — Explicit owner approval for E11 v1.8 phase-2B TWO FAP RENAMES
+
+The owner explicitly replied **"onay veriyorum"** to the two specific
+same-SD `storage rename` operations, after being told that LabMate's
+normal FAP app path could temporarily disappear if interrupted between
+renames. This is **not** permission to flash firmware, delete app/data,
+perform automatic retry/restore, change other apps, publish Stable,
+merge Draft PR #13, or launch v1.9.
+
+**Already proven real device stage-2A:** stage file
+`/ext/apps/Tools/labmate.e11-new-stage` contains precisely 81528 bytes,
+device MD5 `8d44e6ecce500036a8314a8c0e961806` matching
+independent locally verified final candidate. Active previous LabMate
+81,532-byte FAP MD5, native JS GPIO/Event Loop, Manifest and PC
+old-FAP backup remain unchanged. No final FAP application activation
+has occurred as of this note.
+
+**New device operator phase-2B runner prepared, not yet executed:**
+`scripts/run-v18-e11-phase2b-promote-two-fap-renames.ps1`
+at immutable source revision
+`99c791d54fca04e24f2e73125018b55ec6288e01`,
+verified UTF-8 ASCII SHA256
+`61f86aabbf1de2da05221a7bf2e3067dc85b2444a1a5d7ed710ce4fe71b9fa64`.
+It pins all Python preflight/rename code to immutable commit
+`086275b82205ad16750fca893e6aa66300f985b4`.
+Hard gates: exact original actual device FAP PC backup and 2x
+live-read-only report, old candidate source and native plugin/Manifest,
+original paired firmware source, independent new final FAP local
+SHA256/size, original pinned COM7 H0 transport, and live SD state
+(original installed old FAP MD5+size, complete staged new FAP
+MD5+size, reserved backup path absent, firmware label/base and native
+resource MD5). No writes before all checks pass.
+
+If all gates match, only two `storage_common_rename_safe`
+same-directory CLI renames are attempted and each step has exact
+command echo and error/prompt verification:
+(1) `labmate.fap` -> `labmate.e11-pre-final.bak`,
+verify old device backup MD5/size + active app absent;
+(2) `labmate.e11-new-stage` -> `labmate.fap`,
+verify new active FAP MD5/size + old device backup MD5/size +
+stage absent + native resource parity. No auto retry/rollback/delete.
+[Phase2B host CI #39049675255](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/39049675255)
+**SUCCESS** (host mocks + PowerShell wrapper syntax/pin);
+separate [host 2B rename CI #39048792386](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/39048792386)
+**SUCCESS**. **No operator real 2B output yet.**
+
+**Non-destructive interrupted-state classifier prepared BEFORE
+physical 2B:** `scripts/check_v18_e11_phase2b_state_readonly.py`,
+`tests/test_v18_e11_phase2b_state_readonly.py` and
+`scripts/run-v18-e11-phase2b-state-readonly.ps1`, immutable
+wrapper revision
+`5630369f37684e22a35ebc8574e9b19a30259247`, SHA256
+`74f62d3d6bd7be4a677d1211ad31f9e83966dbec28f084d84fe704aa7f127dcc`.
+Read-only classifier recognizes exactly
+BEFORE_PROMOTION (old active / staged final / no device backup),
+BETWEEN_TWO_RENAMES (app absent / staged final / original in bak),
+or AFTER_PROMOTION (new active / stage absent / original in bak),
+with pinned all-files MD5 and firmware/native resource matching.
+[CI #39049683474](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/39049683474)
+**SUCCESS**. Reject unknown or mismatched states. No automatic
+recovery/retry. If phase-2B device action errors after first rename,
+operator must STOP, preserve PC backup, and request fresh
+read-only state verification — do not rerun 2B.
+
+**Status:** Phase2A actual device PASS; 2B exact owner permission
+recorded; source, synthetic tests, read-only recovery plan PASS.
+**Phase2B REAL DEVICE RENAMES NOT YET EXECUTED at this note**.
+New v1.8 GUI functional, version INFO, PWM default STOP,
+button/counter, UART, logger/profile persistence tests PENDING.
+Stable/main/unpublished release and v1.9 HOLD.
