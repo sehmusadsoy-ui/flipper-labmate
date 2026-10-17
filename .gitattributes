@@ -1,0 +1,3 @@
+# Preserve exact audited JS payload bytes on Windows and Linux.
+# Live remote CLI and desktop tests compare SHA256/MD5, so CRLF conversion is unsafe.
+tests/device/e11_h_pa7_read_only.js text eol=lf
