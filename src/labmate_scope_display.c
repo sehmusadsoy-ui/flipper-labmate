@@ -55,7 +55,8 @@ bool labmate_scope_display_draw(Canvas* c, const LabMateScopeDisplay* d) {
               d->plot.result == LabMateScopePlotInvalid) {
         canvas_draw_str(c, 7, 33, "DATA INVALID");
     } else if(d->plot.result == LabMateScopePlotNoEdges) {
-        canvas_draw_str(c, 7, 33, "WAIT REAL EDGE");
+        canvas_draw_str(c, 7, 33,
+            d->state == LabMateScopeDisplayNoTrigger ? "NO TRIGGER" : "WAIT REAL EDGE");
     } else {
         canvas_draw_str(c, 7, 33, "WAIT 2 EDGES");
     }
