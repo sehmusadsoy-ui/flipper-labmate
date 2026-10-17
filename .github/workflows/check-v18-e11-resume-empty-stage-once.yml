@@ -1,0 +1,30 @@
+name: E11 one-shot v1.8 FAP into verified EMPTY nonapp stage (HOST MOCK ONLY)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - ".github/workflows/check-v18-e11-resume-empty-stage-once.yml"
+      - "scripts/resume_v18_final_fap_from_empty_stage_once.py"
+      - "tests/test_v18_resume_empty_stage_once.py"
+      - "scripts/stage_v18_final_fap_on_device_one_file.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exact_zero_stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Test strict first Ready and zero-stage-only preflight (NO DEVICE)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/resume_v18_final_fap_from_empty_stage_once.py
+          python3 -m unittest discover -v -s tests -p test_v18_resume_empty_stage_once.py
+          echo "E11 EXISTING EMPTY SIDE-CAR HOST GUARD PASS - NO DEVICE/SD/RELEASE"
