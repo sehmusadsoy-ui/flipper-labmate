@@ -6,6 +6,8 @@ on:
     paths:
       - "src/labmate_scope_buffer.[ch]"
       - "tests/test_labmate_scope_buffer.c"
+      - "src/labmate_scope_timeguard.[ch]"
+      - "tests/test_labmate_scope_timeguard.c"
       - "src/labmate_scope_gate.[ch]"
       - "tests/test_labmate_scope_gate.c"
       - "src/labmate_resource_policy.[ch]"
@@ -16,6 +18,8 @@ on:
     paths:
       - "src/labmate_scope_buffer.[ch]"
       - "tests/test_labmate_scope_buffer.c"
+      - "src/labmate_scope_timeguard.[ch]"
+      - "tests/test_labmate_scope_timeguard.c"
       - "src/labmate_scope_gate.[ch]"
       - "tests/test_labmate_scope_gate.c"
       - "src/labmate_resource_policy.[ch]"
@@ -81,6 +85,28 @@ jobs:
           ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 \
             UBSAN_OPTIONS=halt_on_error=1 "$RUNNER_TEMP/v19-scope-sanitize"
 
+      - name: Scope timebase/no-trigger watchdog - strict C11 with real edge buffer
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -O2 \
+            -Isrc src/labmate_scope_timeguard.c src/labmate_scope_buffer.c \
+            tests/test_labmate_scope_timeguard.c \
+            -o "$RUNNER_TEMP/v19-scope-timeguard"
+          "$RUNNER_TEMP/v19-scope-timeguard"
+
+      - name: Scope timebase/no-trigger watchdog - ASAN + UBSAN
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -g -O1 \
+            -fsanitize=address,undefined -fno-omit-frame-pointer \
+            -Isrc src/labmate_scope_timeguard.c src/labmate_scope_buffer.c \
+            tests/test_labmate_scope_timeguard.c \
+            -o "$RUNNER_TEMP/v19-scope-timeguard-san"
+          ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 \
+            UBSAN_OPTIONS=halt_on_error=1 "$RUNNER_TEMP/v19-scope-timeguard-san"
+
       - name: Assert no hardware integration or artifacts are introduced by this unit
         shell: bash
         run: |
@@ -92,6 +118,12 @@ jobs:
           assert "LABMATE_SCOPE_MAX_EDGES 256U" in h
           assert "LABMATE_SCOPE_MAX_SAFE_DELTA" in h
           assert "labmate_scope_buffer_push_edge" in c
+          timeguard = Path("src/labmate_scope_timeguard.c").read_text()
+          assert "LabMateScopeGuardClockUnsafe" in timeguard
+          assert "LabMateScopeGuardNoTrigger" in timeguard
+          assert "max_session_ms" in timeguard
+          for forbidden in ("furi_hal_", "LL_EXTI_", "storage_file_", "gpio_init(", "malloc(", "free("):
+              assert forbidden not in timeguard, forbidden
           scope = Path("src/labmate_scope_gate.c").read_text()
           assert "labmate_capture_can_acquire" in scope
           assert "LabMateScopeOwnerReleaseFault" in scope
