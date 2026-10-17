@@ -77,6 +77,17 @@ static void check_ordered_start_and_stop(void) {
     assert(!labmate_scope_owner_started(&s));
     p = labmate_scope_owner_stop_plan(&s);
     assert(p.detach_callback && p.restore_pin && p.release_lease);
+    /* Callback removed and pin restored, but native lease release failed:
+     * the next STOP plan must NOT touch callback/pin a second time. */
+    LabMateScopeOwnerState retry = {0};
+    assert(labmate_scope_owner_lease_acquired(&retry, 80));
+    assert(labmate_scope_owner_callback_added(&retry));
+    assert(labmate_scope_owner_pin_configured(&retry));
+    assert(!labmate_scope_owner_stop_confirmed(&retry, true, true, false));
+    LabMateScopeReleasePlan remaining = labmate_scope_owner_stop_plan(&retry);
+    assert(!remaining.detach_callback && !remaining.restore_pin && remaining.release_lease);
+    assert(labmate_scope_owner_stop_confirmed(&retry, false, false, true));
+    assert(retry.handle == 0 && retry.phase == LabMateScopeOwnerIdle);
     assert(labmate_scope_owner_stop_confirmed(&s, true, true, true));
     assert(s.phase == LabMateScopeOwnerIdle && s.handle == 0);
     assert(labmate_scope_gate_pc1(&c, &s) == LabMateScopeGateReady);
