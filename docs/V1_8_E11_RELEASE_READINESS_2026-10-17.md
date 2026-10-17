@@ -139,3 +139,78 @@ conditions are met and specifically approved.** Existing published
 Stable/main/release files are unchanged. No v1.8.1 subrelease.
 v1.9 is a separate milestone after the v1.8 original-scope
 completion/release decision.
+
+## 2026-10-17 — Full matched v1.8 final-label **REVIEW CANDIDATE BUILD PASS (NO FLASH)**
+
+The source-preserving temporary `v1.8DEV` → `v1.8` label
+overlay **completed** in GitHub Actions
+[#39035056937](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/39035056937):
+`completed/success`, exact CI source
+`99cb65d0194dc59d423cfa439c90618ac6b9f114`.
+This advances release-candidate **compilation/provenance**, not
+the on-device Stable/release gate.
+
+- Workflow:
+  `.github/workflows/check-v18-final-label-review-pair.yml`
+  (an independent no-flash full updater + FAP build).
+- Strict source staging:
+  `scripts/stage_v18_final_label_review_only.py` compares
+  exact tested E11 source `ba379f20fb29369501e1057f570a911f71ac83f8`
+  against the checkout, refuses any changed production/runtime
+  files/firmware patch scripts, requires exact staged source and
+  manifest/icon byte parity, and replaces **only**
+  `#define LABMATE_VERSION_TEXT "v1.8DEV"` with
+  `#define LABMATE_VERSION_TEXT "v1.8"` in the
+  **disposable build folder**. The checked-in app and actual
+  Flipper continue to identify as `v1.8DEV`.
+- Real CI runs completed: source/overlay negative tests, original
+  native Momentum patch tests, FAP `APPCHK`, full firmware/SD
+  resource updater compile, strict updater/radio/option-byte
+  comparison, embedded DFU coherence, exact
+  `SHA256SUMS.txt` and `PROVENANCE.txt` validation.
+- **Matched review-only package SHA256** (exact log output):
+
+  | Candidate binary | SHA256 |
+  | --- | --- |
+  | `labmate.fap` | `393fe3e52aa710162a42d7299aa053f538b2ee1ad6542755cf402b83c1931b61` |
+  | `firmware.dfu` | `e7460ab56d72a77bca1c096496ee6dd6d59044bd314ad4cb78559c3aeff72c8b` |
+  | `js_gpio.module` | `fff2ab8ad8e5b320b669283fc611216da99e9cda4dc03428fcd8e8a130ecca0a` |
+  | `firmware-full-update.tgz` | `cd12be2a85512dcd360e6b93e027fa2ad9136a76602ba01036dc235b7a804dee` |
+
+- Exact native source diff SHA256:
+  `1b3851dfa4de1f62d33430c5a7a4cf563f68da4ebfa01fe332fe7984b7630d80`,
+  matching the prior E11 review source-diff fingerprint.
+  The `js_gpio.module` SHA256 is **byte-identical** to the
+  operator-tested E11 trial plugin.
+- GitHub Actions archived **artifact ID `12101802257`**,
+  named `v18-FINAL-LABEL-E11-PAIRED-REVIEW-DO-NOT-FLASH`,
+  ZIP SHA256 `2c1aa236e566f784c9b94b1da55b6e572e26e8863aeef84972722d1c0eba36bf`
+  as reported by Actions. Artifact is temporary, not an
+  installer and not released.
+- Source stability review since candidate build: comparison of
+  exact CI commit `99cb65d0` and current branch head after
+  adding release-note documentation showed **137/137**
+  source+manifest/icon+native-patch path entries Git-blob identical.
+  Later documentation alone does not change build source.
+
+**Important binary distinction:** New `firmware.dfu`
+SHA256 `e7460ab...` differs from previously installed/trial
+`88d12fee...`; new `labmate.fap` SHA256
+`393fe3...` differs from trial `2b31ec...`.
+The native source patch fingerprint being the same does **not**
+prove byte-for-byte firmware equivalence or safe cross-pair
+FAP-only installation. No cause is assumed for the new firmware
+binary delta without a dedicated comparison. Do **not**
+flash this review package or swap the FAP into another
+firmware environment on this evidence alone.
+
+**Still NOT passed on this exact new binary:**
+`v1.8` About/UI startup and exit on a device, new-pair external
+UART peer, scratch-only CSV/profile write/re-read under approved
+non-user-data scope, fully authenticated running firmware
+compatibility and reviewed restore plan. H1 real concurrent
+native BUSY, actual I²C ACK/DS18B20 and remaining hardware
+fixtures stay **DEFERRED / NOT OBSERVED**, not release acceptance
+PASS. Draft PR #13 remains unmerged; currently published
+v1.8 Stable/tag/release assets are immutable and unchanged.
+**No new device command, install or firmware trial has been approved.**
