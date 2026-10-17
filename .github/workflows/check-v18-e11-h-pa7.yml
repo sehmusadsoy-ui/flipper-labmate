@@ -7,8 +7,11 @@ on:
       - ".github/workflows/check-v18-e11-h-pa7.yml"
       - ".gitattributes"
       - "scripts/check_v18_e11_h_pa7_cli.py"
+      - "scripts/check_v18_e11_h_pa7_cli_v2.py"
       - "tests/device/e11_h_pa7_read_only.js"
+      - "tests/device/e11_h_pa7_read_only_v2.js"
       - "tests/test_v18_e11_h_pa7_cli.py"
+      - "tests/test_v18_e11_h_pa7_cli_v2.py"
   workflow_dispatch:
 
 permissions:
@@ -31,5 +34,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           python -m unittest discover -v -s tests -p test_v18_e11_h_pa7_cli.py
           if ($LASTEXITCODE -ne 0) { throw 'E11 JS PA7 probe host tests failed' }
+          python -m unittest discover -v -s tests -p test_v18_e11_h_pa7_cli_v2.py
+          if ($LASTEXITCODE -ne 0) { throw 'E11 H v2 event_loop dependency host tests failed' }
           Write-Host 'E11 H PA7 HOST SOFTWARE SAFETY PASS - NO DEVICE OR SERIAL'
           Write-Host 'Native PA7 BUSY, STOP release and real cross-service overlap remain NOT TESTED.'
