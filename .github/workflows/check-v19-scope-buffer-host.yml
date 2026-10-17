@@ -278,7 +278,7 @@ jobs:
             -o "$RUNNER_TEMP/v19-native-stock-mock"
           "$RUNNER_TEMP/v19-native-stock-mock"
 
-      - name: Assert no hardware integration or artifacts are introduced by this unit
+      - name: Assert pure host math stays HAL-free and native UI stays review-only
         shell: bash
         run: |
           set -euo pipefail
@@ -303,6 +303,9 @@ jobs:
           display = Path("src/labmate_scope_display.c").read_text()
           assert "labmate_scope_display_draw" in display
           assert "LabMateScopeDisplayBusy" in display
+          assert 'short_state = "NO TRG"' in display
+          assert 'short_state = "UNSUP"' in display
+          assert "d->total_edges > LABMATE_SCOPE_MAX_EDGES" in display
           for forbidden in ("furi_hal_", "LL_EXTI_", "storage_file_", "gpio_init(", "malloc(", "free("):
               assert forbidden not in display, forbidden
           native = Path("src/labmate_scope_native.c").read_text()
