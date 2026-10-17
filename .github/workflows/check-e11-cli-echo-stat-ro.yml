@@ -28,3 +28,16 @@ jobs:
           python3 -m py_compile scripts/probe_e11_cli_echo_stat_ro.py
           python3 -m unittest discover -v -s tests -p test_e11_cli_echo_stat_ro.py
           echo "E11 CLI ECHO READ-ONLY MOCK PASS - NO SERIAL, NO WRITE"
+      - name: Parse PowerShell read-only operator wrapper without executing it
+        shell: pwsh
+        run: |
+          $tokens=$null
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'scripts/run-e11-cli-echo-stat-ro.ps1').Path,
+            [ref]$tokens, [ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            throw 'Invalid E11 READ-ONLY CLI operator wrapper'
+          }
+          Write-Host 'E11 READ-ONLY CLI HANDOFF PS SYNTAX PASS; NOT EXECUTED'
