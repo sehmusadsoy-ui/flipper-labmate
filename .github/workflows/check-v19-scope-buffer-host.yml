@@ -1,0 +1,71 @@
+name: LabMate v1.9 digital edge buffer host gate (NO FIRMWARE / NO FLASH)
+
+on:
+  push:
+    branches: [dev/v1.9-logic-scope]
+    paths:
+      - "src/labmate_scope_buffer.[ch]"
+      - "tests/test_labmate_scope_buffer.c"
+      - ".github/workflows/check-v19-scope-buffer-host.yml"
+  pull_request:
+    branches: [dev/v1.8-completion]
+    paths:
+      - "src/labmate_scope_buffer.[ch]"
+      - "tests/test_labmate_scope_buffer.c"
+      - ".github/workflows/check-v19-scope-buffer-host.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scope_host:
+    name: Verify bounded digital edge timestamps, strict C + ASAN/UBSAN
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exact v1.9 development source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Strict C11 host compile and functional tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -O2 \
+            -Isrc src/labmate_scope_buffer.c \
+            tests/test_labmate_scope_buffer.c \
+            -o "$RUNNER_TEMP/v19-scope-host"
+          "$RUNNER_TEMP/v19-scope-host"
+
+      - name: AddressSanitizer and UndefinedBehaviorSanitizer host tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -g -O1 \
+            -fsanitize=address,undefined -fno-omit-frame-pointer \
+            -Isrc src/labmate_scope_buffer.c \
+            tests/test_labmate_scope_buffer.c \
+            -o "$RUNNER_TEMP/v19-scope-sanitize"
+          ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 \
+            UBSAN_OPTIONS=halt_on_error=1 "$RUNNER_TEMP/v19-scope-sanitize"
+
+      - name: Assert no hardware integration or artifacts are introduced by this unit
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          h = Path("src/labmate_scope_buffer.h").read_text()
+          c = Path("src/labmate_scope_buffer.c").read_text()
+          assert "LABMATE_SCOPE_MAX_EDGES 256U" in h
+          assert "LABMATE_SCOPE_MAX_SAFE_DELTA" in h
+          assert "labmate_scope_buffer_push_edge" in c
+          for forbidden in ("furi_hal_", "gpio_init", "gpio_add_int_callback",
+                            "LL_EXTI_", "storage_file_", "malloc(", "calloc(",
+                            "realloc(", "free("):
+              assert forbidden not in c, forbidden
+          assert not Path("build/").exists(), "Unexpected generated firmware output"
+          PY
+          echo "HOST TEST ONLY. NO IRQ hookup, FAP installation, USB, SD WRITE, FIRMWARE FLASH OR STABLE RELEASE."
