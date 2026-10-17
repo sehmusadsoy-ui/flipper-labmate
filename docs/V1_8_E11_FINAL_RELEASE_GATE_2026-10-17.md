@@ -36,6 +36,48 @@ GitHub read-only comparisons performed on 2026-10-17:
 - Final-label review source `99cb65d0194dc59d423cfa439c90618ac6b9f114` -> same head: **no production/patch-source changes**. The later edits are test tools, workflows and documentation, not modifications to built production source.
 - The repository reports previous matched-source, host and SDK checks in the E11 acceptance documents. This audit independently checked source continuity via GitHub compare; the current session could **not** independently re-read Actions workflow run conclusions (Actions API was unavailable/returned no runs). **Do not claim a fresh CI build on this documentation-only head.**
 
+## 2026-10-17 — public release immutability and source-freeze gate (READ ONLY)
+
+An independent live GitHub connector read compared the **actual** public
+release/tag endpoints against historical pinned identity (no device or
+release mutation):
+
+- `v1.4` tag still targets `84e1d8979d0631c003f9ae5f3e25596f9cb496e6`;
+  published `labmate-v1.4.fap` SHA256 remains
+  `b5be0a27709ea2c4fe8d63269404d50a4e7d8863c1e8e773063764f9f607cf25`,
+  and the two original asset sizes/hashes match the pinned release.
+- `v1.8` tag still targets `02b05639364d6dd71f5eb70456eca379c59218cb`;
+  published `labmate.fap` SHA256 remains
+  `119c44bb854030a73a60fa205d38770bf77f048bb166ab379a03135c1de5f3b0`,
+  and the two original asset sizes/hashes match the pinned release.
+- `99cb65d0194dc59d423cfa439c90618ac6b9f114` to branch HEAD
+  `a3c6b946082e21ad4552f52eeedbbe9a53ebcd80`:
+  GitHub comparison returned 103 commits / 43 changed-file records,
+  no `src/`, `application.fam`, `labmate_10px.png` or
+  `scripts/patch_momentum_*` production/patch-source path changes.
+  Draft PR #13 remains open. The compare payload is below its file/commit
+  pagination limits; this is a read-only source continuity finding.
+
+**New prevention control (development branch only):**
+`scripts/check_v18_e11_public_release_preservation_ro.py`,
+`tests/test_v18_e11_public_release_preservation_ro.py` and
+`.github/workflows/check-v18-e11-public-release-preservation-ro.yml`.
+The runner, when available, fetches live tags/releases and a bounded
+source comparison from GitHub, tests malformed/modified release evidence,
+and uses local `git diff` on the exact pinned source tree. It performs
+**no merge, tag edit, GitHub release creation, firmware write or upload**.
+The independent live read-only GitHub inspection above **PASSed**;
+the new Python test suite and Actions workflow conclusion were
+**NOT independently executed/verified by this session**, since live
+Actions readout was unavailable. Do not mislabel authored tests as
+completed CI evidence. A future changed production code or released
+asset must fail this historic-preservation gate.
+
+**Scope limit:** preserving old releases and the E11 source is not a
+firmware installation plan, ABI attestation for other devices, exact
+custom-firmware restore rehearsal or owner approval for replacing the
+public v1.8 Stable asset. Those safety blockers stay OPEN.
+
 ## Explicit remaining gates before replacing public v1.8
 
 1. **Custom-firmware distribution/restore plan — BLOCKER.** Decide a supported, recoverable installation route for *both* patched Momentum firmware/native resources and exact final FAP, with device-specific compatibility/rollback proof. A FAP-only universal Stable update is prohibited by current ABI evidence. Backup *availability* is not a restore rehearsal.
