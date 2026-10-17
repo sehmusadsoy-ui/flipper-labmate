@@ -588,3 +588,53 @@ ownership scenario* and must not be claimed from this UI retune.
 **Result collection:** operator PASS/FAIL/SKIP for G1–G4,
 and actual Pulse Analyzer HIGH/LOW/PERIOD/DUTY for G2 and G3.
 Targets above are theoretical; don't log them as measured values.
+
+## 2026-10-17 — Matched E11 Round G, actual live PWM retune readbacks: **4/4 functional PASS**
+
+Following A–F **32/32 operator-reported PASS**, the operator supplied
+**real Pulse Analyzer PC1 HIGH and LOW readouts** for the previously
+requested safe same-device PA7→PC1 loopback while native TIM1 PWM runs,
+plus explicit G4 PASS:
+
+| Step | PWM setpoint | Operator-observed Pulse HIGH | Operator-observed Pulse LOW | **Derived** period | **Derived** duty | Scope |
+|---|---|---|---|---|---|---|
+| G1 | 100 Hz / 50% | **5.00 ms** | **5.00 ms** | 10.00 ms | 50% | Numeric values match expected 100 Hz baseline |
+| G2 | 100 Hz / 25% | **2.50 ms** | **7.50 ms** | 10.00 ms | 25% | Numeric values match **live duty retune** |
+| G3 | 200 Hz / 75% | **3.75 ms** | **1.25 ms** | 5.00 ms | 75% | Numeric values match **live frequency/duty retune** |
+| G4 | STOP/exit/re-entry | — | — | — | — | **Explicit operator PASS** |
+
+The input message states **`G1: H 5.00ms, L 5.00ms, G2: H 2.50ms, L
+7.50ms, G3: H 3.75ms, L 1.25ms, G4: PASS`**.
+G1–G3 were numeric readback reports, not literal standalone PASS
+tokens; functional verdict **PASS by expected-reading match** at the
+displayed precision. Derived period/duty are **not** separately claimed
+as values actually seen on the screen. The PWM setpoints come from
+the previously instructed G test, not from a fresh independent
+oscilloscope observation.
+
+With this bounded interpretation the matched E11 device function
+test total is **A6 + B6 + C6 + D4 + E5 + F5 + G4 = 36/36
+operator-evidenced functional matches/PASS**.
+
+**Not closed:** independent scope-calibrated frequency/duty/OFF-state,
+exhaustive contact bounce, external I2C ACK/DS18B20, hard negative
+native-global TIM1/TIM2/DMA/EXTI/JS GPIO BUSY/refusal under
+simultaneous ownership, rollback/exact firmware reproduction, and all
+equipment-dependent HW-01..HW-19 checks. A successful same-app
+Pulse↔PWM handoff is **NOT** a firmware-wide native lease-conflict test.
+No v1.8 Stable/main merge or release and no runtime firmware writes.
+
+### Next gate after G — native collision test design and preflight, not an invented PASS
+
+**Do not perform arbitrary simultaneous native NFC/RFID/SubGHz/JS
+GPIO operations based only on successful sequential Round F.** Before
+any actual overlap test, source-review the **exact matched E11
+firmware+native JS plugin API**, owner masks and time-of-acquisition,
+rollback/recovery readiness, and a named non-destructive competing
+service scenario with explicit STOP/release/expected BUSY behavior.
+Require operator to approve concrete live device steps if an
+unreviewed native-client mechanism or installed test script is needed.
+With hardware stopped and lead removed, a read-only normal UI review
+or existing host tests can proceed. Keep PR #13 Draft / v1.9 HOLD
+until the native integration gate is actually closed or explicitly
+classified as supported-scope limitation/deferred.
