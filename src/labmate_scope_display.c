@@ -61,11 +61,19 @@ bool labmate_scope_display_draw(Canvas* c, const LabMateScopeDisplay* d) {
         canvas_draw_str(c, 7, 33, "WAIT 2 EDGES");
     }
 
+    /* A 128px LCD with 6px FontSecondary fits at most 20 characters
+     * starting from x=3. Use SHORT status text on the footer row; long
+     * diagnostic names remain on the center line. At worst:
+     * E:256 NO TRG LAST64 = 19 glyphs and 114px, fully on-screen.
+     */
+    const char* short_state = scope_state_label(d->state);
+    if(d->state == LabMateScopeDisplayNoTrigger) short_state = "NO TRG";
+    else if(d->state == LabMateScopeDisplayUnsupported) short_state = "UNSUP";
     char summary[24];
     snprintf(summary, sizeof(summary), "E:%u %s%s", (unsigned)d->total_edges,
-             scope_state_label(d->state), d->plot.cropped_old_edges ? " LAST64" : "");
+             short_state, d->plot.cropped_old_edges ? " LAST64" : "");
     canvas_draw_str(c, 3, 50, summary);
     canvas_draw_line(c, 0, 53, 127, 53);
-    canvas_draw_str(c, 3, 62, "OK RUN/STOP    BK MENU");
+    canvas_draw_str(c, 3, 62, "OK RUN/STOP BK EXIT");
     return true;
 }
