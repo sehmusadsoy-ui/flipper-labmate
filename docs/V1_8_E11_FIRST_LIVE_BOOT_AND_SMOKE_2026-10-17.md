@@ -199,3 +199,64 @@ On any ERR, BUSY, hang, unexpected edge count or inability to STOP,
 record screen and stop test. Mark each PASS/FAIL/SKIP; do not run
 firmware install or automatic recovery. Records/Profiles
 preservation remains Round C.
+
+## 2026-10-17 — Operator-reported REAL E11 Round B: **6/6 PASS**
+
+Following actual paired E11 Round A (6/6), the operator reported
+**`B1-B6 PASS`** for the exact previously requested device Round B
+sequence (same installed E11 matching FAP + firmware; no GPIO fixture).
+
+| Case | Actual operator verdict | Scope of requested sequence |
+|---|---|---|
+| B1 | PASS | Counter PB3/TIM2 STOP → RUN → STOP and short wait |
+| B2 | PASS | Counter RESUME → RUN → STOP without unexpected clear |
+| B3 | PASS | Counter UP RESET only while STOP; BACK/re-entry STOP |
+| B4 | PASS | Button PC1/EXTI STOP → RUN → STOP → RESUME → STOP |
+| B5 | PASS | Button MORE/MAIN, debounce change, stopped reset |
+| B6 | PASS | Button BACK and re-entry, complete LabMate exit and reopen |
+
+**Total actual paired E11 GUI/lifecycle smoke:** Round A 6/6 +
+Round B 6/6 = **12/12 operator-reported PASS**. These are functional
+controls on real hardware, not calibrated timer/counter measurements or
+proof of externally driven EXTI edges. The live app's exit/reopen was
+reported PASS in B6; delete the previous unfinished wording only by
+superseding it here, not by rewriting the historical evidence.
+
+**Unresolved:** firmware-global service arbitration and nonstandard
+plugin paths, actual TIM2 count on known external 3.3 V edges,
+independently checked PA7 PWM frequency/duty/OFF, actual dry-contact
+bounce, positive I²C ACK or DS18B20 conversion, actual SD CSV/Profile
+data readback preservation after E11 update, hardware recovery/rollback.
+No main or Stable asset mutation, no firmware reinstall.
+
+### Proposed REAL device Round C: SD preservation and no-device COMM (safe scope)
+
+Only after confirming PWM STOP; no external GPIO leads or unsafe inputs.
+Keep all current user CSVs and Profiles; do not SAVE, DELETE, LOAD, or
+use History delete mode.
+
+- **C1 — Log History:** `RECORDS > Log History`; verify historical
+  numbered CSVs still listed, open one existing nonempty log read-only,
+  BACK. This is **UI readability**, not byte-for-byte SD preservation.
+  Leave any READ/DELETE mode toggle in READ before OK.
+- **C2 — Profiles:** `RECORDS > Profiles`; verify existing profile
+  slot S1 is visibly still present (if it existed before E11).
+  Browse UP/DOWN and BACK **without OK**; avoid LOAD/SAVE/DELETE.
+- **C3 — I²C no-device scan and cancellation:** with no I²C peripheral
+  connected, enter `COMM > I2C Explorer`, press OK once to scan.
+  Observe final state (commonly NONE; ERR or BUSY must be reported
+  exactly, never silently accepted). During SCANNING, OK means STOP.
+  BACK and reopen: READY, no freeze or persistent BUSY.
+- **C4 — 1-Wire missing-sensor recovery:** `COMM > 1-Wire Temp`,
+  OK READ with no DS18B20. Expect NONE after reasonable bounded
+  completion. BACK/reopen returns READY; do not invent temperature.
+- **C5 — Basic device consistency:** Confirm normal Flipper menu and
+  app launch/exit after these reads; no SD error, unexpected BUSY,
+  locked screen or reboot observed.
+- **C6 — Restore safe idle:** PWM remains STOP, Counter and Button
+  STOP, no COMM operation left RUNNING. No changes to historical
+  storage, updater, firmware or installed FAPs.
+
+Require exact operator PASS/FAIL/SKIP + the actual I²C and 1-Wire
+displayed status for C3/C4. A missing physical peripheral is not
+positive protocol-test evidence.
