@@ -2000,3 +2000,40 @@ Test evidence: [full actual archive reconciliation
 upload fresh downloadable binaries for the known-rejected
 SPLIT derivative. Source provenance, external accessories,
 device/SD and working EXITFIX all remain untouched.
+
+
+## 2026-10-17 — E11 complete offline trial-route model PASS; actual hardware acceptance still open
+
+The live old `/ext/Manifest` contains the currently installed
+EXITFIX FAP, so new firmware resource cleanup targets the old app.
+The pinned full E11 updater contains a manifest-correct matching NEW
+E11 FAP and JS plugin. New
+[full resource transition model](../scripts/audit_v18_e11_full_transition.py)
+against REAL packaged artifacts confirms
+`OLD_EXITFIX_TARGETED_NEW_E11_FAP_SUPPLIED`.
+This means a full resources update is expected to **replace**, not
+preserve, working EXITFIX. The split derivative is rejected because
+it removes old EXITFIX and lacks the new app, and its NEW Manifest
+has a stale FAP record.
+
+`scripts/install-v18-full012-dev-firmware.ps1` is an outdated
+older-hash loader. **Its `-Apply` route is QUARANTINED**; Windows
+[test #38984878695](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38984878695)
+SUCCESS proves the block before any USB operation.
+[Exact full native artifact transition
+#38984866895](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38984866895)
+SUCCESS, [integrated host regression
+#38984866835](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38984866835)
+SUCCESS. No new FAP or firmware has been installed.
+
+**No-go remains for physical acceptance.** The missing action is
+not another static/CI check: it requires a specifically approved
+matched full firmware+app device trial, understanding that current
+`mntm-dev dirty` firmware cannot be guaranteed byte-identically
+restored by official MNTM-012 fallback and that installed EXITFIX
+will be replaced in a successful resource update. Then actual
+E11 native GPIO/TIM1/TIM2/EXTI collision, denial, STOP/BACK,
+reacquisition, USB COMM and app re-entry checks must be observed.
+Unavailable calibrated fixtures remain DEFERRED, not PASS.
+Do not mark v1.8 release complete, merge PR #13 or start v1.9
+on the strength of offline successes alone.
