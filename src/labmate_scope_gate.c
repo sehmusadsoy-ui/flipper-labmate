@@ -39,23 +39,33 @@ bool labmate_scope_owner_started(LabMateScopeOwnerState* s) {
 LabMateScopeReleasePlan labmate_scope_owner_stop_plan(const LabMateScopeOwnerState* s) {
     LabMateScopeReleasePlan no = {0};
     if(!s || !s->handle || s->phase == LabMateScopeOwnerIdle) return no;
-    if(s->phase == LabMateScopeOwnerLease)
+    /* Remember the precise hardware stages confirmed before the fault.
+     * Never remove a callback or restore a pin that this owner did not set. */
+    LabMateScopeOwnerPhase owned = s->phase == LabMateScopeOwnerReleaseFault
+                                   ? s->fault_cleanup_phase : s->phase;
+    if(owned == LabMateScopeOwnerLease)
         return (LabMateScopeReleasePlan){false, false, true};
-    if(s->phase == LabMateScopeOwnerCallback)
+    if(owned == LabMateScopeOwnerCallback)
         return (LabMateScopeReleasePlan){true, false, true};
-    /* A fault retains a conservative stop plan, not a proof of recovery. */
-    return (LabMateScopeReleasePlan){true, true, true};
+    if(owned == LabMateScopeOwnerPinConfigured || owned == LabMateScopeOwnerRunning)
+        return (LabMateScopeReleasePlan){true, true, true};
+    return no; /* Unknown state: do not touch any foreign peripheral. */
 }
 bool labmate_scope_owner_stop_confirmed(
     LabMateScopeOwnerState* s, bool callback_removed,
     bool pin_restored, bool lease_released) {
     if(!s || !s->handle || s->phase == LabMateScopeOwnerIdle) return false;
     LabMateScopeReleasePlan p = labmate_scope_owner_stop_plan(s);
-    if((p.detach_callback && !callback_removed) ||
+    if(!p.release_lease || (p.detach_callback && !callback_removed) ||
        (p.restore_pin && !pin_restored) ||
        (p.release_lease && !lease_released)) {
+        if(s->phase != LabMateScopeOwnerReleaseFault)
+            s->fault_cleanup_phase = s->phase;
         s->phase = LabMateScopeOwnerReleaseFault;
         return false;
     }
-    s->handle = 0U; s->phase = LabMateScopeOwnerIdle; return true;
+    s->handle = 0U;
+    s->phase = LabMateScopeOwnerIdle;
+    s->fault_cleanup_phase = LabMateScopeOwnerIdle;
+    return true;
 }
