@@ -128,6 +128,53 @@ nonasserting callback and owned IRQ teardown path with explicit
 low-level failure simulation. New FAP/hardware work needs a separate
 owner-approved install scope and compatibility check.
 
+## 2026-10-18 final local regression — exact existing E11 code, partial STOP retry
+
+After the first ownership model, a STOP/BACK review identified two
+cases that could inadvertently touch a *foreign* resource if the
+application lost track of its completed cleanup steps:
+
+1. A native lease failed **before** any GPIO callback had been registered:
+   a retry must only release the held lease, not remove a nonexistent
+   callback or reconfigure the unowned pin.
+2. The callback was successfully detached and the owned GPIO pin
+   restored, but firmware lease release failed: the next attempt must
+   **only retry lease release**, not touch the already-returned pin or
+   old callback a second time.
+
+The model now stores `fault_cleanup_phase`,
+`callback_detached` and `pin_restored` confirmations. Failed cleanup
+retains the nonzero handle and `RELEASE_FAULT`, preventing START.
+Positive cleanup confirmations are kept between attempts, and steps
+not owned or already completed are excluded from subsequent plans.
+This is still a **software protocol model**; future real firmware code
+must obey the sequence and confirm each actual operation under IRQ
+exclusion.
+
+**Exact local source provenance (no stand-ins for this final regression):**
+
+- New `labmate_scope_gate.h` Git blob `12d6339feb1016d200aea17a8776062659cd7ae3`
+- New `labmate_scope_gate.c` Git blob `0cace12ab474aef3583e8c698b9e6173c6be9b76`
+- New `test_labmate_scope_gate.c` Git blob `bf3d632296095033ecbd33dc0faae83c5df1ada4`
+- Existing E11 `labmate_resource_policy.h/.c` Git blobs
+  `1e9a17d3dae3d281970faf6495715056cc028709` /
+  `bb3653de485878d859ffb433d8c8e023aa4d93ce`
+- Existing E11 `labmate_comm_resource.h/.c` Git blobs
+  `aa5ae54020c4700e5a8814ec85a16ef0820189f2` /
+  `3f2e6106d3cf480f66bfc645f940ff54cf9c5cff`
+
+All seven files were reproduced byte-for-byte locally and their Git
+blob identities confirmed. The real-source gate tests ran with
+`cc -std=c11 -Wall -Wextra -Werror -Wpedantic` and separately with
+`-fsanitize=address,undefined`: **LOCAL HOST PASS in both modes**.
+This proves the pure policy/stop model against the actual E11 C rules;
+it does **not** prove real firmware lease/callback behavior. GitHub
+Actions conclusion is separately **not verified** by the current
+GitHub connector.
+
+**No device write, EXTI registration, v1.9 FAP publication, Stable
+replacement, source tag move, S1 Profile or historical CSV changes.**
+
 ## Objective acceptance before exposing the scope in menu
 
 1. Existing FAP menu and old screen identifiers stay unchanged until
