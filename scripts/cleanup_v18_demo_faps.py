@@ -125,8 +125,11 @@ def apply(storage, selected: dict[str, int], before: dict[str, int], backup: Pat
         return []
     removed = []
     for name in selected:
+        # _md5 is the raw Flipper CLI helper: its path MUST be bytes.
+        # The earlier str path caused TypeError immediately after typed
+        # consent, before storage.remove(). Keep storage.remove() str.
         path = BASE + "/" + name
-        if _md5(storage, path) != preserved[name]["md5_device_screen"]:
+        if _md5(storage, path.encode("ascii")) != preserved[name]["md5_device_screen"]:
             raise ValueError("demo changed immediately before removal: " + name)
         if storage.hash_flipper(BASE + "/" + MAIN).strip().lower() != main_md5:
             raise ValueError("main E11 LabMate changed: refusing deletion")
