@@ -7,6 +7,7 @@ on:
       - ".github/workflows/check-v18-e11-final-stage-abort-ro.yml"
       - "scripts/check_v18_final_stage_after_abort_ro.py"
       - "tests/test_v18_final_stage_abort_readonly.py"
+      - "scripts/run-v18-e11-stage-abort-readonly.ps1"
   workflow_dispatch:
 
 permissions:
@@ -27,3 +28,16 @@ jobs:
           python3 -m py_compile scripts/check_v18_final_stage_after_abort_ro.py
           python3 -m unittest discover -v -s tests -p test_v18_final_stage_abort_readonly.py
           echo "E11 ABORTED FAP STAGE READ-ONLY AUDIT MOCK PASS - NO USB, NO WRITE, NO RETRY"
+      - name: Syntax-parse operator PowerShell diagnosis only (NEVER EXECUTE)
+        shell: pwsh
+        run: |
+          $t=$null
+          $e=$null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'scripts/run-v18-e11-stage-abort-readonly.ps1').Path,
+            [ref]$t, [ref]$e) | Out-Null
+          if ($e.Count -ne 0) {
+            $e | ForEach-Object { Write-Error $_.Message }
+            throw 'E11 abort diagnosis wrapper invalid'
+          }
+          Write-Host 'POWER SHELL DIAGNOSIS SYNTAX ONLY PASS - NO SERIAL'
