@@ -1,7 +1,9 @@
 #pragma once
 #include <stdbool.h>
 #include <stdint.h>
+#ifndef LABMATE_SCOPE_TEST_UNPATCHED
 #define FURI_HAL_GPIO_HAS_TRY_ADD_INT_CALLBACK 1
+#endif
 typedef struct {uint32_t pin;} GpioPin;
 typedef enum {GpioModeAnalog, GpioModeInterruptRiseFall} GpioMode;
 typedef enum {GpioPullNo} GpioPull;
