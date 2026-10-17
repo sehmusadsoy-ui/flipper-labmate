@@ -8,6 +8,9 @@ on:
       - "tests/test_labmate_scope_buffer.c"
       - "src/labmate_scope_timeguard.[ch]"
       - "tests/test_labmate_scope_timeguard.c"
+      - "src/labmate_scope_native.[ch]"
+      - "tests/test_labmate_scope_native.c"
+      - "tests/mock_v19/**"
       - "src/labmate_scope_gate.[ch]"
       - "tests/test_labmate_scope_gate.c"
       - "src/labmate_resource_policy.[ch]"
@@ -20,6 +23,9 @@ on:
       - "tests/test_labmate_scope_buffer.c"
       - "src/labmate_scope_timeguard.[ch]"
       - "tests/test_labmate_scope_timeguard.c"
+      - "src/labmate_scope_native.[ch]"
+      - "tests/test_labmate_scope_native.c"
+      - "tests/mock_v19/**"
       - "src/labmate_scope_gate.[ch]"
       - "tests/test_labmate_scope_gate.c"
       - "src/labmate_resource_policy.[ch]"
@@ -106,6 +112,34 @@ jobs:
             -o "$RUNNER_TEMP/v19-scope-timeguard-san"
           ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 \
             UBSAN_OPTIONS=halt_on_error=1 "$RUNNER_TEMP/v19-scope-timeguard-san"
+
+      - name: Mock actual PC1 / EXTI1 matched-Momentum GPIO and firmware leases
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -O2 \
+            -Itests/mock_v19 -Isrc \
+            src/labmate_scope_native.c src/labmate_scope_gate.c \
+            src/labmate_scope_buffer.c src/labmate_scope_timeguard.c \
+            src/labmate_resource_policy.c src/labmate_comm_resource.c \
+            tests/mock_v19/mock_runtime.c tests/test_labmate_scope_native.c \
+            -o "$RUNNER_TEMP/v19-native-mock"
+          "$RUNNER_TEMP/v19-native-mock"
+
+      - name: Mock native IRQ + ownership fault matrix with ASAN UBSAN
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -O1 -g \
+            -fsanitize=address,undefined -fno-omit-frame-pointer \
+            -Itests/mock_v19 -Isrc \
+            src/labmate_scope_native.c src/labmate_scope_gate.c \
+            src/labmate_scope_buffer.c src/labmate_scope_timeguard.c \
+            src/labmate_resource_policy.c src/labmate_comm_resource.c \
+            tests/mock_v19/mock_runtime.c tests/test_labmate_scope_native.c \
+            -o "$RUNNER_TEMP/v19-native-mock-sanitize"
+          ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 \
+            UBSAN_OPTIONS=halt_on_error=1 "$RUNNER_TEMP/v19-native-mock-sanitize"
 
       - name: Assert no hardware integration or artifacts are introduced by this unit
         shell: bash
