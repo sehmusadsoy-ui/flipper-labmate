@@ -119,6 +119,38 @@ def bounded_changed_offsets(left: Path, right: Path, limit: int = 16) -> list[in
     return offsets
 
 
+def check_dfu_date_only_difference(old: bytes, new: bytes) -> int:
+    """Require the pinned DFUs differ ONLY at build-date text and CRC footer.
+
+    Asserts equality of all remaining DFU bytes, not general firmware
+    compatibility, external runtime behavior or on-device fingerprint.
+    The DFU suffix checksum uses the complement of zlib's CRC32.
+    """
+    if len(old)!=len(new) or len(old)<32 or old[:5]!=b"DfuSe" or new[:5]!=b"DfuSe":
+        raise ValueError("not matching DfuSe image headers/length")
+    old_date=b"HEAD\\x0016-10-2026"
+    new_date=b"HEAD\\x0017-10-2026"
+    # Python bytes literal written in the generated source must contain
+    # the ASCII HEAD sentinel plus one actual zero-byte escape.
+    i=old.find(old_date)
+    j=new.find(new_date)
+    if i<0 or j<0 or i!=j or old.count(old_date)!=1 or new.count(new_date)!=1:
+        raise ValueError("expected exact one-byte firmware build-date update absent")
+    p=i+len(b"HEAD\\x00")+1
+    if old[p]!=ord("6") or new[p]!=ord("7"):
+        raise ValueError("changed byte not the correct date digit")
+    if old[:p]!=new[:p] or old[p+1:-4]!=new[p+1:-4]:
+        raise ValueError("unexpected DFU payload delta beyond build-date byte")
+    if old[-16:-4]!=new[-16:-4]:
+        raise ValueError("DFU suffix metadata changed apart from checksum")
+    for data in (old,new):
+        expected=(~zlib.crc32(data[:-4])) & 0xFFFFFFFF
+        stored=int.from_bytes(data[-4:],"little")
+        if stored!=expected:
+            raise ValueError("invalid DFU CRC suffix")
+    return p
+
+
 def audit(trial: Path, final: Path, first: dict[str,str] = TRIAL,
           second: dict[str,str] = FINAL) -> dict[str,tuple[int,int,int]]:
     if trial.resolve() == final.resolve():
@@ -141,6 +173,11 @@ def main() -> int:
     parser.add_argument("--final",type=Path,required=True)
     options=parser.parse_args()
     result=audit(options.trial,options.final)
+    changed_date_offset=check_dfu_date_only_difference(
+        (options.trial/"firmware.dfu").read_bytes(),
+        (options.final/"firmware.dfu").read_bytes())
+    print("E11 DFU strict match: IDENTICAL except exact build-date digit at "
+          + str(changed_date_offset) + " and validated suffix CRC; NO DEVICE claim")
     for name,(changed,old,new) in result.items():
         print(f"E11 BYTE DELTA {name}: changed-by-position={changed} trial-bytes={old} candidate-bytes={new}")
     offsets=bounded_changed_offsets(options.trial/"firmware.dfu", options.final/"firmware.dfu")
@@ -163,7 +200,7 @@ def main() -> int:
         crc=zlib.crc32(dfu[:-4])
         print(f"E11 DFU {label} checksum: stored=0x{stored:08x} calculated=0x{crc:08x} standard_crc_match={'YES' if stored==crc else 'NO'}")
     print("Unchanged source and small byte delta do NOT by themselves prove unchanged firmware behavior.")
-    print("E11 PINNED PAIR IDENTITIES PASS; BINARY DIFFERENCE REPORT ONLY")
+    print("E11 PINNED PAIR IDENTITIES PASS; STRICT DFU DATE/CRC DIFF ONLY; NO DEVICE PASS")
     print("DO NOT INFER DFU RUNTIME EQUIVALENCE, DEVICE PASS, SAFE FAP-ONLY MIX, OR RELEASE APPROVAL")
     return 0
 
