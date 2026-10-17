@@ -308,6 +308,63 @@ unchanged.
 5. Later independent waveform accuracy at the university with instructor
    and the remaining real BME280/DS18B20/SD tests as material arrives.
 
+## Phase 1E — 128×64 real-edge plot + stateless Canvas (2026-10-18)
+
+Added **source-only, UI-hardware-isolated** modules on the **Draft v1.9
+branch**. No `labmate.c`, `labmate_internal.h`, navigation,
+menu, Profile, Logger or existing E11 callbacks were changed.
+
+- `src/labmate_scope_plot.[ch]`: choose at most the **last 64
+  consecutive actually recorded edges** out of the native 256-edge
+  buffer, and make at most **126 line segments**. The projector uses
+  verified delta ticks to derive X coordinates in [5,122], and only
+  one of two logical Y levels (HIGH=23, LOW=43). It draws each
+  observed high/low interval between two real edges followed by its
+  actual transition. It **does not extrapolate a waveform before the
+  first or beyond the last edge**. One isolated edge is insufficient
+  for a pulse duration and therefore draws no waveform.
+- Full 32-bit modulo counter wrap is checked against individual
+  `tick` and `delta_ticks`. Invalid/zero deltas, duplicate
+  logical levels, cumulative ambiguous spans and insufficient
+  capacity fail closed. Cropped windows are explicitly labeled
+  `LAST64`, not represented as complete capture history.
+- `src/labmate_scope_display.[ch]` is a **view-only** 128×64 Canvas
+  renderer. Receives consistent, app-thread prepared geometry,
+  validates its bounds **before** any waveform draw, separates
+  `WAIT REAL EDGE` (live armed) from `NO TRIGGER` (terminal),
+  and displays real counts plus `LIVE/HOLD/BUSY/ERR/FULL` states.
+  `BUSY`, unsupported and error states cannot paint stale live
+  traces; no drawing routine claims ownership of GPIO or storage.
+- `tests/test_labmate_scope_plot.c` checks empty/single-edge
+  behavior, exact unequal duty geometry, modulo tick wrap,
+  corrupt delta/logic transitions, 64-edge maximum and array bounds.
+- `tests/mock_v19/gui/gui.h` +
+  `tests/test_labmate_scope_display.c` check Canvas line coordinates,
+  header/footer, a real two-edge trace, BUSY suppressing trace,
+  terminal NO TRIGGER without fabricated waveform, and refusal
+  before drawing any malformed geometry.
+- CI `check-v19-scope-buffer-host.yml` includes the two module
+  suites with GCC strict C11 and ASAN/UBSAN; it is **authored, not yet
+  confirmed to run** on this branch.
+
+**Verification:** The exact GitHub blob objects were compared with
+the local source bytes and matched. Local GCC -O2 strict C11,
+Clang -O2 strict C11 and GCC -g -O1 ASAN/UBSAN runs all reported
+**PASS** for both projector and mocked Canvas renderer, including
+after the NO TRIGGER wording fix. This is neither a matched Momentum
+SDK build nor a Flipper screen capture; **physical v1.9 PASS is NOT
+claimed**.
+
+**Final pending linkage:** The future app adapter must (1) take an
+IRQ-excluded `labmate_scope_native_read` copying at most 64 latest
+real edges, (2) project them OUTSIDE the IRQ into bounded geometry,
+(3) retain coherent display status even after STOP, (4) call the
+Canvas view on its normal UI draw path, and (5) use dedicated
+`LabMateCaptureScope` START/STOP/EXIT routing without renumbering
+historical persisted IDs or moving INFO/About from the last group.
+The available exact-matched native SDK build is the next essential
+gate; **do not ask the owner to replace the working E11 FAP yet**.
+
 ## Objective acceptance before exposing the scope in menu
 
 1. Existing FAP menu and old screen identifiers stay unchanged until
