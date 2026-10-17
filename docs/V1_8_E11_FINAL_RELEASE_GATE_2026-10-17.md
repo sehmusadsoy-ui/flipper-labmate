@@ -78,6 +78,32 @@ firmware installation plan, ABI attestation for other devices, exact
 custom-firmware restore rehearsal or owner approval for replacing the
 public v1.8 Stable asset. Those safety blockers stay OPEN.
 
+## 2026-10-17 — exact GitHub source local test execution and scoped distribution decision
+
+The preservation script and its native Python unittest file were copied to
+an isolated local test directory and **each one's Git blob SHA was matched
+to the exact file on the GitHub development branch**:
+
+- `scripts/check_v18_e11_public_release_preservation_ro.py` blob
+  `1751e6ca314fc9caeb687473cec49ebfe16b5d49`.
+- `tests/test_v18_e11_public_release_preservation_ro.py` blob
+  `e573c7cc262b79fd10e8e6fed03c869d1af5dd5b`.
+- **Local `python3 -m unittest discover -v -s tests -p
+  test_v18_e11_public_release_preservation_ro.py` result: 18/18 PASS.**
+  This establishes the pinned positive/negative portable policy test
+  behavior. It is **NOT** a claim that GitHub Actions executed or that
+  the whole Momentum firmware/FAP pair was freshly rebuilt.
+  GitHub Actions run/check lookup through the available connector returned
+  no verifiable new run conclusions.
+
+A focused [distribution scope and recovery decision](V1_8_E11_DISTRIBUTION_SCOPE_DECISION_2026-10-17.md)
+now separates: (a) unchanged public stock-compatible historical
+v1.8, (b) exact final-label E11 FAP operating on **one** matched
+custom Momentum setup after approved FAP-only trial, and
+(c) presently unapproved full-firmware/resource update for unrelated
+devices. FAP backup existence is **not** a demonstrated firmware restore.
+Universal/public Stable replacement stays **NO-GO**.
+
 ## Explicit remaining gates before replacing public v1.8
 
 1. **Custom-firmware distribution/restore plan — BLOCKER.** Decide a supported, recoverable installation route for *both* patched Momentum firmware/native resources and exact final FAP, with device-specific compatibility/rollback proof. A FAP-only universal Stable update is prohibited by current ABI evidence. Backup *availability* is not a restore rehearsal.
