@@ -1,5 +1,22 @@
 # Changelog
 
+## [v1.8 E11 — Custom Momentum Edition] — 2026-10-17 (public compatibility pre-release)
+
+- [Public E11 GitHub release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8-e11-custom-momentum) is a separately tagged **pre-release** of the integrated `v1.8` app. It does **not** replace or alter original v1.8 Stable.
+- Source commit `99cb65d0194dc59d423cfa439c90618ac6b9f114`; tested candidate FAP SHA256 `393fe3e52aa710162a42d7299aa053f538b2ee1ad6542755cf402b83c1931b61`.
+- Implements I2C Explorer and optional 3.3V 1-Wire features alongside existing v1.8 tools, but requires **matching E11-patched Momentum firmware and native plugins/resources**. Not universally compatible with ordinary Momentum, official Flipper firmware or unrelated custom firmware.
+- On a matched device, operator-reported UI, ESP32-S2 UART at 115200, PA7→PC1 100 Hz and 1 kHz 50% PWM/Frequency/Pulse loopback, STOP/RESTART and isolated fresh Logger CSV/Profile persistence PASS.
+- Actual I2C ACK, DS18B20 conversion, independent calibration/OFF voltage, broad native third-party conflicts, fault-injection microSD recovery and exact previous custom-firmware rollback remain unverified/deferred.
+- Matched firmware package is marked expert-review only. Full updater may alter firmware, bundled SD resources/apps/settings. E11 source remains under [Draft PR #13](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/13) and **has not been merged into `main`**.
+
+## [1.8] — 2026-10-14 (ordinary Stable published)
+
+- [Original v1.8 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8): one integrated FAP with modular coordinator, UART Terminal and Counter STOP/RESUME, preserving earlier Logger, Profiles, PWM, Button Analyzer and diagnostic tools.
+- Published FAP SHA256 `119c44bb854030a73a60fa205d38770bf77f048bb166ab379a03135c1de5f3b0`; exact source tag `02b05639364d6dd71f5eb70456eca379c59218cb`. Release tests include operator-reported 19/19 scope acceptance.
+- I2C Explorer and optional 1-Wire were **not shipped in this ordinary Stable** due to native firmware ownership/cancellation concerns; separate E11 custom firmware channel above provides their source and limited hardware-tested build.
+- External calibrated measurements and deliberate storage failure tests were deferred; no general original/third-party firmware compatibility guarantee.
+
+
 ## [1.7] - 2026-10-12 (Stable published)
 
 **[v1.7 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7)**
