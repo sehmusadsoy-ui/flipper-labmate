@@ -1,0 +1,50 @@
+name: E11 final-label versus live-trial binary comparison (NO FLASH)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - ".github/workflows/check-v18-e11-final-binary-delta.yml"
+      - "scripts/audit_v18_e11_final_binary_delta_ro.py"
+      - "tests/test_v18_e11_final_binary_delta_ro.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  compare_pin_only:
+    name: Exact two review archives binary delta, no device and no release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact audit code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Host-only positive/negative read-only artifact audit tests
+        shell: bash
+        run: python3 -m unittest discover -v -s tests -p test_v18_e11_final_binary_delta_ro.py
+      - name: Download exactly pinned immutable original and final review artifacts
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = "sehmusadsoy-ui/flipper-labmate"
+          test "$(gh run view 38966248325 -R "$GITHUB_REPOSITORY" --json conclusion -q .conclusion)" = "success"
+          test "$(gh run view 39035056937 -R "$GITHUB_REPOSITORY" --json conclusion -q .conclusion)" = "success"
+          mkdir -p "$RUNNER_TEMP/e11_trial" "$RUNNER_TEMP/e11_final"
+          gh run download 38966248325 -R "$GITHUB_REPOSITORY" \
+            -n v18DEV-FULL-MNTM012-REVIEW-DO-NOT-FLASH -D "$RUNNER_TEMP/e11_trial"
+          gh run download 39035056937 -R "$GITHUB_REPOSITORY" \
+            -n v18-FINAL-LABEL-E11-PAIRED-REVIEW-DO-NOT-FLASH -D "$RUNNER_TEMP/e11_final"
+          echo "Two archived review-only artifacts downloaded into disposable runner temp; no device."
+      - name: Compare seven-file provenance and exact old-versus-new binary identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/audit_v18_e11_final_binary_delta_ro.py \
+            --trial "$RUNNER_TEMP/e11_trial" --final "$RUNNER_TEMP/e11_final"
+          echo "BINARY DIFF ONLY. NOT EQUIVALENCE, NOT INSTALL OR STABLE RELEASE APPROVAL."
