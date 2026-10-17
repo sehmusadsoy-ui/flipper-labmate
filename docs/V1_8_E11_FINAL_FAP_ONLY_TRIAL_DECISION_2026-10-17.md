@@ -1047,3 +1047,79 @@ recorded; source, synthetic tests, read-only recovery plan PASS.
 New v1.8 GUI functional, version INFO, PWM default STOP,
 button/counter, UART, logger/profile persistence tests PENDING.
 Stable/main/unpublished release and v1.9 HOLD.
+
+## 2026-10-17 — ACTUAL E11 PHASE 2B TWO-RENAME FAP PROMOTION: PASS (DEVICE FILE IDENTITY)
+
+The operator executed the previously consented and independently
+SHA256-verified immutable phase-2B PowerShell runner on COM7.
+Actual user-provided device stdout, copied without reinterpreting
+the phase-2B / runtime distinction:
+
+```text
+E11 FINAL AKTIVASYON BETIGI DOGRULANDI
+E11 FINAL PHASE 2B - TWO PINNED SAME-DIR SAFE RENAMES ONLY
+E11 PHASE 2B TWO SAME-DIRECTORY SAFE RENAMES (NOT FULL FIRMWARE FLASH)
+result: E11 FAP-ONLY PROMOTION FILE IDENTITY PASS
+active_fap: /ext/apps/Tools/labmate.fap
+active_new_fap_md5: 8d44e6ecce500036a8314a8c0e961806
+old_fap_device_backup: /ext/apps/Tools/labmate.e11-pre-final.bak
+old_fap_device_backup_md5: edc86bf6ccb2e9b0215f2903b6f6725f
+stage_now_absent: YES
+native_js_manifest: UNCHANGED
+firmware_flash: NO
+user_csv_profiles: NOT ACCESSED
+new_v18_app_boot_test: PENDING
+stable_release: NOT AUTHORIZED
+E11 2B FAP-ONLY FILE PROMOTION PASS - v1.8 DEVICE GUI STILL PENDING
+E11 PHASE 2B FILE PROMOTION VERIFIED - DEVICE GUI NOT YET TESTED
+STOP HERE. Share output BEFORE launching final LabMate.
+```
+
+**GATE: ACTUAL DEVICE PHASE 2B PASS FOR FAP FILE ACTIVATION**, not merely a
+host simulation. Both same-directory safe renames completed. The
+active `labmate.fap` now holds the final review-only v1.8-label
+candidate, exactly the previously stage-2A-verified 81,528-byte
+FAP MD5 `8d44e6ecce500036a8314a8c0e961806`
+(SHA256 from PC file
+`393fe3e52aa710162a42d7299aa053f538b2ee1ad6542755cf402b83c1931b61`).
+The original device-tested v1.8DEV 81,532-byte FAP is retained at
+`/ext/apps/Tools/labmate.e11-pre-final.bak`, MD5
+`edc86bf6ccb2e9b0215f2903b6f6725f`.
+Its independently pinned PC copy remains untouched, along
+with the complete original E11 candidate bundle. The
+nonapp staging filename is absent after rename. The script
+revalidated the source/destination file identities,
+native JS GPIO/Event Loop/Manifest hashes and preserved
+old backup after these changes. It issued NO firmware flash,
+no other-app write and no CSV or Profiles mutation.
+
+**Remaining runtime acceptance — NOT YET PASS:**
+This proves on-device SD file identity only; it does not establish
+that final FAP launches, About shows `v1.8`,
+menu ordering `MEASURE → OUTPUT → RECORDS → COMM → INFO`
+(with INFO last), reliable STOP/BACK/EXIT or re-open,
+PWM starts STOPPED, UART/ESP32 peer behavior, GPIO/timer
+resource arbitration, logging, profile/history persistence
+or hardware/bench tests on the *new* candidate.
+Prior v1.8DEV A–G 36/36 and earlier main Stable physical
+test evidence is separate and must not be relabeled as
+acceptance of this exact newly installed FAP.
+
+**Next controlled operator step: GUI smoke test without GPIO wiring
+or SD write operations.** On device navigate to Applications /
+Tools / LabMate, launch exactly once, verify visible v1.8
+in INFO/About and INFO is the last root menu item,
+verify COMM appears above INFO, check PWM is STOP by default,
+use BACK/EXIT, then reopen and exit again. If crash,
+missing app, version mismatch or any unsolicited output,
+STOP; no automatic retry, recovery, file rename or firmware flash.
+No generator RUN, logger START, profile SAVE/DELETE or any
+connected external GPIO hardware as part of this smoke test.
+The separate H1 LIVE BUSY, calibration, DS18B20/I2C,
+switch-bounce and SD fault trials remain deferred until
+appropriate physical setup.
+
+**Branch/release:** Keep PR #13 DRAFT, `main`
+and existing public Stable tag/assets unchanged, v1.9 HOLD.
+Do not infer a new Stable release from this private E11
+app-only final-label file promotion.
