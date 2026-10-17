@@ -13,6 +13,8 @@ on:
       - "scripts/install-v18-e11-reviewed-full.ps1"
       - "scripts/audit_v18_e11_full_transition.py"
       - "tests/test_v18_e11_full_transition.py"
+      - "scripts/verify_v18_e11_pc_backup_gate.py"
+      - "tests/test_v18_e11_pc_backup_gate.py"
   workflow_dispatch:
 
 permissions:
@@ -41,6 +43,8 @@ jobs:
           $ErrorActionPreference = 'Stop'
           python -m unittest discover -v -s tests -p test_v18_e11_review_stage.py
           if ($LASTEXITCODE -ne 0) { throw 'Windows E11 review-stage tests FAILED' }
+          python -m unittest discover -v -s tests -p test_v18_e11_pc_backup_gate.py
+          if ($LASTEXITCODE -ne 0) { throw 'Windows E11 two-state PC backup gate tests FAILED' }
       - name: Fetch independently pinned actual full candidate for PUBLIC-only review
         shell: pwsh
         run: |
@@ -114,7 +118,7 @@ jobs:
           try {
             & ./scripts/install-v18-e11-reviewed-full.ps1 -CandidateDirectory $inputDir -Apply -AcceptExitfixReplacement -AcceptNonExactFirmwareRollback
           } catch {
-            if ($_.Exception.Message -match 'explicit rollback, working EXITFIX, historical data, settings and Momentum-root paths REQUIRED') {
+            if ($_.Exception.Message -match 'explicit rollback, working EXITFIX, historical AND current LabMate data snapshots, settings and Momentum-root paths REQUIRED') {
               $blocked = $true
             } else { throw }
           }
