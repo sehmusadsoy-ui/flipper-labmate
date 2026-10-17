@@ -850,3 +850,44 @@ v1.9 HOLD.
 ## E11 native echo probe operator result — 2026-10-17
 
 Actual COM7 read-only check returned `EXACT_COMMAND_ECHO`, `EXPECTED_EMPTY_FILE`, pinned old active FAP size 81532 and MD5 PASS, native resources MD5 PASS, stage PRESENT EMPTY 0 bytes with verified empty MD5, reserved backup target absent. `write_chunk_ready_probed: NO`; no FAP upload, app replacement or firmware/data change. The real first CLI line is the command echo for a stat command. This result is not a successful binary upload test. Previous faulty stage scripts remain prohibited.
+
+## Final reviewed ONE-SHOT non-app empty-sidecar stage handoff (2026-10-17, NOT YET RUN)
+
+Source-backed actual device CLI echo evidence is recorded immediately
+above. The original retired `run-v18-e11-resume-verified-empty-stage.ps1`
+wrapper **must not be used** because it pins a flawed Ready-first helper.
+
+Prepared a distinct operator handoff
+`scripts/run-v18-e11-empty-stage-echo-verified-once.ps1`,
+immutable source ref
+`5c535ff2f37bd66ed1afc5851cb4acb63f25c4f6`,
+independent ASCII source SHA256
+`3375790133c11829db22c0d7fa6b2ac8ad195b72600cf4c4c6d9d7ec7f10b497`.
+This wrapper pins tested helper code to immutable commit
+`8f35e5a782743cc1019f322dfcd53445ac61cd3a`
+(which includes corrected **native CLI command echo first,
+Ready second**, strict zero-stage MD5/size, old original E11
+FAP/native resource checks, actual previous verified PC old
+FAP backup and final candidate SHA256 checks, per-chunk size
+attestation and stage-complete MD5).
+
+[Dedicated combined host CI #39048221398](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/39048221398):
+**SUCCESS**, including PowerShell parser, immutable source pin
+screen and modeled native shell echo second-line Ready transfer.
+This **is not** an actual successful device upload.
+
+**Permitted stage-only behavior if the operator chooses to execute:**
+append exactly 81,528 reviewed candidate bytes to an ALREADY
+PRESENT `/ext/apps/Tools/labmate.e11-new-stage`
+ONLY if it is STILL **0 bytes** and matches empty MD5.
+No app promotion, no rename, no deletion, no old-FAP write,
+no firmware, Manifest, other apps, CSV or Profile modification.
+On the first anomaly, STOP and preserve the current stage state;
+NEVER automatically retry or clean up, even after a partial chunk.
+The old working app, PC old FAP backup and Stable remain unchanged.
+
+**Current status when this handoff was prepared:** prewrite,
+PC old/new pair, and real device post-abort/native CLI read-only
+PASS; corrected stage procedure HOST PASS. **Third actual stage
+upload not yet executed**, no new final-label app installed,
+all final functional acceptance and release gates PENDING.
