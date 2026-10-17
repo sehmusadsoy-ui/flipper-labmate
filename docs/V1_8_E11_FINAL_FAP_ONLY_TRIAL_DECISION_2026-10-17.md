@@ -197,7 +197,7 @@ publication or v1.9 promotion.
   `storage read_chunks` **only** to copy the installed
   81,532-byte FAP to a brand-new PC backup folder,
   asserts independently pinned SHA256
-  `2b31ec3fa9050580dc3c3ff80138578ed185d70811aa8124e2bd2d00b8d981af0`,
+  `2b31ec3fa9050580dc3c3ff80138578ed185d70811aa8124ebd2d00b8d981af0`,
   re-reads remote identity MD5s and writes a
   PC-only SHA/provenance status with an incomplete marker
   preserved on any failure. There is NO Flipper write,
