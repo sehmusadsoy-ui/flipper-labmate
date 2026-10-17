@@ -139,3 +139,60 @@ Test evidence: [full actual archive reconciliation
 upload fresh downloadable binaries for the known-rejected
 SPLIT derivative. Source provenance, external accessories,
 device/SD and working EXITFIX all remain untouched.
+
+
+## 2026-10-17 — Full E11 route selected for future controlled trial; wrong legacy installer blocked
+
+**Engineering decision after final actual-archive reconciliation:** Retire
+FAP-SPLIT as a live candidate. The only resource-content-coherent
+E11 route currently reviewed is **the original matched FULL updater**
+from GitHub Actions #38966248325, source
+`ba379f20fb29369501e1057f570a911f71ac83f8`, firmware DFU
+SHA256 `88d12fee4edb4fa0ec042a1b526ddb41b8db36aeb9554c6a9a8aef1c37e4e1b0`,
+full updater TGZ
+`11ed3cdf4e99c9c7218973695d349cd946be97d21dfc59231113bde15e94c553`,
+new LabMate FAP
+`2b31ec3fa9050580dc3c3ff80138578ed185d70811aa8124ebd2d00b8d981af0`.
+
+[Exact offline full transition audit](../scripts/audit_v18_e11_full_transition.py)
+now consumes the operator's actual old-Manifest summary
+(`old_cleanup_lists_installed_labmate_fap: YES`),
+the independently SHA256-pinned ORIGINAL FULL binary
+and its MD5/size-consistent embedded NEW Manifest.
+It confirms the EXPECTED resource-stage transition:
+`OLD_EXITFIX_TARGETED_NEW_E11_FAP_SUPPLIED`.
+This is **a planned replacement of EXITFIX**, not a
+preservation strategy and not a prediction of boot success.
+
+**Safety remediation:** The historical
+[`install-v18-full012-dev-firmware.ps1`](../scripts/install-v18-full012-dev-firmware.ps1)
+was pinned to an *older*, different DFU/FAP trio and includes
+obsolete wording about installing the FAP after firmware startup.
+It now **throws immediately for `-Apply`**, before attempting
+any USB command or staging; DO NOT use it to install E11.
+[Windows PowerShell CI #38984878695](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38984878695)
+**SUCCESS** confirmed actual legacy `-Apply` rejection,
+and the old archive's non-installing stage-only behavior.
+
+[Actual full archive transition CI #38984866895](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38984866895)
+**SUCCESS** with
+`resource_phase_expected_result:
+OLD_EXITFIX_TARGETED_NEW_E11_FAP_SUPPLIED`,
+`user_install_authorized: NO`,
+`physical_trial_result: NOT_PERFORMED`.
+[Integrated host CI #38984866835](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38984866835)
+**SUCCESS**. No production `src/**`, application.fam,
+patched firmware source, main/Stable or installed EXITFIX changed.
+
+**The missing physical gate cannot be completed by CI:**
+A future first device E11 trial would REPLACE the current working
+EXITFIX FAP and custom `mntm-dev dirty` firmware. The offline
+official MNTM-012 rollback is **NOT byte-identical to that custom
+firmware**. Firmware writes can affect internal settings,
+app/plugin compatibility and recovery; full SD file backup
+is optional per owner preference, not permission to erase.
+This risk must be disclosed and the user must **explicitly
+approve the exact full E11 firmware replacement and its rollback
+limitations before a write**, followed by actual on-device
+GPIO/TIM1/TIM2/EXTI STOP/BACK/conflict/re-entry tests.
+Until such approval and tests: **PHYSICAL NO-GO, DO NOT FLASH**.
