@@ -1178,3 +1178,46 @@ patched E11 device's accepted file activation + 5/5 GUI smoke,
 not a new public Stable artifact, main/PR merge,
 cross-firmware compatibility sign-off or v1.9 opening.
 Draft PR #13 still DRAFT, Stable/main unchanged.
+
+## 2026-10-17 — REAL installed E11 final-label v1.8 passive-records/UART navigation: 3/3 USER PASS
+
+After the first limited 5/5 runtime acceptance of this exact
+newly installed E11 final-label `v1.8` FAP, the operator
+completed the separately requested no-wire, nonmutating
+follow-up and reported **verbatim**:
+
+```text
+Log History: PASS / Profiles S1: PASS / UART STOP-BACK: PASS
+```
+
+**Accepted real device scope:** existing Log History CSV
+can be opened/viewed and exited with BACK; an existing
+Profiles S1 slot can be viewed without save/load/delete;
+COMM/UART Terminal opens and returns via STOP/BACK
+without transmitting anything. Combined with the
+five earlier startup/menu/About/PWM-default/exit checks,
+this is **8/8 user-reported safe user-interface checks
+on the exact newly installed candidate**. No Profile
+LOAD/SAVE/DELETE was approved or claimed and no
+CSV data-write operation was part of this check.
+UART's STOP/BACK PASS is **not** a live ESP32-S2
+RX/TX or baud-rate accuracy test; visual Log History
+is **not** a new Logger CSV recording test.
+
+**Gates still open:** real final-candidate Frequency Meter
+and Pulse Analyzer signal behavior, PWM output and STOP
+under scoped 3.3V loopback, TIM2 Counter and Button
+Analyzer physical behavior and resource-release/owner
+conflict (especially H1 simultaneous BUSY), real UART
+ESP32-S2 peer transfer, disposable scratch Logger CSV
+and backup-gated empty Profiles slot write; separately
+deferred DS18B20 positive, I2C ACK, switch bounce
+and instrument calibration where equipment is absent.
+Maintain prior v1.8DEV hardware evidence as *historical
+for a different binary*, not an automatic PASS here.
+
+**No SD install/write, firmware flash, resource replacement,
+cleanup or Stable publication occurred in these 3 new
+screen-level tests.** Preserve the device old-FAP `.bak`
+and original verified PC backup, retain Draft PR #13,
+existing public Stable/main unchanged, v1.9 HOLD.
