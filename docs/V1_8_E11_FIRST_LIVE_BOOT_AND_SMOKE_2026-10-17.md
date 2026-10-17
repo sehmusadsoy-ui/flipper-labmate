@@ -761,3 +761,41 @@ flash, no bypass of the preflight.
 **Round H0: PENDING corrected local preflight. H1 and H2: NOT RUN.
 A–G 36/36 PASS remains unchanged.** Do not claim a real native
 PA7 BUSY denial until separately observed.
+
+## 2026-10-17 — H0 SECOND OPERATOR ATTEMPT: **INDETERMINATE JS RESULT; NO PASS**
+
+Operator used the corrected on-PC temp `scripts/` staging. The
+helper passed local test fixture and pinned FULL candidate SHA256
+checks and continued through `device_info`, actual installed
+E11 FAP/native JS plugin/remote probe MD5 checks, **then
+issued one** `js /ext/apps/Scripts/e11_h_pa7_read_only.js`
+at operator-confirmed PWM STOP. It returned:
+
+```text
+E11 H PA7 PROBE INCOMPLETE/FAIL: free-state PA7 read did not succeed unambiguously
+H0 henuz PASS degil. H1 testine gecme.
+```
+
+At the exact helper's `evaluate_output()` source contract, this
+means it saw the test script `E11_H_PA7_BEGIN` marker but
+**did NOT establish** the required unambiguous
+`E11_H_PA7_READ_OK` without error/BUSY. Possibilities include
+native JS `GPIO pin BUSY`, JavaScript runtime exception, or
+other malformed/partial CLI output. This console text by itself
+does NOT justify selecting a specific root cause. Unlike the
+first attempt's host path error, the second attempt DID reach
+the device and start the test JS. **H0 NOT PASS / diagnostic
+investigation OPEN; H1/H2 NOT RUN.** A–G 36/36 unchanged.
+
+A newer committed `scripts/check_v18_e11_h_pa7_cli.py` helper
+on the same development branch has `safe_cli_flags()`
+containing only boolean markers
+`launched,begin,read_ok,gpio_busy,error,trace,done,missing_script,usage`
+and now appends this safe summary to failed
+`evaluate_output()` results rather than printing raw device
+CLI text, which could expose serial numbers or unrelated paths.
+**Only one further controlled H0 diagnostic may be requested**
+after verifying qFlipper is closed, PWM STOP and the patched helper
+is the expected source. No blind retries, no H1 until clean H0.
+Do not bypass MD5 or change GPIO pin settings, firmware, installed
+application, SD historical data or scripts.
