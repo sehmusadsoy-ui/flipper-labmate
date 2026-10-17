@@ -1,0 +1,308 @@
+name: LabMate v1.8 final-label matched REVIEW pair (NO FLASH)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - ".github/workflows/check-v18-final-label-review-pair.yml"
+      - "scripts/stage_v18_final_label_review_only.py"
+      - "tests/test_v18_final_label_review_only.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  review_full_update:
+    name: Build and audit full Momentum 012 migration (NO USB)
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: LabMate development source
+        uses: actions/checkout@v4
+        with:
+          path: labmate
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Exact Momentum development source
+        uses: actions/checkout@v4
+        with:
+          repository: Next-Flip/Momentum-Firmware
+          ref: d3f89dfe2ef6b01839201598e9be1590cba80322
+          path: momentum-src
+          persist-credentials: false
+
+      - name: Installed MNTM-012 release source for upgrade comparison
+        uses: actions/checkout@v4
+        with:
+          repository: Next-Flip/Momentum-Firmware
+          ref: mntm-012
+          path: momentum-012
+          persist-credentials: false
+
+      - name: Unit-test full archive parser and reject paths (NO USB)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -v -s labmate/tests -p test_v18_full_update_bundle.py
+
+      - name: Compare radio and option-byte policy; apply exact tested patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C momentum-src rev-parse HEAD)" = "d3f89dfe2ef6b01839201598e9be1590cba80322"
+          test "$(git -C momentum-012 rev-parse HEAD)" = "e1784e7418d8b074e971983ceb6fef0f37e52ae4"
+          cmp momentum-012/scripts/ob.data momentum-src/scripts/ob.data
+          for key in COPRO_CUBE_VERSION COPRO_STACK_BIN COPRO_STACK_TYPE COPRO_OB_DATA; do
+            before="$(grep -E "^${key} = " momentum-012/fbt_options.py)"
+            after="$(grep -E "^${key} = " momentum-src/fbt_options.py)"
+            test "$before" = "$after"
+            echo "MNTM012 C2/option-byte source setting MATCH: $after"
+          done
+          python3 labmate/scripts/patch_momentum_i2c_timeout.py momentum-src
+          python3 labmate/scripts/patch_momentum_i2c_timeout.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_resource_lease.py momentum-src --allow-timed-i2c --apply
+          python3 labmate/scripts/patch_momentum_gpio_tryadd.py momentum-src --allow-prepatched --apply
+          python3 labmate/scripts/patch_momentum_native_pwm_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_pwm_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_pwm_lease.py momentum-src
+          python3 labmate/tests/test_v18_pwm_native_joint.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_js_gpio_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_js_gpio_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_js_gpio_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_pulse_reader_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_pulse_reader_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_pulse_reader_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_pulse_lease_firmware.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_digital_sequence_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_digital_sequence_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_digital_sequence_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_ibutton_tim1_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_ibutton_tim1_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_ibutton_protocol_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_ibutton_protocol_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_ibutton_tim1_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_ibutton_protocol_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_nfc_timers_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_nfc_timers_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_nfc_tim1_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_infrared_rx_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_infrared_rx_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_infrared_rx_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_infrared_tx_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_infrared_tx_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_infrared_tx_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_infrared_rx_worker_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_infrared_rx_worker_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_infrared_rx_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_infrared_rx_worker_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_rfid_read_tim1_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_rfid_read_tim1_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_rfid_read_tim1_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_rfid_capture_tim2_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_rfid_capture_tim2_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_rfid_capture_tim2_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_lfrfid_read_worker_busy.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_lfrfid_read_worker_busy.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_lfrfid_read_worker_busy.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_lfrfid_raw_read_busy.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_lfrfid_raw_read_busy.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_lfrfid_raw_read_busy.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_lfrfid_busy_ui.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_lfrfid_busy_ui.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_lfrfid_busy_ui.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_rfid_emulate_dma_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_rfid_emulate_dma_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_rfid_emulate_dma_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_lfrfid_emulate_busy.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_lfrfid_emulate_busy.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_lfrfid_emulate_worker_busy.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_rfid_field_owner.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_rfid_field_owner.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_rfid_field_owner.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_subghz_rx_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_subghz_rx_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_subghz_rx_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_subghz_rx_busy_callers.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_subghz_rx_busy_callers.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_subghz_rx_callers.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_subghz_tx_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_subghz_tx_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_subghz_tx_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_onewire_slave_exti_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_onewire_slave_exti_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_onewire_slave_exti_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_nfc_irq_exti_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_nfc_irq_exti_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_nfc_irq_exti_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_serial_expansion_exti_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_serial_expansion_exti_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_serial_expansion_exti_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_ext_cc1101_rx_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_ext_cc1101_rx_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_ext_cc1101_rx_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_ext_cc1101_free_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_e11_extended_dma_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_e11_extended_dma_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_extended_dma_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_iso15693_irq_restore_busy.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_iso15693_irq_restore_busy.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_iso15693_irq_restore_busy.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_signal_reader_e11_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_signal_reader_e11_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_signal_reader_e11_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_ext_cc1101_tx_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_ext_cc1101_tx_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_ext_cc1101_tx_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_ext_cc1101_free_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_wiegand_exti_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_wiegand_exti_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_wiegand_exti_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_imu_fifo_exti_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_imu_fifo_exti_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_imu_fifo_exti_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_js_gpio_callback_cleanup.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_js_gpio_callback_cleanup.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_js_gpio_callback_cleanup.py momentum-src
+          python3 labmate/scripts/patch_momentum_subghz_ext_rx_status_bridge.py momentum-src
+          python3 labmate/scripts/patch_momentum_subghz_ext_rx_status_bridge.py momentum-src --apply
+          python3 labmate/tests/test_v18_subghz_ext_rx_status_bridge.py momentum-src
+          python3 labmate/scripts/check_v18_e11_direct_ll_boundary.py momentum-src
+          python3 labmate/tests/test_v18_native_subghz_rx_callers.py momentum-src
+          python3 labmate/scripts/check_v18_e11_native_irq_callback_inventory.py momentum-src
+          python3 labmate/tests/test_v18_signal_reader_iso15693_route_audit.py momentum-src
+          python3 labmate/tests/test_v18_tim2_lease_integration.py
+          python3 labmate/scripts/check_v18_native_legacy_tim2_contract.py momentum-src labmate
+          git -C momentum-src diff --check
+          echo "E11 NATIVE PWM/RESOURCES + FULL MNTM012 SOURCE MATCH; no physical flash."
+
+      - name: Stage single genuine LabMate app
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p momentum-src/applications_user/labmate/src
+          cp labmate/application.fam labmate/labmate_10px.png momentum-src/applications_user/labmate/
+          cp labmate/src/*.c labmate/src/*.h momentum-src/applications_user/labmate/src/
+          python3 -m unittest discover -v -s labmate/tests -p test_v18_final_label_review_only.py
+          python3 labmate/scripts/stage_v18_final_label_review_only.py --repo labmate --staged momentum-src/applications_user/labmate
+          grep -Fqx '#define LABMATE_VERSION_TEXT "v1.8"' momentum-src/applications_user/labmate/src/labmate_internal.h
+          grep -Fqx '#define LABMATE_VERSION_TEXT "v1.8DEV"' labmate/src/labmate_internal.h
+          echo "REVIEW ONLY: source remains DEV, staged candidate displays v1.8, no FAP/firmware install."
+
+      - name: Compile full updater, radio stack, SD resources and matched real FAP (NO FLASH)
+        shell: bash
+        working-directory: momentum-src
+        timeout-minutes: 40
+        env:
+          FBT_GIT_SUBMODULE_SHALLOW: "1"
+        run: |
+          set -euo pipefail
+          # No flash_usb, selfupdate.py, runfap.py, or release.
+          ./fbt copro_dist updater_package fap_labmate fap_js_gpio
+          test -s build/f7-firmware-C/firmware.dfu
+          # E11 native-service firmware changes make the historical
+          # installed DFU hash obsolete for THIS uninstalled candidate.
+          # Verify the newly built exact pair and emit its independent
+          # checksums; never permit a FAP-only deploy against old DFU.
+          test -s build/f7-firmware-C/.extapps/labmate.fap
+          mapfile -t jsbins < <(find build -type f \( -name 'js_gpio.fal' -o -name 'js_gpio.fap' \) -print)
+          test "${#jsbins[@]}" -ge 1
+          for jsfile in "${jsbins[@]}"; do test -s "$jsfile"; sha256sum "$jsfile"; done
+          echo "Native JS GPIO plugin binary built explicitly for full updater."
+          readelf -Ws build/f7-firmware-C/firmware.elf | awk '
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_i2c_external_acquire_timeout" {i2c=1}
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_resource_lease_try_acquire" {claim=1}
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_resource_lease_release" {release=1}
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_resource_lease_v2_try_acquire" {v2claim=1}
+            $4=="FUNC" && $5=="GLOBAL" && $7!="UND" &&
+            $8=="furi_hal_resource_lease_v2_release" {v2release=1}
+            END {exit !(i2c && claim && release && v2claim && v2release)}
+          '
+          sha256sum build/f7-firmware-C/firmware.dfu build/f7-firmware-C/.extapps/labmate.fap
+          mapfile -t tgzs < <(find dist -type f -name '*.tgz' -print)
+          test "${#tgzs[@]}" -eq 1
+          python3 ../labmate/scripts/check_v18_full_update_bundle.py \
+            "${tgzs[0]}" build/f7-firmware-C/firmware.dfu \
+            lib/stm32wb_copro/firmware/stm32wb5x_BLE_Stack_light_fw.bin
+          echo "FULL UPDATER AND MATCHED LABMATE COMPILE/AUDIT PASS; NO FLASH."
+
+      - name: Compare with verified OFFICIAL MNTM-012 radio and option-byte policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --silent --show-error \
+            "https://github.com/Next-Flip/Momentum-Firmware/releases/download/mntm-012/flipper-z-f7-update-mntm-012.tgz" \
+            -o momentum-012-official.tgz
+          echo '1d9e1e600c8680172ff6f6913ca0b12484e7d45adbc72a66552e534784c8c1a7  momentum-012-official.tgz' | sha256sum -c
+          mapfile -t tgzs < <(find momentum-src/dist -type f -name '*.tgz' -print)
+          test "${#tgzs[@]}" -eq 1
+          python3 labmate/scripts/check_v18_full_vs_mntm012.py \
+            momentum-012-official.tgz "${tgzs[0]}"
+          echo "OFFICIAL MNTM012 COMPARISON PASS; NO FLASH."
+
+      - name: Checksums and provenance for separate development artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dev-full-candidate
+          cp momentum-src/build/f7-firmware-C/.extapps/labmate.fap dev-full-candidate/labmate.fap
+          cp momentum-src/build/f7-firmware-C/firmware.dfu dev-full-candidate/firmware.dfu
+          # FBT intentionally duplicates JS plugin in .extapps and SD
+          # resources; exact duplicates are expected, NOT two candidates.
+          JS_PRIMARY="momentum-src/build/f7-firmware-C/.extapps/js_gpio.fal"
+          JS_RESOURCE="momentum-src/build/f7-firmware-C/resources/apps_data/js_app/plugins/js_gpio.fal"
+          test -s "$JS_PRIMARY"
+          test -s "$JS_RESOURCE"
+          cmp "$JS_PRIMARY" "$JS_RESOURCE"
+          cp "$JS_PRIMARY" dev-full-candidate/js_gpio.module
+          mapfile -t tgzs < <(find momentum-src/dist -type f -name '*.tgz' -print)
+          test "${#tgzs[@]}" -eq 1
+          cp "${tgzs[0]}" dev-full-candidate/firmware-full-update.tgz
+          (
+            cd dev-full-candidate
+            sha256sum labmate.fap js_gpio.module firmware.dfu firmware-full-update.tgz > SHA256SUMS.txt
+            sha256sum -c SHA256SUMS.txt
+          )
+          printf 'LabMate commit: %s\n' "$(git -C labmate rev-parse HEAD)" > dev-full-candidate/PROVENANCE.txt
+          printf 'E11 firmware diff SHA256: %s\n' "$(git -C momentum-src diff -- targets/f7/furi_hal targets/furi_hal_include targets/f7/api_symbols.csv lib/ibutton/protocols/misc/protocol_group_misc.c lib/infrared/worker/infrared_worker.c lib/infrared/worker/infrared_worker.h lib/digital_signal/digital_sequence.c lib/pulse_reader/pulse_reader.c lib/signal_reader/signal_reader.c lib/signal_reader/signal_reader.h lib/signal_reader/parsers/iso15693/iso15693_parser.c lib/signal_reader/parsers/iso15693/iso15693_parser.h lib/lfrfid/lfrfid_worker_modes.c lib/lfrfid/lfrfid_raw_worker.c lib/lfrfid/lfrfid_worker.h applications/main/lfrfid/lfrfid_i.h applications/main/lfrfid/scenes/lfrfid_scene_read.c applications/main/lfrfid/scenes/lfrfid_scene_raw_read.c applications/main/lfrfid/scenes/lfrfid_scene_raw_emulate.c lib/subghz/devices/cc1101_int/cc1101_int_interconnect.c lib/subghz/devices/cc1101_int/cc1101_int_interconnect.h lib/subghz/devices/devices.c lib/subghz/devices/devices.h applications/main/subghz/helpers/subghz_txrx.c lib/one_wire/one_wire_slave.c lib/one_wire/one_wire_slave.h lib/ibutton/protocols/dallas/protocol_group_dallas.c targets/f7/furi_hal/furi_hal_nfc_irq.c targets/f7/furi_hal/furi_hal_nfc.c targets/f7/furi_hal/furi_hal_nfc_i.h targets/f7/furi_hal/furi_hal_serial_control.c targets/f7/furi_hal/furi_hal_serial_control.h applications/drivers/subghz/cc1101_ext/cc1101_ext.c applications/drivers/subghz/cc1101_ext/cc1101_ext.h targets/f7/furi_hal/furi_hal_nfc_iso15693.c applications/debug/accessor/helpers/wiegand.cpp applications/debug/accessor/helpers/wiegand.h applications/debug/accessor/accessor_app.cpp applications/system/js_app/modules/js_vgm/ICM42688P/ICM42688P.c applications/system/js_app/modules/js_vgm/ICM42688P/ICM42688P.h applications/system/js_app/modules/js_vgm/imu.c applications/drivers/subghz/cc1101_ext/cc1101_ext_interconnect.c lib/subghz/devices/devices.c lib/subghz/devices/devices.h applications/system/js_app/modules/js_gpio.c | sha256sum | cut -d ' ' -f 1)" >> dev-full-candidate/PROVENANCE.txt
+          printf 'Native JS GPIO plugin source: applications/system/js_app/modules/js_gpio.c (E11 patched)\n' >> dev-full-candidate/PROVENANCE.txt
+          printf 'Native digital sequence source: lib/digital_signal/digital_sequence.c (E11 patched)\n' >> dev-full-candidate/PROVENANCE.txt
+          printf 'Native iButton timer source: targets/f7/furi_hal/furi_hal_ibutton.c (E11 patched)\n' >> dev-full-candidate/PROVENANCE.txt
+          printf 'iButton Misc protocol pin START/STOP lifecycle: lib/ibutton/protocols/misc/protocol_group_misc.c (E11 patched)\n' >> dev-full-candidate/PROVENANCE.txt
+          printf 'Native NFC dual timer TIM1/TIM17 lifecycle: targets/f7/furi_hal/furi_hal_nfc_timer.c and furi_hal_nfc.c (E11 patched)\n' >> dev-full-candidate/PROVENANCE.txt
+          printf 'Native infrared RX TIM2 lease and TX TIM1/DMA2/PA7: targets/f7/furi_hal/furi_hal_infrared.c (E11 patched)\n' >> dev-full-candidate/PROVENANCE.txt
+          printf 'Infrared worker BUSY-aware TX START/WAIT and RX thread STOP cleanup: lib/infrared/worker/infrared_worker.c/h (E11 patched)\n' >> dev-full-candidate/PROVENANCE.txt
+          printf 'E11 native owners plus matched official external CC1101 v1 RX exact BUSY sidechannel; plugin v1 struct unchanged, official unreported RX denied, unknown older third-party plugins remain status UNVERIFIED. Physical native GPIO/EXTI/LL recovery and alternative pins still OPEN.\n' >> dev-full-candidate/PROVENANCE.txt
+          printf 'Momentum base: %s\n' "$(git -C momentum-src rev-parse HEAD)" >> dev-full-candidate/PROVENANCE.txt
+          printf 'Installed Momentum012 source: %s\n' "$(git -C momentum-012 rev-parse HEAD)" >> dev-full-candidate/PROVENANCE.txt
+          printf 'Actions run: %s\n' "$GITHUB_RUN_ID" >> dev-full-candidate/PROVENANCE.txt
+          cat > dev-full-candidate/READ_ME_FIRST.txt <<'EOF'
+          LABMATE FINAL-LABEL CANDIDATE — REVIEW ONLY MATCHED MOMENTUM+FAP.
+          NOT A RELEASE. DO NOT FLASH. NO PHYSICAL ACCEPTANCE/RESTORE TEST.
+           This is NOT Stable and NOT an authorized install/update procedure.
+          Includes SD resources and a C2 radio stack, and MAY apply the
+          option-byte policy from the exact Momentum development source.
+          Requires separate operator backup, source and device review.
+          Never mix this matched FAP with unpatched Momentum firmware.
+          EOF
+          echo "FINAL LABEL REVIEW ARCHIVE MADE: NO DEVICE INTERACTION; STABLE UNCHANGED."
+
+      - name: Independently re-verify FULL review pair bytes and pinned provenance (NO FLASH)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 labmate/scripts/verify_v18_full_review_pair.py dev-full-candidate --expected-source "$GITHUB_SHA" --expected-run "$GITHUB_RUN_ID"
+          echo "FULL PAIR READ-ONLY SHA256/PROVENANCE/UPDATER PASS; NO DEVICE ACTION."
+
+      - name: Archive for review ONLY (not a release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: v18-FINAL-LABEL-E11-PAIRED-REVIEW-DO-NOT-FLASH
+          path: dev-full-candidate/
+          retention-days: 7
+          if-no-files-found: error
