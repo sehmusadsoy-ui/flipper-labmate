@@ -1257,3 +1257,75 @@ pin init/forced release, SD history deletion, updater execution,
 or overwrite of LabMate stable. The verified H2 run was a
 read-only native JS script. Draft PR #13 remains unmerged,
 stable/main untouched, and v1.9 not released.
+
+## 2026-10-17 — H1 dedicated original-C **three-client HOST integration PASS**, live CLI concurrency still NOT TESTED
+
+**The remaining H1 native second-client overlap is NOT device-PASS.**
+Pinned Momentum `js` USB command has
+`CliCommandFlagDefault` and `loader_lock` refuses the command
+while a GUI application (LabMate) is running. The H1 live
+CLI attempt therefore never started JS. This is a *test
+transport concurrency limitation*, not a demonstrated PA7
+lease failure. Do not change the default parallel-safety
+flag, skip the loader, flash, run arbitrary tasks inside LabMate,
+or equate absence of JS markers with hardware BUSY refusal.
+
+To expand coverage **without any Flipper action**, added
+`tests/test_v18_e11_h1_pwm_js_joint.py` and the dedicated
+`.github/workflows/check-v18-e11-h1-pwm-js-joint.yml`. The
+workflow checks out EXACT pinned Momentum source
+`d3f89dfe2ef6b01839201598e9be1590cba80322`, applies
+the already reviewed lease, native PWM and native JS GPIO
+source patches into a disposable CI checkout, then builds
+and runs a **single actual C program** using:
+
+- real patched `furi_hal_pwm.c` native PWM code;
+- the actual `src/labmate_generator.c` C generator logic;
+- **unmodified source-extracted** native JS
+  `js_gpio_e11_monitor_mask()` and `js_gpio_e11_claim()`
+  from patched `js_gpio.c`;
+- the pre-existing fail-closed shared **host HAL lease stub**
+  (including ownership masks, register-write counters and
+  release handles). This is not MCU silicon execution.
+
+The integrated host run exercises actual LabMate generator START,
+a simulated competing native JS PA7 claim while TIM1 PWM owns
+the pin, no second claim or unexpected GPIO/clock/register mutation,
+PWM staying RUN, explicit native HAL STOP, JS acquisition after STOP,
+blocking LabMate native PWM while JS holds PA7, release and successful
+LabMate START/STOP again. This strengthens the cooperative PA7
+implementation-level software proof beyond independent unit tests.
+
+**CLI source guard in the very same test:** verifies
+`applications/system/js_app/js_app.c` defines the
+`js` CLI plugin without `ParallelSafe`, and the original
+Momentum `cli_shell_execute_command()` calls
+`loader_lock()` and produces its open-app refusal BEFORE
+starting a command callback. If installed/source behavior
+changes in the future, the host contract must be reviewed,
+not silently relabelled.
+
+**Evidence:** dedicated [GitHub Actions HOST gate
+#39033260627](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/39033260627)
+completed **SUCCESS** on the checked development source.
+This is real patched-C *on a host stub*, not an on-device test,
+not physical PWM waveform validation, not an independent JS
+CLI thread running during LabMate, not assurance about unknown
+third-party apps/direct LL resource consumers, and not a
+firmware-global E11 ownership certificate.
+
+**Accurate consolidated gate remains:**
+- A–G 36/36 real-device accepted functional smoke;
+- H0 actual native JS PA7 free-state read PASS;
+- H1 PWM RUN survives native CLI refusal; owner STOP PASS;
+- H1 source-level *cooperative PWM vs native JS ownership*
+  **JOINT C HOST PASS**; actual on-device simultaneous
+  `GPIO pin BUSY` **NOT OBSERVED / H1 DEVICE BLOCKED**;
+- H2 actual post-STOP native JS PA7 read PASS;
+- unsupported/unknown native clients, physical fixtures and
+  global cross-driver/resource conflicts remain separate
+  review or hardware-pending scope.
+
+**Preservation:** No Flipper connection/action was performed in
+this new host test. Draft PR #13 remains open; v1.8 Stable/main
+unchanged; no release or v1.9 transition authorization.
