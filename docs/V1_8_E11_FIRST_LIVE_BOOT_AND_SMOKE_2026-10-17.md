@@ -715,3 +715,49 @@ owners, or repeat automatically. This test intentionally writes
 only its fixed new `.js` SD test file via explicit operator
 qFlipper copy; script itself reads pin state and prints status only.
 It cannot establish all native timers, EXTI and DMA ownership.
+
+## 2026-10-17 — Round H0 host staging mistake: **REFUSED BEFORE DEVICE ACCESS; H0 NOT TESTED**
+
+The operator confirmed the read-only JS fixture was manually
+**copied to qFlipper SD** and attempted the initial PC-hosted
+`--expect free` H0 verification. The console returned:
+
+```text
+E11 H PA7 PROBE INCOMPLETE/FAIL: local attestation input missing, linked or incorrectly sized: e11_h_pa7_read_only.js
+H0 dogrulanamadi. H1 testine gecme.
+```
+
+Root cause established from the exact previously given Windows
+PowerShell snippet: it downloaded
+`check_v18_e11_h_pa7_cli.py` and
+`audit_v18_e11_live_labmate_sd.py` **directly into** its new
+`%TEMP%/LabMate-E11-H0-<random>/` root, while it put the
+fixed `tests/device/e11_h_pa7_read_only.js` under
+`<work>/tests/device/`. The helper intentionally resolves
+`LOCAL_PROBE` via `Path(__file__).resolve().parents[1]/tests/device`,
+which assumes the helper itself is in `<work>/scripts/` as in the
+repository layout. The initial command erroneously executed
+`<work>/check_v18_e11_h_pa7_cli.py`, so this path calculation
+instead searched the **parent of** `<work>`, producing a missing
+local input. No firmware or Flipper failure is implied. The
+helper's `expected_md5()` executes **before** constructing a USB
+transport or running any `js` command; H0 therefore did not
+reach the Flipper, no pin ownership was requested, and the
+reported text is a **host preflight setup ERROR**, not an
+on-device H0 FAIL.
+
+**Fix:** identify the exact `LabMate-E11-H0-*` temporary folder
+containing the downloaded files and JS fixture. Create
+`<work>/scripts/` and move **both downloaded Python scripts**
+there without changing their bytes, then invoke
+`py -3 <work>/scripts/check_v18_e11_h_pa7_cli.py
+--port COM7 --momentum-scripts <work>
+--candidate <independently SHA256-matched E11 FULL candidate>
+--expect free`. The existing `<work>/tests/device` remains
+where it was. The original exact JS SHA256 gate and remote script
+MD5 check remain mandatory. No automatic device upload or
+flash, no bypass of the preflight.
+
+**Round H0: PENDING corrected local preflight. H1 and H2: NOT RUN.
+A–G 36/36 PASS remains unchanged.** Do not claim a real native
+PA7 BUSY denial until separately observed.
