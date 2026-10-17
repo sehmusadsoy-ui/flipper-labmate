@@ -25,7 +25,7 @@ REQUIRED = (
     "LL_GPIO_GetPinMode",
     "furi_hal_gpio_read",
     "not on-device firmware",
-    "no binary update",
+    "remain\nunchanged",
     "No permission exists",
 )
 
@@ -44,7 +44,7 @@ def audit(ledger: str, test: str, workflow: str) -> None:
             raise ValueError("H1 original-C, CLI guard or mock test removed: " + token)
     if "test_v18_e11_h1_pwm_js_joint.py" not in workflow:
         raise ValueError("H1 source test omitted from CI")
-    for token in ("NO DEVICE", "NO", "momentum-src"):
+    for token in ("HOST ONLY", "NEVER DEVICE", "momentum-src"):
         if token not in workflow:
             raise ValueError("H1 dedicated job description/source missing: " + token)
 
@@ -67,7 +67,7 @@ class H1LedgerGateTests(unittest.TestCase):
 
     def test_cannot_remove_original_c_js_claim(self):
         src=HOST.read_text()
-        with self.assertRaisesRegex(ValueError,"source"):
+        with self.assertRaisesRegex(ValueError,"removed"):
             audit(LEDGER.read_text(),src.replace("extract_js_claim(js)","mock_claim()"),
                   FLOW.read_text())
 
