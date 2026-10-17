@@ -6,6 +6,8 @@ on:
     paths:
       - ".github/workflows/check-v18-e11-h1-pwm-js-joint.yml"
       - "tests/test_v18_e11_h1_pwm_js_joint.py"
+      - "tests/test_v18_e11_h1_closeout_ledger.py"
+      - "docs/V1_8_E11_H1_CLOSEOUT_DECISION_2026-10-17.md"
       - "tests/test_v18_pwm_native_joint.py"
       - "tests/test_v18_native_pwm_lease.py"
       - "scripts/patch_momentum_native_js_gpio_lease.py"
@@ -51,5 +53,6 @@ jobs:
         run: |
           set -euo pipefail
           python3 labmate/tests/test_v18_e11_h1_pwm_js_joint.py momentum-src
+          python3 -m unittest discover -v -s labmate/tests -p test_v18_e11_h1_closeout_ledger.py
           echo "E11 H1 COOPERATIVE SOFTWARE HOST GATE PASS; LIVE H1 JS BUSY REMAINS NOT TESTED."
           echo "No flash, no serial, no firmware install, no production app changes."
