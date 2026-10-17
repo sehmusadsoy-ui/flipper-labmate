@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reproduce actual pinned Momentum Ready-first / empty-sidecar protocol with no USB."""
+"""Simulate pinned Momentum exact CLI echo then Ready and empty-stage rules, no USB."""
 from __future__ import annotations
 
 import hashlib
@@ -25,7 +25,9 @@ class R:
             if self.d.path not in self.d.stats:
                 return m.MISSING
             return f"File, size: {self.d.stats[self.d.path]}b".encode()
-        raise AssertionError("unexpected second response line")
+        if mark==self.d.CLI_EOL and self.d.kind=="write":
+            return self.d.ready
+        raise AssertionError("unexpected CLI framing")
 
 
 class P:
@@ -53,6 +55,7 @@ class Flipper:
         self.staged=bytearray()
         self.pending=0
         self.ready=b"Ready"
+        self.command_echo_override=None
         self.override_stage_md5=None
         self.port=P(self)
         self.read=R(self)
@@ -71,7 +74,9 @@ class Flipper:
         if cmd.startswith(f'storage write_chunk "{m.STAGE}" '):
             self.kind="write"
             self.pending=int(cmd.split()[-1].strip())
-            return self.ready # REAL native sends Ready FIRST, not empty echo
+            # Real CLI shell echoes command first and native write handler
+            # emits Ready on the NEXT CRLF-delimited line.
+            return cmd[:-1].encode() if self.command_echo_override is None else self.command_echo_override
         raise AssertionError("forbidden command: "+cmd)
     def hash_flipper(self,path):
         self.calls.append(("MD5",path))
@@ -136,9 +141,15 @@ class StrictOneShot(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"E11_APP|labmate.fap"):
             m.resume_once(self.d,self.blob,self.post,self.js)
         self.assertEqual(self.data_count(),0)
-    def test_malformed_first_ready_fails_without_payload(self):
+    def test_malformed_echo_fails_before_payload(self):
+        self.d.command_echo_override=b"unknown echo"
+        with self.assertRaisesRegex(ValueError,"unexpected echoed CLI command"):
+            m.resume_once(self.d,self.blob,self.post,self.js)
+        self.assertEqual(self.data_count(),0)
+
+    def test_malformed_second_line_ready_fails_before_payload(self):
         self.d.ready=b"\r\n"
-        with self.assertRaisesRegex(ValueError,"first response line"):
+        with self.assertRaisesRegex(ValueError,"second-line Ready"):
             m.resume_once(self.d,self.blob,self.post,self.js)
         self.assertEqual(self.data_count(),0)
     def test_short_serial_write_is_fail_closed(self):
