@@ -276,3 +276,37 @@ restore or an install authorization. Adversarial synthetic checks are in
 **Remaining blocker:** explicit informed user approval of EXITFIX replacement
 and possible non-exact rollback, plus subsequent real E11 physical tests.
 No change to Stable/main, no device or SD write, and no v1.9 work.
+
+
+## 2026-10-17 — Operator's specific E11 experimental trial consent (NOT a device result)
+
+After the precise risks were explained in conversation, the operator
+responded **"onay veriyorum"** to the question authorizing the
+original, exact FULL E11 candidate (Actions `38966248325`,
+source `ba379f20fb29369501e1057f570a911f71ac83f8`),
+including replacement of installed EXITFIX by the matched E11 FAP
+and the risk that official `mntm-012` rollback will **not** restore
+the previous custom dirty `mntm-dev` firmware byte-for-byte.
+
+This is consent to **attempt a specific controlled trial** after
+preconditions pass; it is NOT evidence that the Flipper was connected,
+flashed, booted, or that the rollback was rehearsed. Existing immutable
+`DO NOT FLASH` review artifact notes document the historic NO-GO gate;
+they are not rewritten or removed. Other device writes, factory resets,
+automatic rollback, Stable/main promotion, and reusing approval for
+different firmware bytes are NOT approved.
+
+As an additional fail-closed safety measure, the current launcher now
+requires a **fresh, read-only live identity screen before the final
+typed confirmation**: COM-port CLI reports expected `mntm-dev` /
+`d3f89dfe` identifiers, and on-device
+`/ext/apps/Tools/labmate.fap` MD5 matches the independently
+SHA256-checked local EXITFIX readback bytes. A mismatch, unavailable
+COM port, missing exact two-state backups or changed pinned update
+transport MUST abort before any writer. This short firmware info
+comparison cannot authenticate a complete old custom firmware image.
+
+**Status still:** Physical E11 trial **NOT PERFORMED** by ChatGPT.
+The operator must run the guarded launcher locally with Flipper
+connected; results (success, rejection, partial/unknown) must be
+collected without assuming hardware PASS or automatic recovery.
