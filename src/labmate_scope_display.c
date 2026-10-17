@@ -18,6 +18,7 @@ static const char* scope_state_label(LabMateScopeDisplayState s) {
 
 bool labmate_scope_display_draw(Canvas* c, const LabMateScopeDisplay* d) {
     if(!c || !d || d->state > LabMateScopeDisplayError ||
+       d->total_edges > LABMATE_SCOPE_MAX_EDGES ||
        d->plot.result > LabMateScopePlotTimebaseError ||
        d->plot.line_count > LABMATE_SCOPE_PLOT_MAX_LINES ||
        (d->plot.line_count && !d->lines)) return false;
