@@ -59,6 +59,21 @@ int main(void) {
     d.state = LabMateScopeDisplayUnsupported;
     assert(labmate_scope_display_draw(&c,&d));
     assert(c.lines == 2); /* no stale signal while SDK is unsupported */
+    c = (struct Canvas){0};
+    d.state = (LabMateScopeDisplayState)-1;
+    assert(!labmate_scope_display_draw(&c,&d) && c.lines == 0);
+    d.state = LabMateScopeDisplayRunning;
+    d.plot.visible_edges = 0U;
+    assert(!labmate_scope_display_draw(&c,&d) && c.lines == 0);
+    d.plot.visible_edges = 2U;
+    d.plot.line_count = 1U; /* missing transition segment */
+    assert(!labmate_scope_display_draw(&c,&d) && c.lines == 0);
+    d.plot.line_count = 2U;
+    d.total_edges = 1U; /* inconsistent copied source count */
+    assert(!labmate_scope_display_draw(&c,&d) && c.lines == 0);
+    d.total_edges = 256U;
+    d.plot.result = LabMateScopePlotOneEdge; /* must not retain READY geometry */
+    assert(!labmate_scope_display_draw(&c,&d) && c.lines == 0);
     assert(!labmate_scope_display_draw(NULL,&d));
     assert(!labmate_scope_display_draw(&c,NULL));
     puts("v1.9 Logic Scope view-only Canvas mock PASS");
