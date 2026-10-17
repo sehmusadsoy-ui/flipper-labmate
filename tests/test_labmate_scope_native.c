@@ -90,7 +90,10 @@ static void test_partial_release_and_clock_safety(void) {
     assert(labmate_scope_native_stop(&s, &owner));
     assert(labmate_mock_hal.held_handle == 0U);
     assert(!labmate_mock_hal.gpio_writes && !labmate_mock_hal.exti_writes);
-    assert(s.fault_sticky); /* stays blocked until deliberate re-init */
+    assert(s.fault_sticky);
+    assert(!labmate_scope_native_init(&s)); /* fault cannot be wiped by re-arm */
+    assert(labmate_scope_native_start(&s, &env, &owner, 0) ==
+           LabMateScopeNativeFault);
 }
 static void test_timeout_and_overflow_stop(void) {
     static LabMateScopeNative s;
