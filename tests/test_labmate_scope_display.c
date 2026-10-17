@@ -23,6 +23,10 @@ int main(void) {
     assert(labmate_scope_display_draw(&c, &d));
     assert(c.found_wait && c.lines == 2); /* only title and footer separator */
     c = (struct Canvas){0};
+    d.state = LabMateScopeDisplayNoTrigger;
+    assert(labmate_scope_display_draw(&c, &d));
+    assert(!c.found_wait && c.lines == 2); /* no invented waveform */
+    c = (struct Canvas){0};
     LabMateScopeEdge edges[] = {{.tick=10,.high=true},{.tick=20,.high=false,.delta_ticks=10}};
     LabMateScopePlotLine lines[2];
     d.plot = labmate_scope_plot_project(edges,2,false,lines,2);
