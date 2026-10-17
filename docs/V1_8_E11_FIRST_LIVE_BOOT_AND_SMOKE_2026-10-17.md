@@ -393,3 +393,28 @@ Accept operator's actual E1–E5 PASS/FAIL/SKIP individually, actual
 COUNT/time for E2 and actual frequency for E4 when available.
 Do not infer calibrated timing, native RFID/SubGHz conflicting lease
 denial or cross-firmware resource ownership from this loopback.
+
+## 2026-10-17 — Round D numeric evidence supplied **after** D1–D4 PASS
+
+The operator clarified explicitly that the following displayed values
+belong to **the previous D experiment**, the single-wire
+**PA7 → PC1** E11 functional loopback at PWM setting 100 Hz / 50%,
+**not** to pending Round E / PB3 / TIM2:
+
+```text
+Frequency: 100 Hz
+HIGH: 5.00 ms
+LOW: 5.00 ms
+PERIOD: 10 ms
+DUTY: 50.0 %
+```
+
+Evidence classification: **user-reported, on-device displayed values**
+from D2/D3; all five agree with the 100 Hz, 50% expected waveform to
+the displayed precision. This supersedes the earlier record's
+statement that no numerical D values were supplied *as of that point*,
+without rewriting it. Same-device PWM is the reference source, not an
+independently calibrated frequency/duty standard; **HW-02 independent
+scope/frequency calibration stays NOT TESTED**. Do not count this as
+new D test cases or as a TIM2/PB3 Round E result. Round E1–E5 remain
+**NOT TESTED** until separately reported. No device write performed.
