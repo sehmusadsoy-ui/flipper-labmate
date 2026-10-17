@@ -17,6 +17,9 @@
 #include "labmate_comm_resource.h"
 #include "labmate_onewire_hw.h"
 #include "labmate_i2c_runtime.h"
+#include "labmate_scope_native.h"
+#include "labmate_scope_plot.h"
+#include "labmate_scope_display.h"
 
 #define LABMATE_VERSION_TEXT "v1.8DEV"
 /* Shared menu/pin counts: UI and input handling must agree. */
@@ -48,6 +51,7 @@ typedef enum {
     LabMateScreenUart, /* v1.8 UART: append, preserve stable screen IDs */
     LabMateScreenOneWire, /* append only; previous screen IDs preserved */
     LabMateScreenI2c, /* real I2C only on a firmware with bounded HAL API */
+    LabMateScreenScope, /* v1.9 append only; historical screen values preserved */
 } LabMateScreen;
 
 typedef enum {
@@ -258,6 +262,13 @@ typedef struct {
     uint8_t history_mode;
     char history_first_row[80];
     uint8_t history_first_row_len;
+
+    /* Scope's 256 real-edge ISR buffer and 64-edge UI window are kept in
+     * heap-allocated LabMateApp, NEVER on the 4 KiB app stack. */
+    LabMateScopeNative scope_native;
+    LabMateScopeEdge scope_recent[LABMATE_SCOPE_PLOT_MAX_EDGES];
+    LabMateScopePlotLine scope_lines[LABMATE_SCOPE_PLOT_MAX_LINES];
+    LabMateScopeDisplay scope_display;
 
     LabMateUart uart; /* USART external GPIO 13/14, no TIM1/TIM2 ownership */
     LabMateCommOwner comm_owner; /* local exclusive I2C/1Wire sessions */
