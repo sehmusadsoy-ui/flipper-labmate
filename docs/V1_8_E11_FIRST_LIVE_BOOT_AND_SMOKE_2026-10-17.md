@@ -941,3 +941,40 @@ If both modules verify, further investigation must distinguish JS
 module-load / syntax / `gpio.get` / `gpio.read` errors by a
 separately source-reviewed, sanitized one-shot diagnostic plan
 instead of guessing from the old boolean flags.
+
+### H0 next gate: device **READ-ONLY** native JS event_loop resource identity (no JS run)
+
+Created `scripts/check_v18_e11_h_js_runtime_ro.py`, tests
+`tests/test_v18_e11_h_js_runtime_ro.py` and integrated them into
+the E11 H Windows HOST-only workflow. [CI #39028402378](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/39028402378)
+completed **SUCCESS**. Host-only result is NOT an on-device test.
+
+Actual native source `applications/system/js_app/js_modules.c`
+loads `event_loop` from
+`/ext/apps_data/js_app/plugins/js_event_loop.fal`. Its existence,
+version and data integrity have not previously been shown by the
+separate matched `js_gpio.fal` check. The new read-only checker:
+
+1. Validates **SHA256-pinned** local E11 FULL candidate `labmate.fap`,
+   `js_gpio.module` and complete `firmware-full-update.tgz`.
+2. Reads from the *already pinned*, unpacked-in-memory updater
+   `resources.tar.gz` the **single**
+   `apps_data/js_app/plugins/js_event_loop.fal` member and derives
+   its MD5; missing/duplicate/invalid member fails.
+3. Opens the original exact pinned Momentum Python Flipper CLI
+   transport on operator-provided COM port. Runs only
+   `device_info` and `storage md5` for the 3 fixed paths:
+   production LabMate FAP, E11 JS GPIO plugin and JS event-loop
+   plugin. Compares remote hashes to exact pinned candidate/bundle
+   expectations. Never executes JS or touches GPIO.
+4. Gives only fixed named PASS or source-identity failure text; no
+   private microSD browsing, raw device info or user file transfer.
+   If a remote file cannot be MD5-read, that does NOT alone prove
+   it was deleted: transport or read errors are also possible.
+
+**This is a controlled preflight audit, not a remedy or a new H0
+attempt.** Even a positive event-loop file checksum does not prove JS
+engine execution, the C plugin's constructor/ABI behavior, or native
+resource collision denial. Next step only after owner-supplied
+READ-ONLY checksum report; leave previous scripts unmodified and
+H1/H2 on HOLD.
