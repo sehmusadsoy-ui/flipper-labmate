@@ -52,8 +52,8 @@ if (-not $candidate) {
 }
 
 # Provenance pin: this specific helper revision passed mock-only CI
-# #39040745306. Fresh PC files only, no edit to the older H0 stage.
-$pin = '7e49d33ea0020f79afbdec21679521c3a10e0bac'
+# #39042895162 after correcting bytes/bytearray result classification. Fresh PC files only, no edit to the older H0 stage.
+$pin = 'cf4f911437f8930643c01ef2b0a3d0959b89293f'
 $codeDir = Join-Path $env:TEMP ('LabMate-v18-Prewrite-CODE-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $codeDir -ErrorAction Stop | Out-Null
 $sourceFiles = @(
