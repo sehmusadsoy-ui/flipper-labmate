@@ -599,3 +599,40 @@ unresponsive or an unexpected file/size/hash exists,
 delete sidecar or rename an app**. Stable,
 firmware, user CSV/Profiles, Draft PR and
 v1.9 gates are unchanged.
+
+## 2026-10-17 — Owner's post-abort exact on-device read-only state: OLD APP PASS, EMPTY SIDECAR
+
+After one unplug/replug USB reset of the stale CLI pipe, the operator ran the
+independently SHA-pinned stage-abort read-only script exactly once on COM7.
+Their live results:
+
+```text
+active_old_fap: PINNED E11 SHA-BACKED MD5 + SIZE MATCH
+js_gpio_eventloop_manifest: PINNED E11 MD5 MATCH
+reserved_backup_target: ABSENT
+stage_status: PRESENT EMPTY 0 BYTES
+stage_md5: d41d8cd98f00b204e9800998ecf8427e
+safe_to_retry_old_stage_script: NO
+final_v18_fap_installed: NO
+device_writes_performed_by_this_check: NONE
+E11 STAGE ABORT READ-ONLY STATE RECORDED — NO RETRY OR FAP PROMOTION
+```
+
+**Real device diagnostic ACCEPTED, source stage upload still NO-GO.**
+The pre-existing active old E11 app (81,532 bytes), JS GPIO/Event Loop and
+Manifest match their independent MD5 identities. The failed first
+`write_chunk` created a `0-byte` non-app sidecar
+`/ext/apps/Tools/labmate.e11-new-stage`; its MD5 is the well-known
+MD5 of empty bytes. No candidate payload was accepted, no old backup
+path exists, and the final FAP has **not** been installed.
+
+**Recovery scope decision:** Preserve this exact empty sidecar. No
+deletion/cleanup is necessary or authorized. A new *independently tested
+and reviewed* one-shot writer can in principle append the pinned candidate
+only after re-checking that sidecar is **still exactly 0 bytes with empty
+MD5**, the old FAP/resource IDs are unchanged, old-PC backup is valid
+and the destination backup path is still absent. Never retry the old
+stage script, write to the old FAP, or treat this read-only PASS as a
+stage-upload PASS. Any identity mismatch or failed transfer means
+**STOP, preserve evidence, do not automatically retry or clean up**.
+Firmware flash, Stable release, app promotion and v1.9 remain on HOLD.
