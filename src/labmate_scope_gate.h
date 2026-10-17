@@ -37,6 +37,8 @@ typedef enum {
 typedef struct {
     LabMateScopeOwnerPhase phase;
     LabMateScopeOwnerPhase fault_cleanup_phase; /* last confirmed owned resources */
+    bool callback_detached; /* confirmed, never remove foreign callback twice */
+    bool pin_restored;      /* confirmed, never touch foreign pin twice */
     uint32_t handle; /* nonzero only after successful native lease acquire */
 } LabMateScopeOwnerState;
 
