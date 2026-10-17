@@ -504,3 +504,98 @@ sidecar stage **NOT YET RUN**; phase-2B old
 app rename/new FAP promotion **NOT PERFORMED**.
 The original old FAP PC backup shall remain untouched.
 Stable publication and v1.9 HOLD.
+
+## 2026-10-17 — Owner phase-2A first real stage attempt **NO-GO: CLI Ready consumed as the first response**
+
+The operator ran the exact SHA256-verified PowerShell
+stage-only helper, which printed:
+
+```text
+E11 FAP STAGING BETIGI DOGRULANDI
+E11 FINAL ONE-FAP STAGE: creates ONLY one non-app .e11-new-stage sidecar.
+SOURCE APP PRESERVED. NO FIRMWARE, MANIFEST, JS, USER DATA WRITE.
+E11 FINAL ONE-FAP STAGE NO-GO: unexpected staging write command echo
+STOP; DO NOT CLEAN UP/RETRY, DO NOT RENAME OLD APP.
+E11 FINAL FAP STAGE FAILED; DO NOT RETRY/RENAME/DELETE ANYTHING.
+```
+
+**Device 2A FAIL / ABORT, NOT PASS.** Pre-write gate had
+checked exact old app, firmware label/base, native JS, Event
+Loop, Manifest MD5 and that both reserved paths were
+absent. However the stage script reached its first
+`storage write_chunk` command and rejected the initial
+response before sending any FAP payload bytes.
+
+The exact installed Momentum source
+`applications/services/storage/storage_cli.c`
+opens a target in `FSOM_OPEN_APPEND` and prints
+`Ready\r\n` **as the first line** for
+`storage write_chunk`, then waits for binary
+payload. Its Python `FlipperStorage.send_and_wait_eol()`
+first sends command and then **returns the first line**.
+The stage helper incorrectly expected an empty first
+return (`b""`) and planned to read `Ready` on
+a *second* EOL call. Our first host mocks wrongly
+returned empty first line, masking the real transport
+error. This is the protocol bug, **not a reported
+corrupt firmware/FAP or an accepted stage completion**.
+
+Because the device opened the non-app target before
+sending `Ready`, a **zero-byte / partial sidecar may
+exist** at `/ext/apps/Tools/labmate.e11-new-stage`.
+No FAP binary block was sent by the stage helper prior
+to the reported abort. The original app file was
+not a write destination in the helper; nevertheless,
+**its post-abort actual MD5 has not yet been measured**,
+so no blanket post-abort device-state PASS is asserted.
+Do not infer stage absence from a Python exception.
+Preserve the old working FAP and PC backup.
+
+Pinned Momentum `cli_vcp.c` stops its shell and
+breaks/frees its pipe upon a VCP disconnect.
+Before any further read-only CLI inspection,
+the owner should close all serial programs,
+disconnect USB, reconnect USB to establish
+a fresh CLI session, with LabMate stopped/exited.
+**NO device reset/firmware flash** is requested.
+
+**Corrective offline work, not a device permission:**
+
+- Added read-only post-abort
+  `scripts/check_v18_final_stage_after_abort_ro.py`,
+  which is restricted to `device_info`,
+  `storage stat` and `storage md5` on exact
+  old E11 FAP, four native/resource paths,
+  reserved stage and old-backup location.
+  It distinguishes absent, empty, partial/full
+  stage sizes; captures current old FAP and native
+  MD5, and **never uploads, renames, removes,
+  rewrites or auto-cleans**. New mock CI
+  [#39045573509](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/39045573509)
+  **SUCCESS**, including parser-only PowerShell
+  wrapper from commit
+  `145c9aca215b900ea587e71edddb1863087b2c42`
+  SHA256
+  `623dead86bd8999f763cf65f9e51654a1f63834570added95c61b03db8d05e37`.
+- Corrected production stage helper to require the
+  **first** EOL return to be `b"Ready"` and
+  only then send binary; upgraded mocks to match
+  actual native source, including unexpected-first-
+  response refusal. It must NOT be used for an
+  immediate stage retry on the same destination:
+  the existing path may be present and must be
+  reconciled separately. No cleanup is authorized.
+- Phase-2B original FAP safe rename and new FAP
+  promotion are **NOT EXECUTED** and withheld
+  pending actual read-only reconciliation and
+  an independently assessed non-destructive route.
+
+**Immediate next operator action:** run exactly one
+fresh read-only abort state check after a clean USB
+disconnect/reconnect, report only sanitized stage
+status and old app/native parity. If CLI remains
+unresponsive or an unexpected file/size/hash exists,
+**STOP and do not rerun scripts, reset,
+delete sidecar or rename an app**. Stable,
+firmware, user CSV/Profiles, Draft PR and
+v1.9 gates are unchanged.
