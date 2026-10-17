@@ -48,6 +48,7 @@ jobs:
           python3 -m unittest discover -v -s tests -p test_v18_e11_resource_impact.py
           python3 -m unittest discover -v -s tests -p test_v18_e11_split_review.py
           python3 -m unittest discover -v -s tests -p test_v18_e11_packed_manifest_integrity.py
+          python3 -m unittest discover -v -s tests -p test_v18_e11_full_transition.py
           python3 scripts/check_v18_e11_split_trial_gate.py
           python3 -m unittest discover -v -s tests -p test_v18_e11_recovery_readiness.py
           python3 scripts/audit_v18_e11_recovery_readiness.py
@@ -127,6 +128,9 @@ jobs:
             --full-updater "$RUNNER_TEMP/e11-risk/full/firmware-full-update.tgz" \
             --split-updater "$RUNNER_TEMP/e11-derived-split-review-only/firmware-full-update-SPLIT-REVIEW-DO-NOT-FLASH.tgz"
           echo 'Paired archives checked OFFLINE. SPLIT HAS NO DEVICE TRIAL PERMISSION.'
+          python3 scripts/audit_v18_e11_full_transition.py \
+            --candidate "$RUNNER_TEMP/e11-risk/full"
+
       # Deliberately do not publish the rejected FAP-split binary:
       # the real OLD Manifest removes EXITFIX and the NEW split Manifest
       # still declares a now-absent FAP. The temporary package exists
