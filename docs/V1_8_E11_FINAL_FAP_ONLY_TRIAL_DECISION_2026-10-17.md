@@ -1439,3 +1439,47 @@ A no-wire navigation or single loopback PASS must not
 clear any postponed H1 / DS18B20 / I2C ACK / calibration
 or SD-failure equipment test. PR #13 remains DRAFT,
 stable/main unchanged and v1.9 HOLD.
+
+## 2026-10-17 — FINAL E11 v1.8 1 kHz PWM DIGITAL LOOPBACK + STOP/RESTART: OPERATOR PASS
+
+**Scope and tested setup:** the same already-installed, checksum-verified
+final-label E11 `v1.8` FAP on the already-matched custom Momentum
+trial firmware; PA7 PWM OUT → PC1 capture, 3.3 V digital Flipper-to-Flipper
+loopback, 1 kHz at 50% duty. No new firmware/FAP installation or SD
+data mutation was performed for this check.
+
+**Operator-reported actual on-device readout:**
+
+```text
+E11 final v1.8 — 1 kHz / %50
+Frequency LOW PC1: 1khz
+Pulse HIGH: 500us
+Pulse LOW: 500us
+PERIOD: 1.00ms
+DUTY: 50.0%
+PWM STOP: pass
+BUSY/ERR: no
+```
+
+The user then explicitly reported **"pass hepsi"** for the separate
+STOP/RESTART check: 1 kHz PWM starts normally; STOP prevents new
+pulses at PC1; RESTART restores 1 kHz; final STOP/BACK succeeds;
+no BUSY/ERR was reported. Whether Frequency Meter held the last
+displayed numeric value after STOP was **not separately specified**;
+the acceptance claim is cessation of new pulses, not display clearing.
+
+**PWM digital-loopback subset: PASS / CLOSED for this exact final E11
+installed FAP.** The 100 Hz / 50% measurement immediately above,
+this 1 kHz / 50% measurement, observed STOP pulse cessation,
+RESTART and final STOP/BACK form the physical functional evidence.
+This is not independent external frequency/duty calibration, measured
+OFF-state pin voltage, exhaustive timer/peripheral coexistence or an
+actual simultaneous second-client native GPIO BUSY refusal.
+
+**Unchanged release boundaries:** H1 simultaneous on-device native
+resource conflict remains BLOCKED / NOT OBSERVED; missing I²C ACK,
+external DS18B20, calibration, storage fault/restore and universal
+firmware-global arbitration remain pending/explicitly deferred.
+PR #13 stays DRAFT. No `main` merge, existing v1.8 Stable
+tag/asset edit, v1.4 modification, firmware update, data deletion
+or v1.9 authorization is implied by these PASS observations.
