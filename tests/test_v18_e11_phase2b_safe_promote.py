@@ -140,10 +140,17 @@ class TwoRenameHostTests(unittest.TestCase):
         self.assertEqual(self.d.rename_count,0)
         self.assertSafeCommands()
     def test_existing_reserved_backup_refuse_before_first_rename(self):
-        self.d.storage[m.BACKUP]=b"older backup"
+        self.d.storage[m.BACKUP]=b"Q"*81532
         with self.assertRaisesRegex(ValueError,"backup path"):m.promote_two_renames(self.d,self.post,self.js,self.oldmd5,self.newmd5)
         self.assertEqual(self.d.rename_count,0)
         self.assertSafeCommands()
+    def test_malformed_existing_backup_size_fail_closed(self):
+        self.d.storage[m.BACKUP]=b"unknown backup"
+        with self.assertRaisesRegex(ValueError,"unrecognized size"):
+            m.promote_two_renames(self.d,self.post,self.js,self.oldmd5,self.newmd5)
+        self.assertEqual(self.d.rename_count,0)
+        self.assertSafeCommands()
+
     def test_native_manifest_tamper_refuse_before_first_rename(self):
         self.d.storage[MF]=b"tampered manifest"
         with self.assertRaises(ValueError):m.promote_two_renames(self.d,self.post,self.js,self.oldmd5,self.newmd5)
