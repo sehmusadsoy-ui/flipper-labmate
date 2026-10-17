@@ -214,3 +214,81 @@ fixtures stay **DEFERRED / NOT OBSERVED**, not release acceptance
 PASS. Draft PR #13 remains unmerged; currently published
 v1.8 Stable/tag/release assets are immutable and unchanged.
 **No new device command, install or firmware trial has been approved.**
+
+## 2026-10-17 — Two REAL archived review binaries, independent delta/DFU CRC: **PASS (OFFLINE ONLY)**
+
+CI [#39040017389](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/39040017389)
+**completed SUCCESS** after 13/13 synthetic positive/adversarial
+unit cases. This runner fetched the **actual original matched
+E11 DEV user-tested review** artifact
+`#38966248325` (artifact ID `12075925371`) and the **actual
+new final-label review** artifact `#39035056937`
+(artifact ID `12101802257`) from GitHub, in an ephemeral
+runner directory only. New exact-source tool:
+`scripts/audit_v18_e11_final_binary_delta_ro.py`;
+test: `tests/test_v18_e11_final_binary_delta_ro.py`;
+workflow:
+`.github/workflows/check-v18-e11-final-binary-delta.yml`.
+It independently checked both seven-file inventories, four
+pinned SHA256s per archive, their own checksum manifests,
+two separately pinned Actions IDs/commits, exact Momentum base,
+native E11 patch diff fingerprint and `DO NOT FLASH` warnings.
+
+**Measured actual binary deltas (not inferred from SHA alone):**
+
+| Image | DEV device-tested review | Final-label review | Byte differences |
+| --- | ---: | ---: | --- |
+| `labmate.fap` | 81,532 bytes | 81,528 bytes | 30,624 differing positional bytes including size change; not a binary-equivalent FAP |
+| `firmware.dfu` | 846,617 bytes | 846,617 bytes | **Four bytes** |
+| `js_gpio.module` | 13,796 bytes | 13,796 bytes | **Zero: binary-identical** |
+
+**Exact DFU analysis:** Among the **846,617-byte DFUs**
+there is exactly **one changed content byte** at offset
+`750231`, changing the embedded ASCII build date string
+`HEAD\0 16-10-2026` to `HEAD\0 17-10-2026`.
+All remaining bytes through the start of the 16-byte DFU
+suffix agree exactly. Three other changed bytes
+(offsets `846613`, `846614`, `846616`) are
+within the final four-byte DFU suffix checksum field.
+Independent CRC32 complement checks passed on BOTH image
+footer values:
+
+- Prior: stored `0x45e65c07`, calculated complement
+  `0x45e65c07` — **MATCH**.
+- Candidate: stored `0x8ae6a3c2`, calculated complement
+  `0x8ae6a3c2` — **MATCH**.
+
+The strict gate rejects any extra DFU payload byte change,
+missing exact date stamp, invalid DFU footer checksum,
+unmatched JS binary, wrong run/commit/hash, or corrupt
+artifact inventory. It is strong **bytewise offline evidence
+that these two produced DFUs have no other payload
+difference besides embedded build date**; it is **NOT**
+proof that the installed device firmware has been read
+back byte for byte or that a new FAP has actually booted
+and survived full UI/SD/UART acceptance.
+
+**Consequence for next safest operator procedure:**
+The final-label FAP is built against the same patched
+Momentum native source/firmware payload except date metadata,
+and the original device-tested JS module is byte-identical.
+Consequently a **reviewed, narrow FAP-only trial against
+the already installed E11 custom firmware may be worth
+considering**, avoiding a redundant full firmware write.
+But this procedure is **NOT YET AUTHORIZED**: re-attest
+the exact installed firmware API/custom resources plus
+current on-device FAP backup, validate final FAP and
+original E11 resource compatibility, obtain fresh explicit
+operator approval before **any** FAP replacement, and
+record final-label device readback and the actual
+UART/Logger/Profile functional gates before considering
+Stable publication. Do not call this an established
+installation path merely from an offline compare.
+
+**Still NO Stable publication:** original tagged `v1.8`
+release binary, provenance and assets are preserved.
+Candidate build `v1.8` version macro was changed only in
+disposable CI staging; branch source and installed app stay
+`v1.8DEV`. PR #13 remains Draft; actual concurrent native
+H1 and physical equipment-dependent tests remain explicitly
+DEFERRED/NOT PASS.
