@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/check-v18-e11-final-fap-prewrite-ro.yml"
       - "scripts/check_v18_e11_final_fap_prewrite_ro.py"
+      - "scripts/run-v18-e11-final-fap-prewrite-ro.ps1"
       - "tests/test_v18_e11_final_fap_prewrite_ro.py"
       - "scripts/check_v18_e11_postupdate_readonly.py"
       - "scripts/check_v18_e11_h_js_runtime_ro.py"
@@ -32,3 +33,15 @@ jobs:
           python3 -m py_compile scripts/check_v18_e11_final_fap_prewrite_ro.py
           python3 -m unittest discover -v -s tests -p test_v18_e11_final_fap_prewrite_ro.py
           echo "E11 FAP PREWRITE MOCK PASS - NO DEVICE ACCESS, NO DEPLOY, NO RELEASE."
+      - name: Parse the operator PC read-only PowerShell handoff WITHOUT EXECUTING IT
+        shell: pwsh
+        run: |
+          $null = $tokens = $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'scripts/run-v18-e11-final-fap-prewrite-ro.ps1').Path,
+            [ref]$tokens, [ref]$errors) | Out-Null
+          if ($errors.Count -ne 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            throw 'E11 PowerShell handoff contains syntax errors'
+          }
+          Write-Host 'E11 READ-ONLY PC HANDOFF PARSE PASS - NEVER EXECUTED ON CI'
