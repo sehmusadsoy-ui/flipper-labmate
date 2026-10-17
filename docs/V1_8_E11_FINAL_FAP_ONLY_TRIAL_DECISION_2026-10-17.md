@@ -373,3 +373,60 @@ is offline validation/staging of **exact new candidate**
 with preserved immutable PC backup, followed only by a separately
 reviewed one-FAP on-device update step. Do not run a full firmware
 updater, touch other apps/recordings or mark Stable published yet.
+
+## 2026-10-17 — Actual GitHub RC ZIP independently fetched; exact final single FAP bytes verified (PC ONLY)
+
+Following actual phase-1 Flipper/old-FAP PC backup PASS,
+the reviewed GitHub Actions artifact ID `12101802257`
+from run `#39035056937` was **downloaded directly
+from GitHub** to the analysis container (not to the
+operator's Flipper) as
+`v18-FINAL-LABEL-E11-PAIRED-REVIEW-DO-NOT-FLASH.zip`.
+ZIP SHA256 independently matched
+`2c1aa236e566f784c9b94b1da55b6e572e26e8863aeef84972722d1c0eba36bf`.
+
+Exact ZIP content inventory was **seven file members**
+(no duplicate/unknown filename), and independent SHA256
+over each of the four binary members matched the original
+GitHub CI `SHA256SUMS.txt` and pinned expectations.
+`PROVENANCE.txt` records exact LabMate source
+`99cb65d0194dc59d423cfa439c90618ac6b9f114`,
+exact run `39035056937`, Momentum base
+`d3f89dfe2ef6b01839201598e9be1590cba80322`,
+and native patch diff fingerprint
+`1b3851dfa4de1f62d33430c5a7a4cf563f68da4ebfa01fe332fe7984b7630d80`.
+Nested full-update TAR member `firmware.dfu` SHA256
+agreed with the independently pinned candidate DFU; the
+radio binary SHA256 matched reviewed official MNTM012
+fingerprint `134a9af448d2bc35995600c9e95723a387c144c2d1adea671086f16f95d327df`.
+The ZIP has **NOT** been flashed, run or installed.
+
+Only the final FAP member was extracted to a
+**separate PC-only review artifact** named
+`labmate_v18_FINAL_REVIEW_ONLY.fap`:
+**81,528 bytes**, SHA256
+`393fe3e52aa710162a42d7299aa053f538b2ee1ad6542755cf402b83c1931b61`.
+No internal binary modification was made. The user may
+download that standalone reviewed file for an offline
+backup-vs-candidate identity check; it must not be
+installed merely because this offline source audit PASSED.
+
+Added source guard
+`scripts/stage_v18_final_fap_pc_only.py`,
+synthetic adversarial tests
+`tests/test_v18_final_fap_pc_only.py`, CI
+`.github/workflows/check-v18-final-fap-pc-only.yml`;
+[CI #39043508705](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/39043508705)
+**SUCCESS**. The guard requires an independently
+sha-pinned final paired review archive and old
+device PC-only FAP backup with read-only identity
+report, before allowing a new PC-only FAP staging copy.
+CI is mocked and did not read the operator's local PC
+files. Their actual offline candidate+backup crosscheck
+and any on-device FAP replacement remain next separate steps.
+
+**Current result:** Phase-1 real device old FAP backup
+PASS; actual final RC package archive source/hash PASS
+offline; old-vs-final FAP swap **NOT PERFORMED**;
+v1.8 final About/UI physical acceptance **PENDING**,
+Stable release untouched, v1.9 HOLD.
