@@ -49,23 +49,43 @@ def expected_md5(probe: Path, candidate: Path) -> dict[str, str]:
     return actual
 
 
+def safe_cli_flags(raw: bytes) -> str:
+    """Fixed boolean-only CLI diagnostics: never show raw console or device IDs."""
+    if not isinstance(raw, bytes):
+        return "response_not_bytes"
+    flags = {
+        "launched": b"Running script " in raw,
+        "begin": b"E11_H_PA7_BEGIN" in raw,
+        "read_ok": b"E11_H_PA7_READ_OK " in raw,
+        "gpio_busy": b"GPIO pin BUSY" in raw,
+        "error": b"---- ERROR ----" in raw,
+        "trace": b"Trace:" in raw,
+        "done": b"Script done!" in raw,
+        "missing_script": b"Can not open file" in raw,
+        "usage": b"Usage:" in raw,
+    }
+    return "CLI_FLAGS " + " ".join(
+        key + "=" + ("YES" if val else "NO") for key, val in flags.items()
+    )
+
+
 def evaluate_output(raw: bytes, expectation: str) -> str:
     if expectation not in ("free", "busy") or not isinstance(raw, bytes) or not 1 <= len(raw) <= 65536:
         raise ValueError("invalid JS CLI response or expectation")
     if b"E11_H_PA7_BEGIN" not in raw:
-        raise ValueError("test marker missing; JS might not have run")
+        raise ValueError("test marker missing; JS might not have run; " + safe_cli_flags(raw))
     success = b"E11_H_PA7_READ_OK " in raw
     busy = b"GPIO pin BUSY" in raw
     error = b"---- ERROR ----" in raw
     if success and busy:
-        raise ValueError("contradictory CLI response: do not accept")
+        raise ValueError("contradictory CLI response: do not accept; " + safe_cli_flags(raw))
     if expectation == "free":
         if success and not busy and not error:
             return "E11 H PA7 JS READ WHEN FREE PASS (UI PWM STOP REQUIRED)"
-        raise ValueError("free-state PA7 read did not succeed unambiguously")
+        raise ValueError("free-state PA7 read did not succeed unambiguously; " + safe_cli_flags(raw))
     if busy and error and not success:
         return "E11 H PA7 NATIVE JS BUSY DENIAL PASS (UI PWM RUN REQUIRED)"
-    raise ValueError("owned-state native JS GPIO claim NOT proven to be refused")
+    raise ValueError("owned-state native JS GPIO claim NOT proven to be refused; " + safe_cli_flags(raw))
 
 
 def preflight_device(info: bytes, md5s: dict[str, str], expected: dict[str, str]) -> None:
