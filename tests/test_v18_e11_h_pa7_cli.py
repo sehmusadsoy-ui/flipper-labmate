@@ -6,7 +6,7 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from check_v18_e11_h_pa7_cli import evaluate_output, expected_md5, preflight_device, EXPECTED_SCRIPT_SHA256
+from check_v18_e11_h_pa7_cli import evaluate_output, safe_cli_flags, expected_md5, preflight_device, EXPECTED_SCRIPT_SHA256
 
 class E11HLiveProbeTests(unittest.TestCase):
     def test_idle_success(self):
@@ -28,6 +28,25 @@ class E11HLiveProbeTests(unittest.TestCase):
         ):
             with self.subTest(expect=expect,p=p), self.assertRaises(ValueError):
                 evaluate_output(p,expect)
+
+    def test_safe_diagnostics_on_ambiguous_h0(self):
+        # No raw CLI output, IDs, private paths or values may be emitted.
+        raw=b"Running script /ext/private.txt\r\nE11_H_PA7_BEGIN\r\n---- ERROR ----\r\nGPIO pin BUSY\r\nTrace:\r\n"
+        flags=safe_cli_flags(raw)
+        self.assertIn("begin=YES", flags)
+        self.assertIn("gpio_busy=YES", flags)
+        self.assertIn("error=YES", flags)
+        self.assertIn("done=NO", flags)
+        self.assertNotIn("private",flags)
+        with self.assertRaisesRegex(ValueError,"gpio_busy=YES") as caught:
+            evaluate_output(raw, "free")
+        self.assertNotIn("private",str(caught.exception))
+
+    def test_missing_print_marker_diagnostics(self):
+        raw=b"Running script /ext/hidden.js\r\nScript done!\r\n"
+        with self.assertRaisesRegex(ValueError,"begin=NO") as caught:
+            evaluate_output(raw, "free")
+        self.assertNotIn("hidden",str(caught.exception))
 
     def test_attestation_requires_all_matching_remote_md5(self):
         hashes={"labmate.fap":"a"*32,"js_gpio.module":"b"*32,"probe":"c"*32}
