@@ -196,3 +196,52 @@ approve the exact full E11 firmware replacement and its rollback
 limitations before a write**, followed by actual on-device
 GPIO/TIM1/TIM2/EXTI STOP/BACK/conflict/re-entry tests.
 Until such approval and tests: **PHYSICAL NO-GO, DO NOT FLASH**.
+
+
+## 2026-10-17 — Exact matched E11 Windows trial launcher ready; default stage-only verified
+
+Added the **new**, source-pinned
+[`scripts/install-v18-e11-reviewed-full.ps1`](../scripts/install-v18-e11-reviewed-full.ps1).
+This is distinct from the now-quarantined older
+`install-v18-full012-dev-firmware.ps1`; the new entry point
+uses exact E11 source `ba379f20...` / Actions run
+`38966248325` and the independently SHA256-pinned full
+firmware, FAP and JS GPIO module. By default it checks the
+entire candidate provenance, nested packed Manifest and
+OLD→NEW app transition, extracts only to a new PC TEMP folder,
+verifies firmware, radio/resource/target fields and prints
+**STAGE ONLY / NO DEVICE WRITE**.
+
+A future `-Apply` is **NOT automatically authorized**. The new
+script must be invoked with both explicit
+`-AcceptExitfixReplacement` and
+`-AcceptNonExactFirmwareRollback` switches; it then
+requires **all** individual paths to a checked official
+MNTM-012 rollback archive, **matching actual EXITFIX FAP PC
+readback copy**, local historical 14-file LabMate backup, verified
+internal-settings TGZ and a pinned Momentum source tree. It
+refuses modified updater transport scripts, validates the
+source commit and prompts for typed `YUKLE-E11`. Only
+then can its sole `selfupdate.py` call attempt device writing.
+A selfupdate return code does **not** mean firmware boot/physical
+acceptance passed; STOP/REPAIR/rollback cannot run automatically.
+
+**Windows CI of the exact real FULL candidate**
+[#38985136037](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38985136037)
+**SUCCESS**:
+- actual Windows `-Apply`-absent stage-only call: PASS;
+- intentional missing-consent `-Apply`: refused **before USB**;
+- even if both risk flags supplied, missing rollback/backup paths:
+  refused **before USB**;
+- no external device, no simulated flash or physical boot PASS.
+
+**No operator device write has been requested or performed.**
+Full E11 can now be proposed for a *separately authorized*
+physical trial only with those material risks disclosed:
+EXITFIX will be targeted for replacement by newly built E11 FAP
+in the resources phase; exact restoration of custom dirty
+`mntm-dev` is NOT proven with verified official MNTM-012;
+firmware recovery could affect internal settings/app compatibility;
+E11 real GPIO/TIM1/TIM2/EXTI STOP/BACK/lease tests remain OPEN.
+Until explicit informed approval: firmware install status
+**NO-GO**, PR #13 remains DRAFT and Stable/main unchanged.
