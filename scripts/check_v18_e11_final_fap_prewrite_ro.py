@@ -79,8 +79,15 @@ def check_and_copy(client, expected_post: dict[str,str], expected_js: dict[str,s
 
     # Exactly one native FAP read from SD to memory; source file is never edited.
     content = client.read_file(APP_REMOTE)
-    if not isinstance(content, bytes) or len(content)!=EXPECTED_BYTES:
+    # PINNED Momentum storage.py / FlipperStorage.read_file() returns a
+    # bytearray (not bytes) on a completed transfer. Only accept these
+    # two exact binary containers; length and SHA256 independently
+    # detect truncated serial reads from the upstream transport.
+    if not isinstance(content, (bytes, bytearray)):
+        raise ValueError("invalid nonbinary FAP readback")
+    if len(content) != EXPECTED_BYTES:
         raise ValueError("incomplete/oversized FAP readback")
+    content = bytes(content)
     if hashlib.sha256(content).hexdigest()!=EXPECTED_SHA:
         raise ValueError("readback FAP SHA256 differs from previously tested E11")
     if hashlib.md5(content).hexdigest()!=expected_post["E11_APP"]:
