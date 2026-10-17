@@ -22,7 +22,12 @@ LabMateScopeGate labmate_scope_gate_pc1(
 
 bool labmate_scope_owner_lease_acquired(LabMateScopeOwnerState* s, uint32_t h) {
     if(!s || s->phase != LabMateScopeOwnerIdle || s->handle || !h) return false;
-    s->handle = h; s->phase = LabMateScopeOwnerLease; return true;
+    s->handle = h;
+    s->phase = LabMateScopeOwnerLease;
+    s->callback_detached = false;
+    s->pin_restored = false;
+    s->fault_cleanup_phase = LabMateScopeOwnerIdle;
+    return true;
 }
 bool labmate_scope_owner_callback_added(LabMateScopeOwnerState* s) {
     if(!s || !s->handle || s->phase != LabMateScopeOwnerLease) return false;
@@ -46,9 +51,9 @@ LabMateScopeReleasePlan labmate_scope_owner_stop_plan(const LabMateScopeOwnerSta
     if(owned == LabMateScopeOwnerLease)
         return (LabMateScopeReleasePlan){false, false, true};
     if(owned == LabMateScopeOwnerCallback)
-        return (LabMateScopeReleasePlan){true, false, true};
+        return (LabMateScopeReleasePlan){!s->callback_detached, false, true};
     if(owned == LabMateScopeOwnerPinConfigured || owned == LabMateScopeOwnerRunning)
-        return (LabMateScopeReleasePlan){true, true, true};
+        return (LabMateScopeReleasePlan){!s->callback_detached, !s->pin_restored, true};
     return no; /* Unknown state: do not touch any foreign peripheral. */
 }
 bool labmate_scope_owner_stop_confirmed(
@@ -56,9 +61,14 @@ bool labmate_scope_owner_stop_confirmed(
     bool pin_restored, bool lease_released) {
     if(!s || !s->handle || s->phase == LabMateScopeOwnerIdle) return false;
     LabMateScopeReleasePlan p = labmate_scope_owner_stop_plan(s);
+    /* Positive acknowledgements persist across partial STOP failures. A
+     * later recovery plan can never detach an already-removed callback or
+     * restore a pin already handed back to the firmware. */
+    if(p.detach_callback && callback_removed) s->callback_detached = true;
+    if(p.restore_pin && pin_restored && (!p.detach_callback || callback_removed))
+        s->pin_restored = true;
     if(!p.release_lease || (p.detach_callback && !callback_removed) ||
-       (p.restore_pin && !pin_restored) ||
-       (p.release_lease && !lease_released)) {
+       (p.restore_pin && !pin_restored) || !lease_released) {
         if(s->phase != LabMateScopeOwnerReleaseFault)
             s->fault_cleanup_phase = s->phase;
         s->phase = LabMateScopeOwnerReleaseFault;
@@ -67,5 +77,7 @@ bool labmate_scope_owner_stop_confirmed(
     s->handle = 0U;
     s->phase = LabMateScopeOwnerIdle;
     s->fault_cleanup_phase = LabMateScopeOwnerIdle;
+    s->callback_detached = false;
+    s->pin_restored = false;
     return true;
 }
