@@ -29,7 +29,7 @@ def fixture():
         })
     comparison = {
         "base_commit": {"sha": module.FROZEN_SOURCE},
-        "head_commit": {"sha": HEAD},
+        "commits": [{"sha": "0" * 40} for _ in range(97)] + [{"sha": HEAD}],
         "status": "ahead",
         "behind_by": 0,
         "total_commits": 98,
@@ -104,7 +104,12 @@ class PreservationTests(unittest.TestCase):
             self.check()
 
     def test_wrong_head(self):
-        self.inputs[4]["head_commit"]["sha"] = "0" * 40
+        self.inputs[4]["commits"][-1]["sha"] = "0" * 40
+        with self.assertRaises(module.PreservationError):
+            self.check()
+
+    def test_missing_compare_commit(self):
+        self.inputs[4]["commits"].pop()
         with self.assertRaises(module.PreservationError):
             self.check()
 
