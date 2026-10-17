@@ -1,0 +1,30 @@
+name: E11 phase2B read-only pre/mid/post FAP state screens (HOST MOCK ONLY)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - ".github/workflows/check-v18-e11-phase2b-state-readonly.yml"
+      - "scripts/check_v18_e11_phase2b_state_readonly.py"
+      - "tests/test_v18_e11_phase2b_state_readonly.py"
+      - "scripts/run-v18-e11-phase2b-state-readonly.ps1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  read_only_recovery_states:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Confirm three exact FAP states and all mismatch STOP (NO SERIAL)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/check_v18_e11_phase2b_state_readonly.py
+          python3 -m unittest discover -v -s tests -p test_v18_e11_phase2b_state_readonly.py
+          echo "E11 PHASE2B READONLY RESCUE SCREEN HOST PASS - NO DEVICE/RENAME"
