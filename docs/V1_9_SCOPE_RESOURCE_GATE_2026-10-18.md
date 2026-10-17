@@ -482,6 +482,50 @@ after that, back up the installed E11 FAP and preserve S1/CSV, then
 authorize a reversible **FAP-only** trial. Full firmware flash is
 out of scope.
 
+## Phase 1H — E11 SDK exported-symbol and FAP ELF guard (2026-10-18)
+
+Implemented a new **read-only, fail-closed verifier**:
+`scripts/verify_v19_e11_sdk_fap.py`, plus
+`tests/test_verify_v19_e11_sdk_fap.py`. This gate is wired **after**
+the real `./fbt fap_labmate` step and **before** the workflow may
+produce any review artifact.
+
+- Requires **exact Momentum git baseline**
+  `d3f89dfe2ef6b01839201598e9be1590cba80322`.
+- Parses the actual `targets/f7/api_symbols.csv` as CSV (not a grep
+  that might accept commented or disabled exports). Both the firmware
+  lease acquire/release APIs and nonasserting GPIO callback API must
+  have the **Function,+** exported entry. Missing or disabled exports
+  yield **NO-GO**.
+- Checks the patched native feature macros plus PC1 lease mask in
+  native HAL headers. The staged app must display `v1.9DEV`, its
+  manifest must say `fap_version="1.9"`, and its real scope driver
+  must call both patched APIs without a legacy asserting callback
+  fallback.
+- Rejects empty, too-short, oversized, non-ELF, non-32-bit-LE and
+  non-ARM FAP payloads; calculates SHA256 on the actual generated
+  artifact. This is still NOT a physical RAM budget or device proof.
+- The exact GitHub verifier and test blobs were re-read and compared
+  to locally executed source, and **all six unit tests PASS**. Negative
+  tests explicitly reject an unexported lease, missing callback macro,
+  wrong app version, legacy asserting GPIO fallback, invalid ELF and
+  wrong CPU architecture.
+- The byte format was independently checked against the **already
+  published E11 v1.8 custom FAP** (81,528-byte 32-bit ARM ELF, known
+  SHA256 `393fe3e52aa710162a42d7299aa053f538b2ee1ad6542755cf402b83c1931b61`).
+  This verifies the parser against a real prior FAP, **NOT** that a new
+  1.9 FAP was compiled.
+- Existing host regression suites for navigation, plot, edge buffer,
+  timeguard and PC1 gate were freshly compiled/run locally in strict
+  C11: **all 5 PASS**. CI Actions runtime results for this branch are
+  **not returned by the available GitHub Actions listing**, so do
+  not equate these local successes with Actions PASS.
+
+**Result:** v1.9 development source and review verification improved,
+but **1.9 FAP COMPILE/LINK remains UNVERIFIED**, no 1.9 binary SHA256
+exists and device installation stays **NO-GO**. No main/Stable/E11
+publication, S1, CSV, firmware or device files were modified.
+
 ## Objective acceptance before exposing the scope in menu
 
 1. Existing FAP menu and old screen identifiers stay unchanged until
