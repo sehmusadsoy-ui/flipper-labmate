@@ -99,3 +99,36 @@ external 3.3 V loopback and genuine safe fixtures, preserved SD
 History/Profiles functionality, E11 FAP app exit/reopen, and test
 backlog HW-01..HW-19 all require their own dated, correctly scoped
 results. `main` and published Stable v1.8 stay immutable.
+
+
+## 2026-10-17 — Operator explicitly deferred physical tests until tomorrow
+
+After reporting the real post-update CLI/resource matching PASS, the
+operator asked to **postpone Round A GUI/PWM/COMM/Counter/Button tests until
+tomorrow**. **No Round A hardware test result has yet been reported**,
+so every such case above remains NOT TESTED on the installed E11 pair.
+
+The operator also shared an **older app-menu screenshot** displaying
+`KeyCopier`, `LabMate`, `LabMate BUSY Probe`,
+`LabMate 2: UI Demo`, `LabMate Scope UI Demo`.
+The screenshot **does not establish the installed FAP basenames or
+prove the same extra test apps survived the intervening full E11 update**.
+The operator wants to remove **only obsolete standalone demo/probe FAPs**,
+keeping KeyCopier, actual production `/ext/apps/Tools/labmate.fap`,
+firmware resources, LabMate `apps_data`, History, Profiles and
+read-only PC snapshots intact.
+
+The new `scripts/cleanup_v18_demo_faps.py` first confirms the actual
+installed E11 main app via local independent SHA256 and live Flipper MD5,
+then lists the actual Tools FAP names. Without `--apply` it is strictly
+read-only. With `--apply`, it identifies at most three conservative
+LabMate-named demo/probe FAP **filenames** (not the GUI label), makes a
+fresh exact PC-only readback backup for each, checks remote MD5
+before/after, requires an exact typed `SIL-DEMO-N` confirmation, and
+only then calls `storage remove` for those named files. Other apps
+and user data are out of scope. A demo with a non-obvious basename
+must be handled separately after evidence review, not guessed.
+
+**Status:** No report of demo deletion yet. Deletion software's
+synthetic/CI PASS, when it arrives, is NOT a live microSD delete PASS.
+Final E11 functional acceptance remains OPEN; Stable/main unchanged.
