@@ -1199,3 +1199,61 @@ is only a sequential state check, NOT an H1 contention test.
   milestone sign-off, no firmware write/update/SD user data
   modification. Need an explicit choice and separate review
   before broadening the native concurrency test mechanism.
+
+## 2026-10-17 — H2 actual on-device STOP → native JS PA7 reacquisition: **PASS**
+
+The operator confirmed the preceding H1 attempt left LabMate PWM Studio
+showing **RUN** and then a normal **OK STOP** succeeded. They were
+instructed to exit LabMate entirely after STOP, leave external GPIO
+wiring removed and qFlipper closed, and run the **original checksum-
+attested H0 V3 host helper only once** as a *sequential H2* read.
+
+Operator's actual PowerShell output:
+
+```text
+E11 H2 - PWM STOP SONRASI PA7 TESTI
+Dogrulanmis E11 dosyalari bulundu.
+Yalnizca tek bir GPIO read testi yapilacak.
+E11 H0 v3: exact JS/FAP/plugin identity + one staged GPIO read; NO FLASH/WRITE.
+Operator prerequisite: PWM STOP, LabMate closed, no GPIO wires, qFlipper closed.
+E11 H0 v3 FREE PA7 JS READ PASS - H3_FLAGS begin=YES event_loop=YES gpio=YES pin=YES read=YES launched=YES error=NO trace=NO done=YES gpio_busy=NO
+Only H0 proves native JS free-state read, not cross-service overlap.
+E11 H2 - TEST TAMAMLANDI
+```
+
+**Acceptance:** **H2 PASS (1/1 actual device after manually successful
+STOP and app exit)** for sequential PA7 native-JavaScript availability:
+the pinned E11 FULL bundle and exact installed LabMate FAP,
+`js_gpio.fal`, `js_event_loop.fal`, and V3 JS script were again
+attested by host+device MD5/SHA checks; then the one `pa7.read()`
+completed. The CLI's internal message `H0 v3` is **the reused
+positive-read verifier's name**, not a second H0 claim; in this
+operator-controlled post-STOP phase it supplies H2 observation.
+This does **not** prove that all claims were freed at exactly the
+instant of STOP, nor that a second client could acquire the PA7
+resource *while PWM was RUN*.
+
+**Consolidated E11 H checkpoint:**
+- A–G: **36/36 operator-evidenced functional matches/PASS**.
+- H0: **1/1 native JS PA7 free-state read PASS**.
+- H1 (UI): PWM **RUN persisted** while CLI probe was refused
+  before JS launch; operator **OK STOP PASS**.
+- H1 (actual firmware resource arbitration): **BLOCKED/NOT TESTED**.
+  Pinned Momentum `js` CLI command lacks
+  `CliCommandFlagParallelSafe`; its outer shell prevents
+  concurrent command execution while LabMate FAP owns the loader.
+  The exact refused command message was source verified but the
+  operator's raw CLI response was *not* retained, so do not
+  call H1 a `GPIO pin BUSY` firmware PASS.
+- H2: **1/1 sequential POST-STOP PA7 reacquisition PASS**.
+- Native-global full-resource contention coverage (not just PA7,
+  e.g. TIM2/EXTI/DMA, third-party direct register users) remains
+  **UNPROVEN**. Keep this as an E11/v1.8 acceptance blocker or
+  separately documented deferred scope; do not silently mark
+  firmware-global resource management complete.
+
+**Safety:** no requested/reported firmware flash, reboot/reset,
+pin init/forced release, SD history deletion, updater execution,
+or overwrite of LabMate stable. The verified H2 run was a
+read-only native JS script. Draft PR #13 remains unmerged,
+stable/main untouched, and v1.9 not released.
