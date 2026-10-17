@@ -16,6 +16,9 @@ on:
       - "src/labmate_navigation.[ch]"
       - "tests/test_labmate_scope_navigation.c"
       - "src/labmate_internal.h"
+      - "src/labmate_ui_primitives.c"
+      - "src/labmate_ui_screens.c"
+      - "application.fam"
       - "src/labmate_input_menu.c"
       - "src/labmate_input.c"
       - "src/labmate_view.c"
@@ -45,6 +48,9 @@ on:
       - "src/labmate_navigation.[ch]"
       - "tests/test_labmate_scope_navigation.c"
       - "src/labmate_internal.h"
+      - "src/labmate_ui_primitives.c"
+      - "src/labmate_ui_screens.c"
+      - "application.fam"
       - "src/labmate_input_menu.c"
       - "src/labmate_input.c"
       - "src/labmate_view.c"
@@ -212,6 +218,8 @@ jobs:
           assert 'case LabMateScreenScope:' in src['labmate_input.c']
           assert 'case LabMateScreenScope:' in src['labmate_view.c']
           assert 'LabMateScreenScope,' in src['labmate_internal.h']
+          assert '#define LABMATE_VERSION_TEXT "v1.9DEV"' in src['labmate_internal.h']
+          assert 'fap_version="1.9"' in Path('application.fam').read_text()
           assert 'LabMateToolScope' in src['labmate_navigation.c']
           assert '[LabMateToolScope]' in src['labmate_ui_screens.c']
           assert 'labmate_scope_native_read' in src['labmate_scope_bridge.c']
