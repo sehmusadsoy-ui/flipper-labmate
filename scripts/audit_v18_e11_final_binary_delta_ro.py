@@ -128,15 +128,15 @@ def check_dfu_date_only_difference(old: bytes, new: bytes) -> int:
     """
     if len(old)!=len(new) or len(old)<32 or old[:5]!=b"DfuSe" or new[:5]!=b"DfuSe":
         raise ValueError("not matching DfuSe image headers/length")
-    old_date=b"HEAD\\x0016-10-2026"
-    new_date=b"HEAD\\x0017-10-2026"
+    old_date=b"HEAD\x0016-10-2026"
+    new_date=b"HEAD\x0017-10-2026"
     # Python bytes literal written in the generated source must contain
     # the ASCII HEAD sentinel plus one actual zero-byte escape.
     i=old.find(old_date)
     j=new.find(new_date)
     if i<0 or j<0 or i!=j or old.count(old_date)!=1 or new.count(new_date)!=1:
         raise ValueError("expected exact one-byte firmware build-date update absent")
-    p=i+len(b"HEAD\\x00")+1
+    p=i+len(b"HEAD\x00")+1
     if old[p]!=ord("6") or new[p]!=ord("7"):
         raise ValueError("changed byte not the correct date digit")
     if old[:p]!=new[:p] or old[p+1:-4]!=new[p+1:-4]:
