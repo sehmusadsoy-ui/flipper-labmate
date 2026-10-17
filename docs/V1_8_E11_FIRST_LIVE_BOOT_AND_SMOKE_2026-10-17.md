@@ -638,3 +638,80 @@ With hardware stopped and lead removed, a read-only normal UI review
 or existing host tests can proceed. Keep PR #13 Draft / v1.9 HOLD
 until the native integration gate is actually closed or explicitly
 classified as supported-scope limitation/deferred.
+
+## 2026-10-17 — Round H source-reviewed JS-vs-LabMate PA7 overlap probe: **PREPARED, NOT DEVICE TESTED**
+
+After E11 Round G (cumulative **36/36 operator-reported functional
+matches/PASS**), a bounded, **one-pin, read-only** native service
+collision experiment has been authored for the exact already-installed
+firmware/FAP/JS GPIO matched pair. This is an independently
+instrumented **native JS GPIO** requester, not a GUI-only LabMate
+self-contention test. It is not a full firmware-wide or legacy
+plugin guarantee.
+
+Pinned original Momentum source `d3f89dfe` was inspected in
+`applications/system/js_app/js_app.c`, showing USB CLI
+`js <path>` starts a dedicated `js_thread_run` and waits for a
+bounded execution to finish; it does not use the foreground app
+loader for that CLI command. Source
+`applications/system/js_app/modules/js_gpio.c` uses
+`gpio.get("PA7")` and `read()`, and the actual E11 patch
+`scripts/patch_momentum_native_js_gpio_lease.py` makes `read()`
+first call `js_gpio_e11_claim`, returning a `GPIO pin BUSY`
+exception if the native PWM/PA7 owner holds the pin. The patch
+protects cleanup so an unclaimed JS pin is not reconfigured.
+
+**Payload:** `tests/device/e11_h_pa7_read_only.js`, independently
+pinned **SHA256
+`2d154f899100767209da1b0504b2954c4aa9766ce409edbe051bf5ea391aa629`**.
+Only script operations: print test marker, require GPIO,
+`gpio.get("PA7")`, `read()`, print success. No `init`,
+`write`, `pwmWrite`, `pwmStop`, interrupt, mode change, CSV,
+profile or firmware operation. `.gitattributes` forces LF bytes on
+Windows because exact test-file hash comparison is required.
+`scripts/check_v18_e11_h_pa7_cli.py` compares pinned local FULL
+`labmate.fap` and `js_gpio.module` SHA256 with their **actual
+device** MD5, device firmware label/base, and remote script MD5
+before attempting a single fixed CLI `js` command. Exact
+unambiguous BUSY vs successful readback output is required; any
+unexpected response refuses PASS and does not retry. Unit tests:
+`tests/test_v18_e11_h_pa7_cli.py`. Windows host-only CI is
+`.github/workflows/check-v18-e11-h-pa7.yml`; CI software PASS,
+when observed, is not device acceptance.
+
+**No device USB JS call has been made. The probe file is currently
+in GitHub, not proven copied to Flipper. Real H0/H1/H2 results:
+NOT TESTED.**
+
+### Safe manual operator sequence (only after host CI PASS)
+
+- Ensure no external Flipper GPIO wiring or module, LabMate PWM STOP,
+  captures STOP and application exit. With qFlipper File Manager,
+  copy the pinned exact script to a NEW
+  `/ext/apps/Scripts/e11_h_pa7_read_only.js` (no replacement of
+  existing user files), then CLOSE qFlipper to free COM7.
+- Validate local candidate folder and Momentum source HEAD remains
+  `d3f89dfe2ef6b01839201598e9be1590cba80322`.
+  Use the pinned `check_v18_e11_h_pa7_cli.py`
+  `--port COM7 --momentum-scripts <trusted scripts dir>
+  --candidate <E11 FULL local dir> --expect free`
+  with LabMate PWM **STOP** (H0): expect a normal
+  `E11_H_PA7_READ_OK`, no BUSY.
+- Open LabMate PWM Studio, 100 Hz/50%, press OK until RUN, BACK
+  to menu leaving PWM **RUN**. Keep qFlipper closed. Run the same
+  helper with `--expect busy` once (H1): expected native JS
+  `GPIO pin BUSY` and no successful read; verify the LabMate
+  PWM screen still reports RUN, then use OK to STOP.
+- While PWM STOP again (H2), run `--expect free` once:
+  native JS read should succeed, demonstrating sequential lease
+  reacquisition after PWM STOP. Exit LabMate, keep all sources
+  disabled and the Flipper GPIO unplugged.
+
+If any result is unexpected, if the COM port is busy or if a known
+file digest mismatch occurs, **STOP and report the exact sanitized
+status**. Never reboot to fix, flash/update, try alternate debug
+GPIO, change pins, force a native lease release, disable firmware
+owners, or repeat automatically. This test intentionally writes
+only its fixed new `.js` SD test file via explicit operator
+qFlipper copy; script itself reads pin state and prints status only.
+It cannot establish all native timers, EXTI and DMA ownership.
