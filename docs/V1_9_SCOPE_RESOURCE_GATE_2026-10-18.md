@@ -75,6 +75,59 @@ UI, state or GPIO IRQ** at this stage.
   3 KiB; confirm exact `sizeof()` and available SRAM/stack in the
   actual Momentum toolchain before selecting the allocation pattern.
 
+## Phase 1B — PC1 fail-closed resource model (2026-10-18)
+
+Added new **pure-C-only**, host-testable model modules (the existing
+v1.8/E11 capture, I2C, PWM, menu and UI sources were **NOT edited**):
+
+- `src/labmate_scope_gate.h`, `src/labmate_scope_gate.c`:
+  `labmate_scope_gate_pc1()` consults the *current* E11 local capture
+  policy's **PC1 EXTI1** rule, other capture owners/active flags,
+  application I2C/1-Wire communications ownership, GPIO monitor,
+  active Logger/UART/counter/button and sticky release faults.
+  Unsupported native `resource_lease` or non-asserting GPIO
+  `try_add_int_callback` API yields **UNSUPPORTED**, not an assert-based
+  callback fallback. Wrong pin yields **BUSY/INVALID**; system button
+  EXTI3/EXTI6 and unreviewed other candidate pins are never offered.
+  Independent PA7/TIM1 PWM intentionally remains permissible for a
+  future PA7→PC1 loopback *only when other resources are free*.
+- The model separates a real, nonzero firmware token, a successfully
+  registered callback, configured GPIO and actual RUNNING state.
+  Each state transition is allowed only after a hypothetical caller has
+  **confirmed** the respective native operation. This model does not
+  invoke the native operation itself and does not grant physical ownership.
+- `labmate_scope_owner_stop_plan()` lists owned resources that would
+  require cleanup; `stop_confirmed()` clears the handle only after
+  successful callback detach, pin restoration and native lease release
+  are **reported by the future driver**. A missing result latches
+  `RELEASE_FAULT`, preserving the recorded handle and denying a
+  subsequent capture. An incomplete cleanup must not be retried
+  blindly or used to erase a foreign callback; native recovery will
+  require separately verified handling.
+- `tests/test_labmate_scope_gate.c` covers foreign Frequency/Counter/
+  Pulse/Button ownership, I2C/1-Wire, Logger, GPIO Monitor, UART,
+  stale active flags, invalid PC0/PC3/PA6/PB3/PA7 pins, missing firmware
+  features, illegal lifecycle transitions, STOP/restart, failed
+  callback registration cleanup, and sticky release failure.
+- CI workflow `.github/workflows/check-v19-scope-buffer-host.yml`
+  now includes **actual repository** E11 `labmate_resource_policy.c`
+  and `labmate_comm_resource.c` in its C11 and ASAN/UBSAN link tests.
+
+**Evidence classification:** Exact newly committed GitHub file blobs
+match local C/header/test working bytes; a local strict C11 + ASAN/UBSAN
+unit run **PASSED** with signature-compatible local policy doubles.
+The **new live Actions job against the complete real E11 policy modules
+has NOT been independently observed finishing**, so no CI PASS is claimed.
+No firmware, FAP, S1 profile, historical CSV or application menu was
+modified. This source-only gate does **not** constitute a native PC1
+IRQ lease, physical BUSY or STOP/BACK on a device.
+
+**Next:** add independent no-signal timeout/timebase validity gates to
+bounded capture; then write the actual matched-native firmware acquire /
+nonasserting callback and owned IRQ teardown path with explicit
+low-level failure simulation. New FAP/hardware work needs a separate
+owner-approved install scope and compatibility check.
+
 ## Objective acceptance before exposing the scope in menu
 
 1. Existing FAP menu and old screen identifiers stay unchanged until
