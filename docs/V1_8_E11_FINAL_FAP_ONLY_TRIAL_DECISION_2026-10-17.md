@@ -430,3 +430,77 @@ PASS; actual final RC package archive source/hash PASS
 offline; old-vs-final FAP swap **NOT PERFORMED**;
 v1.8 final About/UI physical acceptance **PENDING**,
 Stable release untouched, v1.9 HOLD.
+
+## 2026-10-17 — Actual PC-only old/new pair gate PASS; phase-2A safe stage prepared (NOT EXECUTED)
+
+Operator independently checked on Windows and reported:
+
+```text
+E11 OLD FAP PC BACKUP PASS
+E11 FINAL v1.8 FAP PASS
+E11 PREWRITE REPORT PASS
+E11 FINAL PC-ONLY PAIR CHECK PASS - NO DEVICE WRITE
+```
+
+This combines their earlier actual on-device prewrite and
+backup proof with the downloaded exact 81,528-byte final FAP
+SHA256. It **does not** mean the final FAP is already on Flipper.
+
+A source-audited safer phase-2A approach is now prepared.
+At pinned Momentum source, `storage write_chunk` opens its
+destination using `FSOM_OPEN_APPEND` and cannot replace
+the old LabMate FAP safely. The CLI's `storage rename` uses
+`storage_common_rename_safe` and refuses an existing
+destination. Accordingly an app-only transaction is split
+into **two explicitly gated operator-observed phases**:
+
+- **Phase 2A stage-only:** make one new non-application
+  sidecar file `/ext/apps/Tools/labmate.e11-new-stage`,
+  **not** `.fap`. Before its first device write,
+  verify the actual old FAP PC backup/report, new candidate
+  exact SHA256, original E11 bundle, firmware label/base
+  and native JS Event Loop/GPIO/Manifest resource MD5,
+  and require both reserved stage and future-backup
+  destinations to be ABSENT. Write solely that named
+  non-app stage path, check 81,528 bytes and MD5 on
+  device, recheck old active FAP unchanged and plugin /
+  Manifest MD5. On error **STOP without retry,
+  deletion or automatic recovery**. Existing
+  `/ext/apps/Tools/labmate.fap` remains unmodified
+  regardless of staging success/failure.
+- **Phase 2B final promotion (NOT YET PREPARED,
+  NOT YET EXECUTED):** only after an
+  independently reviewed actual device 2A PASS,
+  consider two explicitly scoped safe renames
+  to preserve the old FAP under
+  `/ext/apps/Tools/labmate.e11-pre-final.bak`
+  and promote the verified staged bytes to
+  the normal LabMate app path. Must independently
+  attest postwrite/live FAP, old copy and original
+  firmware resources. Any lack of parity is a
+  STOP and separately reviewed recovery action.
+  No full updater, firmware flash or user-data change.
+
+**Prepared, mocked source, not actual owner-device PASS:**
+`scripts/stage_v18_final_fap_on_device_one_file.py`,
+`tests/test_v18_final_fap_on_device_stage.py`,
+`scripts/run-v18-e11-final-one-fap-stage.ps1` and
+`.github/workflows/check-v18-e11-final-fap-stage-guard.yml`.
+[Host stage CI #39044976177](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/39044976177)
+**SUCCESS**; combined PowerShell syntax and stage guards
+[CI #39045061455](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/39045061455)
+**SUCCESS**. The immutable wrapper source is
+`903a55b67d7df94e0654c32952606bc258e21fc9`
+and independently checked SHA256 is
+`a5ee23a1145fca6782d05c2a615dfb08f9c2f27165a49aea551308082da2b869`.
+It downloads source from immutable stage/test
+commit `39662e195e0aa748e12f0b5acfeb5aaf6c862f48`.
+The wrapper itself was CI-checked for syntax, not
+run against a real device by the agent.
+
+**Current gate:** PC original/new FAP pair **PASS**;
+phase-2A source/mocks **PASS**; actual Flipper
+sidecar stage **NOT YET RUN**; phase-2B old
+app rename/new FAP promotion **NOT PERFORMED**.
+The original old FAP PC backup shall remain untouched.
+Stable publication and v1.9 HOLD.
