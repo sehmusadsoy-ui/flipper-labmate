@@ -8,7 +8,7 @@
 [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 ![GPIO](https://img.shields.io/badge/GPIO-3.3%20V%20only-red?style=flat-square)
 
-![LabMate digital signal diagnostics — Flipper Zero, PWM waveforms and 3.3 V breadboard illustration](assets/labmate-hero.webp)
+![LabMate digital signal diagnostics — Flipper Zero, PWM waveforms and 3.3 V breadboard illustration](assets/labmate-hero.jpg)
 
 *LabMate concept artwork — the depicted interface is illustrative, not an actual application screenshot. Check the [release notes](https://github.com/sehmusadsoy-ui/flipper-labmate/releases) for real supported features and firmware compatibility.*
 
