@@ -491,3 +491,24 @@ failure. Do not over-claim RF protocol compatibility or shared
 resource lease coverage based on UI-only smoke. Later exact native
 RFID TIM2 vs Counter and native PWM vs LabMate TIM1 contention
 require a reviewed concurrency fixture/scenario and are still OPEN.
+
+## 2026-10-17 — Round E4 supplementary real HIGH PB3 frequency extrema
+
+The operator separately added **"frekans değeri min 99 max 102.2 hz
+bu arada hıgh pb3 için"**, explicitly identifying these displayed
+readouts as the **HIGH PB3 Frequency Meter** portion of the already
+completed E1–E5 loopback, not Round F or a new trial.
+
+- PWM setting for Round E: **100 Hz, duty 50%** (from E1).
+- User-observed HIGH PB3 Frequency Meter **minimum 99 Hz**.
+- User-observed HIGH PB3 Frequency Meter **maximum 102.2 Hz**.
+
+These are **displayed min/max observations**, not a time-series, an
+instrument-calibrated stability measurement or a claim that the
+actual PA7 output ranged 99–102.2 Hz. A simultaneous independent
+measurement was not available. The previously logged E4 PASS now
+has a numerical observed range; the E test count remains **5/5**,
+cumulative matched E11 device functional checks **27/27**.
+
+Round F native firmware service screens are still **NOT REPORTED**;
+do not claim any F PASS from this E4 clarification.
