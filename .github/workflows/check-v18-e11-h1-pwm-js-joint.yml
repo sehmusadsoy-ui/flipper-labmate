@@ -7,6 +7,10 @@ on:
       - ".github/workflows/check-v18-e11-h1-pwm-js-joint.yml"
       - "tests/test_v18_e11_h1_pwm_js_joint.py"
       - "tests/test_v18_e11_h1_closeout_ledger.py"
+      - "tests/test_v18_e11_release_readiness_guard.py"
+      - "docs/V1_8_E11_RELEASE_READINESS_2026-10-17.md"
+      - "docs/DEFERRED_HARDWARE_TESTS.md"
+      - "ROADMAP.md"
       - "docs/V1_8_E11_H1_CLOSEOUT_DECISION_2026-10-17.md"
       - "tests/test_v18_pwm_native_joint.py"
       - "tests/test_v18_native_pwm_lease.py"
@@ -54,5 +58,6 @@ jobs:
           set -euo pipefail
           python3 labmate/tests/test_v18_e11_h1_pwm_js_joint.py momentum-src
           python3 -m unittest discover -v -s labmate/tests -p test_v18_e11_h1_closeout_ledger.py
+          python3 -m unittest discover -v -s labmate/tests -p test_v18_e11_release_readiness_guard.py
           echo "E11 H1 COOPERATIVE SOFTWARE HOST GATE PASS; LIVE H1 JS BUSY REMAINS NOT TESTED."
           echo "No flash, no serial, no firmware install, no production app changes."
