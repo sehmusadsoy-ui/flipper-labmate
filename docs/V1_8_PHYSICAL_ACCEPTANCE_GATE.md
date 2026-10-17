@@ -2037,3 +2037,33 @@ reacquisition, USB COMM and app re-entry checks must be observed.
 Unavailable calibrated fixtures remain DEFERRED, not PASS.
 Do not mark v1.8 release complete, merge PR #13 or start v1.9
 on the strength of offline successes alone.
+
+## 2026-10-17 — EXACT FINAL E11 v1.8 FAP: 100 Hz / 50% PA7→PC1 function PASS
+
+The operator reports **on the newly installed final-label FAP**
+with a previously tested Flipper 3.3V PA7 generator → PC1 input
+loopback (not an independently calibrated external signal):
+
+- Frequency Meter PC1 (LOW): **100.00 Hz** at
+  generator **100 Hz** preset.
+- Pulse Analyzer PC1: **HIGH 5.00 ms**, **LOW 5.00 ms**,
+  **PERIOD 10 ms**, **DUTY 50.0%**.
+- PWM **STOP PASS**.
+- No distinct BUSY / ERR condition was **reported**; an
+  empty error report is not proof of a tested error-refusal path.
+
+These numbers are consistent with the selected PWM frequency
+and duty, and are accepted as functional same-device loopback
+for the exact new FAP. This is a separate positive physical
+result following **12/12 GUI/screen-navigation checks** and
+post-UART no-peer tool availability PASS. Unlike screen-only
+checks, real 3.3V signal activity was observed at PC1.
+
+**Not cleared by this check:** independent signal calibration;
+the scope of H1 simultaneous firmware-owner resource contention;
+PB3 TIM2 event counter accuracy; mechanical switch bounce;
+physical DS18B20, I2C positive ACK, other sensor input safety,
+or an SD-failure fault path. Do not merge public Stable, rewrite
+old firmware tags, or start v1.9 on these results. See
+[V1_8_E11_FINAL_FAP_ONLY_TRIAL_DECISION_2026-10-17.md](V1_8_E11_FINAL_FAP_ONLY_TRIAL_DECISION_2026-10-17.md)
+for exact owner report / evidence boundaries.
