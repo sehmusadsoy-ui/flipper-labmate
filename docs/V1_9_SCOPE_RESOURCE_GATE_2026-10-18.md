@@ -175,6 +175,73 @@ GitHub connector.
 **No device write, EXTI registration, v1.9 FAP publication, Stable
 replacement, source tag move, S1 Profile or historical CSV changes.**
 
+## Phase 1C — bounded capture time supervision (2026-10-18)
+
+The independent v1.9 buffer is now accompanied by a **pure-C app-thread
+timeguard**. Added `src/labmate_scope_timeguard.[ch]` and
+`tests/test_labmate_scope_timeguard.c`; the previous E11 app,
+IRQ/PWM, Logger/Profile, menu and firmware files remain unchanged.
+
+- **NO TRIGGER**, not automatically `NO SIGNAL`: after waiting for
+  the first accepted real triggering edge, an expired trigger window
+  reports `LabMateScopeGuardNoTrigger` (which avoids claiming there
+  were no untriggered transitions).
+- **QUIET**: after actual stored edges, a bounded quiet period without
+  *new* edges reports `LabMateScopeGuardQuiet`. No synthetic waveform
+  samples, false jitter or fake frequency values are generated.
+- **DURATION LIMIT**: every capture session must terminate within
+  **5,000 ms maximum**; the app must then stop and detach its own
+  native IRQ callback. Until real firmware integration, this is a
+  watchdog *decision only* and not a physical STOP implementation.
+- **CLOCK UNSAFE**: app-thread polling gaps over **100 ms**, backwards
+  or out-of-order 32-bit millisecond timestamps, or ambiguous gaps
+  fail closed. Native code must independently verify DWT edge-timer
+  frequency and a session duration shorter than its half-wrap period.
+  An *entire* 32-bit millisecond counter wrap between missed polls
+  remains fundamentally undetectable without an independent monotonic
+  clock; never claim this algorithm solves that case.
+- **FULL / CAPTURE ERROR / STOPPED / INVALID** remain distinct
+  terminal outcomes and sticky once detected. Unexpected count
+  rollback or inconsistent ARMED/RECORDING snapshots are rejected.
+- All polling receives a **consistent IRQ-excluded snapshot**, runs
+  on the application thread, and NEVER changes GPIO, firmware leases
+  or FAP storage. Native STOP/BACK has to explicitly detach/quiesce
+  the owned callback before mutating the underlying buffer. GUI
+  mutex alone is insufficient for ISR synchronization.
+
+**Local independently executed evidence (exact GitHub file blobs):**
+
+| File | Git blob |
+| --- | --- |
+| `src/labmate_scope_timeguard.h` | `24496b1f7378ad78c4c73626c199e7f77cd81dc7` |
+| `src/labmate_scope_timeguard.c` | `677e0baa40383167bdb0d1bbe39c831e54f46042` |
+| `tests/test_labmate_scope_timeguard.c` | `0f69ef514600ae4e2d8cfbfa909cf62a15ce6ccc` |
+
+The exact current source/test bytes were compiled against the earlier
+**actual** `labmate_scope_buffer.c` in three configurations, all
+**LOCAL HOST PASS**: GCC strict C11 `-O2`; GCC AddressSanitizer +
+UndefinedBehaviorSanitizer `-g -O1`; and Clang strict C11 `-O2`.
+Tests cover max limits and rejected bad configuration, NO TRIGGER,
+QUIET after real edges, multiple accepted event snapshots, 32-bit
+millisecond wrap, invalid clock gaps, backwards timestamps,
+capture maximum duration, overflow/ERROR/STOPPED, invalid state and
+**integration with real stored edge timestamps**. No native Flipper
+SDK build, on-device timebase verification or GitHub Actions
+successful conclusion is claimed.
+
+`.github/workflows/check-v19-scope-buffer-host.yml` was extended to
+compile the watchdog together with the existing edge buffer in strict
+C11 + ASAN/UBSAN on the development branch. **GitHub Actions status
+is still unverified** with the available connector.
+
+**Next implementation gate:** a native **PC1/EXTI1** adapter with
+version-pinned matched Momentum `resource_lease` and non-asserting
+`try_add_int_callback`, sample/run/STOP under proper IRQ exclusion,
+status UI and integrated host/matched-FAP build tests. A deliberate,
+backed-up FAP-only Flipper test may follow **after** those pass and the
+owner has reviewed the exact artifact/hash. No full firmware flash
+is required or authorized as part of this host-only phase.
+
 ## Objective acceptance before exposing the scope in menu
 
 1. Existing FAP menu and old screen identifiers stay unchanged until
