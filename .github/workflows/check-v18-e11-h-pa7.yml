@@ -5,6 +5,7 @@ on:
     branches: [dev/v1.8-completion]
     paths:
       - ".github/workflows/check-v18-e11-h-pa7.yml"
+      - ".gitattributes"
       - "scripts/check_v18_e11_h_pa7_cli.py"
       - "tests/device/e11_h_pa7_read_only.js"
       - "tests/test_v18_e11_h_pa7_cli.py"
