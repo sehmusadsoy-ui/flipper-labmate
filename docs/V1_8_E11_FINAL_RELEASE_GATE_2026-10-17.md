@@ -4,12 +4,29 @@
 **Branch:** `dev/v1.8-completion`, [Draft PR #13](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/13).
 **No action authorized by this document:** firmware flashing, FAP installation, CSV/profile modification, merge, tag move, public release asset replacement, or rollback.
 
+## Public compatibility-limited E11 publication verified — 2026-10-17
+
+**Published: [LabMate v1.8 E11 — Custom Momentum Edition](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8-e11-custom-momentum).** GitHub API release ID `416028800`, publication `2026-10-17T20:02:28Z`. This is **public, not a draft, deliberately marked PRE-RELEASE**, *not* an ordinary/public universal Stable replacement. Git tag `v1.8-e11-custom-momentum` and target branch `release/v1.8-e11-custom-momentum` both point to exact frozen final E11 source `99cb65d0194dc59d423cfa439c90618ac6b9f114`.
+
+Live GitHub release **uploaded asset digest and byte-size** screen (GitHub API values, compared to independently pinned final build identities):
+
+| Uploaded asset | Bytes | SHA256 reported by GitHub | Status |
+| --- | ---: | --- | --- |
+| `LabMate-v1.8-E11-CUSTOM-MOMENTUM.fap` | 81,528 | `393fe3e52aa710162a42d7299aa053f538b2ee1ad6542755cf402b83c1931b61` | PASS |
+| `E11-FULL-MATCHED-FIRMWARE-EXPERT-REVIEW-ONLY.tgz` | 12,690,519 | `cd12be2a85512dcd360e6b93e027fa2ad9136a76602ba01036dc235b7a804dee` | PASS, expert review only |
+| `SHA256SUMS-E11.txt` | 218 | `61507acf08d30fd31dce0195c748027f90671caef91858f64488df695ea9a05f` | UPLOADED |
+| `READ_ME_FIRST-E11.md` | 549 | `c5a43ec682af2df8dd349bfc9306107486cf003d8fa8cccc6b7294fcb59c0e1e` | UPLOADED |
+
+**Default latest:** Verified live GitHub `releases/latest` still resolves to original normal `v1.8` Stable. Original `v1.8` and `v1.4` tags and all originally pinned assets remain unchanged. Release notes clearly warn that ordinary/unpatched Momentum firmware lacks the E11 native ABI, that full firmware update can affect other SD resources/settings and that exact custom firmware rollback is not proven. This constitutes publication at a *voluntary compatibility-limited prerelease* scope, **not proof** of general installation support, safe generic firmware flash, exact restore, external hardware completeness, or approval to merge Draft PR #13.
+
+**Public prerelease publication is COMPLETE. Universal/public v1.8 Stable promotion remains NO-GO by design.** Older narrative below records the pre-publication decision history and must not be read as claiming the E11 prerelease was never published.
+
 ## Separate the two v1.8 binaries
 
 | Build | Exact artifact / provenance | Status |
 | --- | --- | --- |
 | Published public `v1.8` Stable (2026-10-14) | GitHub tag `v1.8` -> `02b05639364d6dd71f5eb70456eca379c59218cb`; `labmate.fap` SHA256 `119c44bb854030a73a60fa205d38770bf77f048bb166ab379a03135c1de5f3b0` | **PRESERVE, NO CHANGE** |
-| Expanded E11 **final-label** `v1.8` *candidate* | Source/overlay review CI `#39035056937`, commit `99cb65d0194dc59d423cfa439c90618ac6b9f114`; FAP SHA256 `393fe3e52aa710162a42d7299aa053f538b2ee1ad6542755cf402b83c1931b61` | **Tested on the matched custom E11 firmware, NOT public Stable** |
+| Expanded E11 **final-label** `v1.8` *candidate* | Source/overlay review CI `#39035056937`, commit `99cb65d0194dc59d423cfa439c90618ac6b9f114`; FAP SHA256 `393fe3e52aa710162a42d7299aa053f538b2ee1ad6542755cf402b83c1931b61` | **Tested on matched custom E11 firmware; now publicly available as a compatibility-limited PRE-RELEASE, NOT ordinary Stable** |
 | E11 matched firmware and native resources | Built on patched Momentum source base `d3f89dfe2ef6b01839201598e9be1590cba80322`; candidate `firmware.dfu` SHA256 `e7460ab56d72a77bca1c096496ee6dd6d59044bd314ad4cb78559c3aeff72c8b`; `js_gpio.module` SHA256 `fff2ab8ad8e5b320b669283fc611216da99e9cda4dc03428fcd8e8a130ecca0a` | **Custom ABI/dependency: never market as standalone universal FAP** |
 
 The E11 final-label candidate was installed on the already paired custom firmware by a narrowly authorized **FAP-only** replacement; previous FAP retained in `/ext/apps/Tools/labmate.e11-pre-final.bak`. This does **not** certify installing the candidate on stock Momentum `MNTM-012`. The matched full updater can alter firmware, bundled microSD resources and startup/compatibility behavior, and exact rollback was **not rehearsed**.
