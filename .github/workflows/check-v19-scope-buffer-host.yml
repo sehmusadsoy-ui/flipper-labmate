@@ -175,6 +175,13 @@ jobs:
           assert "max_session_ms" in timeguard
           for forbidden in ("furi_hal_", "LL_EXTI_", "storage_file_", "gpio_init(", "malloc(", "free("):
               assert forbidden not in timeguard, forbidden
+          native = Path("src/labmate_scope_native.c").read_text()
+          assert "furi_hal_gpio_try_add_int_callback" in native
+          assert "FURI_HAL_LEASE_IRQ_PC1" in native
+          assert "labmate_capture_exti_clear(LL_EXTI_LINE_1" in native
+          assert "LabMateCaptureScope" in native
+          for forbidden in ("furi_hal_gpio_add_int_callback(", "storage_file_", "malloc(", "calloc(", "realloc("):
+              assert forbidden not in native, forbidden
           scope = Path("src/labmate_scope_gate.c").read_text()
           assert "labmate_capture_can_acquire" in scope
           assert "LabMateScopeOwnerReleaseFault" in scope
@@ -186,4 +193,4 @@ jobs:
               assert forbidden not in c, forbidden
           assert not Path("build/").exists(), "Unexpected generated firmware output"
           PY
-          echo "HOST TEST ONLY. NO IRQ hookup, FAP installation, USB, SD WRITE, FIRMWARE FLASH OR STABLE RELEASE."
+          echo "HOST MOCK TEST ONLY. Real PC1 IRQ adapter is STAGED but not reachable from app menu. NO FAP install, USB, SD write, firmware flash or Stable release."
