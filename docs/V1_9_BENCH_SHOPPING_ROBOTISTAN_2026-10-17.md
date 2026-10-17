@@ -24,9 +24,16 @@ don't repurchase those needlessly.
 | 1 | [125 kHz RFID card](https://www.robotistan.com/125-khz-rfid-kart) | 16 TL | HW-09 LF RFID basic known tag |
 | 1 | [13.56 MHz ISO14443A key fob](https://www.robotistan.com/1356mhz-nfc-anahtarlik-s50-1k) | 12 TL | HW-12 NFC basic tests **NOT** ISO15693 test |
 
-**Optional but recommended measurement instrument (choose exactly one):**
-- [FNIRSI 2C23T 10 MHz 2-channel scope + multimeter + generator](https://www.robotistan.com/fnirsi-2c23t-10mhz-3in1-osiloskop-multimetre-jenerator): ~4,548 TL. Sufficient for representative digital 1 Hz–50 kHz signals, independent PWM timing, analog OFF-state DC and external reference stimulus within verified tool accuracy. A budget bench instrument is not a traceably calibrated metrology standard; check probe/ground safety.
-- [FNIRSI 2C53P 50 MHz 2-channel scope + multimeter + generator](https://www.robotistan.com/fnirsi-2c53p-50mhz-3in1-dokunmatik-tablet-osiloskop-multimetre-jenerator): ~8,049 TL if future v2.0 measurement headroom is worth extra cost. Not both.
+**Owner decision — 2026-10-17: DO NOT PURCHASE AN OSCILLOSCOPE.**
+Independent PWM duty/period, DC OFF voltage and output accuracy will be
+measured with appropriate calibrated/reference equipment at the owner's former
+university, **together with an instructor**. This is a **future test plan**,
+not hardware already booked or tests already PASS. Record instrument model,
+probe attenuation/ground setup, instrument timebase/voltage uncertainty,
+3.3 V logic levels, waveform values, STOP/BACK and exact device+FAP
+provenance at that visit. The existing 8-channel USB logic analyzer
+remains a useful PC-based digital fixture, but does not replace the
+university scope for analog OFF-voltage calibration.
 
 **External reference signal generator alternative:** the already-owned ESP32-S2 can produce 3.3 V signals **if its firmware/wiring is independent of LabMate ST2 testing**. Optionally get an extra [Raspberry Pi Pico](https://www.robotistan.com/raspberry-pi-pico) ~250 TL, 3.3V I/O; it allows controlled independent signal timing without altering existing ESP32-S2. Its USB power is separate; join ground only in verified SELV circuits.
 
@@ -52,4 +59,4 @@ don't repurchase those needlessly.
 - The **hardware backlog** is a mixture of bench fixtures and unfinished custom firmware native-service verification; buying the Tier A basket can close core sensor/PWM/storage/device tests, **not automatically all HW-01…HW-19**.
 - Record each physical test with actual device firmware and FAP SHA256, wiring, stimulus, measured values, STOP/BACK/restart, BUSY/ERR and final data preservation. Mark EXPLICITLY deferred rather than inventing PASS.
 
-**Value priority:** Tier A without scope first if budget constrained; otherwise add **one** two-channel scope with generator. The existing ESP32-S2 reduces need for a new controller. Confirm store's checkout stock/prices and whether probe sets / USB data cable are included at time of purchase.
+**Value priority:** Owner plans to buy the practical Tier A items **without any oscilloscope**; defer university independent electrical measurement until the instructor-led visit. Existing ESP32-S2 reduces need for a new controller. Confirm store checkout stock/prices, USB data cable, analyzer probe clips and sensor breakout pull-ups before buying. Nothing in this list has been purchased or measured yet.
