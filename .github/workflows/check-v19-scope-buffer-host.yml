@@ -323,4 +323,4 @@ jobs:
               assert forbidden not in c, forbidden
           assert not Path("build/").exists(), "Unexpected generated firmware output"
           PY
-          echo "HOST MOCK TEST ONLY. Real PC1 IRQ adapter is STAGED but not reachable from app menu. NO FAP install, USB, SD write, firmware flash or Stable release."
+          echo "HOST TEST ONLY. Logic Scope is source-wired to dev UI; native FAP build and device validation remain UNVERIFIED. NO USB/SD writes, FAP install, firmware flash or Stable release."
