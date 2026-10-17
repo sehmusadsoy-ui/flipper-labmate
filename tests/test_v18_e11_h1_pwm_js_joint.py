@@ -160,6 +160,21 @@ def main() -> None:
     native = (root/PWM_FILE).read_text()
     js = (root/JS_FILE).read_text()
     resources=(root/"targets/f7/furi_hal/furi_hal_resources.h").read_text()
+    # The stock Momentum CLI JS command is not ParallelSafe: do not mistake
+    # loader rejection for a live native GPIO lease BUSY refusal.
+    js_cli=(root/"applications/system/js_app/js_app.c").read_text()
+    flags=(root/"lib/toolbox/cli/cli_command.h").read_text()
+    shell=(root/"lib/toolbox/cli/shell/cli_shell.c").read_text()
+    if not re.search(r"CLI_COMMAND_INTERFACE\\(js,\\s*js_cli_execute,\\s*CliCommandFlagDefault",js_cli):
+        raise ValueError("pinned native JS CLI app concurrency flag has changed; review H1")
+    if "CliCommandFlagDefault = 0" not in flags or "CliCommandFlagParallelSafe = (1 << 0)" not in flags:
+        raise ValueError("pinned native JS CLI safety flag contract changed")
+    lock=shell.index("if(!(command_data.flags & CliCommandFlagParallelSafe))")
+    claim=shell.index("loader_locked = loader_lock(loader)", lock)
+    refusal=shell.index("this command cannot be run while an application is open",claim)
+    dispatch=shell.index("command_data.execute_callback(", refusal)
+    if not lock < claim < refusal < dispatch:
+        raise ValueError("pinned CLI loader-lock refusal no longer precedes command dispatch")
     if "native_pwm_try_claim" not in native or "FURI_HAL_PWM_NATIVE_LEASE_API_V1" not in resources:
         raise ValueError("native PWM lease firmware source not patched")
     if "labmate_pwm_pa7_lease_handle" in APP_FILE.read_text():
