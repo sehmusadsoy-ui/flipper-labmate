@@ -104,6 +104,48 @@ custom Momentum setup after approved FAP-only trial, and
 devices. FAP backup existence is **not** a demonstrated firmware restore.
 Universal/public Stable replacement stays **NO-GO**.
 
+## 2026-10-17 — independent final release-binary retrieval and risk verdict
+
+Using the connected GitHub repository's recorded Actions run
+`39035056937` and artifact ID `12101802257`, the exact archived review
+ZIP was **actually downloaded** and independently inspected offline.
+A matching Actions job `Build and audit full Momentum 012 migration (NO USB)`
+returned `completed/success`; current branch HEAD Actions check statuses
+remain unavailable/unverified. All expected binary SHA256 values match the
+pinned release-candidate dossier:
+
+| Actual file | Bytes | Independently checked SHA256 |
+| --- | ---: | --- |
+| Original Actions archive ZIP | 13,329,016 reported artifact bytes (uncompressed archive storage metadata may vary) | `2c1aa236e566f784c9b94b1da55b6e572e26e8863aeef84972722d1c0eba36bf` |
+| `labmate.fap` | 81,528 | `393fe3e52aa710162a42d7299aa053f538b2ee1ad6542755cf402b83c1931b61` |
+| `firmware.dfu` | 846,617 | `e7460ab56d72a77bca1c096496ee6dd6d59044bd314ad4cb78559c3aeff72c8b` |
+| `js_gpio.module` | 13,796 | `fff2ab8ad8e5b320b669283fc611216da99e9cda4dc03428fcd8e8a130ecca0a` |
+| `firmware-full-update.tgz` | 12,690,519 | `cd12be2a85512dcd360e6b93e027fa2ad9136a76602ba01036dc235b7a804dee` |
+
+The archive's own `PROVENANCE.txt`, `SHA256SUMS.txt` and explicit
+`READ_ME_FIRST.txt` were inspected. Importantly the original README
+says **REVIEW ONLY / NOT A RELEASE / DO NOT FLASH**, confirms patched
+Momentum dependency, and warns of updater resource/radio/option-byte
+side effects. This does NOT independently attest live firmware binary
+readback or a verified installation/restore path on another device.
+
+A separate **FAP-only, compatibility-restricted review ZIP** was
+prepared locally from the verified actual final `labmate.fap` plus its
+SHA256 and safety README. It does **not** contain the full firmware
+updater or flashing script. Its locally computed ZIP SHA256 is
+`39d25926b5f053d975816201597c25884e966621075a34ccea33835e854a3da5`.
+This local preparation is **NOT a GitHub Release creation** and no
+universal Stable promotion has occurred. Do not distribute this as a
+stock Momentum FAP or overwrite the already published `v1.8` asset.
+
+**Real remaining blocker for requested general publish:** the candidate
+requires custom firmware/native resources, has no approved safe public
+installation or exact rollback proof for arbitrary targets, and GitHub
+PR #13 remains Draft/not mergeable. Historical `v1.4` and public
+`v1.8` Stable must remain available. The owner's generic request to
+publish does not by itself supply an authenticated old custom-firmware
+recovery image or a successful recovery rehearsal. **PUBLIC STABLE NO-GO.**
+
 ## Explicit remaining gates before replacing public v1.8
 
 1. **Custom-firmware distribution/restore plan — BLOCKER.** Decide a supported, recoverable installation route for *both* patched Momentum firmware/native resources and exact final FAP, with device-specific compatibility/rollback proof. A FAP-only universal Stable update is prohibited by current ABI evidence. Backup *availability* is not a restore rehearsal.
