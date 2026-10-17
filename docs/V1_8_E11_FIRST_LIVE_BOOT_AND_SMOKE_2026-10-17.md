@@ -1125,3 +1125,77 @@ sanitized known flags, require actual operator UI PWM RUN
 and STOP and exact source checks. No speculative PASS.
 A–G **36/36** and H0 **1/1 PASS** unchanged; H1/H2
 **not accepted**. PR Draft, stable and v1.9 unchanged.
+
+## 2026-10-17 — H1 operator confirmed PWM RUN survived and STOP succeeded; original overlap method **STRUCTURALLY BLOCKED BY MOMENTUM CLI APP LOADER LOCK**
+
+Following the first supposed H1 read-only JS while LabMate PWM was
+running (H3 flags all NO, including `launched=NO`, `begin=NO`
+and `gpio_busy=NO`), the operator confirmed:
+
+- LabMate PWM Studio still displayed **RUN** after the attempted
+  command, so there was **no observed unrequested STOP**.
+- The operator pressed **OK** and the PWM stopped normally:
+  **explicit STOP PASS**, by operator observation.
+
+**Pinned upstream source investigation establishes a deterministic
+test harness design limitation; no device firmware defect implied:**
+
+1. `Next-Flip/Momentum-Firmware` at the **installed pinned
+   source revision** `d3f89dfe2ef6b01839201598e9be1590cba80322`,
+   `applications/system/js_app/js_app.c`, defines:
+   `CLI_COMMAND_INTERFACE(js, js_cli_execute, CliCommandFlagDefault,
+   1024, CLI_APPID);`.
+2. `lib/toolbox/cli/cli_command.h` defines
+   `CliCommandFlagDefault = 0` and
+   `CliCommandFlagParallelSafe = (1 << 0)`.
+   Therefore the `js` CLI command is **not** permitted while a
+   foreground application has the loader locked, regardless of
+   what the command handler could do *if invoked*.
+3. `lib/toolbox/cli/shell/cli_shell.c`
+   `cli_shell_execute_command()` inspects the command flags.
+   When `!(flags & CliCommandFlagParallelSafe)`, it calls
+   `loader_lock(loader)`; on false it prints:
+   `this command cannot be run while an application is open`
+   and **breaks BEFORE starting** the command thread or entering
+   `js_cli_execute()`.
+4. `src/labmate_input_output.c` is designed to keep native PWM
+   running after BACK to menu **inside** LabMate. This keeps
+   the LabMate app open, so the loader lock is unavailable
+   to the default-flagged CLI `js` command.
+
+**Conclusion:** the intended simultaneous LabMate-PWM RUN vs JS-CLI
+`gpio.get("PA7").read()` overlap **CANNOT RUN through this
+exact installed Momentum CLI path while LabMate is foreground**.
+The earlier H1 `launched=NO` with no JS/BUSY markers is exactly
+consistent with upstream app-loader refusal, not proof of an active
+PA7 lease conflict. We did **not** capture the raw CLI refusal text
+in that device run, so do not falsely claim the literal refusal
+message was actually observed; it is verified in the pinned
+source. The prior assumptions that `js_thread_run` by itself
+made JS CLI concurrent with a FAP were incomplete: the *outer
+shell* rejects non-parallel-safe command before that callback.
+
+**Safety prohibition:** do not reclassify the rejected command as
+`CliCommandFlagParallelSafe`, bypass/patch loader_lock, directly
+launch hidden JS threads, start an unsafe parallel native service,
+flash a new experimental firmware, force GPIO mode or PWM STOP,
+or weaken matching attestation merely to make H1 PASS.
+The native ownership contract must be assessed through a
+separately reviewed, genuinely authorized parallel mechanism or
+recorded as a supported-scope blocker/deferred native-global
+collision acceptance gap. Running ordinary JS after closing LabMate
+is only a sequential state check, NOT an H1 contention test.
+
+**Accurate status at this checkpoint:**
+- A–G: **36/36** functional operator matches/PASS.
+- H0: **1/1 PASS** independent native JS PA7 free-state read.
+- H1: **CLI overlap blocked** by app loader (JS never started);
+  PWM RUN state persisted and explicit STOP independently
+  operator-reported PASS. **No observed native `GPIO pin BUSY`
+  refusal under concurrent ownership. H1 NOT PASSED.**
+- H2: **NOT TESTED**. It may be done as an explicitly labeled
+  sequential STOP/reacquisition check, but would NOT close H1.
+- PR #13 remains **Draft**, no stable/main merge or v1.9
+  milestone sign-off, no firmware write/update/SD user data
+  modification. Need an explicit choice and separate review
+  before broadening the native concurrency test mechanism.
