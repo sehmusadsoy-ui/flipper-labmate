@@ -1,0 +1,36 @@
+name: E11 Demo FAP cleanup safety (HOST ONLY)
+
+on:
+  push:
+    branches: [dev/v1.8-completion]
+    paths:
+      - ".github/workflows/check-v18-demo-cleanup.yml"
+      - "scripts/cleanup_v18_demo_faps.py"
+      - "tests/test_v18_demo_cleanup.py"
+      - "scripts/audit_v18_e11_live_labmate_sd.py"
+      - "scripts/backup_v18_e11_usb_sd_to_pc.py"
+      - "scripts/survey_v18_e11_external_sd_ro.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  demo_cleanup_unit:
+    name: Demo allowlist, PC backup and denial cases (NO USB)
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m unittest discover -v -s tests -p test_v18_demo_cleanup.py
+          if ($LASTEXITCODE -ne 0) { throw 'Demo FAP cleanup unit tests failed' }
+          Write-Host 'DEMO CLEANUP SOFTWARE SAFETY TEST PASS - NO SERIAL/USB/DEVICE'
+          Write-Host 'Do not interpret this workflow as physical file deletion.'
