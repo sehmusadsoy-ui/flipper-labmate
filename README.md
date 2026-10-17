@@ -8,7 +8,7 @@
 [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 ![GPIO](https://img.shields.io/badge/GPIO-3.3%20V%20only-red?style=flat-square)
 
-![LabMate — Flipper Zero digital signal diagnostics concept artwork](https://raw.githubusercontent.com/sehmusadsoy-ui/flipper-labmate/main/assets/labmate-hero.jpg)
+![LabMate — Flipper Zero digital signal diagnostics concept artwork](https://github.com/user-attachments/assets/1ec87371-951e-4d02-9929-fce82bb93143)
 
 *LabMate concept artwork — the depicted interface is illustrative, not an actual application screenshot. Check the [release notes](https://github.com/sehmusadsoy-ui/flipper-labmate/releases) for real supported features and firmware compatibility.*
 
