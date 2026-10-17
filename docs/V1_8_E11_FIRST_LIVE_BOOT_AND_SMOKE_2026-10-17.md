@@ -1080,3 +1080,48 @@ Cumulative separately: A–G **36/36** matched functional checks,
 plus H0 **1/1** free-state native JS GPIO check.
 H1/H2 **NOT TESTED**. No change to Stable/main/production app,
 firmware flash, cleanup, or other SD data.
+
+## 2026-10-17 — H1 first attempted overlap with LabMate PWM RUN: CLI native JS launch **NOT OBSERVED**, NO H1 PASS
+
+After real H0 V3 FREE PA7 read PASS, operator was instructed
+to start LabMate PWM Studio at **100 Hz / 50%**, leave native
+PWM running, then press BACK to LabMate menu with app still
+loaded. The previously validated H0-only Python helper was
+reused during this purported overlapping state. Operator
+posted:
+
+```text
+E11 H0 v3 INCOMPLETE: H0 v3 staged JS not an unambiguous successful read -
+H3_FLAGS begin=NO event_loop=NO gpio=NO pin=NO read=NO
+launched=NO error=NO trace=NO done=NO gpio_busy=NO
+H1/H2 NOT AUTHORIZED. DO NOT RETRY BLINDLY.
+```
+
+**Interpretation:** the helper checksums and preflight evidently
+advanced through its real FAP/native JS GPIO/event-loop/JS script
+MD5 reads, but it did not capture native CLI's `Running script`
+banner, any script stage print, native JS `GPIO pin BUSY`,
+runtime error, or script completion. The CLI response was some
+nonempty bounded bytes that did not match known markers
+(`stage_status()` accepted it), but the script did not print
+those bytes, so source alone does not identify whether the
+command was refused, a foreground-app/CLI availability issue,
+or CLI response framing. **It is NOT evidence of a successful
+native lease BUSY refusal, nor a successful JS read.**
+Do not interpret the H0 helper's INCOMPLETE message as
+H1 correct BUSY. No H1 PASS. The **operator has not yet
+reported** whether PWM remained RUN after the attempt and
+whether an explicit STOP succeeded. Until that is confirmed,
+require manual device UI STOP; no second H1, no H2, no firmware
+change or alternate GPIO testing.
+
+The earlier instruction to reuse an **H0 positive-only**
+verifier for H1 was insufficient: its success predicate is the
+opposite of H1's expected denial, and it has no classification
+for launch refusal. Future concurrency harness, if approved,
+must distinguish `js` command availability from a real
+`GPIO pin BUSY` emitted at `pa7.read()`, record only
+sanitized known flags, require actual operator UI PWM RUN
+and STOP and exact source checks. No speculative PASS.
+A–G **36/36** and H0 **1/1 PASS** unchanged; H1/H2
+**not accepted**. PR Draft, stable and v1.9 unchanged.
