@@ -636,3 +636,76 @@ stage script, write to the old FAP, or treat this read-only PASS as a
 stage-upload PASS. Any identity mismatch or failed transfer means
 **STOP, preserve evidence, do not automatically retry or clean up**.
 Firmware flash, Stable release, app promotion and v1.9 remain on HOLD.
+
+## 2026-10-17 — Exact empty-sidecar resumed-write gate prepared (host only, **not run**)
+
+In response to the operator's real post-abort report that the old
+app/native resources PASS and `labmate.e11-new-stage`
+exists as **0 bytes** with MD5 `d41d8cd98f00b204e9800998ecf8427e`,
+we deliberately chose **no deletion, renaming or automatic
+cleanup**. The pinned Momentum `FSOM_OPEN_APPEND` path
+can write only to that still-empty nonapp stage after
+it is independently checked again. The faulty first
+stage script must **never be reused**.
+
+Prepared independent source
+`scripts/resume_v18_final_fap_from_empty_stage_once.py`,
+10-case native-Ready-first simulated transport test
+`tests/test_v18_resume_empty_stage_once.py`,
+operator wrapper
+`scripts/run-v18-e11-resume-verified-empty-stage.ps1`,
+and workflow
+`.github/workflows/check-v18-e11-resume-empty-stage-once.yml`.
+[Pure host mocked stage #39045995763](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/39045995763)
+**SUCCESS** and
+[combined PowerShell parser + host mocks #39046073195](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/39046073195)
+**SUCCESS**. These are **not device tests**.
+
+The new code's strict gates, before sending a single
+raw stage payload byte:
+
+- Requires the exact original 81,532-byte old app
+  backup + read-only two-MD5 PC report, original
+  firmware/FAP pinned local provenance, exact
+  81,528-byte final candidate FAP SHA256 and
+  source/transport path.
+- Rechecks the **actual** COM7 device firmware
+  identity and old FAP/native GPIO JS/Event Loop/
+  Manifest MD5; installed old app must remain
+  `File, size: 81532b`.
+- Requires the **same nonapp stage** path
+  `/ext/apps/Tools/labmate.e11-new-stage`
+  to be exactly **0 bytes** and have independent
+  empty-content MD5 `d41d8cd98f00b204e9800998ecf8427e`;
+  absent/non-empty/unknown-file responses REFUSE.
+  Reserved internal old-app backup destination
+  must still be absent.
+- Requires `Ready` as the **first** native
+  `write_chunk` reply; sends only that stage
+  path's bytes, checks SD file size after every
+  4 KiB-or-smaller acknowledged chunk, and
+  checks exact final stage length/MD5 plus
+  unchanged original FAP and native resources.
+  NO remove/rename/flash/CSV/Profile operations.
+  On any mismatch or USB interruption STOP with
+  **no retry**. A partial sidecar remains in
+  place pending separate review.
+
+Exact immutable handoff wrapper commit
+`01d4f089fe62dc3630bac6cc6af4dec2ba9a1dcd`
+has independently computed SHA256
+`be0996eb4121905818aa9b6459fdb83d63f270d4cde7804db48e54761a42ba91`.
+It downloads only helper code pinned to
+`3aff361687d57e11dae8b0a7c2cc989bb1ad8d02`.
+No previous old-stage helper is invoked or reused
+for the upload.
+
+**Gate at this writing:** actual prewrite PASS and
+actual aborted-stage read-only state PASS. Host
+one-shot empty-sidecar protocol and guard PASS.
+**Actual empty-stage payload upload not yet run**,
+old `labmate.fap` still installed, 2B promotion
+not executed, public Stable/main/v1.9 untouched.
+The existing conditional operator consent covers
+only this narrow app-only trial path, not cleanup,
+firmware update or release publication.
