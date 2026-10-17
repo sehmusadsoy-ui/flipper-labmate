@@ -145,6 +145,18 @@ def main() -> int:
     offsets=bounded_changed_offsets(options.trial/"firmware.dfu", options.final/"firmware.dfu")
     print("E11 DFU byte offsets of changes: " + ", ".join(map(str, offsets)))
     print("E11 DFU last-16-byte suffix start: " + str(result["firmware.dfu"][1]-16))
+    # Context is informational: even a printable byte is not proof of
+    # firmware ABI or behavior equivalence. Review only changed payload bytes.
+    firmware_payload_end=result["firmware.dfu"][1]-16
+    left=(options.trial/"firmware.dfu").read_bytes()
+    right=(options.final/"firmware.dfu").read_bytes()
+    for pos in offsets:
+        if pos>=firmware_payload_end:
+            continue
+        start=max(0,pos-14)
+        end=min(firmware_payload_end,pos+15)
+        print(f"E11 DFU payload delta at {pos} trial-context-hex={left[start:end].hex()}")
+        print(f"E11 DFU payload delta at {pos} final-context-hex={right[start:end].hex()}")
     print("Unchanged source and small byte delta do NOT by themselves prove unchanged firmware behavior.")
     print("E11 PINNED PAIR IDENTITIES PASS; BINARY DIFFERENCE REPORT ONLY")
     print("DO NOT INFER DFU RUNTIME EQUIVALENCE, DEVICE PASS, SAFE FAP-ONLY MIX, OR RELEASE APPROVAL")
