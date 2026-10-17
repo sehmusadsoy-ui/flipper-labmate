@@ -23,7 +23,7 @@ class ReadQueue:
             if self.device.last=="stat":
                 return self.device.stat_raw
             if self.device.last=="write":
-                return b"Ready"
+                return b"Ready" if not self.device.malformed_ready else b"Storage error: denied"
         raise AssertionError("not a pinned read frame")
 
 class MockPort:
@@ -53,6 +53,7 @@ class FakeE11:
         self.backup_already_present=False
         self.corrupt_md5=False
         self.malformed_first_ready=False
+        self.malformed_ready=False
         self.untouched={
           stage.APP_REMOTE:b"original old FAP",
           "/ext/apps_data/js_app/plugins/js_gpio.fal":b"js_gpio",
@@ -83,9 +84,9 @@ class FakeE11:
             self.last="write"
             if self.stage_already_present:
                 raise AssertionError("cannot write into preexisting stage")
-            # Pinned Momentum's write_chunk() first line is Ready, consumed
-            # and returned directly by send_and_wait_eol(). No second EOL.
-            return b"not-ready" if self.malformed_first_ready else b"Ready"
+            # CLI shell echoes command and terminates CRLF, BEFORE native
+            # write_chunk prints Ready on a second CRLF-delimited line.
+            return b"not-our-command" if self.malformed_first_ready else cmd[:-1].encode("ascii")
         raise AssertionError("FORBIDDEN command: "+cmd)
     def hash_flipper(self,path):
         self.calls.append(("MD5",path))
@@ -164,17 +165,23 @@ class StageOnlyTests(unittest.TestCase):
             stage.stage_one_file(self.existing,self.blob,self.post,self.js)
         self.assertEqual(self.existing.untouched[stage.APP_REMOTE],b"original old FAP")
 
-    def test_real_momentum_first_line_ready_and_no_second_line_read(self):
-        self.existing.read=ReadQueue(self.existing)
+    def test_real_momentum_echo_first_then_ready_second(self):
         result=stage.stage_one_file(self.existing,self.blob,self.post,self.js)
         self.assertEqual(result["final_swap_performed"],"NO")
         self.assertEqual(bytes(self.existing.stage_data),self.blob)
-        self.assertTrue(all("write_chunk" not in x[1] or x[1].startswith("storage write_chunk \""+stage.STAGE+"\"")
-                            for x in self.existing.calls if x[0]=="CMD"))
+        self.assertTrue(all(stage.STAGE in x[1]
+                            for x in self.existing.calls if x[0]=="CMD" and "write_chunk" in x[1]))
 
-    def test_refuse_unexpected_first_ready_without_binary_send(self):
+    def test_refuse_wrong_echo_before_any_binary_send(self):
         self.existing.malformed_first_ready=True
-        with self.assertRaisesRegex(ValueError,"first response line"):
+        with self.assertRaisesRegex(ValueError,"unexpected echoed CLI command"):
+            stage.stage_one_file(self.existing,self.blob,self.post,self.js)
+        self.assertEqual(len(self.existing.stage_data),0)
+        self.assertFalse(any(x[0]=="USB-stage-bytes" for x in self.existing.calls))
+
+    def test_refuse_wrong_second_ready_before_any_binary_send(self):
+        self.existing.malformed_ready=True
+        with self.assertRaisesRegex(ValueError,"second-line Ready"):
             stage.stage_one_file(self.existing,self.blob,self.post,self.js)
         self.assertEqual(len(self.existing.stage_data),0)
         self.assertFalse(any(x[0]=="USB-stage-bytes" for x in self.existing.calls))
