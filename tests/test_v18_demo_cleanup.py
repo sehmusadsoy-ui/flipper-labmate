@@ -10,6 +10,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from cleanup_v18_demo_faps import classify, shortlist, apply
 
 
+def typed_md5(storage, path):
+    # Mirror the REAL USB helper's byte-only raw CLI path contract.
+    # Returning a constant without this validation once masked TypeError
+    # after explicit SIL-DEMO-N consent and before storage.remove().
+    if not isinstance(path, bytes):
+        raise TypeError("raw Flipper storage md5 path MUST be bytes")
+    if not path.startswith(b"/ext/apps/Tools/labmate_") or not path.endswith(b".fap"):
+        raise ValueError("unexpected demo pre/post-delete hash path")
+    return "a" * 32
+
+
 class FakeStorage:
     def __init__(self):
         self.removed = []
@@ -86,7 +97,7 @@ class DemoCleanupTests(unittest.TestCase):
             path = Path(folder) / "fresh"
             remote = FakeStorage()
             listing = {"labmate.fap": 10, "labmate_demo.fap": 6}
-            with patch("cleanup_v18_demo_faps._md5", return_value="a" * 32), \
+            with patch("cleanup_v18_demo_faps._md5", side_effect=typed_md5), \
                  patch("cleanup_v18_demo_faps._read_to_pc", side_effect=make_copy), \
                  patch("cleanup_v18_demo_faps.list_tools", return_value=listing):
                 deleted = apply(remote, {"labmate_demo.fap": 6}, listing, path,
@@ -102,7 +113,7 @@ class DemoCleanupTests(unittest.TestCase):
             chosen = {"labmate_busydiag.fap": 6, "labmate_ui_demo.fap": 6}
             listing = {"labmate.fap": 10, "KeyCopier.fap": 12, **chosen}
             after = {"labmate.fap": 10, "KeyCopier.fap": 12}
-            with patch("cleanup_v18_demo_faps._md5", return_value="a" * 32), \
+            with patch("cleanup_v18_demo_faps._md5", side_effect=typed_md5), \
                  patch("cleanup_v18_demo_faps._read_to_pc", side_effect=make_copy), \
                  patch("cleanup_v18_demo_faps.list_tools", side_effect=[listing, after]):
                 deleted = apply(remote, chosen, listing, path, "f" * 32,
@@ -115,12 +126,34 @@ class DemoCleanupTests(unittest.TestCase):
             self.assertTrue((path / "DEMO_BACKUP_MANIFEST.json").is_file())
             self.assertTrue((path / "labmate_ui_demo.fap").is_file())
 
+    def test_hash_change_on_final_pre_delete_check_blocks_removal(self):
+        # Must reject the exact last digest check, not just backup-stage errors.
+        with tempfile.TemporaryDirectory() as folder:
+            remote = FakeStorage()
+            chosen = {"labmate_demo.fap": 6}
+            listing = {"labmate.fap": 10, **chosen}
+            calls = []
+
+            def md5_changing_after_consent(storage, path):
+                typed_md5(storage, path)  # Ensures bytes even on third call.
+                calls.append(path)
+                return ("a" if len(calls) < 3 else "b") * 32
+
+            with patch("cleanup_v18_demo_faps._md5", side_effect=md5_changing_after_consent), \\
+                 patch("cleanup_v18_demo_faps._read_to_pc", side_effect=make_copy), \\
+                 patch("cleanup_v18_demo_faps.list_tools", return_value=listing):
+                with self.assertRaisesRegex(ValueError, "changed immediately before removal"):
+                    apply(remote, chosen, listing, Path(folder) / "fresh",
+                          "f" * 32, confirm=lambda _: "SIL-DEMO-1")
+            self.assertEqual(len(calls), 3)
+            self.assertEqual(remote.removed, [])
+
     def test_inventory_changes_before_delete_refused(self):
         with tempfile.TemporaryDirectory() as folder:
             remote = FakeStorage()
             chosen = {"labmate_demo.fap": 6}
             listing = {"labmate.fap": 10, **chosen}
-            with patch("cleanup_v18_demo_faps._md5", return_value="a" * 32), \
+            with patch("cleanup_v18_demo_faps._md5", side_effect=typed_md5), \
                  patch("cleanup_v18_demo_faps._read_to_pc", side_effect=make_copy), \
                  patch("cleanup_v18_demo_faps.list_tools", return_value={"labmate.fap": 10}):
                 with self.assertRaisesRegex(ValueError, "changed before deletion"):
