@@ -6,6 +6,7 @@
 #include "labmate_ui_screens.h"
 #include "labmate_scope_display.h"
 #include "labmate_scope_pair_view.h"
+#include "labmate_scope_reference_view.h"
 
 /* ---------- DRAWING (stateful screens) ---------- */
 
@@ -82,7 +83,34 @@ void labmate_view_render_callback(
         draw_alerts(canvas, app);
         break;
     case LabMateScreenScope:
-        if(app->scope_show_compare) {
+        if(app->scope_show_reference) {
+            const bool lease_clear = !app->scope_native.active &&
+                !app->scope_native.owner.handle &&
+                app->capture_owner == LabMateCaptureNone;
+            const bool same_generation = app->scope_capture_generation != 0U &&
+                app->scope_last_generation == app->scope_capture_generation;
+            const bool complete = lease_clear && same_generation &&
+                app->scope_last_valid && !app->scope_clock_fault;
+            const LabMateScopeMetrics* measured =
+                complete ? &app->scope_last_metrics : NULL;
+            LabMateScopeObservation observation = LabMateScopeObservationInvalid;
+            if(app->scope_display.state == LabMateScopeDisplayBusy) {
+                observation = LabMateScopeObservationBusy;
+            } else if(lease_clear && same_generation && !app->scope_clock_fault &&
+                      app->scope_display.state == LabMateScopeDisplayNoTrigger &&
+                      app->scope_display.total_edges == 0U) {
+                observation = LabMateScopeObservationNoSignalConfirmed;
+            } else if(complete) {
+                observation = LabMateScopeObservationComplete;
+            }
+            LabMateScopeReference reference = {0};
+            (void)labmate_scope_reference_preset(
+                app->scope_reference_preset, &reference);
+            const LabMateScopeToleranceResult result =
+                labmate_scope_tolerance_evaluate(&reference, measured, observation);
+            (void)labmate_scope_reference_view_draw(
+                canvas, app->scope_reference_preset, result, measured);
+        } else if(app->scope_show_compare) {
             /* "RIGHT SAVE B" must never be advertised for A's same
              * capture run; the pair backend requires a fresh generation. */
             const bool fresh_candidate = app->scope_last_valid &&
