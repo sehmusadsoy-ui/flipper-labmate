@@ -34,6 +34,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 55
     steps:
+      - name: Record CI trigger and guard development ref (READ ONLY)
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'EVENT=%s\nREF=%s\nSOURCE_SHA=%s\n' "$GITHUB_EVENT_NAME" "$GITHUB_REF" "$GITHUB_SHA"
+          # A push or manual run must never build application code from main.
+          if [[ "$GITHUB_EVENT_NAME" != "pull_request" ]]; then
+            test "$GITHUB_REF" = "refs/heads/dev/v1.9-logic-scope"
+          fi
+
       - name: Checkout LabMate v1.9 draft; never checkout Stable for this build
         uses: actions/checkout@v4
         with:
