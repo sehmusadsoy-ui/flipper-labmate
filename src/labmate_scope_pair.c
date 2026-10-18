@@ -7,7 +7,7 @@ void labmate_scope_pair_reset(LabMateScopePair* p) {
 
 static bool valid(const LabMateScopeMetrics* m, uint32_t generation) {
     return generation != 0U && m &&
-        m->status == LabMateScopeMetricsReady &&
+        m->status == LabMateScopeMetricsReady && !m->truncated &&
         m->completed_cycles != 0U &&
         m->edge_count >= 3U && m->edge_count <= LABMATE_SCOPE_MAX_EDGES &&
         m->timebase_hz != 0U && m->duty_permille <= 1000U &&
