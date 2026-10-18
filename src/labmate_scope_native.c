@@ -167,7 +167,10 @@ bool labmate_scope_native_stop(
 #if LABMATE_SCOPE_NATIVE_MATCHED_ABI
     const LabMateScopeReleasePlan todo =
         labmate_scope_owner_stop_plan(&session->owner);
-    if(!todo.release_lease) return !session->active && !session->owner.handle;
+    /* A missing release plan is a CLEAN no-op only if every session
+     * lifecycle flag is positively idle. Never acknowledge STOP while
+     * an IRQ flag or stale callback state survives. */
+    if(!todo.release_lease) return labmate_scope_native_reinit_safe(session);
 
     /* Callback cannot race with the buffer STOP; critical section excludes
      * in-flight ISR. Do NOT detach if it is not our callback.
