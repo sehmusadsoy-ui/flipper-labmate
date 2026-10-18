@@ -50,3 +50,21 @@ No Stable tag or release changed; no Flipper flash or microSD modification occur
 ### Re-run after same-verdict margin regression
 
 Commit `31bf18e` adds a case where the last capture changes from 50.0% to 49.5% duty: both would be inside tolerance and individually `PASS`, but the old result's numerical error fields are stale. The renderer correctly refuses to draw the stale result even though the status label would not change. The committed updated test blob `fd7807441980798f3f04e4cca4eb9062cc8835a4` was hash-checked and executed again against the matching source files with strict GCC and UBSan: **PASS**. This remains a local host test with GUI/edge-buffer type stubs, not a Flipper FAP acceptance.
+
+## Native Scope reinitialization regression — 2026-10-18
+
+**Source-level safety finding:** `labmate_scope_native_init()` previously checked `active`, native `owner.handle`, `owner.phase` and `fault_sticky` but could clear session bookkeeping through `memset` even when an IRQ enable bit or stale `callback_detached`, `pin_restored`, or `fault_cleanup_phase` indicated unresolved native cleanup.
+
+**Fix:** `labmate_scope_native_reinit_safe()` now applies a single fail-closed predicate to all native cleanup fields. The pure predicate is shared by `labmate_scope_native_init()` and `labmate_scope_exit_storage_safe()`; the latter additionally requires `session_initialized`. The PC1 resource admission gate independently refuses stale callback, pin-restore and cleanup-phase flags. No GPIO or foreign owner is reconfigured on refusal.
+
+Exact GitHub blob bytes of these committed files were compared against local `git hash-object` results:
+
+| File | Git blob SHA |
+| --- | --- |
+| `src/labmate_scope_exit_guard.h` | `9e8c2c3a77cd7ac09a808efddf64d443b2176308` |
+| `src/labmate_scope_exit_guard.c` | `28a00c3e265dbe0579ba5f66268226b53acbb6d9` |
+| `tests/test_scope_exit_guard.c` | `71a6c761c262f17ffcafc6db154d0c09c5fc490c` |
+
+**Actually executed locally:** GCC 14.2, C11 `-Wall -Wextra -Werror -pedantic` host test **PASS** and GCC UBSan `-fsanitize=undefined -fno-sanitize-recover=all` **PASS**; the test uses the isolated host type stub and does not compile `labmate_scope_native.c` against the matched Momentum E11 SDK. New PC1 gate tests are committed but a complete exact-repo/GitHub Actions run has NOT been obtained.
+
+Source/test commits: `d35f740`, `066d48b`, `5b4ea0d`, `9974968`, `35c6f20`, `83af385`. Device install, flash, and PR merge remain blocked until full CI and FAP link acceptance.
