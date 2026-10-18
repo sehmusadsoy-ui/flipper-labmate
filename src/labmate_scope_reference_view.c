@@ -17,8 +17,10 @@ bool labmate_scope_reference_view_draw(
     LabMateScopeReferencePreset selected,
     LabMateScopeToleranceResult result,
     const LabMateScopeMetrics* measured) {
-    if(!canvas || result.verdict < LabMateScopeVerdictInvalid ||
-       result.verdict > LabMateScopeVerdictBusy) return false;
+    /* The enum starts at zero; unsigned upper-bound validation also
+     * rejects negative/invalid enum values after conversion on ARM. */
+    if(!canvas || (unsigned)result.verdict > (unsigned)LabMateScopeVerdictBusy)
+        return false;
 
     LabMateScopeReference reference = {0};
     if(!labmate_scope_reference_preset(selected, &reference)) return false;
