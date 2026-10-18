@@ -70,6 +70,22 @@ static void test_real_metrics_and_invalid_no_fake_pass(void) {
     assert(contains(&canvas, "PASS"));
     assert(contains(&canvas, "1000.00Hz 50.0%"));
 
+    /* Same metrics but changed 100 Hz preset: previous 1 kHz PASS cannot
+     * be reused as a plausible new PASS. */
+    canvas = (Canvas){0};
+    assert(!labmate_scope_reference_view_draw(
+        &canvas, LabMateScopeReference100Hz50, result, &m));
+    assert(canvas.count == 0U);
+
+    /* Even with the same preset, altered measured data and stale error
+     * fields must be rejected before any LCD pixels are painted. */
+    LabMateScopeMetrics altered = m;
+    altered.duty_permille = 450U;
+    canvas = (Canvas){0};
+    assert(!labmate_scope_reference_view_draw(
+        &canvas, LabMateScopeReference1kHz50, result, &altered));
+    assert(canvas.count == 0U);
+
     m.truncated = true;
     result = labmate_scope_tolerance_evaluate(
         &reference, &m, LabMateScopeObservationComplete);
