@@ -20,6 +20,7 @@
 #include "labmate_scope_native.h"
 #include "labmate_scope_plot.h"
 #include "labmate_scope_display.h"
+#include "labmate_scope_pair.h"
 
 #define LABMATE_VERSION_TEXT "v1.9DEV"
 /* Shared menu/pin counts: UI and input handling must agree. */
@@ -269,6 +270,16 @@ typedef struct {
     LabMateScopeEdge scope_recent[LABMATE_SCOPE_PLOT_MAX_EDGES];
     LabMateScopePlotLine scope_lines[LABMATE_SCOPE_PLOT_MAX_LINES];
     LabMateScopeDisplay scope_display;
+    /* A and B store only summaries of two confirmed, non-overlapping PC1
+     * sessions. NO stored raw ISR pointers and NO SD profile/CSV writes. */
+    LabMateScopePair scope_pair;
+    LabMateScopeMetrics scope_last_metrics;
+    uint32_t scope_capture_generation;
+    uint32_t scope_last_generation;
+    uint32_t scope_capture_hz;
+    bool scope_last_valid;
+    bool scope_clock_fault;
+    bool scope_show_compare;
 
     LabMateUart uart; /* USART external GPIO 13/14, no TIM1/TIM2 ownership */
     LabMateCommOwner comm_owner; /* local exclusive I2C/1Wire sessions */
