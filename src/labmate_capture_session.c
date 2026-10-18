@@ -16,6 +16,7 @@
 #include "labmate_generator.h"
 #include "labmate_logger_storage.h"
 #include "labmate_scope_bridge.h"
+#include "labmate_scope_exit_guard.h"
 
 /* Pulse Analyzer uses GPIO edge interrupts, not polling.
  * STM32 EXTI lines are shared across GPIO ports, and the firmware already
@@ -52,7 +53,7 @@ static uint8_t pulse_gpio_next_index(uint8_t current, int8_t direction) {
 void labmate_capture_stop_all(LabMateApp* app) {
     /* Stop the independent Scope-owned PC1 callback before old tool state
      * can clear capture_owner or overwrite its IRQ/EXTI configuration. */
-    if(app->scope_native.active || app->scope_native.owner.handle) {
+    if(!labmate_scope_native_reinit_safe(&app->scope_native)) {
         if(!labmate_scope_bridge_stop(app)) {
             app->capture_release_fault = true;
             app->capture_blocked = true;
@@ -65,7 +66,7 @@ void labmate_capture_stop_all(LabMateApp* app) {
     labmate_button_capture_stop(app);
     /* A failed/stale stop must not advertise a free capture owner. */
     if(!app->counter_active && !app->button_active &&
-       !app->scope_native.active && !app->scope_native.owner.handle &&
+       labmate_scope_native_reinit_safe(&app->scope_native) &&
        labmate_capture_all_stopped(
            app->frequency_irq_active, app->frequency_hw_active,
            app->pulse_irq_active)) {
