@@ -66,7 +66,7 @@ static void labmate_scope_bridge_latch(LabMateApp* a) {
         labmate_scope_native_read(&a->scope_native, NULL, 0U, NULL);
     if(a->scope_clock_fault || a->scope_capture_hz == 0U ||
        s.state != LabMateScopeStopped || s.timebase_error ||
-       s.overflowed || s.dropped_edges || s.count < 3U ||
+       s.count < 3U ||
        s.count > LABMATE_SCOPE_MAX_EDGES) return;
     a->scope_last_metrics = labmate_scope_metrics_from_edges(
         a->scope_native.storage, s.count, a->scope_capture_hz);
