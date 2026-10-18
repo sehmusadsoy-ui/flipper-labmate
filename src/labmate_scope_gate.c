@@ -25,7 +25,11 @@ LabMateScopeGate labmate_scope_gate_pc1(
 }
 
 bool labmate_scope_owner_lease_acquired(LabMateScopeOwnerState* s, uint32_t h) {
-    if(!s || s->phase != LabMateScopeOwnerIdle || s->handle || !h) return false;
+    /* Do not clear unresolved callback/EXTI cleanup evidence even if a
+     * caller bypasses the ordinary PC1 admission gate. */
+    if(!s || s->phase != LabMateScopeOwnerIdle || s->handle || !h ||
+       s->fault_cleanup_phase != LabMateScopeOwnerIdle ||
+       s->callback_detached || s->pin_restored) return false;
     s->handle = h;
     s->phase = LabMateScopeOwnerLease;
     s->callback_detached = false;
