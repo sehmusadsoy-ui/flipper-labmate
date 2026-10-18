@@ -57,7 +57,9 @@ bool labmate_scope_reference_view_draw(
         labmate_scope_reference_verdict_text(result.verdict));
 
     if(has_metrics) {
-        char observed[24];
+        /* Keep enough room for the compiler's full unsigned-format bound.
+         * Physical LCD width is separately bounded by the measured ranges. */
+        char observed[48];
         /* This line is for display only. The verdict uses full mHz
          * precision from the pure-C evaluator, never rounded LCD text. */
         if(measured->frequency_millihz < UINT64_C(100000000)) {
