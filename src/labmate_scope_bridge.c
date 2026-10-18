@@ -222,6 +222,7 @@ void labmate_scope_bridge_input(LabMateApp* a, InputEvent event) {
        !a->scope_native.active && !a->scope_show_reference) {
         const bool complete = a->scope_last_valid &&
             labmate_scope_native_reinit_safe(&a->scope_native) &&
+            a->capture_owner == LabMateCaptureNone &&
             !a->scope_clock_fault &&
             a->scope_last_generation == a->scope_capture_generation;
         const LabMateScopeMetrics* metric =
