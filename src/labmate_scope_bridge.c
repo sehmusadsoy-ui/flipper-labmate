@@ -72,7 +72,8 @@ static void labmate_scope_bridge_latch(LabMateApp* a) {
         a->scope_native.storage, s.count, a->scope_capture_hz);
     a->scope_last_metrics.truncated = s.overflowed || s.dropped_edges > 0U;
     a->scope_last_valid =
-        a->scope_last_metrics.status == LabMateScopeMetricsReady;
+        a->scope_last_metrics.status == LabMateScopeMetricsReady &&
+        !a->scope_last_metrics.truncated;
 }
 
 bool labmate_scope_bridge_init(LabMateApp* a) {
