@@ -220,7 +220,7 @@ void labmate_scope_bridge_input(LabMateApp* a, InputEvent event) {
     if((event.key == InputKeyLeft || event.key == InputKeyRight) &&
        !a->scope_native.active && !a->scope_show_reference) {
         const bool complete = a->scope_last_valid &&
-            !a->scope_native.owner.handle &&
+            labmate_scope_native_reinit_safe(&a->scope_native) &&
             !a->scope_clock_fault &&
             a->scope_last_generation == a->scope_capture_generation;
         const LabMateScopeMetrics* metric =
