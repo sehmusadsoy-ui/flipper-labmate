@@ -10,6 +10,31 @@
 #include <stdio.h>
 #include "labmate_scope_gate.h"
 
+static void test_lease_release_fail_closed(void) {
+    LabMateScopeOwnerState owner = {0};
+    assert(labmate_scope_owner_lease_acquired(&owner, 42U));
+    assert(!labmate_scope_owner_lease_acquired(&owner, 43U));
+    assert(labmate_scope_owner_callback_added(&owner));
+    assert(labmate_scope_owner_pin_configured(&owner));
+    assert(labmate_scope_owner_started(&owner));
+
+    LabMateScopeReleasePlan plan = labmate_scope_owner_stop_plan(&owner);
+    assert(plan.detach_callback && plan.restore_pin && plan.release_lease);
+
+    /* Native STOP reports callback/pin removed but lease release refused. */
+    assert(!labmate_scope_owner_stop_confirmed(&owner, true, true, false));
+    assert(owner.phase == LabMateScopeOwnerReleaseFault);
+    assert(owner.handle == 42U);
+    plan = labmate_scope_owner_stop_plan(&owner);
+    assert(!plan.detach_callback && !plan.restore_pin && plan.release_lease);
+
+    /* Retry must ONLY release the outstanding matching lease. */
+    assert(labmate_scope_owner_stop_confirmed(&owner, false, false, true));
+    assert(owner.phase == LabMateScopeOwnerIdle && owner.handle == 0U);
+    plan = labmate_scope_owner_stop_plan(&owner);
+    assert(!plan.detach_callback && !plan.restore_pin && !plan.release_lease);
+}
+
 int main(void) {
     LabMateScopeOwnerState owner = {0};
     LabMateScopePc1Environment env = {
@@ -42,6 +67,7 @@ int main(void) {
 
     env.capture_release_fault = true;
     assert(labmate_scope_gate_pc1(&env, &owner) == LabMateScopeGateFault);
-    puts("scope PC1 pin gate: PASS");
+    test_lease_release_fail_closed();
+    puts("scope PC1 pin gate + ownership lifecycle: PASS");
     return 0;
 }
