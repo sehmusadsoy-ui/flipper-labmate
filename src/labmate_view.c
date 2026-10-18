@@ -85,8 +85,8 @@ void labmate_view_render_callback(
         break;
     case LabMateScreenScope:
         if(app->scope_show_reference) {
-            const bool lease_clear = !app->scope_native.active &&
-                !app->scope_native.owner.handle &&
+            const bool lease_clear =
+                labmate_scope_native_reinit_safe(&app->scope_native) &&
                 app->capture_owner == LabMateCaptureNone;
             const bool same_generation = app->scope_capture_generation != 0U &&
                 app->scope_last_generation == app->scope_capture_generation;
