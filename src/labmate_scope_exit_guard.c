@@ -9,6 +9,12 @@ bool labmate_scope_native_reinit_safe(const LabMateScopeNative* session) {
            session->owner.fault_cleanup_phase == LabMateScopeOwnerIdle;
 }
 
+bool labmate_scope_native_stop_confirmed(
+    const LabMateScopeNative* session, LabMateCaptureOwner shared_owner) {
+    return labmate_scope_native_reinit_safe(session) &&
+           shared_owner != LabMateCaptureScope;
+}
+
 bool labmate_scope_exit_storage_safe(const LabMateScopeNative* session) {
     return session && session->session_initialized &&
            labmate_scope_native_reinit_safe(session);
