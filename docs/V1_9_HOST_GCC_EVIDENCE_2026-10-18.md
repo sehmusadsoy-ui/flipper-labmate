@@ -30,7 +30,7 @@ No Flipper firmware was installed, no E11 native ABI was linked, and no actual I
 | `src/labmate_scope_compare.h` | `3417ea901485ba18244997929294d82df95605e6` |
 | `src/labmate_scope_reference_view.c` | `a91377a6c674e723f00310c95bf87ee6017d6b0c` |
 | `src/labmate_scope_reference_view.h` | `b45c84646c3306372100974845ec249e76af22e9` |
-| `tests/test_scope_reference_view.c` | `11914fe721bc9828f9036525fc403761acdb7f29` |
+| `tests/test_scope_reference_view.c` | `fd7807441980798f3f04e4cca4eb9062cc8835a4` |
 
 ## Defects fixed while testing
 
@@ -46,3 +46,7 @@ No Flipper firmware was installed, no E11 native ABI was linked, and no actual I
 - Use PA7->PC1 loopback for functional test only. Independent timing/duty calibration requires an external instrument (planned university test); no calibration claims until measured.
 
 No Stable tag or release changed; no Flipper flash or microSD modification occurred.
+
+### Re-run after same-verdict margin regression
+
+Commit `31bf18e` adds a case where the last capture changes from 50.0% to 49.5% duty: both would be inside tolerance and individually `PASS`, but the old result's numerical error fields are stale. The renderer correctly refuses to draw the stale result even though the status label would not change. The committed updated test blob `fd7807441980798f3f04e4cca4eb9062cc8835a4` was hash-checked and executed again against the matching source files with strict GCC and UBSan: **PASS**. This remains a local host test with GUI/edge-buffer type stubs, not a Flipper FAP acceptance.
