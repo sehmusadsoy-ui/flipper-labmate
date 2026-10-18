@@ -89,6 +89,6 @@ bool labmate_scope_display_draw(Canvas* c, const LabMateScopeDisplay* d) {
         c, 3, 62,
         (d->state == LabMateScopeDisplayArmed ||
          d->state == LabMateScopeDisplayRunning) ?
-            "OK STOP BK EXIT" : "OK RUN L:A R:B D:AB");
+            "OK STOP BK EXIT" : "OK RUN DN:AB BK EXIT");
     return true;
 }
