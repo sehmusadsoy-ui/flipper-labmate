@@ -68,6 +68,7 @@ void labmate_capture_stop_all(LabMateApp* app) {
     /* A failed/stale stop must not advertise a free capture owner. */
     if(!app->counter_active && !app->button_active &&
        labmate_scope_native_reinit_safe(&app->scope_native) &&
+       app->capture_owner != LabMateCaptureScope &&
        labmate_capture_all_stopped(
            app->frequency_irq_active, app->frequency_hw_active,
            app->pulse_irq_active)) {
