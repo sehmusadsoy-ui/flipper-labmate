@@ -155,6 +155,9 @@ void labmate_scope_bridge_poll(LabMateApp* a) {
             a->scope_display.state = LabMateScopeDisplayFull; break;
         case LabMateScopeGuardStopped:
         case LabMateScopeGuardDurationLimit:
+        case LabMateScopeGuardSampleComplete:
+            /* Native poll has already detached the owned IRQ and lease.
+             * The subsequent latch validates full cycles and overflow. */
             a->scope_display.state = LabMateScopeDisplayStopped; break;
         default:
             a->scope_display.state = LabMateScopeDisplayError; break;
