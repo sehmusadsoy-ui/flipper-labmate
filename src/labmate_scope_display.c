@@ -85,6 +85,10 @@ bool labmate_scope_display_draw(Canvas* c, const LabMateScopeDisplay* d) {
              short_state, d->plot.cropped_old_edges ? " LAST64" : "");
     canvas_draw_str(c, 3, 50, summary);
     canvas_draw_line(c, 0, 53, 127, 53);
-    canvas_draw_str(c, 3, 62, "OK RUN/STOP BK EXIT");
+    canvas_draw_str(
+        c, 3, 62,
+        (d->state == LabMateScopeDisplayArmed ||
+         d->state == LabMateScopeDisplayRunning) ?
+            "OK STOP BK EXIT" : "OK RUN L:A R:B D:AB");
     return true;
 }
