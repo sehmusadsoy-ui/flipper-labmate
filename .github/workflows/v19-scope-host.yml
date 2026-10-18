@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   scope-host:
-    name: Pure C Scope gate, buffer, watchdog and Compare
+    name: Pure C Scope safety, Compare and tolerance
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
@@ -42,6 +42,10 @@ jobs:
             tests/test_scope_compare_pair.c \
             src/labmate_scope_compare.c src/labmate_scope_pair.c \
             -o build/scope-host/compare-pair
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc \
+            tests/test_scope_tolerance.c \
+            src/labmate_scope_tolerance.c src/labmate_scope_compare.c \
+            -o build/scope-host/tolerance
       - name: Execute host regressions
         shell: bash
         run: |
@@ -49,3 +53,4 @@ jobs:
           ./build/scope-host/pc1-pin-gate
           ./build/scope-host/buffer-timeguard
           ./build/scope-host/compare-pair
+          ./build/scope-host/tolerance
