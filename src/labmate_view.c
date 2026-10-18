@@ -7,6 +7,7 @@
 #include "labmate_scope_display.h"
 #include "labmate_scope_pair_view.h"
 #include "labmate_scope_reference_view.h"
+#include "labmate_scope_exit_guard.h"
 
 /* ---------- DRAWING (stateful screens) ---------- */
 
