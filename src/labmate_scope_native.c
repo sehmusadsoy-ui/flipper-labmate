@@ -1,4 +1,5 @@
 #include "labmate_scope_native.h"
+#include "labmate_scope_exit_guard.h"
 #include "labmate_capture_exti.h"
 
 #include <furi.h>
@@ -49,9 +50,9 @@ static bool labmate_scope_edge_timebase_safe(void) {
 #endif
 
 bool labmate_scope_native_init(LabMateScopeNative* session) {
-    if(!session || session->active || session->owner.handle ||
-       session->owner.phase != LabMateScopeOwnerIdle ||
-       session->fault_sticky) return false;
+    /* Never erase callback/lease cleanup evidence. A completed STOP or a
+     * fresh zero-initialized session is required before resetting memory. */
+    if(!labmate_scope_native_reinit_safe(session)) return false;
     memset(session, 0, sizeof(*session));
     if(!labmate_scope_buffer_init(
            &session->buffer, session->storage, LABMATE_SCOPE_MAX_EDGES)) return false;
