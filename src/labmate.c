@@ -215,19 +215,20 @@ int32_t labmate_app(void* p) {
     furi_mutex_free(
         app->mutex);
 
-    /* Do NOT free the heap-backed Scope buffer if an ISR callback, native
-     * lease or uncertain cleanup still owns a pointer inside LabMateApp.
-     * Even a failed resource release cannot justify a use-after-free.
-     * Quiesce only our own IRQ handler flag (not a foreign GPIO callback),
-     * and retain the allocation until reboot rather than reclaim unsafely.
-     * This exceptional nonzero-exit path needs a native fault-injection
-     * test; host guard regressions alone are not device proof. */
+    /* A native IRQ callback points to app-owned state AND executable FAP
+     * code. If owned teardown is uncertain, returning from labmate_app()
+     * risks unloading the callback's code even if the heap is leaked.
+     * Quiesce our own handler flag first, then trigger Furi's controlled
+     * crash/reboot path rather than return with a potentially live IRQ.
+     * NEVER release another owner's callback or modify foreign GPIO here.
+     * This emergency path requires a separate native fault-injection test;
+     * ordinary successful STOP/BACK still exits normally. */
     if(!labmate_scope_exit_storage_safe(&app->scope_native)) {
         FURI_CRITICAL_ENTER();
         app->scope_native.irq_enabled = false;
         FURI_CRITICAL_EXIT();
-        FURI_LOG_E("LabMate", "Scope cleanup uncertain; app state retained");
-        return -2;
+        FURI_LOG_E("LabMate", "Scope IRQ cleanup uncertain; reboot required");
+        furi_crash("LabMate Scope IRQ cleanup fault");
     }
 
     free(app);
