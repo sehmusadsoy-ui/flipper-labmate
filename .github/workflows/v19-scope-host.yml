@@ -12,6 +12,7 @@ on:
       - "src/labmate_comm_resource.h"
       - "src/labmate_internal.h"
       - "src/labmate_view.c"
+      - "src/labmate.c"
       - "tests/test_scope_*.c"
       - "tests/host_stubs/gui/gui.h"
       - ".github/workflows/v19-scope-host.yml"
@@ -55,6 +56,10 @@ jobs:
             src/labmate_scope_reference_view.c \
             src/labmate_scope_tolerance.c src/labmate_scope_compare.c \
             -o build/scope-host/reference-view
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc \
+            tests/test_scope_exit_guard.c \
+            src/labmate_scope_exit_guard.c \
+            -o build/scope-host/exit-guard
       - name: Execute host regressions
         shell: bash
         run: |
@@ -64,3 +69,4 @@ jobs:
           ./build/scope-host/compare-pair
           ./build/scope-host/tolerance
           ./build/scope-host/reference-view
+          ./build/scope-host/exit-guard
