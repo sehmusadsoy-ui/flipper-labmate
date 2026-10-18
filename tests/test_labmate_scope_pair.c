@@ -51,6 +51,10 @@ static void bad_data_cannot_overwrite_good_reference(void) {
     assert(!labmate_scope_pair_save_b(&p,&broken,4U));
     broken=a; broken.frequency_millihz=0U;
     assert(!labmate_scope_pair_save_b(&p,&broken,4U));
+    broken=a; broken.frequency_millihz=UINT64_C(64000000)*1000U;
+    assert(!labmate_scope_pair_save_b(&p,&broken,4U)); /* impossible >clock/2 */
+    broken=a; broken.min_period_ticks=1U;
+    assert(!labmate_scope_pair_save_b(&p,&broken,4U)); /* can't H-L-H in 1 tick */
     assert(!labmate_scope_pair_save_b(&p,&a,0U));
     assert(p.has_a && !p.has_b && p.generation_a==3U);
     assert(!labmate_scope_pair_save_a(NULL,&a,4U));
