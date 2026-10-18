@@ -23,6 +23,7 @@ int main(void) {
     assert(labmate_scope_native_stop_confirmed(&n, LabMateCaptureFrequencyLow));
 
     n.irq_enabled = true; /* ISR may hold &app->scope_native */
+    assert(!labmate_scope_native_stop_confirmed(&n, LabMateCaptureNone));
     assert(!labmate_scope_native_reinit_safe(&n));
     assert(!labmate_scope_exit_storage_safe(&n));
     n.irq_enabled = false;
