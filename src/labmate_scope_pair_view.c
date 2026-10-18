@@ -45,7 +45,9 @@ bool labmate_scope_pair_view_draw(Canvas* c, const LabMateScopePair* p,
         canvas_draw_str(c, 3, 35, "LEFT: SAVE A");
         canvas_draw_str(c, 3, 46, last_valid ? "A READY TO SAVE" : "NEED FULL CYCLE");
     } else {
-        char line[28];
+        /* Larger temporary protects snprintf's compile-time worst case;
+         * the explicit 20-glyph check below remains the actual LCD limit. */
+        char line[48];
         metric_line(line, sizeof(line), 'A', &p->a);
         /* FontSecondary is 6px/glyph; max 20 chars from x=3. */
         if(strlen(line) > 20U) return false;
