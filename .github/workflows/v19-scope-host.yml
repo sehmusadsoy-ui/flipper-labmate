@@ -11,6 +11,7 @@ on:
       - "src/labmate_resource_policy.h"
       - "src/labmate_comm_resource.h"
       - "tests/test_scope_*.c"
+      - "tests/host_stubs/gui/gui.h"
       - ".github/workflows/v19-scope-host.yml"
   workflow_dispatch:
 
@@ -46,6 +47,12 @@ jobs:
             tests/test_scope_tolerance.c \
             src/labmate_scope_tolerance.c src/labmate_scope_compare.c \
             -o build/scope-host/tolerance
+          cc -std=c11 -Wall -Wextra -Werror -pedantic \
+            -Itests/host_stubs -Isrc \
+            tests/test_scope_reference_view.c \
+            src/labmate_scope_reference_view.c \
+            src/labmate_scope_tolerance.c src/labmate_scope_compare.c \
+            -o build/scope-host/reference-view
       - name: Execute host regressions
         shell: bash
         run: |
@@ -54,3 +61,4 @@ jobs:
           ./build/scope-host/buffer-timeguard
           ./build/scope-host/compare-pair
           ./build/scope-host/tolerance
+          ./build/scope-host/reference-view
