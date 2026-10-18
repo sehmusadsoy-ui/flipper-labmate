@@ -14,6 +14,7 @@ on:
       - ".github/workflows/build-v19-e11-fap-review-only.yml"
   pull_request:
     branches: [dev/v1.8-completion]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -21,6 +22,8 @@ permissions:
 jobs:
   compile_matched_fap:
     name: Build v1.9DEV FAP on PINNED E11 patched Momentum source
+    # Manual builds are allowed ONLY when selecting the v1.9 development branch.
+    if: github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/dev/v1.9-logic-scope'
     runs-on: ubuntu-latest
     timeout-minutes: 55
     steps:
