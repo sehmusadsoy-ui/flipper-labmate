@@ -64,8 +64,12 @@ bool labmate_scope_native_init(LabMateScopeNative* session) {
 LabMateScopeNativeStatus labmate_scope_native_start(
     LabMateScopeNative* session, const LabMateScopePc1Environment* env,
     LabMateCaptureOwner* shared_owner, uint32_t current_ms) {
+    /* START must be as strict as reinitialization: an IRQ-enabled bit,
+     * stale callback/pin cleanup, lease token or sticky release fault must
+     * never be concealed by an apparently IDLE software owner. */
     if(!session || !env || !shared_owner || !session->session_initialized ||
-       session->active || *shared_owner != env->capture_owner) {
+       !labmate_scope_native_reinit_safe(session) ||
+       *shared_owner != env->capture_owner) {
         return LabMateScopeNativeFault;
     }
 #if LABMATE_SCOPE_NATIVE_MATCHED_ABI
