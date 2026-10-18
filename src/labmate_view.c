@@ -5,6 +5,7 @@
 #include "labmate_view.h"
 #include "labmate_ui_screens.h"
 #include "labmate_scope_display.h"
+#include "labmate_scope_pair_view.h"
 
 /* ---------- DRAWING (stateful screens) ---------- */
 
@@ -81,7 +82,12 @@ void labmate_view_render_callback(
         draw_alerts(canvas, app);
         break;
     case LabMateScreenScope:
-        (void)labmate_scope_display_draw(canvas, &app->scope_display);
+        if(app->scope_show_compare) {
+            (void)labmate_scope_pair_view_draw(
+                canvas, &app->scope_pair, app->scope_last_valid);
+        } else {
+            (void)labmate_scope_display_draw(canvas, &app->scope_display);
+        }
         break;
     }
 
