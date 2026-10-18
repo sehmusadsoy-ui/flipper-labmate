@@ -38,6 +38,14 @@ int main(void) {
     n.owner.fault_cleanup_phase = LabMateScopeOwnerIdle;
     assert(labmate_scope_exit_storage_safe(&n));
 
+    n.owner.callback_detached = true; /* stale owner cleanup bookkeeping */
+    assert(!labmate_scope_exit_storage_safe(&n));
+    n.owner.callback_detached = false;
+    n.owner.pin_restored = true;
+    assert(!labmate_scope_exit_storage_safe(&n));
+    n.owner.pin_restored = false;
+    assert(labmate_scope_exit_storage_safe(&n));
+
     n.fault_sticky = true;
     assert(!labmate_scope_exit_storage_safe(&n));
     n.fault_sticky = false;
