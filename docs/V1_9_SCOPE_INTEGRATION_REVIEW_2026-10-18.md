@@ -111,3 +111,9 @@ The pure-C reference comparator is now **connected in development source** to an
 - Physical/native fault injection must verify lease-release failure, retained-callback state, actual final-exit behavior, reboot path, and that no foreign GPIO/callback is modified. No deliberate fault injection should run on the user's only working firmware or production microSD.
 
 The gate does **not** close LS-05/LS-08/LS-10 without an exact native build and measured firmware-level behavior. v1.8 Stable and the v1.8 E11 prerelease remain unchanged.
+
+## Traceable host compilation evidence (2026-10-18)
+
+See [host GCC evidence](V1_9_HOST_GCC_EVIDENCE_2026-10-18.md) for individual Git blob hashes and actual strict GCC/UBSan outputs for the **exact** Scope exit guard, tolerance engine, compare module, and reference-Canvas regression sources with explicitly substituted host device headers. An additional stale-verdict guard now prevents a previous PASS from being drawn after the reference preset or measurement changes; GCC also exposed and resolved a `-Werror=format-truncation` renderer issue.
+
+This improves source-level verification only. **LS-01 (exact E11 FAP build), LS-04/05 (real hardware resource isolation/teardown), LS-07 (ISR/LCD performance), LS-08 (independent physical truth), LS-09 (legacy device regression), LS-10 (install/recovery) remain open.** The remaining complete GitHub Actions workflow status is still not authenticated by a real run log.
