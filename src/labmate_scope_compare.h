@@ -19,6 +19,7 @@ typedef struct {
     uint16_t completed_cycles;
     uint16_t edge_count;
     uint32_t timebase_hz;
+    bool truncated; /* true for valid measured prefix of a FULL buffer */
     uint64_t frequency_millihz; /* rounded to nearest mHz */
     uint16_t duty_permille; /* rounded to nearest 0.1% */
     uint32_t min_period_ticks;
