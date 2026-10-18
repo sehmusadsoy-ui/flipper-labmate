@@ -114,7 +114,8 @@ bool labmate_scope_bridge_stop(LabMateApp* a) {
     /* A zero lease handle alone does not confirm IRQ callback cleanup.
      * Only a fully idle native owner can exit Scope or latch a captured
      * measurement. Never turn unfinished teardown into STOP/BACK success. */
-    if(!labmate_scope_native_reinit_safe(&a->scope_native)) {
+    if(!labmate_scope_native_reinit_safe(&a->scope_native) ||
+       a->capture_owner == LabMateCaptureScope) {
         a->capture_release_fault = true;
         a->capture_blocked = true;
         a->scope_last_valid = false;
