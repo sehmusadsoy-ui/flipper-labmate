@@ -74,3 +74,26 @@ A new **pure C, UI-independent** starting point toward the required v1.9 named r
 - **Acceptance scope:** source files and CI configuration committed; exact GitHub runner logs/green result were not available through the readback tools. No v1.9 FAP, UI integration, ABI compatibility or physical device results are claimed.
 
 **Next gate:** inspect real CI job output and fix any compiler/runtime regressions, then connect this verified evaluator to the Flipper display via an explicitly reviewable change. Do not invent measured PASS screens or integrate demo-only output.
+
+## Reference verdict page integration — 2026-10-18
+
+The pure-C reference comparator is now **connected in development source** to an additional read-only Scope LCD page. This is NOT a device acceptance or a published v1.9 FAP.
+
+- `src/labmate_scope_reference_view.[ch]` renders the selected named preset, `PASS / OUT OF TOLERANCE / NO SIGNAL / INVALID / BUSY`, and measured Hz/duty only for complete, non-truncated, validated captures. The verdict uses full mHz precision; LCD display rounds/truncates for readability.
+- Existing app view and input coordinator now offer `DOWN` cycling `PLOT -> A/B -> REFERENCE -> PLOT` when stopped, and `UP` to toggle `100Hz 50%` / `1kHz 50%` on the reference page. `BACK` retains existing safe STOP + return logic. Starting new capture resets the page to PLOT without changing the selected reference.
+- The reference view cannot independently acquire GPIO/IRQ, and app UI computes a comparison only after a matching completed capture generation, no active native owner/lease and no clock fault. `NO SIGNAL` is shown only after the native no-trigger timeout with zero captured edges. `BUSY` is not shown as a measurement.
+- Existing A/B and waveform screens remain available; neither SD Profile nor Logger CSV format was modified.
+- Added `tests/host_stubs/gui/gui.h` and `tests/test_scope_reference_view.c` for a fake Canvas test of read-only PASS/INVALID/NO SIGNAL/BUSY rendering and denial of a PASS without validated metrics. Included as fifth host test in `.github/workflows/v19-scope-host.yml`.
+- The new reference presets are initial fixed examples. An on-device editor for custom tolerances is **NOT implemented**; the pure comparator accepts caller-provided reference values, but UI currently offers only the two named presets. Do not claim full user-configurable v1.9 controls are shipped.
+
+**GitHub evidence:** committed branch files were read back. Native Flipper SDK compilation, CI green logs, on-device UI pixels/controls, independent waveform truth, real firmware-wide BUSY and STOP/RESTART are **NOT VERIFIED**. The connected GitHub Actions tool used here did not expose push-run logs; empty commit-status or PR-run lists do not establish CI PASS/FAIL. Work must remain in `dev/v1.9-logic-scope` until these gates are separately checked.
+
+### Next manual physical acceptance (only after confirmed matched E11 FAP build and backup)
+
+1. Without starting capture, go to reference page: it must say INVALID/WAIT, **not** PASS or NO SIGNAL.
+2. With known-safe 3.3 V signal, capture 100 Hz / 50% using the already validated PA7->PC1 loopback. STOP, choose the 100 Hz preset on the reference page; this is a **functional loopback check**, not independent calibration.
+3. Compare against the wrong 1 kHz preset; verdict must be OUT OF TOLERANCE (given a completed valid capture), never false PASS.
+4. With PC1 disconnected and safe input state, start and allow no-trigger timeout; expect NO SIGNAL only on confirmed no-edge timeout, not before START.
+5. Check 1-2 observed edge cases, full/overflow and resource-denied BUSY; they must never be marked PASS.
+6. Check DOWN/UP/BACK and STOP/RESTART, UART/PWM/Logger/Profile regressions and all owned IRQ/lease cleanup. Inspect result on actual 128x64 LCD.
+7. Do not install the FAP or flash firmware before exact SDK/ABI, backup and explicitly approved installation scope are verified. External scope measurements remain with the instructor at the university.
