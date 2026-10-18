@@ -9,6 +9,8 @@ on:
       - "tests/test_labmate_scope_navigation.c"
       - "tests/test_verify_v19_e11_sdk_fap.py"
       - "scripts/verify_v19_e11_sdk_fap.py"
+      - "scripts/check_v19_review_bundle.py"
+      - "tests/test_check_v19_review_bundle.py"
       - ".github/workflows/build-v19-e11-fap-review-only.yml"
   pull_request:
     branches: [dev/v1.8-completion]
@@ -36,6 +38,7 @@ jobs:
           set -euo pipefail
           cd labmate
           python3 -m unittest discover -v -s tests -p test_verify_v19_e11_sdk_fap.py
+          python3 -m unittest discover -v -s tests -p test_check_v19_review_bundle.py
 
       - name: Checkout exact previous E11 Momentum source; never use floating main
         uses: actions/checkout@v4
@@ -215,6 +218,7 @@ jobs:
           physical acceptance plan. Do NOT flash any firmware or modify SD.
           UART/CSV/S1/Profile old behavior still requires regression checks.
           EOF
+          python3 ../labmate/scripts/check_v19_review_bundle.py . --source-sha "$GITHUB_SHA"
           echo "BINARY + SHA256 WRITTEN TO ACTIONS ARTIFACT. NO DEVICE OPERATION."
 
       - name: Store review files, NOT a GitHub Release
