@@ -124,5 +124,5 @@ Source defect: the previous final-exit guard used `return -2` after retaining th
 
 - Changed file `src/labmate.c`; fix commit `31430fd`. The native HAL ABI / complete FAP link and physical reboot behavior remain **unverified**.
 - The purely logical `labmate_scope_exit_storage_safe` gate was recompiled from exact Git blob sources in local C11 GCC `-Wall -Wextra -Werror -pedantic` and UBSan on 2026-10-18. Both **PASS**. This does **not** exercise the `furi_crash` call in a live firmware image.
-- The dev-only host-test workflow gained a `pull_request` event scoped to `main` with source/test file filters in commit `f9e0fea`. Draft PR #15 stays Draft and nothing is merged; allowing test runs must not be mistaken for a verified successful run.
+- The host-test workflow initially gained a `pull_request` event for `main` in `f9e0fea`. An actual GitHub PR metadata check established that Draft PR #15 targets `dev/v1.8-completion`, not `main`; commit `5287fe4` corrected the filter to include the real PR base, retaining `main` for future review. The PR remains Draft and unmerged; enabling the event does not establish a successful CI run.
 - **Go/no-go:** Do not flash, install a new v1.9 FAP, or label native cleanup accepted until exact SDK compile and a controlled hardware test with backup/recovery proof. The current v1.8 stable and E11 prerelease are unchanged.
