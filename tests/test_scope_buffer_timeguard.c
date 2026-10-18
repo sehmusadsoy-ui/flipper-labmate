@@ -203,6 +203,53 @@ static void test_dropped_counter_saturates(void) {
     assert(s.overflowed && s.count == 1U && s.dropped_edges == UINT32_MAX);
 }
 
+/* Continuous PWM uses bounded real edges, never waits for silence and
+ * never fabricates a quiet interval. Error/overflow and scheduling faults
+ * take priority over a superficially complete sample. */
+static void test_continuous_pwm_auto_stop(void) {
+    LabMateScopeTimeguard g = {0};
+    const uint16_t threshold = LABMATE_SCOPE_GUARD_AUTO_STOP_EDGES;
+    assert(threshold >= 3U && threshold < LABMATE_SCOPE_MAX_EDGES);
+    assert(labmate_scope_timeguard_init(&g, 0U, 1000U, 200U, 5000U, 100U));
+    assert(labmate_scope_timeguard_poll(
+        &g, 10U, snap(LabMateScopeRecording, threshold - 1U)) ==
+        LabMateScopeGuardRunning);
+    assert(labmate_scope_timeguard_poll(
+        &g, 20U, snap(LabMateScopeRecording, threshold)) ==
+        LabMateScopeGuardSampleComplete);
+    assert(labmate_scope_timeguard_poll(
+        &g, 30U, snap(LabMateScopeRecording, threshold + 1U)) ==
+        LabMateScopeGuardSampleComplete); /* STOP result is terminal */
+
+    LabMateScopeSnapshot sample = snap(LabMateScopeFull, 256U);
+    sample.overflowed = true;
+    sample.dropped_edges = 2U;
+    assert(labmate_scope_timeguard_init(&g, 0U, 1000U, 200U, 5000U, 100U));
+    assert(labmate_scope_timeguard_poll(&g, 10U, sample) ==
+        LabMateScopeGuardFull); /* truncation is NEVER SampleComplete */
+
+    sample = snap(LabMateScopeRecording, threshold);
+    sample.timebase_error = true;
+    assert(labmate_scope_timeguard_init(&g, 0U, 1000U, 200U, 5000U, 100U));
+    assert(labmate_scope_timeguard_poll(&g, 10U, sample) ==
+        LabMateScopeGuardCaptureError);
+
+    assert(labmate_scope_timeguard_init(&g, 0U, 1000U, 200U, 5000U, 50U));
+    assert(labmate_scope_timeguard_poll(&g, 51U,
+        snap(LabMateScopeRecording, threshold)) ==
+        LabMateScopeGuardClockUnsafe); /* missing poll beats count */
+
+    assert(labmate_scope_timeguard_init(&g, 0U, 1000U, 200U, 5000U, 50U));
+    assert(labmate_scope_timeguard_poll(&g, 10U,
+        snap(LabMateScopeRecording, threshold)) ==
+        LabMateScopeGuardSampleComplete);
+    /* A fresh session still rejects impossible recorded histories. */
+    assert(labmate_scope_timeguard_init(&g, 0U, 1000U, 200U, 5000U, 50U));
+    sample = snap(LabMateScopeArmed, threshold);
+    assert(labmate_scope_timeguard_poll(&g, 10U, sample) ==
+        LabMateScopeGuardInvalid);
+}
+
 int main(void) {
     test_reject_invalid_and_trigger_filter();
     test_short_wrap_and_clock_failure();
@@ -211,6 +258,7 @@ int main(void) {
     test_duration_and_terminal_status();
     test_fail_closed_snapshot_and_full();
     test_dropped_counter_saturates();
+    test_continuous_pwm_auto_stop();
     puts("scope buffer + timeguard host regressions: PASS");
     return 0;
 }
