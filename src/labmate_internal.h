@@ -21,6 +21,7 @@
 #include "labmate_scope_plot.h"
 #include "labmate_scope_display.h"
 #include "labmate_scope_pair.h"
+#include "labmate_scope_tolerance.h"
 
 #define LABMATE_VERSION_TEXT "v1.9DEV"
 /* Shared menu/pin counts: UI and input handling must agree. */
@@ -280,6 +281,8 @@ typedef struct {
     bool scope_last_valid;
     bool scope_clock_fault;
     bool scope_show_compare;
+    bool scope_show_reference; /* read-only named reference result page */
+    LabMateScopeReferencePreset scope_reference_preset;
 
     LabMateUart uart; /* USART external GPIO 13/14, no TIM1/TIM2 ownership */
     LabMateCommOwner comm_owner; /* local exclusive I2C/1Wire sessions */
