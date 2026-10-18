@@ -112,7 +112,8 @@ void labmate_view_render_callback(
             (void)labmate_scope_reference_view_draw(
                 canvas, app->scope_reference_preset, result, measured);
         } else if(app->scope_show_compare) {
-            if(!labmate_scope_native_reinit_safe(&app->scope_native)) {
+            if(!labmate_scope_native_stop_confirmed(
+                   &app->scope_native, app->capture_owner)) {
                 /* A/B data is historical, not proof that the IRQ has been
                  * detached. Never present it over a native cleanup fault. */
                 canvas_set_font(canvas, FontSecondary);
