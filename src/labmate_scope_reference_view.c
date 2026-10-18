@@ -32,6 +32,20 @@ bool labmate_scope_reference_view_draw(
         measured->frequency_millihz == 0U ||
         measured->duty_permille > 1000U)) return false;
 
+    /* A reference can change after a verdict was computed. A stale PASS
+     * must never be painted alongside the new reference or another
+     * measurement. Recheck both classification and numeric errors from
+     * the supplied complete sample before displaying a pass/fail. */
+    if(has_metrics) {
+        const LabMateScopeToleranceResult verified =
+            labmate_scope_tolerance_evaluate(
+                &reference, measured, LabMateScopeObservationComplete);
+        if(verified.verdict != result.verdict ||
+           verified.frequency_error_millihz != result.frequency_error_millihz ||
+           verified.duty_error_permille != result.duty_error_permille)
+            return false;
+    }
+
     canvas_set_font(canvas, FontSecondary);
     canvas_draw_str(canvas, 3, 9, "REF COMPARE PC1");
     canvas_draw_line(canvas, 0, 13, 127, 13);
