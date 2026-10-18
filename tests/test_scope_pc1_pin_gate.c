@@ -102,6 +102,7 @@ int main(void) {
     owner.fault_cleanup_phase = LabMateScopeOwnerIdle;
     assert(labmate_scope_gate_pc1(&env, &owner) == LabMateScopeGateReady);
 
+    test_stale_direct_lease_rejected();
     test_lease_release_fail_closed();
     puts("scope PC1 pin gate + ownership lifecycle: PASS");
     return 0;
