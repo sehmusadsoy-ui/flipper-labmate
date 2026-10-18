@@ -12,7 +12,10 @@ static bool valid(const LabMateScopeMetrics* m, uint32_t generation) {
         m->edge_count >= 3U && m->edge_count <= LABMATE_SCOPE_MAX_EDGES &&
         m->timebase_hz != 0U && m->duty_permille <= 1000U &&
         m->frequency_millihz != 0U &&
-        m->min_period_ticks != 0U &&
+        /* Two real transitions are required per cycle, so more than half
+         * the edge-counter clock rate is physically impossible. */
+        m->frequency_millihz <= (uint64_t)m->timebase_hz * 500U &&
+        m->min_period_ticks >= 2U &&
         m->max_period_ticks >= m->min_period_ticks;
 }
 
