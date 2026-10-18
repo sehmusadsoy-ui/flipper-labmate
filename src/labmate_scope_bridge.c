@@ -1,5 +1,6 @@
 #include "labmate_scope_bridge.h"
 #include <furi.h>
+#include <furi_hal.h>
 
 /* The Furi kernel's tick unit is NOT guaranteed to be milliseconds.
  * Conversion happens before entering the pure-C timeguard. The app loop
@@ -51,11 +52,34 @@ static void labmate_scope_bridge_refresh(LabMateApp* a) {
         a->scope_display.state = LabMateScopeDisplayError;
 }
 
+/* Called only after the matching PC1 IRQ callback has been detached
+ * and the E11 firmware lease was positively released. Accessing the
+ * full 256-edge native array while live is categorically forbidden. */
+static void labmate_scope_bridge_latch(LabMateApp* a) {
+    if(!a || a->scope_capture_generation == 0U ||
+       a->scope_last_generation == a->scope_capture_generation ||
+       a->scope_native.active || a->scope_native.owner.handle) return;
+    a->scope_last_generation = a->scope_capture_generation;
+    a->scope_last_valid = false;
+    a->scope_last_metrics = (LabMateScopeMetrics){0};
+    const LabMateScopeSnapshot s =
+        labmate_scope_native_read(&a->scope_native, NULL, 0U, NULL);
+    if(a->scope_clock_fault || a->scope_capture_hz == 0U ||
+       s.state != LabMateScopeStopped || s.timebase_error ||
+       s.overflowed || s.dropped_edges || s.count < 3U ||
+       s.count > LABMATE_SCOPE_MAX_EDGES) return;
+    a->scope_last_metrics = labmate_scope_metrics_from_edges(
+        a->scope_native.storage, s.count, a->scope_capture_hz);
+    a->scope_last_valid =
+        a->scope_last_metrics.status == LabMateScopeMetricsReady;
+}
+
 bool labmate_scope_bridge_init(LabMateApp* a) {
     if(!a || !labmate_scope_native_init(&a->scope_native)) return false;
     a->scope_display.lines = a->scope_lines;
     a->scope_display.plot.result = LabMateScopePlotNoEdges;
     a->scope_display.state = LabMateScopeDisplayStopped;
+    labmate_scope_pair_reset(&a->scope_pair);
     return true;
 }
 
@@ -69,6 +93,9 @@ void labmate_scope_bridge_enter(LabMateApp* a) {
 
 bool labmate_scope_bridge_stop(LabMateApp* a) {
     if(!a) return false;
+    if(a->scope_native.active &&
+       (!a->scope_capture_hz ||
+        SystemCoreClock != a->scope_capture_hz)) a->scope_clock_fault = true;
     if(a->scope_native.active || a->scope_native.owner.handle) {
         if(!labmate_scope_native_stop(&a->scope_native, &a->capture_owner)) {
             a->capture_release_fault = true;
@@ -88,6 +115,7 @@ bool labmate_scope_bridge_stop(LabMateApp* a) {
        a->capture_owner == LabMateCaptureNone) {
         a->capture_pin_index = GPIO_COUNT;
     }
+    labmate_scope_bridge_latch(a);
     labmate_scope_bridge_refresh(a);
     return !a->scope_native.owner.handle;
 }
@@ -95,6 +123,13 @@ bool labmate_scope_bridge_stop(LabMateApp* a) {
 void labmate_scope_bridge_poll(LabMateApp* a) {
     if(!a || a->screen != LabMateScreenScope) return;
     if(a->scope_native.active) {
+        if(!a->scope_capture_hz || SystemCoreClock != a->scope_capture_hz) {
+            a->scope_clock_fault = true;
+            (void)labmate_scope_bridge_stop(a);
+            a->scope_display.state = LabMateScopeDisplayError;
+            labmate_scope_bridge_refresh(a);
+            return;
+        }
         const LabMateScopeGuardResult state = labmate_scope_native_poll(
             &a->scope_native, &a->capture_owner, labmate_scope_bridge_millis());
         switch(state) {
@@ -126,6 +161,7 @@ void labmate_scope_bridge_poll(LabMateApp* a) {
             a->capture_blocked = true;
             a->scope_display.state = LabMateScopeDisplayError;
         }
+        labmate_scope_bridge_latch(a);
     }
     labmate_scope_bridge_refresh(a);
 }
@@ -137,6 +173,27 @@ void labmate_scope_bridge_input(LabMateApp* a, InputEvent event) {
             a->screen = LabMateScreenMenu;
         return;
     }
+    if(event.key == InputKeyDown && !a->scope_native.active) {
+        a->scope_show_compare = !a->scope_show_compare;
+        return;
+    }
+    if((event.key == InputKeyLeft || event.key == InputKeyRight) &&
+       !a->scope_native.active) {
+        const bool complete = a->scope_last_valid &&
+            !a->scope_native.owner.handle &&
+            !a->scope_clock_fault &&
+            a->scope_last_generation == a->scope_capture_generation;
+        const LabMateScopeMetrics* metric =
+            complete ? &a->scope_last_metrics : NULL;
+        if(event.key == InputKeyLeft)
+            (void)labmate_scope_pair_save_a(
+                &a->scope_pair, metric, a->scope_last_generation);
+        else
+            (void)labmate_scope_pair_save_b(
+                &a->scope_pair, metric, a->scope_last_generation);
+        a->scope_show_compare = true;
+        return;
+    }
     if(event.key != InputKeyOk) return;
     if(a->scope_native.active) {
         (void)labmate_scope_bridge_stop(a);
@@ -146,14 +203,20 @@ void labmate_scope_bridge_input(LabMateApp* a, InputEvent event) {
         a->scope_display.state = LabMateScopeDisplayError;
         return;
     }
-    if(furi_kernel_get_tick_frequency() == 0U) {
+    if(furi_kernel_get_tick_frequency() == 0U ||
+       a->scope_capture_generation == UINT32_MAX) {
         a->scope_display.state = LabMateScopeDisplayError;
-        return; /* no trustworthy watchdog clock */
+        return; /* no trustworthy clock or run-id generation */
     }
     const LabMateScopePc1Environment env = labmate_scope_bridge_environment(a);
     const LabMateScopeNativeStatus state = labmate_scope_native_start(
         &a->scope_native, &env, &a->capture_owner, labmate_scope_bridge_millis());
     if(state == LabMateScopeNativeReady && a->scope_native.active) {
+        ++a->scope_capture_generation;
+        a->scope_capture_hz = SystemCoreClock;
+        a->scope_clock_fault = a->scope_capture_hz == 0U;
+        a->scope_last_valid = false;
+        a->scope_show_compare = false;
         a->gpio_index = LABMATE_MONITOR_PC1_INDEX;
         a->capture_pin_index = LABMATE_MONITOR_PC1_INDEX;
         a->scope_display.state = LabMateScopeDisplayArmed;
