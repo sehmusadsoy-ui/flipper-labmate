@@ -12,6 +12,10 @@ on:
       - "tests/test_labmate_scope_plot.c"
       - "src/labmate_scope_compare.[ch]"
       - "tests/test_labmate_scope_compare.c"
+      - "src/labmate_scope_pair.[ch]"
+      - "tests/test_labmate_scope_pair.c"
+      - "src/labmate_scope_pair_view.[ch]"
+      - "tests/test_labmate_scope_pair_view.c"
       - "src/labmate_scope_display.[ch]"
       - "tests/test_labmate_scope_display.c"
       - "src/labmate_scope_bridge.[ch]"
@@ -46,6 +50,10 @@ on:
       - "tests/test_labmate_scope_plot.c"
       - "src/labmate_scope_compare.[ch]"
       - "tests/test_labmate_scope_compare.c"
+      - "src/labmate_scope_pair.[ch]"
+      - "tests/test_labmate_scope_pair.c"
+      - "src/labmate_scope_pair_view.[ch]"
+      - "tests/test_labmate_scope_pair_view.c"
       - "src/labmate_scope_display.[ch]"
       - "tests/test_labmate_scope_display.c"
       - "src/labmate_scope_bridge.[ch]"
@@ -171,6 +179,44 @@ jobs:
           ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 \
             UBSAN_OPTIONS=halt_on_error=1 "$RUNNER_TEMP/v19-compare-sanitize"
 
+      - name: A/B sequential references with strict GCC C11
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -O2 -Isrc \
+            src/labmate_scope_compare.c src/labmate_scope_pair.c \
+            tests/test_labmate_scope_pair.c -o "$RUNNER_TEMP/v19-ab-pair"
+          "$RUNNER_TEMP/v19-ab-pair"
+
+      - name: A/B sequential references ASAN UBSAN
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -g -O1 \
+            -fsanitize=address,undefined -fno-omit-frame-pointer -Isrc \
+            src/labmate_scope_compare.c src/labmate_scope_pair.c \
+            tests/test_labmate_scope_pair.c -o "$RUNNER_TEMP/v19-ab-pair-sanitize"
+          ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 \
+            UBSAN_OPTIONS=halt_on_error=1 "$RUNNER_TEMP/v19-ab-pair-sanitize"
+
+      - name: A/B true metrics view 128x64 Canvas mock (GCC + ASAN UBSAN)
+        shell: bash
+        run: |
+          set -euo pipefail
+          for mode in fast sanitize; do
+            flags="-O2"
+            if [ "$mode" = sanitize ]; then
+              flags="-O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer"
+            fi
+            cc -std=c11 -Wall -Wextra -Werror -Wpedantic $flags \
+              -Itests/mock_v19 -Isrc \
+              src/labmate_scope_compare.c src/labmate_scope_pair.c \
+              src/labmate_scope_pair_view.c tests/test_labmate_scope_pair_view.c \
+              -o "$RUNNER_TEMP/v19-pair-view-$mode"
+            ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 \
+              UBSAN_OPTIONS=halt_on_error=1 "$RUNNER_TEMP/v19-pair-view-$mode"
+          done
+
       - name: Render real bounded waveform coordinates (GCC strict C11)
         shell: bash
         run: |
@@ -247,6 +293,11 @@ jobs:
           assert 'LabMateToolScope' in src['labmate_navigation.c']
           assert '[LabMateToolScope]' in src['labmate_ui_screens.c']
           assert 'labmate_scope_native_read' in src['labmate_scope_bridge.c']
+          assert 'labmate_scope_bridge_latch' in src['labmate_scope_bridge.c']
+          assert 'labmate_scope_pair_save_a' in src['labmate_scope_bridge.c']
+          assert 'labmate_scope_pair_save_b' in src['labmate_scope_bridge.c']
+          assert 'scope_last_generation == a->scope_capture_generation' in src['labmate_scope_bridge.c']
+          assert 'labmate_scope_pair_view_draw' in src['labmate_view.c']
           assert 'labmate_scope_plot_project' in src['labmate_scope_bridge.c']
           assert 'furi_kernel_get_tick_frequency' in src['labmate_scope_bridge.c']
           assert 'labmate_scope_native_stop' in src['labmate_scope_bridge.c']
@@ -319,6 +370,16 @@ jobs:
           assert "max_session_ms" in timeguard
           for forbidden in ("furi_hal_", "LL_EXTI_", "storage_file_", "gpio_init(", "malloc(", "free("):
               assert forbidden not in timeguard, forbidden
+          pair = Path("src/labmate_scope_pair.c").read_text()
+          assert "gen <= p->generation_a" in pair
+          assert "p->has_b = false" in pair
+          for forbidden in ("furi_hal_", "LL_EXTI_", "storage_file_", "gpio_init(", "malloc("):
+              assert forbidden not in pair, forbidden
+          pair_view = Path("src/labmate_scope_pair_view.c").read_text()
+          assert "COMPARE PC1 A/B" in pair_view
+          assert "format_frequency" in pair_view
+          for forbidden in ("furi_hal_", "LL_EXTI_", "storage_file_", "gpio_init("):
+              assert forbidden not in pair_view, forbidden
           compare = Path("src/labmate_scope_compare.c").read_text()
           assert "LabMateScopeMetricsInsufficient" in compare
           assert "LABMATE_SCOPE_MAX_SAFE_DELTA" in compare
