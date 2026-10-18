@@ -112,13 +112,22 @@ void labmate_view_render_callback(
             (void)labmate_scope_reference_view_draw(
                 canvas, app->scope_reference_preset, result, measured);
         } else if(app->scope_show_compare) {
-            /* "RIGHT SAVE B" must never be advertised for A's same
-             * capture run; the pair backend requires a fresh generation. */
-            const bool fresh_candidate = app->scope_last_valid &&
-                (!app->scope_pair.has_a ||
-                 app->scope_last_generation > app->scope_pair.generation_a);
-            (void)labmate_scope_pair_view_draw(
-                canvas, &app->scope_pair, fresh_candidate);
+            if(!labmate_scope_native_reinit_safe(&app->scope_native)) {
+                /* A/B data is historical, not proof that the IRQ has been
+                 * detached. Never present it over a native cleanup fault. */
+                canvas_set_font(canvas, FontSecondary);
+                canvas_draw_str(canvas, 3, 23, "SCOPE IRQ FAULT");
+                canvas_draw_str(canvas, 3, 37, "RESTART REQUIRED");
+            } else {
+                /* A and B must come from distinct complete generations. */
+                const bool fresh_candidate =
+                    app->scope_last_valid && !app->scope_clock_fault &&
+                    app->capture_owner == LabMateCaptureNone &&
+                    (!app->scope_pair.has_a ||
+                     app->scope_last_generation > app->scope_pair.generation_a);
+                (void)labmate_scope_pair_view_draw(
+                    canvas, &app->scope_pair, fresh_candidate);
+            }
         } else {
             (void)labmate_scope_display_draw(canvas, &app->scope_display);
         }
