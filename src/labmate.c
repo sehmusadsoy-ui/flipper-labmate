@@ -19,6 +19,7 @@
 #include "labmate_uart.h"
 #include "labmate_monitor_gpio.h"
 #include "labmate_scope_bridge.h"
+#include "labmate_scope_exit_guard.h"
 
 /* App coordinator: lifecycle, sampling, dispatch and teardown only. */
 int32_t labmate_app(void* p) {
@@ -213,6 +214,21 @@ int32_t labmate_app(void* p) {
 
     furi_mutex_free(
         app->mutex);
+
+    /* Do NOT free the heap-backed Scope buffer if an ISR callback, native
+     * lease or uncertain cleanup still owns a pointer inside LabMateApp.
+     * Even a failed resource release cannot justify a use-after-free.
+     * Quiesce only our own IRQ handler flag (not a foreign GPIO callback),
+     * and retain the allocation until reboot rather than reclaim unsafely.
+     * This exceptional nonzero-exit path needs a native fault-injection
+     * test; host guard regressions alone are not device proof. */
+    if(!labmate_scope_exit_storage_safe(&app->scope_native)) {
+        FURI_CRITICAL_ENTER();
+        app->scope_native.irq_enabled = false;
+        FURI_CRITICAL_EXIT();
+        FURI_LOG_E("LabMate", "Scope cleanup uncertain; app state retained");
+        return -2;
+    }
 
     free(app);
 
