@@ -76,13 +76,23 @@ jobs:
             tests/test_scope_exit_guard.c \
             src/labmate_scope_exit_guard.c \
             -o build/scope-host/exit-guard
-      - name: Execute host regressions
+      - name: Execute host regressions with retained review log
         shell: bash
         run: |
           set -euo pipefail
-          ./build/scope-host/pc1-pin-gate
-          ./build/scope-host/buffer-timeguard
-          ./build/scope-host/compare-pair
-          ./build/scope-host/tolerance
-          ./build/scope-host/reference-view
-          ./build/scope-host/exit-guard
+          mkdir -p build/scope-host
+          printf 'LABMATE_V19_HOST_TEST_COMMIT=%s\\n' "$GITHUB_SHA" > build/scope-host-results.txt
+          printf 'COMPILER=%s\\n' "$(cc --version | head -n 1)" >> build/scope-host-results.txt
+          for name in pc1-pin-gate buffer-timeguard compare-pair tolerance reference-view exit-guard; do
+            printf '\\n=== %s ===\\n' "$name" | tee -a build/scope-host-results.txt
+            "./build/scope-host/$name" 2>&1 | tee -a build/scope-host-results.txt
+          done
+          printf '\\nALL HOST EXECUTABLES PASS\\n' | tee -a build/scope-host-results.txt
+      - name: Retain host test output (even on failure, never a release)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v19-scope-host-review-log
+          path: build/scope-host-results.txt
+          retention-days: 7
+          if-no-files-found: warn
