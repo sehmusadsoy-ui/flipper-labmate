@@ -1,4 +1,5 @@
 #include "labmate_scope_bridge.h"
+#include "labmate_scope_exit_guard.h"
 #include <furi.h>
 #include <furi_hal.h>
 
@@ -58,7 +59,8 @@ static void labmate_scope_bridge_refresh(LabMateApp* a) {
 static void labmate_scope_bridge_latch(LabMateApp* a) {
     if(!a || a->scope_capture_generation == 0U ||
        a->scope_last_generation == a->scope_capture_generation ||
-       a->scope_native.active || a->scope_native.owner.handle) return;
+       !labmate_scope_native_reinit_safe(&a->scope_native) ||
+       a->capture_owner != LabMateCaptureNone) return;
     a->scope_last_generation = a->scope_capture_generation;
     a->scope_last_valid = false;
     a->scope_last_metrics = (LabMateScopeMetrics){0};
@@ -90,8 +92,8 @@ void labmate_scope_bridge_enter(LabMateApp* a) {
     a->scope_show_compare = false;
     a->scope_show_reference = false;
     a->scope_display.state =
-        a->scope_native.fault_sticky ? LabMateScopeDisplayError :
-        LabMateScopeDisplayStopped;
+        !labmate_scope_native_reinit_safe(&a->scope_native) ?
+            LabMateScopeDisplayError : LabMateScopeDisplayStopped;
     labmate_scope_bridge_refresh(a);
 }
 
@@ -109,20 +111,25 @@ bool labmate_scope_bridge_stop(LabMateApp* a) {
             return false;
         }
     }
-    if(a->scope_native.fault_sticky) {
+    /* A zero lease handle alone does not confirm IRQ callback cleanup.
+     * Only a fully idle native owner can exit Scope or latch a captured
+     * measurement. Never turn unfinished teardown into STOP/BACK success. */
+    if(!labmate_scope_native_reinit_safe(&a->scope_native)) {
         a->capture_release_fault = true;
         a->capture_blocked = true;
+        a->scope_last_valid = false;
         a->scope_display.state = LabMateScopeDisplayError;
-    } else {
-        a->scope_display.state = LabMateScopeDisplayStopped;
+        labmate_scope_bridge_refresh(a);
+        return false;
     }
-    if(!a->scope_native.active && !a->scope_native.owner.handle &&
-       a->capture_owner == LabMateCaptureNone) {
+    a->scope_display.state =
+        a->scope_clock_fault ? LabMateScopeDisplayError :
+                               LabMateScopeDisplayStopped;
+    if(a->capture_owner == LabMateCaptureNone)
         a->capture_pin_index = GPIO_COUNT;
-    }
     labmate_scope_bridge_latch(a);
     labmate_scope_bridge_refresh(a);
-    return !a->scope_native.owner.handle;
+    return true;
 }
 
 void labmate_scope_bridge_poll(LabMateApp* a) {
