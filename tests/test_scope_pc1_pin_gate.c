@@ -10,6 +10,26 @@
 #include <stdio.h>
 #include "labmate_scope_gate.h"
 
+static void test_stale_direct_lease_rejected(void) {
+    LabMateScopeOwnerState owner = {0};
+    owner.callback_detached = true;
+    assert(!labmate_scope_owner_lease_acquired(&owner, 41U));
+    assert(owner.handle == 0U && owner.callback_detached);
+    owner.callback_detached = false;
+    owner.pin_restored = true;
+    assert(!labmate_scope_owner_lease_acquired(&owner, 41U));
+    assert(owner.handle == 0U && owner.pin_restored);
+    owner.pin_restored = false;
+    owner.fault_cleanup_phase = LabMateScopeOwnerRunning;
+    assert(!labmate_scope_owner_lease_acquired(&owner, 41U));
+    assert(owner.handle == 0U &&
+           owner.fault_cleanup_phase == LabMateScopeOwnerRunning);
+    owner.fault_cleanup_phase = LabMateScopeOwnerIdle;
+    assert(!labmate_scope_owner_lease_acquired(&owner, 0U));
+    assert(labmate_scope_owner_lease_acquired(&owner, 41U));
+    assert(owner.handle == 41U && owner.phase == LabMateScopeOwnerLease);
+}
+
 static void test_lease_release_fail_closed(void) {
     LabMateScopeOwnerState owner = {0};
     assert(labmate_scope_owner_lease_acquired(&owner, 42U));
