@@ -20,6 +20,11 @@
  * be checked by the native driver before any IRQ mode is enabled. */
 #define LABMATE_SCOPE_GUARD_MAX_SESSION_MS UINT32_C(5000)
 #define LABMATE_SCOPE_GUARD_MAX_POLL_GAP_MS UINT32_C(100)
+/* Finish a useful, bounded slice of a continuing square-wave input before
+ * a 256-edge buffer saturates. 32 observed transitions provide >=15 full
+ * H-L-H cycles in an alternating capture, but metrics still independently
+ * validate those cycles. No fabricated samples or ISR-side STOP. */
+#define LABMATE_SCOPE_GUARD_AUTO_STOP_EDGES 32U
 
 typedef enum {
     LabMateScopeGuardRunning = 0,
@@ -31,6 +36,7 @@ typedef enum {
     LabMateScopeGuardCaptureError,
     LabMateScopeGuardStopped,
     LabMateScopeGuardInvalid,
+    LabMateScopeGuardSampleComplete, /* append: preserve prior enum IDs */
 } LabMateScopeGuardResult;
 
 typedef struct {
