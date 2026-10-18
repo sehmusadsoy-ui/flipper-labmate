@@ -54,7 +54,7 @@ jobs:
           set -Eeuo pipefail
           # This records ONLY the failing shell line and return code.
           # No firmware build, flash or working tree edits beyond E11 patch.
-          trap 'rc=$?; printf "E11_PATCH_CHAIN_FAILURE_EXIT=%s\\nSHELL_LINE=%s\\n" "$rc" "$LINENO" > "$GITHUB_WORKSPACE/v19-e11-patch-failure.txt"' ERR
+          trap 'rc=$?; printf "E11_PATCH_CHAIN_FAILURE_EXIT=%s\nSHELL_LINE=%s\n" "$rc" "$LINENO" > "$GITHUB_WORKSPACE/v19-e11-patch-failure.txt"' ERR
           test "$(git -C momentum-src rev-parse HEAD)" = "d3f89dfe2ef6b01839201598e9be1590cba80322"
           python3 labmate/scripts/patch_momentum_i2c_timeout.py momentum-src
           python3 labmate/scripts/patch_momentum_i2c_timeout.py momentum-src --apply
