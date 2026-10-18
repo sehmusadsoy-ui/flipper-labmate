@@ -36,7 +36,6 @@ on:
       - "scripts/check_v19_review_bundle.py"
       - "tests/test_check_v19_review_bundle.py"
       - ".github/workflows/v19-scope-host.yml"
-  workflow_dispatch:
 
 permissions:
   contents: read
