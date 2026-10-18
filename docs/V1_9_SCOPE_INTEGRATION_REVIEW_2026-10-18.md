@@ -60,7 +60,7 @@ Canonical scope stays: v1.9 **Logic Scope + Signal Compare**, then v2.0 **Signal
 - `.github/workflows/v19-scope-host.yml`: added the third host test executable.
 - Relevant commits: `15de604`, `3035467`, `4ec7796`, `a2439f2`, `09b788f`.
 
-**Evidence distinction:** A local Linux C11/GCC strict-warning check of a manually reconstructed, equivalent Compare/Pair implementation and regression scenarios returned PASS in the assistant's isolated workspace. This is **not** an exact checked-out repository build, does not prove GitHub Actions success, and does not validate the native FAP or physical device. The definitive branch CI workflow log remains a separate acceptance gate.
+**Evidence correction:** No reproducible local GCC execution log for the exact repository sources is available in the reviewed evidence. An earlier note describing a reconstructed implementation as local PASS is **not acceptable as verified evidence** and is superseded here. Host test code is committed, but exact checkout/CI execution and native FAP/device acceptance remain UNVERIFIED until genuine logs are inspected.
 
 ## Measured tolerance reference module — 2026-10-18
 
