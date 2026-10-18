@@ -67,6 +67,21 @@ int main(void) {
 
     env.capture_release_fault = true;
     assert(labmate_scope_gate_pc1(&env, &owner) == LabMateScopeGateFault);
+    env.capture_release_fault = false;
+
+    /* A native owner with an IDLE phase but unfinished cleanup must never
+     * be treated as available merely because its handle is zero. */
+    owner.callback_detached = true;
+    assert(labmate_scope_gate_pc1(&env, &owner) == LabMateScopeGateFault);
+    owner.callback_detached = false;
+    owner.pin_restored = true;
+    assert(labmate_scope_gate_pc1(&env, &owner) == LabMateScopeGateFault);
+    owner.pin_restored = false;
+    owner.fault_cleanup_phase = LabMateScopeOwnerRunning;
+    assert(labmate_scope_gate_pc1(&env, &owner) == LabMateScopeGateFault);
+    owner.fault_cleanup_phase = LabMateScopeOwnerIdle;
+    assert(labmate_scope_gate_pc1(&env, &owner) == LabMateScopeGateReady);
+
     test_lease_release_fail_closed();
     puts("scope PC1 pin gate + ownership lifecycle: PASS");
     return 0;
