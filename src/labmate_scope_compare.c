@@ -60,7 +60,8 @@ LabMateScopeCompare labmate_scope_compare_metrics(
     const LabMateScopeMetrics* a, const LabMateScopeMetrics* b) {
     LabMateScopeCompare c = {0};
     if(!a || !b || a->status != LabMateScopeMetricsReady ||
-       b->status != LabMateScopeMetricsReady || !a->completed_cycles ||
+       b->status != LabMateScopeMetricsReady || a->truncated || b->truncated ||
+       !a->completed_cycles ||
        !b->completed_cycles || !a->timebase_hz || !b->timebase_hz ||
        a->duty_permille > 1000U || b->duty_permille > 1000U ||
        a->frequency_millihz > INT64_MAX || b->frequency_millihz > INT64_MAX)
