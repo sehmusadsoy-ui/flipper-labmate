@@ -2,17 +2,17 @@
 
 **Status 2026-10-18: HOLD FOR VERIFIED FAP BUILD.** This protocol is a checklist, not a claim that a compiled v1.9 FAP exists or has been installed. No firmware flashing, Momentum updater, microSD reformat, SD cleanup manifest or automatic install is permitted. Stable v1.8 and E11 existing builds stay unchanged.
 
-## Next operator action: request a read-only GitHub build
+## Next operator action: inspect automatic branch/PR build
 
-The v1.9 build workflow contains a `workflow_dispatch` trigger and can be run without uploading anything to the Flipper.
+**Do not look for a manual Run workflow button.** GitHub requires a workflow to be present on the repository's default branch to offer `workflow_dispatch`; the experimental v1.9 workflows are deliberately absent from `main`. Manual dispatch was removed as inoperative; `push` to `dev/v1.9-logic-scope` and the existing Draft PR #15 `pull_request` event are the intended triggers.
 
-1. Open [v1.9 E11 FAP review build](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/workflows/build-v19-e11-fap-review-only.yml).
-2. Choose **Run workflow**, select branch **`dev/v1.9-logic-scope`**, then run. Do **not** choose `main`, `dev/v1.8-completion`, or any firmware flashing/updater workflow.
-3. Open the newly created run and note its full URL. If a job fails, do **not** retry by flashing the Flipper. The workflow now keeps a 7-day `v19-E11-COMPILE-LOG-REVIEW-ONLY` artifact, including up to 2000 lines of FBT/compiler output and the exact shell failure line of the E11 patch phase when available.
-4. Share the **run URL** for inspection. Do not copy `labmate.fap` to the Flipper. A green build alone does not prove the running Flipper firmware has the patched E11 ABI.
-5. Only a fully successful run can additionally produce `v19-E11-FAP-REVIEW-ONLY-DO-NOT-INSTALL`. Verify that review artifact and the existing installed firmware and backups as in Gate A below.
+1. Open the repository's [Actions page](https://github.com/sehmusadsoy-ui/flipper-labmate/actions) or the [Draft PR #15 Checks tab](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/15/checks).
+2. Look for **LabMate v1.9 exact E11 Momentum FAP REVIEW BUILD (NO FLASH)** and **v1.9 Logic Scope host regressions** on branch `dev/v1.9-logic-scope`. If needed, filter runs by branch and select the newest run associated with the current commit. These `push`/PR jobs, not a manual dispatch, generate the build evidence.
+3. Share the **full GitHub Actions run URL** (normally ending in `/actions/runs/NUMBER`). A PR URL is not the same as an individual run URL. If **no matching run** exists, capture the Actions page and the message/status shown instead of attempting a flash, branch merge or unrelated updater.
+4. On failure, inspect the workflow step and `v19-E11-COMPILE-LOG-REVIEW-ONLY` artifact. It includes the exact source SHA and failing E11 patch-shell line or up to 2,000 lines of FBT output if those stages ran. Do not retry by flashing the Flipper.
+5. Only a fully successful review build can produce `v19-E11-FAP-REVIEW-ONLY-DO-NOT-INSTALL`. We must independently verify its SHA256, installed E11 ABI, and backup before approving the controlled FAP-only trial.
 
-**CI status at time of writing:** successful v1.9 Actions run not independently verified. Build/run URL is essential evidence and is not interchangeable with a PR link, a screenshot showing a different workflow, or a local host-test PASS.
+**Status at this revision:** no authenticated v1.9 successful Actions job log available to this project session. The connected GitHub interface exposes only a restricted set of run records, so an empty connector result does NOT mean no push-run exists.
 
 ## Gate A — Before touching the device
 
