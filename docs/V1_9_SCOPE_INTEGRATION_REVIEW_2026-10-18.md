@@ -61,3 +61,16 @@ Canonical scope stays: v1.9 **Logic Scope + Signal Compare**, then v2.0 **Signal
 - Relevant commits: `15de604`, `3035467`, `4ec7796`, `a2439f2`, `09b788f`.
 
 **Evidence distinction:** A local Linux C11/GCC strict-warning check of a manually reconstructed, equivalent Compare/Pair implementation and regression scenarios returned PASS in the assistant's isolated workspace. This is **not** an exact checked-out repository build, does not prove GitHub Actions success, and does not validate the native FAP or physical device. The definitive branch CI workflow log remains a separate acceptance gate.
+
+## Measured tolerance reference module — 2026-10-18
+
+A new **pure C, UI-independent** starting point toward the required v1.9 named reference and tolerance feature is on the development branch:
+
+- `src/labmate_scope_tolerance.h/.c`: sample presets `100Hz 50%` and `1kHz 50%`, illustrative ±1% frequency and ±2 percentage-point duty tolerances; custom caller-supplied numeric limits are supported by the reference struct. These are reference specifications, **not measured signal truth or accuracy claims**.
+- Verdicts are `PASS`, `OUT_OF_TOLERANCE`, `NO_SIGNAL`, `INVALID` and `BUSY`. Only capture-complete READY metrics without dropped edges, with observed cycles, valid timebase and plausible fields can become PASS/OUT_OF_TOLERANCE.
+- `NO_SIGNAL` requires the caller to explicitly classify a confirmed no-signal timeout. Zero edges alone, while still waiting for a signal, remain `INVALID`. A BUSY condition is not evaluated as a pass.
+- `tests/test_scope_tolerance.c` exercises authentic synthetic H-L-H timestamp-derived 1kHz metrics, exact and exceeded numeric limits, null/stale references, truncated captures, unverified clock/zero-cycle metrics, BUSY and NO_SIGNAL differentiation.
+- `.github/workflows/v19-scope-host.yml` builds and runs the tolerance module as a **fourth host test**. Commits `eff400b`, `48c6174`, `15ff321`, `9e4bee9`.
+- **Acceptance scope:** source files and CI configuration committed; exact GitHub runner logs/green result were not available through the readback tools. No v1.9 FAP, UI integration, ABI compatibility or physical device results are claimed.
+
+**Next gate:** inspect real CI job output and fix any compiler/runtime regressions, then connect this verified evaluator to the Flipper display via an explicitly reviewable change. Do not invent measured PASS screens or integrate demo-only output.
