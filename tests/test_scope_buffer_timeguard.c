@@ -118,11 +118,99 @@ static void test_timeguard_trigger_quiet_and_wrap(void) {
         == LabMateScopeGuardInvalid);
 }
 
+/* Limits, terminal priority and snapshot faults not covered by ordinary
+ * 100Hz/1kHz flows. Keep these pure and deterministic on any host. */
+static void test_duration_and_terminal_status(void) {
+    LabMateScopeTimeguard g = {0};
+    assert(!labmate_scope_timeguard_init(&g, 0U, 200U, 150U, 1001U, 0U));
+    assert(!labmate_scope_timeguard_init(
+        &g, 0U, 200U, 150U, LABMATE_SCOPE_GUARD_MAX_SESSION_MS + 1U, 50U));
+    assert(!labmate_scope_timeguard_init(&g, 0U, 300U, 150U, 250U, 50U));
+    assert(labmate_scope_timeguard_init(&g, 0U, 200U, 150U, 300U, 50U));
+    for(uint32_t t = 50U; t <= 300U; t += 50U) {
+        const LabMateScopeGuardResult status = labmate_scope_timeguard_poll(
+            &g, t, snap(LabMateScopeRecording, 1U));
+        assert(status == (t == 300U ?
+            LabMateScopeGuardDurationLimit :
+            (t < 200U ? LabMateScopeGuardRunning : LabMateScopeGuardQuiet)));
+        if(t == 200U) break; /* quiet is terminal for this session */
+    }
+    /* A separate capture with fresh edges at each poll reaches session cap. */
+    assert(labmate_scope_timeguard_init(&g, 0U, 200U, 150U, 300U, 50U));
+    for(uint32_t t = 50U; t <= 300U; t += 50U) {
+        const LabMateScopeGuardResult status = labmate_scope_timeguard_poll(
+            &g, t, snap(LabMateScopeRecording, (uint16_t)(t / 50U)));
+        assert(status == (t == 300U ?
+            LabMateScopeGuardDurationLimit : LabMateScopeGuardRunning));
+    }
+    assert(labmate_scope_timeguard_poll(
+        &g, 350U, snap(LabMateScopeRecording, 8U)) ==
+        LabMateScopeGuardDurationLimit);
+}
+
+static void test_fail_closed_snapshot_and_full(void) {
+    LabMateScopeTimeguard g = {0};
+    LabMateScopeSnapshot invalid = snap(LabMateScopeArmed, 1U);
+    assert(labmate_scope_timeguard_init(&g, 0U, 200U, 150U, 1000U, 50U));
+    assert(labmate_scope_timeguard_poll(&g, 50U, invalid) ==
+           LabMateScopeGuardInvalid);
+    assert(labmate_scope_timeguard_poll(
+        &g, 100U, snap(LabMateScopeArmed, 0U)) ==
+        LabMateScopeGuardInvalid); /* terminal stays invalid */
+
+    assert(labmate_scope_timeguard_init(&g, 0U, 200U, 150U, 1000U, 50U));
+    invalid = snap(LabMateScopeRecording, 2U);
+    invalid.overflowed = true;
+    invalid.state = LabMateScopeFull;
+    assert(labmate_scope_timeguard_poll(&g, 50U, invalid) ==
+           LabMateScopeGuardFull);
+
+    assert(labmate_scope_timeguard_init(&g, 0U, 200U, 150U, 1000U, 50U));
+    invalid = snap(LabMateScopeError, 1U);
+    invalid.timebase_error = true;
+    assert(labmate_scope_timeguard_poll(&g, 50U, invalid) ==
+           LabMateScopeGuardCaptureError);
+
+    assert(labmate_scope_timeguard_init(&g, 0U, 200U, 150U, 1000U, 50U));
+    invalid = snap(LabMateScopeRecording, 2U);
+    invalid.capacity = 1U;
+    assert(labmate_scope_timeguard_poll(&g, 50U, invalid) ==
+           LabMateScopeGuardInvalid);
+
+    assert(labmate_scope_timeguard_init(&g, 0U, 200U, 150U, 1000U, 50U));
+    assert(labmate_scope_timeguard_poll(
+        &g, 50U, snap(LabMateScopeRecording, 2U)) ==
+        LabMateScopeGuardRunning);
+    assert(labmate_scope_timeguard_poll(
+        &g, 100U, snap(LabMateScopeRecording, 1U)) ==
+        LabMateScopeGuardInvalid); /* lost edges are not a valid history */
+}
+
+static void test_dropped_counter_saturates(void) {
+    LabMateScopeBuffer b = {0};
+    LabMateScopeEdge storage[1] = {0};
+    assert(labmate_scope_buffer_init(&b, storage, 1U));
+    assert(labmate_scope_buffer_arm(&b, LabMateScopeTriggerEither, false));
+    assert(labmate_scope_buffer_push_edge(&b, 1U, true));
+    assert(!labmate_scope_buffer_push_edge(&b, 2U, false));
+    assert(b.state == LabMateScopeFull && b.dropped_edges == 1U);
+    b.dropped_edges = UINT32_MAX;
+    assert(!labmate_scope_buffer_push_edge(&b, 3U, true));
+    assert(b.dropped_edges == UINT32_MAX);
+    assert(!labmate_scope_buffer_push_edge(&b, 4U, true));
+    assert(b.dropped_edges == UINT32_MAX); /* duplicate not an edge */
+    const LabMateScopeSnapshot s = labmate_scope_buffer_snapshot(&b);
+    assert(s.overflowed && s.count == 1U && s.dropped_edges == UINT32_MAX);
+}
+
 int main(void) {
     test_reject_invalid_and_trigger_filter();
     test_short_wrap_and_clock_failure();
     test_bounded_full_and_drop();
     test_timeguard_trigger_quiet_and_wrap();
+    test_duration_and_terminal_status();
+    test_fail_closed_snapshot_and_full();
+    test_dropped_counter_saturates();
     puts("scope buffer + timeguard host regressions: PASS");
     return 0;
 }
