@@ -92,7 +92,8 @@ void labmate_scope_bridge_enter(LabMateApp* a) {
     a->scope_show_compare = false;
     a->scope_show_reference = false;
     a->scope_display.state =
-        !labmate_scope_native_reinit_safe(&a->scope_native) ?
+        !labmate_scope_native_stop_confirmed(
+            &a->scope_native, a->capture_owner) ?
             LabMateScopeDisplayError : LabMateScopeDisplayStopped;
     labmate_scope_bridge_refresh(a);
 }
