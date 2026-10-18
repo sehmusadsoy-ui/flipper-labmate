@@ -223,6 +223,14 @@ jobs:
           python3 ../labmate/scripts/check_v19_review_bundle.py . --source-sha "$GITHUB_SHA"
           echo "BINARY + SHA256 WRITTEN TO ACTIONS ARTIFACT. NO DEVICE OPERATION."
 
+      - name: Store review files, NOT a GitHub Release
+        uses: actions/upload-artifact@v4
+        with:
+          name: v19-E11-FAP-REVIEW-ONLY-DO-NOT-INSTALL
+          path: v19-review/
+          retention-days: 7
+          if-no-files-found: error
+
       - name: Collect read-only build diagnostics (including failed builds)
         if: always()
         shell: bash
@@ -251,11 +259,3 @@ jobs:
           path: v19-diagnostics/
           retention-days: 7
           if-no-files-found: warn
-
-      - name: Store review files, NOT a GitHub Release
-        uses: actions/upload-artifact@v4
-        with:
-          name: v19-E11-FAP-REVIEW-ONLY-DO-NOT-INSTALL
-          path: v19-review/
-          retention-days: 7
-          if-no-files-found: error
