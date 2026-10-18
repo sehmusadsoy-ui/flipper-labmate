@@ -94,8 +94,9 @@ void labmate_scope_bridge_enter(LabMateApp* a) {
 bool labmate_scope_bridge_stop(LabMateApp* a) {
     if(!a) return false;
     if(a->scope_native.active &&
-       (!a->scope_capture_hz ||
-        SystemCoreClock != a->scope_capture_hz)) a->scope_clock_fault = true;
+       (!a->scope_capture_hz || SystemCoreClock != a->scope_capture_hz ||
+        (DWT->CTRL & DWT_CTRL_CYCCNTENA_Msk) == 0U))
+        a->scope_clock_fault = true;
     if(a->scope_native.active || a->scope_native.owner.handle) {
         if(!labmate_scope_native_stop(&a->scope_native, &a->capture_owner)) {
             a->capture_release_fault = true;
@@ -123,7 +124,8 @@ bool labmate_scope_bridge_stop(LabMateApp* a) {
 void labmate_scope_bridge_poll(LabMateApp* a) {
     if(!a || a->screen != LabMateScreenScope) return;
     if(a->scope_native.active) {
-        if(!a->scope_capture_hz || SystemCoreClock != a->scope_capture_hz) {
+        if(!a->scope_capture_hz || SystemCoreClock != a->scope_capture_hz ||
+           (DWT->CTRL & DWT_CTRL_CYCCNTENA_Msk) == 0U) {
             a->scope_clock_fault = true;
             (void)labmate_scope_bridge_stop(a);
             a->scope_display.state = LabMateScopeDisplayError;
@@ -132,6 +134,13 @@ void labmate_scope_bridge_poll(LabMateApp* a) {
         }
         const LabMateScopeGuardResult state = labmate_scope_native_poll(
             &a->scope_native, &a->capture_owner, labmate_scope_bridge_millis());
+        /* A missed watchdog poll or uncertain edge clock invalidates the
+         * entire A/B metric candidate, even when captured edges look sane. */
+        if(state == LabMateScopeGuardClockUnsafe ||
+           state == LabMateScopeGuardCaptureError ||
+           state == LabMateScopeGuardInvalid ||
+           state == LabMateScopeGuardStopped)
+            a->scope_clock_fault = true;
         switch(state) {
         case LabMateScopeGuardRunning: break;
         case LabMateScopeGuardNoTrigger:
