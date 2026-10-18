@@ -112,3 +112,25 @@ Code: `src/labmate_scope_timeguard.[ch]`, `src/labmate_scope_bridge.c`, `tests/t
 **FAP artifact provenance gate:** New `scripts/check_v19_review_bundle.py` validates an unmodified GitHub Actions ZIP or extracted directory *without extracting, installing or modifying device files*. It requires four named files, positive run ID, **full expected source commit SHA**, pinned E11 Momentum base, ARM32 little-endian ELF magic and a matching internal FAP SHA-256 checksum. New unit suite `tests/test_check_v19_review_bundle.py` exercised 11 successful/negative scenarios locally: **11/11 PASS** with Python unittest. Local source blob hashes match GitHub: script `e5738c19572b6f060b9eed0166d6d83678d55765`, unit tests `9d6aa76720cb77f1422619c9e91d90b61de3b8f8`. A self-contained checksum is **not a trusted publisher signature**, and a syntactically valid ARM ELF does **not** prove it will execute.
 
 The pinned-E11 **review-only build workflow** now runs the 11 packaging tests before compilation, then checks the output folder against the actual `GITHUB_SHA` before uploading a seven-day review artifact; the host CI workflow also runs the unit tests. **Neither workflow has a verified successful v1.9 run log here.** Next: exact FAP compiled/link-tested by GitHub Actions, confirm installed firmware ABI and complete backups, then follow [first Flipper FAP-only protocol](V1_9_FIRST_FLIPPER_TRIAL_NO_FLASH.md). No flash or FAP install authorized at this step.
+
+## STOP/BACK and shared-owner safety regression — 2026-10-18
+
+**Newly corrected source-level fault:** `labmate_scope_bridge_stop` previously accepted STOP/BACK based mostly on `owner.handle == 0`, even if native IRQ enable, callback/pin-cleanup flags, sticky fault or shared `LabMateCaptureScope` owner were inconsistent. That also risked admitting stale data into A/B or a reference PASS.
+
+The development branch now:
+- Uses one pure-C `labmate_scope_native_stop_confirmed(session, shared_owner)` gate, combining the existing `labmate_scope_native_reinit_safe` check with rejection of an uncleared shared `LabMateCaptureScope` owner.
+- Refuses `BACK` and sets a blocked/fault condition on unresolved Scope native or shared ownership, rather than declaring success from a zero lease handle.
+- Protects `labmate_capture_stop_all` from silently clearing stale Scope ownership; latch, A/B save and reference PASS require compatible completed/clean state.
+- Replaces the A/B readout with `SCOPE IRQ FAULT` when native cleanup state is suspect. A legitimate foreign capture owner is *not* released by the new pure gate.
+
+**Actually rerun now, October 18:** local GCC `-std=c11 -Wall -Wextra -Werror -pedantic` and GCC UBSan `-fsanitize=undefined -fno-sanitize-recover=all` both report `scope safe final-exit guard regression: PASS`. The **three exact repository source/test blobs** were reconstructed and checked via `git hash-object`:
+
+| File | Verified Git blob SHA |
+| --- | --- |
+| `src/labmate_scope_exit_guard.h` | `730752112a9d4a1ed18578d132d47558e6e2d8ed` |
+| `src/labmate_scope_exit_guard.c` | `887a948446d4bfc3a35007f168a28201f459277e` |
+| `tests/test_scope_exit_guard.c` | `2433a8844c49db8ffa7fe40c93a28e66b1d1dc70` |
+
+The host run required a minimal `labmate_scope_native.h` stub containing the relevant owner state; its first compile exposed a missing `LabMateCaptureOwner` definition in **the host stub**, corrected by including the existing resource-policy enum header. The byte-verified repository files above did not need a compiler fix. The pure-C tests do not execute the Flipper-native bridge, actual GPIO callback, E11 SDK, STOP/BACK UI, or FAP linker. **Hardware/runtime behavior and authentic CI success remain UNVERIFIED.**
+
+This fixes a real source-state bug and strengthens the pre-hardware safety gate, but it **does not authorize FAP installation**. Refer to [first Flipper acceptance protocol](V1_9_FIRST_FLIPPER_TRIAL_NO_FLASH.md) and require the exact successful pinned-Momentum E11 FAP build plus backup and ABI checks.
