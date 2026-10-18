@@ -17,11 +17,13 @@ static const char* scope_state_label(LabMateScopeDisplayState s) {
 }
 
 bool labmate_scope_display_draw(Canvas* c, const LabMateScopeDisplay* d) {
-    if(!c || !d || d->state < LabMateScopeDisplayArmed ||
-       d->state > LabMateScopeDisplayError ||
+    /* These enums start at zero. An unsigned upper-bound check also
+     * rejects invalid negative values cast into the enum type on ARM,
+     * without GCC 15's always-false lower-bound comparison. */
+    if(!c || !d ||
+       (unsigned)d->state > (unsigned)LabMateScopeDisplayError ||
        d->total_edges > LABMATE_SCOPE_MAX_EDGES ||
-       d->plot.result < LabMateScopePlotReady ||
-       d->plot.result > LabMateScopePlotTimebaseError ||
+       (unsigned)d->plot.result > (unsigned)LabMateScopePlotTimebaseError ||
        d->plot.line_count > LABMATE_SCOPE_PLOT_MAX_LINES ||
        d->plot.visible_edges > LABMATE_SCOPE_PLOT_MAX_EDGES ||
        d->plot.visible_edges > d->total_edges ||
