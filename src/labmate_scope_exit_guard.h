@@ -10,4 +10,9 @@
  * ownership before allowing native_init() to reset the state. */
 bool labmate_scope_native_reinit_safe(const LabMateScopeNative* session);
 
+/* A full STOP/BACK must also prove LabMate's shared capture owner no
+ * longer claims Scope (another legitimate owner is not modified here). */
+bool labmate_scope_native_stop_confirmed(
+    const LabMateScopeNative* session, LabMateCaptureOwner shared_owner);
+
 bool labmate_scope_exit_storage_safe(const LabMateScopeNative* session);
