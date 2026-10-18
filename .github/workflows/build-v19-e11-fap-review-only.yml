@@ -19,6 +19,13 @@ on:
 permissions:
   contents: read
 
+# Each push of this very workflow on the isolated development branch is a
+# FAP review-only build request. No browser dispatch, release or flash.
+# Serializing rather than cancelling preserves compiler failure evidence.
+concurrency:
+  group: v19-e11-review-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   compile_matched_fap:
     name: Build v1.9DEV FAP on PINNED E11 patched Momentum source
