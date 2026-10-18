@@ -1,6 +1,21 @@
 name: v1.9 Logic Scope host regressions
 
 on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "src/labmate_scope_*.c"
+      - "src/labmate_scope_*.h"
+      - "src/labmate_resource_policy.c"
+      - "src/labmate_resource_policy.h"
+      - "src/labmate_comm_resource.h"
+      - "src/labmate_internal.h"
+      - "src/labmate_view.c"
+      - "src/labmate.c"
+      - "tests/test_scope_*.c"
+      - "tests/host_stubs/gui/gui.h"
+      - ".github/workflows/v19-scope-host.yml"
   push:
     branches:
       - dev/v1.9-logic-scope
