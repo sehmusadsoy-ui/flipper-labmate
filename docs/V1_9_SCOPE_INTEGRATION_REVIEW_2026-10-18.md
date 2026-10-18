@@ -97,3 +97,17 @@ The pure-C reference comparator is now **connected in development source** to an
 5. Check 1-2 observed edge cases, full/overflow and resource-denied BUSY; they must never be marked PASS.
 6. Check DOWN/UP/BACK and STOP/RESTART, UART/PWM/Logger/Profile regressions and all owned IRQ/lease cleanup. Inspect result on actual 128x64 LCD.
 7. Do not install the FAP or flash firmware before exact SDK/ABI, backup and explicitly approved installation scope are verified. External scope measurements remain with the instructor at the university.
+
+## Final-exit IRQ lifetime hardening — 2026-10-18
+
+**Source safety finding:** The original app coordinator always called `free(app)` on final exit even if `labmate_capture_stop_all` reported unresolved Scope native callback/lease ownership. The Scope IRQ callback receives a pointer into the heap-owned `LabMateApp.scope_native`; unconditional reclamation can risk a dangling IRQ context if native teardown is incomplete.
+
+**Development-only remediation:**
+
+- `src/labmate_scope_exit_guard.[ch]` defines a pure-C fail-closed predicate. Reclaiming the Scope heap requires an initialized session with inactive capture/IRQ, zero native lease handle, idle owner phase and fault-cleanup phase, cleared teardown bookkeeping flags, and no sticky native fault.
+- `src/labmate.c` applies this gate after ordinary cleanup but **before** `free(app)`. For uncertain teardown it disables only LabMate's own IRQ-processing flag within a critical section, logs an error and **intentionally retains the app allocation** and returns nonzero. This favors preventing a dangling ISR pointer; it intentionally trades recoverable RAM for safety on an exceptional unverified fault path, and **is not a normal recovery guarantee**. Reboot may be required.
+- `tests/test_scope_exit_guard.c` covers fresh and initialized sessions, active ISR, running capture, outstanding lease, interrupted release, sticky fault, stale callback/pin flags, and only-confirmed-clean exit. The sixth standalone host executable is wired into `.github/workflows/v19-scope-host.yml`.
+- A **separate isolated Linux GCC/C11 smoke** reproduced the new predicate and assertions with a minimal structural native-header stub and passed using `-Wall -Wextra -Werror -pedantic`. This is **not an exact GitHub source checkout, full firmware SDK compile, GitHub Actions PASS or Flipper fault-injection result**. Connector readback confirmed the committed repository files exist.
+- Physical/native fault injection must verify lease-release failure, retained-callback state, actual final-exit behavior, reboot path, and that no foreign GPIO/callback is modified. No deliberate fault injection should run on the user's only working firmware or production microSD.
+
+The gate does **not** close LS-05/LS-08/LS-10 without an exact native build and measured firmware-level behavior. v1.8 Stable and the v1.8 E11 prerelease remain unchanged.
