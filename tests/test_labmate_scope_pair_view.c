@@ -16,8 +16,8 @@ void canvas_draw_str(Canvas* c, int32_t x, int32_t y, const char* s) {
     assert(c && s && x>=0 && y>=0 && y<64);
     assert((size_t)x+strlen(s)*6U <= 128U); /* Flipper secondary glyph cell */
     ++c->labels;
-    if(s[0]=='A' && s[1]==' ') c->saw_a=true;
-    if(s[0]=='B' && s[1]==' ') c->saw_b=true;
+    if(s[0]=='A' && (s[1]==' ' || s[1]=='*')) c->saw_a=true;
+    if(s[0]=='B' && (s[1]==' ' || s[1]=='*')) c->saw_b=true;
     if(!strncmp(s,"dF ",3)) c->saw_delta=true;
     if(strstr(s,"NEED")) c->saw_need=true;
 }
@@ -54,6 +54,10 @@ int main(void) {
     p.b.duty_permille=1000U;
     p.delta=labmate_scope_compare_metrics(&p.a,&p.b);
     assert(labmate_scope_pair_view_draw(&c,&p,true)); /* large MHz, 100% duty */
+    c=(struct Canvas){0};
+    p.a.truncated = true; p.b.truncated = true;
+    assert(labmate_scope_pair_view_draw(&c,&p,true)); /* *PREFIX ONLY display */
+    assert(c.saw_a && c.saw_b && c.saw_delta);
     c=(struct Canvas){0};
     p.has_a=false;
     assert(!labmate_scope_pair_view_draw(&c,&p,false));
