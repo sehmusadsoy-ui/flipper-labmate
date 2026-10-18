@@ -68,3 +68,33 @@ Exact GitHub blob bytes of these committed files were compared against local `gi
 **Actually executed locally:** GCC 14.2, C11 `-Wall -Wextra -Werror -pedantic` host test **PASS** and GCC UBSan `-fsanitize=undefined -fno-sanitize-recover=all` **PASS**; the test uses the isolated host type stub and does not compile `labmate_scope_native.c` against the matched Momentum E11 SDK. New PC1 gate tests are committed but a complete exact-repo/GitHub Actions run has NOT been obtained.
 
 Source/test commits: `d35f740`, `066d48b`, `5b4ea0d`, `9974968`, `35c6f20`, `83af385`. Device install, flash, and PR merge remain blocked until full CI and FAP link acceptance.
+
+## PC1 native owner gate and direct-lease regression — 2026-10-18
+
+**Actually executed in a local GCC Linux environment using exact GitHub file bytes** (no SDK/GUI/HAL stubs in this particular pure-C suite). After reconstructing the six repository sources listed below, local `git hash-object` output exactly matched the GitHub Contents API blob SHA values. Both commands returned **PASS**:
+
+```sh
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc \
+  tests/test_scope_pc1_pin_gate.c src/labmate_scope_gate.c \
+  src/labmate_resource_policy.c -o build/pc1-pin-gate-exact
+./build/pc1-pin-gate-exact
+
+cc -std=c11 -Wall -Wextra -Werror -pedantic \
+  -fsanitize=undefined -fno-sanitize-recover=all -Isrc \
+  tests/test_scope_pc1_pin_gate.c src/labmate_scope_gate.c \
+  src/labmate_resource_policy.c -o build/pc1-pin-gate-exact-ubsan
+./build/pc1-pin-gate-exact-ubsan
+```
+
+| Exact GitHub path | Git blob SHA |
+| --- | --- |
+| `src/labmate_scope_gate.c` | `c06a77f06b7f466b87609ba0d9db5052cb1e32b4` |
+| `src/labmate_scope_gate.h` | `12d6339feb1016d200aea17a8776062659cd7ae3` |
+| `src/labmate_resource_policy.c` | `00e595f9b9c711cb25a3b824614d6617eacafb79` |
+| `src/labmate_resource_policy.h` | `6842755950ad614d81fa2eb47ffc743fba4d340e` |
+| `src/labmate_comm_resource.h` | `aa5ae54020c4700e5a8814ec85a16ef0820189f2` |
+| `tests/test_scope_pc1_pin_gate.c` | `29e56d397b5cf0e40d02dbb11e1a20fba97de7ad` |
+
+**Behavior:** Both PC1 admission and `labmate_scope_owner_lease_acquired` now fail closed on stale `callback_detached`, `pin_restored`, or non-idle `fault_cleanup_phase` state; the new test asserts the direct bookkeeping call does not erase evidence of unfinished native cleanup. It also verifies that an owned callback and pin are not detached/restored twice when an owned lease release fails then a later release-only retry succeeds.
+
+Source/test commits `d37cdb2`, `bd5a0dd`, `ecf71d8`. This is a **real byte-provenance-confirmed host regression** of the unchanged pure-C code, not a successful v1.9 GitHub Actions run or patched Momentum FAP compile. External firmware ownership, actual ISR/lease cleanup, safe STOP/BACK and the independent oscilloscope timing acceptance remain **unverified**.
