@@ -2,6 +2,18 @@
 
 **Status 2026-10-18: HOLD FOR VERIFIED FAP BUILD.** This protocol is a checklist, not a claim that a compiled v1.9 FAP exists or has been installed. No firmware flashing, Momentum updater, microSD reformat, SD cleanup manifest or automatic install is permitted. Stable v1.8 and E11 existing builds stay unchanged.
 
+## Next operator action: request a read-only GitHub build
+
+The v1.9 build workflow contains a `workflow_dispatch` trigger and can be run without uploading anything to the Flipper.
+
+1. Open [v1.9 E11 FAP review build](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/workflows/build-v19-e11-fap-review-only.yml).
+2. Choose **Run workflow**, select branch **`dev/v1.9-logic-scope`**, then run. Do **not** choose `main`, `dev/v1.8-completion`, or any firmware flashing/updater workflow.
+3. Open the newly created run and note its full URL. If a job fails, do **not** retry by flashing the Flipper. The workflow now keeps a 7-day `v19-E11-COMPILE-LOG-REVIEW-ONLY` artifact, including up to 2000 lines of FBT/compiler output and the exact shell failure line of the E11 patch phase when available.
+4. Share the **run URL** for inspection. Do not copy `labmate.fap` to the Flipper. A green build alone does not prove the running Flipper firmware has the patched E11 ABI.
+5. Only a fully successful run can additionally produce `v19-E11-FAP-REVIEW-ONLY-DO-NOT-INSTALL`. Verify that review artifact and the existing installed firmware and backups as in Gate A below.
+
+**CI status at time of writing:** successful v1.9 Actions run not independently verified. Build/run URL is essential evidence and is not interchangeable with a PR link, a screenshot showing a different workflow, or a local host-test PASS.
+
 ## Gate A — Before touching the device
 
 1. Inspect the actual **successful** GitHub Actions run of `.github/workflows/build-v19-e11-fap-review-only.yml`. The run must checkout exactly pinned Momentum `d3f89dfe2ef6b01839201598e9be1590cba80322`, apply the audited E11 resource lease / nonasserting GPIO callback patches, and finish the `./fbt fap_labmate` and SDK-export/ELF verifier steps. Do **not** infer a success from a workflow file alone.
