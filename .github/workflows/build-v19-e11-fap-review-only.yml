@@ -51,7 +51,10 @@ jobs:
       - name: Reapply the previously audited E11 patch chain (SOURCE ONLY)
         shell: bash
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
+          # This records ONLY the failing shell line and return code.
+          # No firmware build, flash or working tree edits beyond E11 patch.
+          trap 'rc=$?; printf "E11_PATCH_CHAIN_FAILURE_EXIT=%s\\nSHELL_LINE=%s\\n" "$rc" "$LINENO" > "$GITHUB_WORKSPACE/v19-e11-patch-failure.txt"' ERR
           test "$(git -C momentum-src rev-parse HEAD)" = "d3f89dfe2ef6b01839201598e9be1590cba80322"
           python3 labmate/scripts/patch_momentum_i2c_timeout.py momentum-src
           python3 labmate/scripts/patch_momentum_i2c_timeout.py momentum-src --apply
@@ -245,6 +248,9 @@ jobs:
             tail -n 2000 v19-fap-build-output.log > v19-diagnostics/FBT_LAST_2000_LINES.txt
           else
             printf 'No FBT transcript; inspect preceding checkout, patch or SDK steps.\n' > v19-diagnostics/FBT_NOT_STARTED.txt
+          fi
+          if test -f v19-e11-patch-failure.txt; then
+            cp v19-e11-patch-failure.txt v19-diagnostics/E11_PATCH_FAILURE.txt
           fi
           echo '## LabMate v1.9 E11 FAP review build' >> "$GITHUB_STEP_SUMMARY"
           echo "Source commit: \`$GITHUB_SHA\`" >> "$GITHUB_STEP_SUMMARY"
