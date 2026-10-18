@@ -81,13 +81,13 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p build/scope-host
-          printf 'LABMATE_V19_HOST_TEST_COMMIT=%s\\n' "$GITHUB_SHA" > build/scope-host-results.txt
-          printf 'COMPILER=%s\\n' "$(cc --version | head -n 1)" >> build/scope-host-results.txt
+          printf 'LABMATE_V19_HOST_TEST_COMMIT=%s\n' "$GITHUB_SHA" > build/scope-host-results.txt
+          printf 'COMPILER=%s\n' "$(cc --version | head -n 1)" >> build/scope-host-results.txt
           for name in pc1-pin-gate buffer-timeguard compare-pair tolerance reference-view exit-guard; do
-            printf '\\n=== %s ===\\n' "$name" | tee -a build/scope-host-results.txt
+            printf '\n=== %s ===\n' "$name" | tee -a build/scope-host-results.txt
             "./build/scope-host/$name" 2>&1 | tee -a build/scope-host-results.txt
           done
-          printf '\\nALL HOST EXECUTABLES PASS\\n' | tee -a build/scope-host-results.txt
+          printf '\nALL HOST EXECUTABLES PASS\n' | tee -a build/scope-host-results.txt
       - name: Retain host test output (even on failure, never a release)
         if: always()
         uses: actions/upload-artifact@v4
