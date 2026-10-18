@@ -2,17 +2,17 @@
 
 **Status 2026-10-18: HOLD FOR VERIFIED FAP BUILD.** This protocol is a checklist, not a claim that a compiled v1.9 FAP exists or has been installed. No firmware flashing, Momentum updater, microSD reformat, SD cleanup manifest or automatic install is permitted. Stable v1.8 and E11 existing builds stay unchanged.
 
-## Next operator action: inspect automatic branch/PR build
+## Next operator action: run the development FAP review build manually
 
-**Do not look for a manual Run workflow button.** GitHub requires a workflow to be present on the repository's default branch to offer `workflow_dispatch`; the experimental v1.9 workflows are deliberately absent from `main`. Manual dispatch was removed as inoperative; `push` to `dev/v1.9-logic-scope` and the existing Draft PR #15 `pull_request` event are the intended triggers.
+**The missing Actions entry is now corrected.** A 100%-inert **visibility-only** entry file was added to the default `main` branch (`f71459d`) so GitHub's manual Actions UI can discover the workflow. It contains **no FAP build or install code**; if accidentally run on `main`, it fails with an explicit wrong-branch message. The actual pinned E11 review build retains the full implementation **only** on `dev/v1.9-logic-scope` (`40980a8`) and refuses manual builds on any other branch.
 
-1. Open the repository's [Actions page](https://github.com/sehmusadsoy-ui/flipper-labmate/actions) or the [Draft PR #15 Checks tab](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/15/checks).
-2. Look for **LabMate v1.9 exact E11 Momentum FAP REVIEW BUILD (NO FLASH)** and **v1.9 Logic Scope host regressions** on branch `dev/v1.9-logic-scope`. If needed, filter runs by branch and select the newest run associated with the current commit. These `push`/PR jobs, not a manual dispatch, generate the build evidence.
-3. Share the **full GitHub Actions run URL** (normally ending in `/actions/runs/NUMBER`). A PR URL is not the same as an individual run URL. If **no matching run** exists, capture the Actions page and the message/status shown instead of attempting a flash, branch merge or unrelated updater.
-4. On failure, inspect the workflow step and `v19-E11-COMPILE-LOG-REVIEW-ONLY` artifact. It includes the exact source SHA and failing E11 patch-shell line or up to 2,000 lines of FBT output if those stages ran. Do not retry by flashing the Flipper.
-5. Only a fully successful review build can produce `v19-E11-FAP-REVIEW-ONLY-DO-NOT-INSTALL`. We must independently verify its SHA256, installed E11 ABI, and backup before approving the controlled FAP-only trial.
+1. Open [LabMate v1.9 E11 review build in GitHub Actions](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/workflows/build-v19-e11-fap-review-only.yml).
+2. Click **Run workflow**. In the **Branch** dropdown, explicitly select **`dev/v1.9-logic-scope`**. **Do not leave the dropdown on `main`**. That branch runs only a wrong-branch refusal and does not build v1.9.
+3. Click **Run workflow** to submit the **review-only** build. No firmware flashing, installation or microSD changes are performed. Copy the newly created run URL ending `/actions/runs/NUMBER`; check the shown branch is `dev/v1.9-logic-scope`.
+4. A failed job may produce `v19-E11-COMPILE-LOG-REVIEW-ONLY` with pinned SHA/run ID and the E11 patch error line or 2,000 compiler-output lines (when the build reached that stage). **Do not install any FAP after failure.**
+5. A **successful** build should produce `v19-E11-FAP-REVIEW-ONLY-DO-NOT-INSTALL`, which still needs the full SHA256, native E11 ABI and backed-up existing device audit in Gate A below. A green check alone is never approval to install.
 
-**Status at this revision:** no authenticated v1.9 successful Actions job log available to this project session. The connected GitHub interface exposes only a restricted set of run records, so an empty connector result does NOT mean no push-run exists.
+If the workflow does not appear immediately, refresh GitHub Actions and check the account's Actions settings. Its presence on `main` and its `workflow_dispatch` trigger were confirmed by an authenticated GitHub file read, but its actual UI rendering and run status have **not** been independently observed from this session. The standard automatic `push` and Draft PR events remain enabled as a fallback.
 
 ## Gate A — Before touching the device
 
