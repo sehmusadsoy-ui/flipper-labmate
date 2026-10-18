@@ -87,6 +87,8 @@ bool labmate_scope_bridge_init(LabMateApp* a) {
 
 void labmate_scope_bridge_enter(LabMateApp* a) {
     if(!a) return;
+    a->scope_show_compare = false;
+    a->scope_show_reference = false;
     a->scope_display.state =
         a->scope_native.fault_sticky ? LabMateScopeDisplayError :
         LabMateScopeDisplayStopped;
@@ -185,11 +187,28 @@ void labmate_scope_bridge_input(LabMateApp* a, InputEvent event) {
         return;
     }
     if(event.key == InputKeyDown && !a->scope_native.active) {
-        a->scope_show_compare = !a->scope_show_compare;
+        /* Read-only page rotation: PLOT -> A/B -> REFERENCE -> PLOT.
+         * Changing display pages never touches the IRQ or capture data. */
+        if(a->scope_show_reference) {
+            a->scope_show_reference = false;
+            a->scope_show_compare = false;
+        } else if(a->scope_show_compare) {
+            a->scope_show_compare = false;
+            a->scope_show_reference = true;
+        } else {
+            a->scope_show_compare = true;
+        }
+        return;
+    }
+    if(event.key == InputKeyUp && a->scope_show_reference &&
+       !a->scope_native.active) {
+        a->scope_reference_preset =
+            a->scope_reference_preset == LabMateScopeReference100Hz50 ?
+                LabMateScopeReference1kHz50 : LabMateScopeReference100Hz50;
         return;
     }
     if((event.key == InputKeyLeft || event.key == InputKeyRight) &&
-       !a->scope_native.active) {
+       !a->scope_native.active && !a->scope_show_reference) {
         const bool complete = a->scope_last_valid &&
             !a->scope_native.owner.handle &&
             !a->scope_clock_fault &&
@@ -228,6 +247,7 @@ void labmate_scope_bridge_input(LabMateApp* a, InputEvent event) {
         a->scope_clock_fault = a->scope_capture_hz == 0U;
         a->scope_last_valid = false;
         a->scope_show_compare = false;
+        a->scope_show_reference = false;
         a->gpio_index = LABMATE_MONITOR_PC1_INDEX;
         a->capture_pin_index = LABMATE_MONITOR_PC1_INDEX;
         a->scope_display.state = LabMateScopeDisplayArmed;
