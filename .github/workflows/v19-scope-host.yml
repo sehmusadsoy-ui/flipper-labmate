@@ -1,0 +1,46 @@
+name: v1.9 Logic Scope host regressions
+
+on:
+  push:
+    branches:
+      - dev/v1.9-logic-scope
+    paths:
+      - "src/labmate_scope_*.c"
+      - "src/labmate_scope_*.h"
+      - "src/labmate_resource_policy.c"
+      - "src/labmate_resource_policy.h"
+      - "src/labmate_comm_resource.h"
+      - "tests/test_scope_*.c"
+      - ".github/workflows/v19-scope-host.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scope-host:
+    name: Pure C Scope gate, buffer and watchdog
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exact branch commit
+        uses: actions/checkout@v4
+      - name: Build host tests with strict warnings
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/scope-host
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc \
+            tests/test_scope_pc1_pin_gate.c \
+            src/labmate_scope_gate.c src/labmate_resource_policy.c \
+            -o build/scope-host/pc1-pin-gate
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc \
+            tests/test_scope_buffer_timeguard.c \
+            src/labmate_scope_buffer.c src/labmate_scope_timeguard.c \
+            -o build/scope-host/buffer-timeguard
+      - name: Execute host regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./build/scope-host/pc1-pin-gate
+          ./build/scope-host/buffer-timeguard
