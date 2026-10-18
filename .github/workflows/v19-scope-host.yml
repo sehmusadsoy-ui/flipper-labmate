@@ -3,6 +3,7 @@ name: v1.9 Logic Scope host regressions
 on:
   pull_request:
     branches:
+      - dev/v1.8-completion
       - main
     paths:
       - "src/labmate_scope_*.c"
