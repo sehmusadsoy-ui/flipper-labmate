@@ -21,7 +21,7 @@ These are **code observations only**. Neither CI status nor real native coexiste
 | LS-03 | Trigger/quiet/wall-duration and delayed (>100ms) polling watchdog, including tick-to-ms conversion | TRIGGER/QUIET/POLL-GAP/WRAP CASES ADDED; wall-duration/native conversion still open; CI result unverified |
 | LS-04 | START refusal under existing PC1 native callback/lease **without changing foreign registers**, and lease-release failure stickiness | PURE C PC1/OWNER TESTS ADDED; real HAL register and callback isolation not yet verified |
 | LS-05 | STOP/BACK/restart during ARMED, RUNNING, FULL, error and clock-unsafe states; verify no own IRQ/lease remains | NOT VERIFIED IN THIS REVIEW |
-| LS-06 | A/B pair metrics: require complete distinct captures; invalid/no signal/overflow must never report an idealized PASS | NOT VERIFIED IN THIS REVIEW |
+| LS-06 | A/B pair metrics: require complete distinct captures; invalid/no signal/overflow must never report an idealized PASS | TRUNCATION FAIL-CLOSED FIX + HOST REGRESSION ADDED; exact CI/FAP/physical acceptance still open |
 | LS-07 | Peak IRQ load, RAM/stack usage and 128×64 rendering responsiveness under high edge rate | NOT VERIFIED IN THIS REVIEW |
 | LS-08 | 3.3V independent signal generator and independent analyzer/scope, plus native foreign-service contention | DEFERRED PHYSICAL TEST |
 | LS-09 | Existing UART/PWM/Counter/Button/Logger/Profile navigation and legacy data regression | NOT VERIFIED FOR V1.9 |
@@ -48,3 +48,16 @@ Canonical scope stays: v1.9 **Logic Scope + Signal Compare**, then v2.0 **Signal
 - Added `.github/workflows/v19-scope-host.yml` on the dev branch to compile and execute both tests on branch pushes with strict compiler warnings. This workflow is **host only**: no Flipper firmware flashing, FAP publishing, personal data or GPIO access.
 - Commits: `eae6bbd` gate, `f171d80` initial PC1 regression, `7a9e27b` buffer/timeguard suite, `7e12fef` workflow, `9954701` ownership retry test.
 - **Execution status:** workflow source and tests exist, but no authenticated run/job PASS log was retrieved in this session. Treat outcomes as **UNVERIFIED**, never as CI PASS.
+
+## Signal Compare follow-up — 2026-10-18
+
+**Source defect fixed:** `scope_bridge_latch` marked an overflow/dropped-edge capture as `truncated` while still allowing `scope_last_valid`. The pure A/B pair validator and comparison engine also accepted such metrics. A sample containing unobserved transitions must not be used as a trustworthy full-capture comparison.
+
+- `src/labmate_scope_bridge.c`: latches `last_valid` only for READY **and not truncated**.
+- `src/labmate_scope_pair.c`: refuses saving A/B from truncated measurements.
+- `src/labmate_scope_compare.c`: independent comparison API refuses truncated A or B.
+- `tests/test_scope_compare_pair.c`: covers two genuinely observed 1kHz waves with different duty (50.0% vs 45.0%), insufficient/invalid input, A/B generation monotonicity, and overflow-marked A/B rejection.
+- `.github/workflows/v19-scope-host.yml`: added the third host test executable.
+- Relevant commits: `15de604`, `3035467`, `4ec7796`, `a2439f2`, `09b788f`.
+
+**Evidence distinction:** A local Linux C11/GCC strict-warning check of a manually reconstructed, equivalent Compare/Pair implementation and regression scenarios returned PASS in the assistant's isolated workspace. This is **not** an exact checked-out repository build, does not prove GitHub Actions success, and does not validate the native FAP or physical device. The definitive branch CI workflow log remains a separate acceptance gate.
