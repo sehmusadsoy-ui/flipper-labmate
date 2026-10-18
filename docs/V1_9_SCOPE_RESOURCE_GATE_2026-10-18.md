@@ -613,6 +613,79 @@ labels. Do not read mutable ISR data without a critical-section
 copy or pretend independent simultaneous inputs are present.
 Do not overwrite occupied Profile S1 or old CSV history.
 
+## Phase 1K — SOURCE-WIRED sequential Signal Compare A/B UI (2026-10-18)
+
+**Draft v1.9 development source only.** Added
+`src/labmate_scope_pair.[ch]` (allocation-free, pure-C A/B metrics
+store, distinct capture-run IDs) and
+`src/labmate_scope_pair_view.[ch]` (read-only Canvas page).
+The app's heap-owned `LabMateApp` now contains a last-stopped
+metrics candidate, **separate A and B summary records**, their
+capture generations, and an A/B-versus-waveform view toggle.
+
+On-device key intent (not yet device-tested):
+- **OK** START/STOP PC1 capture, always through the existing E11 lease
+  and owned-IRQ teardown. Native driver and 256-event memory are
+  unchanged. Application polls/timeouts retain their existing scope
+  guarding behavior.
+- **LEFT** saves A only when the last run has fully stopped,
+  its IRQ and lease are detached, the record contains at least one
+  complete **H-L-H** observed cycle, and DWT/system clock stayed
+  trustworthy throughout the run.
+- **OK** START again, **RIGHT** saves B only from an explicitly NEW
+  capture generation > A's generation. Trying to reuse A as B, or
+  an invalid/no-trigger run, fails closed. LEFT with a new reference
+  deliberately invalidates old B and its prior delta.
+- **DOWN** (only when not capturing) toggles the original 128×64
+  true-waveform plot and the new A/B read-only display. BACK uses the
+  existing safe Scope-owned STOP then returns to main menu. The view
+  advertises RIGHT only when a NEW post-A capture is available.
+- Comparison shows per-run measured Hz/kHz/MHz, duty, signed
+  B−A frequency and duty differences; uses fixed-point formatting,
+  not unbounded floating-point output. **No simultaneous channels,
+  analog voltage magnitude, fabricated missing edges or automated
+  fault verdict.**
+
+**Continuous PWM saturation resolved honestly:**
+The native 256-edge buffer may fill quickly at 100 Hz/1 kHz. The
+first 256 *actually measured* consecutive events still define valid
+H-L-H cycles, even when later edges were dropped. A/B metrics are
+allowed to describe only that measured **prefix**, instead of
+rejecting every continuous waveform. The `LabMateScopeMetrics.truncated`
+flag is propagated from native `overflowed/dropped_edges` through
+the app snapshot and A/B saved summaries. The Canvas explicitly shows
+`A/B *PREFIX ONLY` plus A*/B* markers. This is NOT a claim that the
+entire capture session or all missed transitions were reconstructed.
+Clock errors, invalid delta order, corrupted full-cycle durations,
+unknown ownership and failed lease releases still deny the metric.
+
+**Provenance / executable checks:**
+- First local strict GCC run **found a genuine `-Werror=format-truncation`
+  blocker** in A/B Canvas string rendering. Fixed the temporary
+  28-byte text buffer to 48 bytes without relaxing the actual
+  20-glyph LCD bound. Recompiled and reran successfully.
+- Exact GitHub blob sources for comparator,
+  `labmate_scope_pair.c`, A/B display, and the latest
+  `labmate_scope_compare.h` were independently reproduced locally
+  and hash-matched. Fresh GCC strict C11, Clang strict C11 and
+  GCC ASAN/UBSAN **local smoke PASS** for the pair state and its
+  Canvas rendering, including the `*PREFIX ONLY` branch. These are
+  genuine executed **local module tests**, not CI/Flipper proof.
+- New formal regression sources
+  `tests/test_labmate_scope_pair.c` and
+  `tests/test_labmate_scope_pair_view.c` exercise A/B IDs,
+  refusal of stale/duplicate B, invalid clocks, LCD text bounds,
+  partial prefixes and invalid state. The v1.9 host Actions workflow
+  was extended to compile both normally and under sanitizers.
+
+**Not yet accepted:** The full Flipper `application.fam` link against
+the exact patched E11 SDK (and its heap/stack budget), the combined
+app-thread STOP/LEFT/RIGHT/DOWN integration test, real Actions status,
+Flipper physical A/B traces, and matching independent lab measurements.
+These remain **NO-GO for Stable promotion or device installation**.
+The working v1.8 Stable, E11 release FAP, `main`, S1 and historical
+CSV files are unchanged.
+
 ## Objective acceptance before exposing the scope in menu
 
 1. Existing FAP menu and old screen identifiers stay unchanged until
