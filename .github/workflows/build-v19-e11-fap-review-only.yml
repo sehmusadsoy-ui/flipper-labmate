@@ -1,0 +1,23 @@
+# Visibility-only entry point for the experimental v1.9 E11 FAP review.
+# GitHub's manual Actions UI requires a file on the default branch.
+# This file must NEVER build, publish, install or flash a FAP from main.
+# In Actions -> Run workflow, select dev/v1.9-logic-scope instead:
+# GitHub then loads the fully guarded review-only workflow from that ref.
+name: LabMate v1.9 exact E11 Momentum FAP REVIEW BUILD (NO FLASH)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  wrong_branch_guard:
+    name: Select dev/v1.9-logic-scope (no build on main)
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Refuse Stable/main build
+        run: |
+          echo "::error::MAIN IS A VISIBILITY STUB; no v1.9 FAP was built. Choose dev/v1.9-logic-scope in the Run workflow branch selector."
+          exit 1
