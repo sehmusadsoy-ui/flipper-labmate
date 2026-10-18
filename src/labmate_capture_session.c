@@ -53,8 +53,8 @@ static uint8_t pulse_gpio_next_index(uint8_t current, int8_t direction) {
 void labmate_capture_stop_all(LabMateApp* app) {
     /* Stop the independent Scope-owned PC1 callback before old tool state
      * can clear capture_owner or overwrite its IRQ/EXTI configuration. */
-    if(!labmate_scope_native_reinit_safe(&app->scope_native) ||
-       app->capture_owner == LabMateCaptureScope) {
+    if(!labmate_scope_native_stop_confirmed(
+           &app->scope_native, app->capture_owner)) {
         if(!labmate_scope_bridge_stop(app)) {
             app->capture_release_fault = true;
             app->capture_blocked = true;
