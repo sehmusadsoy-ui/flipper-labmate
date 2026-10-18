@@ -84,6 +84,6 @@ bool labmate_scope_pair_view_draw(Canvas* c, const LabMateScopePair* p,
         }
     }
     canvas_draw_line(c, 0, 54, 127, 54);
-    canvas_draw_str(c, 3, 62, "DN PLOT BK EXIT");
+    canvas_draw_str(c, 3, 62, "DN REF BK EXIT");
     return true;
 }
