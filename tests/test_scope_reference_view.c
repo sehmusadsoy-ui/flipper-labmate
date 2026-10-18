@@ -80,7 +80,12 @@ static void test_real_metrics_and_invalid_no_fake_pass(void) {
     /* Even with the same preset, altered measured data and stale error
      * fields must be rejected before any LCD pixels are painted. */
     LabMateScopeMetrics altered = m;
-    altered.duty_permille = 450U;
+    altered.duty_permille = 495U; /* still PASS, but stale error=0 */
+    canvas = (Canvas){0};
+    assert(!labmate_scope_reference_view_draw(
+        &canvas, LabMateScopeReference1kHz50, result, &altered));
+    assert(canvas.count == 0U);
+    altered.duty_permille = 450U; /* both the verdict and errors change */
     canvas = (Canvas){0};
     assert(!labmate_scope_reference_view_draw(
         &canvas, LabMateScopeReference1kHz50, result, &altered));
