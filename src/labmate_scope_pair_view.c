@@ -26,7 +26,8 @@ static void format_frequency(char* out, size_t cap, uint64_t mhz, bool negative)
 static void metric_line(char* out, size_t cap, char prefix, const LabMateScopeMetrics* m) {
     char f[19];
     format_frequency(f, sizeof(f), m->frequency_millihz, false);
-    (void)snprintf(out, cap, "%c %s %u.%u%%", prefix, f,
+    (void)snprintf(out, cap, "%c%s %s %u.%u%%", prefix,
+                   m->truncated ? "*" : "", f,
                    (unsigned)(m->duty_permille / 10U),
                    (unsigned)(m->duty_permille % 10U));
 }
@@ -38,7 +39,11 @@ bool labmate_scope_pair_view_draw(Canvas* c, const LabMateScopePair* p,
        (p->has_b && (p->b.status != LabMateScopeMetricsReady ||
                      !p->b.completed_cycles))) return false;
     canvas_set_font(c, FontSecondary);
-    canvas_draw_str(c, 3, 9, "COMPARE PC1 A/B");
+    /* An asterisk denotes only the measured PREFIX of a saturated
+     * 256-edge buffer, NOT a 5-second full signal reconstruction. */
+    const bool clipped = (p->has_a && p->a.truncated) ||
+                         (p->has_b && p->b.truncated);
+    canvas_draw_str(c, 3, 9, clipped ? "A/B *PREFIX ONLY" : "COMPARE PC1 A/B");
     canvas_draw_line(c, 0, 13, 127, 13);
     if(!p->has_a) {
         canvas_draw_str(c, 3, 24, "CAPTURE THEN STOP");
