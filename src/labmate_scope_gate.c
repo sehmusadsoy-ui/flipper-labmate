@@ -2,7 +2,9 @@
 
 LabMateScopeGate labmate_scope_gate_pc1(
     const LabMateScopePc1Environment* e, const LabMateScopeOwnerState* s) {
-    if(!e || !s || e->selected_pin >= LABMATE_MONITOR_PIN_COUNT)
+    /* The native IRQ driver is hard-wired to PC1/EXTI1. Never approve a
+     * different pin index and then configure PC1 behind the caller's back. */
+    if(!e || !s || e->selected_pin != LABMATE_MONITOR_PC1_INDEX)
         return LabMateScopeGateInvalid;
     if(e->capture_release_fault || e->monitor_release_fault ||
        s->phase == LabMateScopeOwnerReleaseFault) return LabMateScopeGateFault;
