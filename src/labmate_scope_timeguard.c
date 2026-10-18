@@ -79,6 +79,14 @@ LabMateScopeGuardResult labmate_scope_timeguard_poll(
 
     if(guard->elapsed_ms >= guard->max_session_ms) {
         guard->result = LabMateScopeGuardDurationLimit;
+    } else if(sample.state == LabMateScopeRecording &&
+              sample.count >= LABMATE_SCOPE_GUARD_AUTO_STOP_EDGES) {
+        /* A continuous PWM signal cannot satisfy the quiet timeout and
+         * would eventually fill the 256-edge recorder. Request owned STOP
+         * from the application thread once a useful REAL edge prefix is
+         * present. The caller still validates clock/overflow/full cycles
+         * before offering an A/B or reference verdict. */
+        guard->result = LabMateScopeGuardSampleComplete;
     } else if(sample.state == LabMateScopeArmed &&
               guard->elapsed_ms >= guard->trigger_timeout_ms) {
         /* NO TRIGGER is honest even when unmatched edges were observed. */
