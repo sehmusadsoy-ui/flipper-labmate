@@ -7,7 +7,10 @@ LabMateScopeGate labmate_scope_gate_pc1(
     if(!e || !s || e->selected_pin != LABMATE_MONITOR_PC1_INDEX)
         return LabMateScopeGateInvalid;
     if(e->capture_release_fault || e->monitor_release_fault ||
-       s->phase == LabMateScopeOwnerReleaseFault) return LabMateScopeGateFault;
+       s->phase == LabMateScopeOwnerReleaseFault ||
+       s->fault_cleanup_phase != LabMateScopeOwnerIdle ||
+       s->callback_detached || s->pin_restored)
+        return LabMateScopeGateFault;
     if(!e->firmware_lease_api || !e->firmware_try_callback)
         return LabMateScopeGateUnsupported;
     if(s->phase != LabMateScopeOwnerIdle || s->handle ||
