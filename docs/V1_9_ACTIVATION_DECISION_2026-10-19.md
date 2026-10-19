@@ -108,3 +108,27 @@ Until then and until a reviewed explicit activation grant, retain the real devic
 ## 2026-10-19 — operator confirms corrected 22/22 offline fault cases PASS
 
 The operator pulled `dev/v1.9-logic-scope` from `766a100` to `aafb860`, then actually reran `tests/test_v19_e11_activation_recovery_real_fap_offline.py -v` with **all 22 tests PASS**, `Ran 22 tests in 0.007s`, `OK`. The previously reported real-three-PC-FAP in-memory activation + manual rollback + interrupted first-rename recovery rehearsal also PASS. The 22/22 result closes **host-only** behavior checking of the current fake CLI and reviewed in-memory transition function. It does **not** authenticate the STM32 installed firmware ABI, does not prove a live rename/restore, and does not authorize activation. The real v1.9 FAP stays staged, with final v1.8 still active. Next work: review a separately constrained real COM7 activation adapter and independent post-activation state checker, fully offline tested, with explicit separate activation permission before first actual mutation.
+
+
+## 2026-10-19 — real COM7 activation review adapter + independent postactivation classifier prepared
+
+After **22/22** operator-run offline activation/rollback fault cases PASS, the following source was drafted on the isolated development branch for separate audit:
+
+- `scripts/activate_v19_e11_once_review_only.py`: real COM7 capable **only with a separate new precise two-rename approval** plus independent acknowledgment that installed STM32 firmware native exported ABI has not been attested. Before any mutation, checks three PC FAP hashes, 12-file data snapshot, local pinned E11 provenance, **fresh same-COM7 full staged v1.9 readbacks + v1.8/legacy backup state** and native E11 label/JS resources/Manifest. Then and only then two non-atomic, allowlisted, guarded renames (active v1.8 → reserved v1.8 backup; staged v1.9 → active). It inspects the full binary active and backups after each rename; never retries/rolls back automatically. **No firmware flash**. Interrupted first rename can temporarily remove installed app path.
+- `scripts/run-v19-e11-activation-review.ps1`: Windows fixed COM7 wrapper whose **DEFAULT IS PC-only DRY RUN with ZERO COM**. The dangerous `-ApplyActivation` branch requires simultaneous explicit ABI-risk flag and a separately owner-approved trial, performs all original candidate + backup validations, and checks **19 exact Git Python helper blobs** plus pinned native Momentum `flipper/storage.py` blob before any COM access. All 19 pinned SHA IDs were individually cross-checked against GitHub source contents and matched. This script has **NOT** been operator executed, including dry run. **Do not run `-ApplyActivation` yet**.
+- `scripts/check_v19_e11_postactivation_ro.py`: completely separate **read-only**, fixed COM7 postactivation state checker. Requires staged filename ABSENT; active v1.9 PRESENT (pinned SHA and two complete byte readbacks), protected final v1.8 backup PRESENT (2 complete readbacks), original E11 backup unchanged, failed-v1.9 reserved filename ABSENT, and native E11 firmware label/JS GPIO/event_loop/Manifest MD5 parity. Not valid for the existing, still-staged real device.
+- `scripts/run-v19-e11-postactivation-ro.ps1`: no-write Windows wrapper with **17 exact pinned Git Python source blobs** plus original native Momentum storage transport identity, PC candidate and backups. All 17 pinned Python blob IDs were independently matched against GitHub; this wrapper is only appropriate AFTER separately authorized activation. Do not invoke it before then.
+- New **43 offline synthetic/static unit tests**: `tests/test_v19_e11_real_activation_adapter_offline.py` (17); `tests/test_v19_e11_postactivation_readonly.py` (15); `tests/test_v19_e11_activation_windows_static.py` (11). Their actual execution is **PENDING**. Source presence and hash audit does not imply these tests passed.
+
+**Current GO/NO-GO:** GO for running these **host-only tests** and **default PC-only dry run** of the Windows activation review wrapper, after the operator pulls dev. NO-GO for `-ApplyActivation`, either real on-device rename, firmware flash, automatic rollback/restore, app first boot, Main/Stable merge. All v1.9 real-device FAP integrity stages PASS, but the installed firmware binary native API/export-table remains independently **UNATTESTED**. The owner has not consented to the two non-atomic renames nor accepted this separate ABI risk.
+
+**Next operator host-only commands**:
+
+```bash
+powershell.exe -NoProfile -Command 'git -C "$env:USERPROFILE\labmate-src-v19" pull --ff-only origin dev/v1.9-logic-scope'
+python3 /mnt/c/Users/sehmu/labmate-src-v19/tests/test_v19_e11_real_activation_adapter_offline.py -v &&
+python3 /mnt/c/Users/sehmu/labmate-src-v19/tests/test_v19_e11_postactivation_readonly.py -v &&
+python3 /mnt/c/Users/sehmu/labmate-src-v19/tests/test_v19_e11_activation_windows_static.py -v
+```
+
+Expected only if actually successful: **17/17, 15/15, 11/11 PASS**. If these pass, separate Windows review dry-run (NO `-ApplyActivation` switch) should be executed and reported before an activation decision.
