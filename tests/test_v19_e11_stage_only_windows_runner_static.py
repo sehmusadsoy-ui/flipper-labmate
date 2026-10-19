@@ -40,13 +40,14 @@ class StaticWindowsStageRunnerTest(unittest.TestCase):
         self.assertIn("0182cf45fa8ff254e31da6a1d059d570badb816e", self.script)
         self.assertIn("hash-object -- $h0storage", self.script)
 
-    def test_all_fourteen_sources_pinned(self):
+    def test_all_fifteen_sources_pinned(self):
         records = re.findall(r"(?m)^    '([^']+\.py)'='([0-9a-f]{40})'$", self.script)
-        self.assertEqual(len(records), 14)
+        self.assertEqual(len(records), 15)
         self.assertEqual(len(set(x for x, y in records)), 14)
         self.assertEqual(len(set(records)), 14)
         self.assertIn("stage_v19_e11_sidecar_only.py", {x for x, y in records})
-        self.assertIn("if ($names.Count -ne 14 -or $expected.Count -ne 14)", self.script)
+        self.assertIn("check_v19_e11_pc_backups_windows_ro.py", {x for x, y in records})
+        self.assertIn("if ($names.Count -ne 15 -or $expected.Count -ne 15)", self.script)
 
     def test_checks_stage_source_bytes_twice(self):
         self.assertIn("hash-object -- $source", self.script)
@@ -56,8 +57,18 @@ class StaticWindowsStageRunnerTest(unittest.TestCase):
     def test_independent_windows_fap_hash_and_backup_report(self):
         self.assertIn("Get-FileHash -LiteralPath $candidate -Algorithm SHA256", self.script)
         self.assertIn("e1f43390c4078fbaad7e13124331926e0d6667294f2815e8b63762bd16f3ff90".upper(), self.script)
-        self.assertIn("verify_backups", self.script)
+        self.assertIn("check_v19_e11_pc_backups_windows_ro.py", self.script)
         self.assertIn("WINDOWS_PC_ONLY_CANDIDATE_MANIFEST.json", self.script)
+
+    def test_pc_backup_verifier_is_file_based_not_python_c_string(self):
+        self.assertIn("Join-Path $working 'check_v19_e11_pc_backups_windows_ro.py'", self.script)
+        self.assertIn("'--active-v18-backup',$active", self.script)
+        self.assertIn("'--historical-e11-backup',$saved", self.script)
+        self.assertIn("'--data-snapshot',$data", self.script)
+        self.assertNotIn("'-c'", self.script)
+        self.assertNotIn("$env:PYTHONPATH", self.script)
+        self.assertLess(self.script.index("$verifyArgs = @("),
+                        self.script.index("if (-not $ApplyStageOnly) {"))
 
     def test_installer_runs_only_the_stager(self):
         self.assertIn("Join-Path $working 'stage_v19_e11_sidecar_only.py'", self.script)
