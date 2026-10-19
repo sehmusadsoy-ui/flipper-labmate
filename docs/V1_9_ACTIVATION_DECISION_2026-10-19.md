@@ -330,3 +330,12 @@ V19 E11 ACTIVE FAP VERIFIED INDEPENDENTLY - NO DEVICE WRITE
 **Decision:** v1.9 is confirmed physically installed at the active Flipper application path; the backup of FINAL v1.8 and historical E11 artifact are preserved, and 12 backed-up LabMate data files unchanged on PC. The independent full-binary check validates the FAP bytes and state, **not runtime correctness or installed internal firmware export-table ABI compatibility**.
 
 **Next:** permit carefully observed first GUI launch with NO external GPIO wiring or generation; if GUI fails to start/crashes, STOP and report exact observable error, do NOT rerun activation or firmware flash. Only after basic GUI launch passes proceed to controlled non-destructive native scope/GPIO functionality tests. Draft PR #15 and Stable remain unchanged until actual runtime evidence exists.
+
+
+## v1.9 physical GUI first launch — owner confirms opens
+
+After independently attested on-device v1.9 active FAP postactivation PASS, the owner directly reported **"açılıyor"** (LabMate opens on the Flipper), providing the first physical **GUI launch PASS** evidence. This is not yet evidence of menu navigation, clean BACK exit, actual native firmware-export ABI compatibility under v1.9 tools, or core measurement/signal operation; those remain to be checked only as useful.
+
+The owner also questioned why the old, convenient PowerShell installation/automatic app-opening workflow had been replaced by a laborious multi-step activate/verify process. Explain clearly: that extra conservative process was limited to safeguarding v1.8 FINAL, pinned Momentum E11 firmware and user data during experimental v1.9 activation. It did not imply the previous simple install-and-open workflow was intrinsically broken. Do not make the user repeat successful stage or rename operations. After functionality is verified, plan a simpler, safely constrained future install-and-launch developer workflow while keeping pinned old-version backups and one-time risk checkpoints for first experimental swaps.
+
+Current physical evidence: **v1.9 file active and two SHA256 readbacks PASS; human-observed GUI opens PASS.** No user confirmation for menu/back/functional checks has been provided yet. Never claim v1.9 fully stable or publish to Stable solely on "açılıyor".
