@@ -176,7 +176,7 @@ def main() -> None:
             patched = text.replace(RFID_ANCHOR, RFID_REPLACEMENT, 1)
             raw = patched.encode("utf-8")
             replacement_sha = hashlib.sha1(
-                b"blob " + str(len(raw)).encode() + b"\\0" + raw).hexdigest()
+                b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest()
             must(replacement_sha == RFID_NEW_BLOB,
                  "RFID Windows host test patch differs from approved GitHub blob")
             with tempfile.TemporaryDirectory(prefix="labmate_e11_rfid_win_overlay_") as tmp:
