@@ -54,9 +54,22 @@ The operator correctly recalled that an **E11 full firmware update was actually 
 
 **Corrected interpretation:** The operator's installed firmware is backed by historical actual custom-E11 deployment evidence. A hypothetical claim that it *must* be unpatched stock firmware is incorrect. However, the **screenshot by itself** proves only the base commit/API label, not firmware-image bytes or the full custom ABI. Historical readback of matching app/plugin + unchanged patch-source files greatly increases confidence, but does not automatically attest the currently running image after possible later actions.
 
-**IMPORTANT (2026-10-19): The old and new recorded patch fingerprints are not calculated with the same command.** The old E11 fingerprint `1b3851...` was produced by `git -C momentum-src diff --` with a specific allowlist of modified firmware paths in `.github/workflows/check-v18-final-label-review-pair.yml`. The local v1.9 fingerprint `a0cc3040...` is from `git -C momentum-src diff --binary` **without** that path allowlist. These SHA-256 strings MUST NOT be directly compared as evidence of modified firmware patch content. Recompute the legacy scoped diff SHA-256 on the existing local patched source tree using its exact path list and default `git diff` format; only then compare to `1b3851...`. This is read-only and should not repeat/apply any patches, reflash, or install a FAP. A matching source diff would not by itself attest currently installed firmware binary identity.
+## Final historical E11 patch fingerprint check — 2026-10-19 PASS
 
-**Next read-only reproducibility comparison:** From the already-built local candidate, inspect `PATCH_DIFF_SHA256` in `/home/adsoy/labmate-build/v19-local-review-3d66658/PROVENANCE.txt` and compare to the previously pinned **`1b3851... `** E11 source-diff digest. If different, do not install; inspect precisely what changed. If identical, it is strong *source-patch parity evidence*, **not an installed-image SHA readback or an authorization to replace the FAP**. Preserve verified old FAP + Profiles/S1 + CSV backups; confirm exact working path and reversible FAP-only procedure before asking for an operator's explicit v1.9 trial consent. Never update firmware in this step.
+The operator ran a read-only local comparison of the **45 pathspecs** extracted verbatim from `.github/workflows/check-v18-final-label-review-pair.yml` using `git -C momentum-src diff -- <paths>`. Under local Git 2.53.0, the initial digest differed from the older workflow's documented result. A follow-up using **`git -c core.abbrev=7 -C momentum-src diff -- <paths>`**, preserving the exact legacy pathspecs, returned:
+
+```text
+GIT VERSION: git version 2.53.0
+ABBREV=7: 1b3851dfa4de1f62d33430c5a7a4cf563f68da4ebfa01fe332fe7984b7630d80
+HISTORICAL PATCH HASH: PASS
+```
+
+This **matches the historical matched E11 final-label firmware source diff SHA-256 exactly**. The `core.abbrev` parameter controls the abbreviated object IDs embedded in unified Git diff headers, and the old and new default outputs were not byte-identical until the historical 7-character abbreviation was selected.
+
+**Result: historical firmware source-diff parity PASS** for the inspected, allowlisted tracked files. The local review ZIP's independent `PATCH_DIFF_SHA256=a0cc3040a9ef41897f3c3d1cd9414e1d7aeb8dfae69244d3d782c88a5cb7ea90` still correctly refers to its own *whole-tree binary diff* and must not be rewritten or falsely labelled as the historical digest. The two provenance fields measure different byte sequences. The FAP and ZIP SHA-256 bytes remain unchanged, and **there is no need to rebuild or repackage** solely for this confirmation.
+
+This is **source parity**, not an independent readback hash of the installed firmware and not installation authorization. Continue with read-only current firmware/FAP identity and exact installed-app backup verification, then separately request operator authorization for any new v1.9 FAP-only replacement. Preserve Stable v1.8 and the installed patched E11 firmware; no updater, flash or SD cleanup.
+
 
 ## Device gate remains closed
 
