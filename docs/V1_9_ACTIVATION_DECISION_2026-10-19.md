@@ -195,3 +195,39 @@ UNKNOWN POSSIBLE PARTIAL ACTIVATION. STOP; classify read-only. NO RE-RUN.
 **Immediate safe response:** keep Flipper connected, avoid app launch/reboot, and run ONLY the previously operator-proven **independent existing post-stage strict-read-only** tool `run-v19-e11-poststage-ro.ps1 -Port COM7` against the likely original active-v1.8/staged-v1.9 state. That tool was previously real COM7 PASS and has no mutation commands; a fresh PASS proves original stage/active/old-backup configuration; a NO-GO **does not itself license any recovery or retry**. For unknown/partial state use a separate independently reviewed read-only five-path classifier (not the activation runner), and STOP on surprising results. No changes to actual Flipper have been attempted by assistant.
 
 Activation implementation must be revised to use real `js_gpio.module` dict key and avoid masking `KeyError`, with a new non-mocked regression simulating the actual dictionary shape. Revalidate pinned wrapper source, unit tests and PC dry-run and separately seek **new explicit operator approval for any future attempt**. Installed firmware binary ABI remains UNATTESTED.
+
+
+## 2026-10-19 — physical post-KeyError read-only state PASS; original v1.8 untouched
+
+Immediately after the unsuccessful one-attempt real COM7 activation (`KeyError`), operator ran the **previously validated independent** `run-v19-e11-poststage-ro.ps1 -Port COM7` (without any approval or apply switch). Full actual device output confirmed:
+
+```text
+PC_BACKUPS_PASS: 12 files, 2128 bytes
+V19 E11 LOCAL HASH / TRANSPORT POST-STAGE READ-ONLY GATE: PASS
+FAP: 97540 bytes / pinned SHA256, source 15/15 / transport Git blob PASS
+state: STAGED_V19_NONAPP_ACTIVE_V18
+v19_stage_size: 97540
+v19_stage_sha256_full_readback_twice: e1f43390c4078fbaad7e13124331926e0d6667294f2815e8b63762bd16f3ff90
+active_v18: FINAL_UNCHANGED_MD5_AND_SIZE_PASS
+old_e11_device_backup: PRESERVED_AND_PINNED
+firmware_js_manifest_label: PINNED_SCREEN_ONLY_NOT_FIRMWARE_ABI_ATTESTATION
+future_recovery_filename: ABSENT
+v19_active: NO
+device_writes: ZERO
+automatic_retry_rollback_rename: ZERO
+activation_authorized: NO
+V19 E11 INDEPENDENT POST-STAGE READ-ONLY PASS
+V18 STILL ACTIVE, V19 STAGED ONLY; ACTIVATION NOT AUTHORIZED
+```
+
+**REAL DEVICE RECOVERED STATUS:** live FAP v1.8 FINAL unchanged, v1.9 full-stage sidecar unchanged with two complete reads, E11 backup intact and reserved final-v1.8 backup absent. Therefore the first physical two-rename activation attempt **did not move either original or stage FAP**. The independent poststage checker is read-only; it effected no rename. No device repair, recovery upload or firmware work necessary.
+
+**Root cause confirmed by source:** `activate_v19_e11_once_review_only.py` accidentally selected `PINNED_NATIVE[js_gpio.fal] = 'E11_JS_GPIO'` (a `post` dict key) and tried `js['E11_JS_GPIO']`, whereas `pinned_local_expectation` returns the JS dict with key `js['js_gpio.module']`. This throws `KeyError` at the first `identity_resources_ro` call **before** the first rename. Previous 17 mocked activation adapter tests had masked this exact check. Full device read-only result independently proves the pre-rename safe outcome.
+
+**Corrective source review (NO activation permission):**
+- Set `PINNED_NATIVE[js_gpio.fal] = 'js_gpio.module'`, match exact `JS_REMOTE` mapping, retrieve hash with `js.get(key)` and explicit 32-hex MD5 validation. Refuse absent/malformed plugin or Manifest expected keys with explicit `ValueError`, and compare each to actual remote digest. Keep two same-directory rename allowlist, all byte-readback and resource gates, no retry/restore/flash behavior intact.
+- Update exact source Git SHA-1 pin for corrected `activate_v19_e11_once_review_only.py` in Windows `run-v19-e11-activation-review.ps1`; new blob is `755f8b62ed566903881370f577a1c2eedf63b320` and the wrapper pin was independently checked to match. Wrapper still requires separate exact two-rename approval, explicit ABI-risk acknowledgment, and is default dry run with no COM.
+- New `tests/test_v19_e11_native_resource_live_contract_offline.py` adds **15 concrete dict-contract regressions** and does NOT mock `identity_resources_ro`: successful real-shaped JS GPIO/event_loop/native-label/Manifest checks at all three positions (pre-rename, between-renames, after), missing/malformed key, wrong hex/MD5, resource path drift, firmware identity drift, dangerous post-first-rename drift preservation, and zero unintended mutation. This suite uses ONLY an in-memory FakeCLI, no actual COM.
+- CI host-only workflow updated to run **58** tests (17 existing adapter, 15 new native contract, 15 independent reader, 11 Windows static). **ALL 58 OPERATOR RESULTS AND UPDATED WINDOWS DEFAULT DRY-RUN ARE PENDING.** Do not assert PASS or claim activation ready.
+
+**Strict approval boundary:** Previous express consent was for the *one attempted* experimental activation and is **consumed**. Successful source corrections/host tests would **not** renew it. A new express informed approval must be requested for any later real on-device rename; no auto replay permitted. Firmware currently flashed has NOT been independently attested at binary/export-table level. Main/Stable and PR #15 remain untouched.
