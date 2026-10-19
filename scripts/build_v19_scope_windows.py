@@ -10,7 +10,6 @@ import re
 import shutil
 import subprocess
 import sys
-import urllib.request
 from zipfile import ZipFile
 
 SOURCE = "050ec62fe372422056e0e903cde6c5e6f54f10f2"
@@ -56,14 +55,28 @@ def main():
     need((old_sdk / "fbt.cmd").is_file(), "existing Windows Momentum fbt.cmd missing")
     need(git("-C", old_sdk, "rev-parse", "HEAD") == E11_BASE,
          "Windows Momentum base is NOT the pinned E11 SDK")
-    need(not src_area.exists() and not sdk.exists(),
-         "isolated source/SDK build folder already exists: STOP to preserve evidence")
-    print("EXISTING SDK: PRESERVED; NEW WORKTREE: ISOLATED; DEVICE WRITES: ZERO")
-    src_area.mkdir()
+    need(not sdk.exists(), "isolated SDK worktree already exists; do not overwrite")
+    # A failed codeload attempt from the earlier Windows helper created an
+    # EMPTY source directory before receiving HTTP 404. Reuse only if empty.
+    if src_area.exists():
+        need(src_area.is_dir() and not any(src_area.iterdir()),
+             "source directory has existing data; refuse overwrite")
+    else:
+        src_area.mkdir()
     archive = src_area / "source.zip"
-    uri = ("https://codeload.github.com/sehmusadsoy-ui/flipper-labmate/zip/" + SOURCE)
-    print("PINNED GITHUB ARCHIVE:", uri, flush=True)
-    urllib.request.urlretrieve(uri, archive)
+    endpoint = ("repos/sehmusadsoy-ui/flipper-labmate/zipball/" + SOURCE)
+    print("AUTHENTICATED GH API PINNED ARCHIVE:", endpoint, flush=True)
+    # gh api follows GitHub's authenticated zipball redirect. stdout must be
+    # byte-for-byte binary; never pass this stream through PowerShell text
+    # redirection or git HTTPS credential prompts.
+    with archive.open("wb") as stream:
+        status = subprocess.run(["gh", "api", endpoint], stdout=stream).returncode
+    need(status == 0, "GitHub CLI archive download failed")
+    need(archive.is_file() and archive.stat().st_size > 100,
+         "empty or invalid GitHub archive")
+    need(archive.stat().st_size <= 50_000_000,
+         "GitHub source archive exceeds 50 MB safety limit")
+    need(ZipFile.is_zipfile(archive), "GitHub CLI returned data that is not ZIP")
     with ZipFile(archive) as z:
         names = z.namelist()
         need(all(not n.startswith("/") and ".." not in n.split("/") and
