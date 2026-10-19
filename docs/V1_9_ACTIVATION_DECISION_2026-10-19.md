@@ -269,3 +269,36 @@ The prior real post-KeyError COM7 independent read-only scan already confirmed *
 **Decision:** revised activation code and its pin-verified PC wrapper may now be presented for a **new, independent informed authorization**; however the previous one-attempt activation approval was consumed by the prior attempt, so it must NOT be replayed by assumption. The new activation still executes exactly two **non-atomic** guarded microSD renames and no firmware flash, user-data writes, automatic retry/recovery/restore. An interrupted rename can leave the active application filename absent. The STM32's actually installed firmware native binary export table is still **not independently attested**. Following any new separately approved on-device operation, require separate fresh strict read-only postactivation reconciliation before opening the v1.9 GUI. On error STOP and reclassify read-only, never rerun on ambiguous device state.
 
 No actual new v1.9 activation, firmware/SD writes or v1.9 GUI test is evidenced by this operator log. Draft PR #15 and Stable must remain untouched pending physical tests.
+
+
+## Physical v1.9 activation file promotion PASS — independent postactivation check pending
+
+After **60/60 corrected offline host tests** PASS and an updated Windows default NO-COM dry-run PASS, the owner explicitly instructed immediate activation ("ARTIK GEÇ ŞU CİHAZA YÜKLE ŞUNU YA BIKTIM"). In the subsequent assistant reply, this was treated as **fresh separate consent for the second bounded experimental activation attempt**, retaining the disclosed un-attested native firmware binary ABI, non-atomic two-rename risk, no firmware flash, no automatic retry or restoration. The operator then executed `run-v19-e11-activation-review.ps1 -Port COM7 -ApplyActivation -AcceptFirmwareABIRisk` in Windows PowerShell.
+
+**Actual physical COM7 command output**:
+
+```text
+PC_BACKUPS_PASS: 12 files, 2128 bytes
+WINDOWS_PC_BACKUPS_RO: PASS | DEVICE_WRITES: ZERO | PC_WRITES: ZERO
+V19 E11 ACTIVATION LOCAL HASH / BACKUP / TRANSPORT REVIEW PASS
+FAP: 97540 bytes / pinned SHA256, source 19/19 / transport Git blob PASS
+V19 E11 REAL TWO-RENAME ACTIVATION REVIEW ADAPTER - NO AUTORETRY
+[real binary readback chunk progress]
+v19_file_promotion: PASS_TWO_NONATOMIC_RENAMES
+installed_app: V19_SHA256_FULL_READBACK
+preserved_final_v18: V18_BAK_FULL_READBACK
+original_e11_backup: UNCHANGED_FULL_READBACK
+stage_path: ABSENT
+other_files_user_data: NOT_ACCESSED
+firmware_flash: NO
+gui_boot: NOT_TESTED
+installed_firmware_binary_abi: NOT_ATTESTED
+next_action: STOP_FOR_INDEPENDENT_READ_ONLY_ACTIVATED_STATE_SCAN
+STOP: independent post-activation READ-ONLY classifier required.
+STAGED v1.9 FILE ACTIVATED BY RENAME: INDEPENDENT READ-ONLY SCREEN STILL REQUIRED.
+Do not start app before post-activation identity PASS.
+```
+
+**REAL ACTIVATION FILE-PROMOTION SUCCESS:** Two device FAP rename operations completed with in-session exact full binary FAP readback. Pinned v1.9 is now at `/ext/apps/Tools/labmate.fap`, exact v1.8 FINAL at `/ext/apps/Tools/labmate.v18-final-before-v19.bak`, earlier E11 backup still preserved, staging path absent. No firmware flash or LabMate data access claimed. **Independent postactivation read-only run is now the mandatory next gate**, using `scripts/run-v19-e11-postactivation-ro.ps1 -Port COM7`. It is separate from the mutating activation wrapper and is already source-reviewed, not yet operator-executed in this state. Do not launch the v1.9 GUI until it independently reports PASS, and do not mark installed native firmware ABI or GUI functionality as proven. If the independent checker reports NO-GO, STOP without blind retry, rollback or firmware flash.
+
+PR #15 should remain Draft and Stable untouched until independently accepted hardware functionality evidence.
