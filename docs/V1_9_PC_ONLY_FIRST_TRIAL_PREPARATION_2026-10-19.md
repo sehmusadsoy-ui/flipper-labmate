@@ -300,3 +300,21 @@ install_authorized: NO
 **PC handoff is closed PASS**; both original existing v1.8/v1.8DEV PC FAP backups and current 12-file LabMate data snapshot still verify. This is *not* the entire microSD and not a restore rehearsal. The stage-only writer remains unexecuted. Real on-device v1.9 APP ACTIVE = NO; v1.8 remains installed. Draft PR #15; published v1.8 immutable.
 
 **Next permission decision:** only if separately authorized, consider writing the new **non-.fap** staging sidecar `/ext/apps/Tools/labmate.v19-new-stage`; do not promote, rename the active `labmate.fap`, flash firmware, or touch any backups. This is a genuine microSD device write and must have an independent exact-command Windows transport provenance review and fresh same-session live preflight. Regardless of stage outcome, no v1.9 activation without separate installed E11 SDK ABI compatibility and an independent express permission.
+
+
+## 2026-10-19 — first PHYSICAL stage-only authorization scope
+
+The operator explicitly approved **starting only the first device-side stage process** after a full PC FAP-copy PASS. Authorization applies solely to writing the verified **97,540-byte** v1.9 E11 candidate to the NEW, currently absent **non-app staging filename** `/ext/apps/Tools/labmate.v19-new-stage`, and only after current-session identity/absence and local helper/transport integrity gates pass. This approval **does not permit** changing the active `/ext/apps/Tools/labmate.fap`, renaming any file, deleting an incomplete stage, overwriting old backups, modifying user CSV/Profiles, flashing firmware, restoring, or performing an unattended retry. Firmware ABI attestation for activation remains open. Operator has **not yet run the stage**.
+
+A new `scripts/run-v19-e11-stage-only.ps1` has been added. **DEFAULT IS DRY-RUN**, which tests PC-only provenance: 14/14 exact Git SHA-1 blobs (independently retrieved GitHub inventory PASS), exact pinned upstream Momentum d3f89dfe `scripts/flipper/storage.py` Git blob `0182cf45fa8ff254e31da6a1d059d570badb816e`, approved Windows-only candidate FAP SHA-256/size and data/backups. The `-ApplyStageOnly` flag (NOT recommended until the dry-run reports PASS and operator sends its output) independently reruns the PC verification and launches the approved single-sidecar stage-only code with that consent scope. Stage code itself performs fresh **same-COM-session** dual E11 live FAP/native resource identity and two absent path screens BEFORE any 4096-byte chunk write, then full binary double readback. Failure leaves stage on SD exactly as-is, stops, with **NO auto retry/rollback**.
+
+Static structural tests `tests/test_v19_e11_stage_only_windows_runner_static.py` (10 synthetic source tests, **operator execution pending**) validate default dry-run, single stage writer, tight COM7/pinned helper/transport gates, Windows FAP integrity, and absence of backup-clobber/activation commands. Real wrapper hasn't run on Windows, and any actual COM stage result must be reported separately.
+
+**Next steps, one gate at a time**: Git pull, run 10 static tests, run Windows wrapper DEFAULT (NO `-ApplyStageOnly`), examine results and fix any unmet prerequisite. Only then run the exact separately approved `-ApplyStageOnly` command once with connected idle Flipper, qFlipper shut down and no GPIO leads. If ANY error appears, never blindly rerun (sidecar state uncertain); perform read-only classification before a new decision.
+
+```bash
+python3 /mnt/c/Users/sehmu/labmate-src-v19/tests/test_v19_e11_stage_only_windows_runner_static.py -v
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command '& "$env:USERPROFILE\labmate-src-v19\scripts\run-v19-e11-stage-only.ps1" -Port COM7'
+```
+
+No device-write command is provided in this document prior to actual dry-run success and exact command verification. Stable/public v1.8 and custom firmware remain frozen; v1.9 draft PR #15.
