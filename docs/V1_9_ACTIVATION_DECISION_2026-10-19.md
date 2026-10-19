@@ -161,3 +161,17 @@ Activation requires separate, explicit owner approval; NEVER imply permission.
 **ACTUAL DEVICE STATUS REMAINS** independently last-attested `STAGED_V19_NONAPP_ACTIVE_V18`: 97,540-byte SHA256 `e1f43390c4078fbaad7e13124331926e0d6667294f2815e8b63762bd16f3ff90` staged only, v1.8 FINAL active and historical E11 backup unmodified. No app activation, device file renames, firmware update or data write occurred in the log. Draft PR #15 is still open/draft/unmerged (independently rechecked).
 
 **Separate consent NOW REQUIRED:** Owner must acknowledge (a) exact installed firmware binary native ABI remains un-attested, so v1.9 may fail to load/behave; and (b) the two serial-storage renames are NOT atomic, so an interruption/ambiguous reply may leave the LabMate active filename absent while v1.8 is at a protected backup path. No automatic retry, rollback, restore or delete is permitted; any failure needs fresh independent read-only classification and separate owner action. Do not run the activation branch or leak approval flags as an implied command before new express authorization. The only permitted next action without this approval is additional PC-only review.
+
+
+## Owner's fresh experimental activation consent — granted; NOT yet executed
+
+After the operator actually reported **43/43** host tests PASS and the Windows script default **PC-only dry-run PASS**, the owner explicitly replied **"ONAY VERİYORUM"** to the following precise question: "bu riskleri kabul ederek v1.9'un gerçek Flipper'da deneysel olarak etkinleştirilmesine ve yalnızca gerekli iki dosya yeniden adlandırmasına onay veriyor musun?". This is a new **experimental activation permission**, NOT a general firmware permission.
+
+Authorized **exactly once, with no retry**, subject to fresh same-session identity/hash/backup gate:
+
+1. `/ext/apps/Tools/labmate.fap` (v1.8 FINAL) → `/ext/apps/Tools/labmate.v18-final-before-v19.bak` (new, previously absent)
+2. `/ext/apps/Tools/labmate.v19-new-stage` (97,540-byte pinned candidate) → `/ext/apps/Tools/labmate.fap`
+
+Operator was explicitly warned and accepted that current installed STM32 firmware binary API exports for the 3 required v1.9 native HAL symbols are **NOT independently attested**, and the renames are **NOT atomic**; failure between the two may leave the live `.fap` path absent. NO firmware flash, FAP re-upload, deletion, CSV/Profile writes, automatic retry, rollback or restore authorized. The existing physical stage integrity and latest v1.8 preservation had previously independently passed.
+
+**At time of this entry: NOT ACTUALLY ACTIVATED.** Never claim real rename or functional GUI PASS until fresh operator-provided live command output plus independent postactivation strict read-only scan. Upon any error, preserve state, classify with new read-only tool, do not rerun the activation command; the initial permission is consumed once used.
