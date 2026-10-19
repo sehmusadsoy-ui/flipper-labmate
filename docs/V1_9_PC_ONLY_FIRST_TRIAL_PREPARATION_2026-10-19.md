@@ -218,7 +218,7 @@ A separately designed **activation tool**, separate manually authorized rollback
 After the operator executed all **21/21 synthetic tests PASS** on `tests/test_v19_e11_sidecar_stage_only.py`, we added:
 
 - `scripts/replay_v19_e11_real_fap_stage_offline.py` — directly calls `stage_v19_e11_sidecar_only.stage_only()` with the three exact archived PC FAPs and the existing in-memory `FakeCLI`. This deliberately tests the **actual stage-only orchestration**, rather than only the earlier separate conceptual model. Calls to *remote-native resource attestation* are mocked because the fake does not contain device_info; actual initial E11 read-only device attestation is independently PASS. The stage's stat, echo, 24 write_chunk/Ready exchanges, binary replay, MD5, full readback, and after-stage v1.8 unchanged checks execute on FakeCLI without PC/device writes. **This is not a full integration test with the real serial SDK.**
-- `tests/test_v19_e11_real_fap_stage_offline_replay.py` — 12 synthetic boundary/negative tests against that direct-code replay, **operator test execution pending**.
+- `tests/test_v19_e11_real_fap_stage_offline_replay.py` — 12 synthetic boundary/negative tests against that direct-code replay, **operator-reported 12/12 PASS on 2026-10-19 (0.004s, `OK`)**.
 
 Run the unit suite first and STOP on any failure:
 
