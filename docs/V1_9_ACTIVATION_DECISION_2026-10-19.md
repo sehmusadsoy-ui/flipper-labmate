@@ -137,3 +137,27 @@ Expected only if actually successful: **17/17, 15/15, 11/11 PASS**. If these pas
 ### Additional source checks and test-run caveat
 
 All **19/19 activation-wrapper** and **17/17 postactivation-wrapper** pinned Python Git SHA-1 blobs were independently fetched and matched source, and each of those Windows wrappers uses the exact previously reviewed Momentum CLI transport Git blob. In the synthetic postactivation suite, the strict stat-size allowlist is now patched to synthetic FAP byte lengths **inside the test only** (`232b236b2c5ccb67da30e3eabbba89f42963195e`); production read-only checker and real-size pins are unchanged. The 43 operator tests remain PENDING. A separate restricted GitHub Actions CI workflow `.github/workflows/check-v19-e11-real-activation-adapter-offline.yml` was added for these three host-only suites, but its actual run conclusion has NOT been obtained and cannot be called PASS yet. **Do not treat GitHub source upload, mocked E11 identity, or future host-only PASS as evidence that firmware currently flashed exports the v1.9 scope lease APIs.**
+
+
+## 2026-10-19 — operator runs 43/43 adapter/postactivation tests and Windows PC-only activation gate PASS
+
+The operator supplied a complete pasted terminal log confirming the local Windows repo was fast-forwarded from `aafb860` to `efcae40` on `dev/v1.9-logic-scope`, and **ACTUALLY** executed the new activation/postactivation offline gates:
+
+```text
+test_v19_e11_real_activation_adapter_offline.py: Ran 17 tests in 0.012s — OK
+test_v19_e11_postactivation_readonly.py: Ran 15 tests in 0.009s — OK
+test_v19_e11_activation_windows_static.py: Ran 11 tests in 0.011s — OK
+PC_BACKUPS_PASS: 12 files, 2128 bytes
+WINDOWS_PC_BACKUPS_RO: PASS | DEVICE_WRITES: ZERO | PC_WRITES: ZERO
+V19 E11 ACTIVATION LOCAL HASH / BACKUP / TRANSPORT REVIEW PASS
+FAP: 97540 bytes / pinned SHA256, source 19/19 / transport Git blob PASS
+DRY RUN: NO COM / NO DEVICE WRITES / NO RENAMES / NO FIRMWARE FLASH
+Native E11 installed firmware ABI: NOT ATTESTED.
+Activation requires separate, explicit owner approval; NEVER imply permission.
+```
+
+**STATUS: 43/43 host-only verification PASS; production Windows PC-only activation dry-run PASS.** The mock tests intentionally trigger expected `ACTIVATE NO-GO` text in some negative cases while returning unit test `ok`; those are not real COM7 attempts or defects.
+
+**ACTUAL DEVICE STATUS REMAINS** independently last-attested `STAGED_V19_NONAPP_ACTIVE_V18`: 97,540-byte SHA256 `e1f43390c4078fbaad7e13124331926e0d6667294f2815e8b63762bd16f3ff90` staged only, v1.8 FINAL active and historical E11 backup unmodified. No app activation, device file renames, firmware update or data write occurred in the log. Draft PR #15 is still open/draft/unmerged (independently rechecked).
+
+**Separate consent NOW REQUIRED:** Owner must acknowledge (a) exact installed firmware binary native ABI remains un-attested, so v1.9 may fail to load/behave; and (b) the two serial-storage renames are NOT atomic, so an interruption/ambiguous reply may leave the LabMate active filename absent while v1.8 is at a protected backup path. No automatic retry, rollback, restore or delete is permitted; any failure needs fresh independent read-only classification and separate owner action. Do not run the activation branch or leak approval flags as an implied command before new express authorization. The only permitted next action without this approval is additional PC-only review.
