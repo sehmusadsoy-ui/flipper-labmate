@@ -202,7 +202,7 @@ This is another in-memory model using actual PC FAP bytes, NOT an actual USB wri
 
 ## 2026-10-19 — proposed NEW **stage-only** device writer — UNTESTED / NEVER RUN
 
-A limited review candidate is available at `scripts/stage_v19_e11_sidecar_only.py`; host tests at `tests/test_v19_e11_sidecar_stage_only.py` (**21 synthetic offline tests, not yet operator executed**).
+A limited review candidate is available at `scripts/stage_v19_e11_sidecar_only.py`; host tests at `tests/test_v19_e11_sidecar_stage_only.py` (**21/21 operator-executed synthetic offline tests PASS — 2026-10-19, 0.025s, `OK`**).
 
 The proposed script is **capable of writing to the Flipper's SD card** if explicitly invoked later. It requires an exact separate authorization string and is **NOT AUTHORIZED BY EXISTING CONVERSATION CONSENT**. Do NOT invoke the stage script or give the authorization string in an operator-facing command yet. The ONLY permitted device write, *once it separately passes mock tests, native SDK/protocol review, source hash pinning and explicit operator approval*, would be append-chunks to a **new, previously ABSENT** non-`.fap` sidecar `/ext/apps/Tools/labmate.v19-new-stage`. It does **not** rename/overwrite/activate the current final v1.8, alter LabMate CSV/Profiles or flash firmware.
 
@@ -211,3 +211,28 @@ Before any potential stage it re-verifies existing active final v1.8, previous E
 The reviewed synthetic `FakeCLI` tests cover echo/Ready drift, partial write, wrong tail, corrupt remote MD5/readback, occupied paths, changed old active/native identity, wrong candidate SHA, duplicate stage attempt, CLI-path allowlist, and missing authorization. **Do not claim test PASS until actually run.**
 
 A separately designed **activation tool**, separate manually authorized rollback tool, independent SDK symbol/image attestation and a host replay using the exact native CLI transport implementation remain outstanding. Stage-only work does not imply v1.9 installation readiness. Existing version 1.8 and published Stable remain unchanged.
+
+
+## 2026-10-19 — direct stage-only implementation replay (new independent offline gate)
+
+After the operator executed all **21/21 synthetic tests PASS** on `tests/test_v19_e11_sidecar_stage_only.py`, we added:
+
+- `scripts/replay_v19_e11_real_fap_stage_offline.py` — directly calls `stage_v19_e11_sidecar_only.stage_only()` with the three exact archived PC FAPs and the existing in-memory `FakeCLI`. This deliberately tests the **actual stage-only orchestration**, rather than only the earlier separate conceptual model. Calls to *remote-native resource attestation* are mocked because the fake does not contain device_info; actual initial E11 read-only device attestation is independently PASS. The stage's stat, echo, 24 write_chunk/Ready exchanges, binary replay, MD5, full readback, and after-stage v1.8 unchanged checks execute on FakeCLI without PC/device writes. **This is not a full integration test with the real serial SDK.**
+- `tests/test_v19_e11_real_fap_stage_offline_replay.py` — 12 synthetic boundary/negative tests against that direct-code replay, **operator test execution pending**.
+
+Run the unit suite first and STOP on any failure:
+
+```bash
+python3 /mnt/c/Users/sehmu/labmate-src-v19/tests/test_v19_e11_real_fap_stage_offline_replay.py -v
+```
+
+Only if all **12/12 pass**, run the independent real-PC-FAP-memory-replay command:
+
+```bash
+python3 /mnt/c/Users/sehmu/labmate-src-v19/scripts/replay_v19_e11_real_fap_stage_offline.py \
+  --candidate ~/labmate-build/v19-pc-only-prepared-3d66658/labmate-v1.9DEV-E11-PC-ONLY.fap \
+  --current-v18-pc-backup /mnt/c/Users/sehmu/Documents/LabMate-FAP-PC-Backups/V19-pretrial-live-v18-5e5cf7bc9ade41289c870ed156864482/installed_LabMate_v18_FINAL_E11_before_v19.fap \
+  --legacy-e11-pc-backup /mnt/c/Users/sehmu/Documents/LabMate-FAP-PC-Backups/E11-before-v18-final-b7370882610140aa871dbdf8b61cf53d/installed_E11_v18DEV_before_final_label.fap
+```
+
+**No operator result is claimed in advance.** The standalone, dangerous real USB stage-only writer **MUST NOT be run** until a new, separately reviewed and explicitly authorized stage-only operation. Its use is NOT part of either of these offline commands. A successful offline replay will not imply native firmware ABI hash attestation or authorization to replace the active v1.8.
