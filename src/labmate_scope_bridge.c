@@ -40,7 +40,7 @@ static void labmate_scope_bridge_refresh(LabMateApp* a) {
     uint16_t copied = 0U;
     const LabMateScopeSnapshot snap = labmate_scope_native_read(
         &a->scope_native, a->scope_recent, LABMATE_SCOPE_PLOT_MAX_EDGES, &copied);
-    a->scope_display.plot = labmate_scope_plot_project(
+    a->scope_display.plot = labmate_scope_plot_focus(
         a->scope_recent, copied, snap.count > copied,
         a->scope_lines, LABMATE_SCOPE_PLOT_MAX_LINES);
     a->scope_display.lines = a->scope_lines;
