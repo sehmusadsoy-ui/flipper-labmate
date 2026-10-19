@@ -53,6 +53,27 @@ def run(args, cwd=None, env=None) -> None:
 def output(args) -> str:
     return subprocess.check_output(list(map(str, args)), text=True).strip()
 
+def verify_git_diff_without_pager(sdk: Path) -> None:
+    """Read-only E11 whitespace check without any interactive Git pager.
+
+    Capture both streams: Windows CRLF conversion notices from Git must not
+    spawn a pager or block subsequent test execution.
+    """
+    env = dict(os.environ)
+    env["GIT_PAGER"] = "cat"
+    env["PAGER"] = "cat"
+    env["GIT_TERMINAL_PROMPT"] = "0"
+    cmd = ["git", "--no-pager", "-C", str(sdk), "diff", "--check"]
+    result = subprocess.run(cmd, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, text=True, env=env)
+    if result.returncode:
+        print(result.stdout, file=sys.stderr)
+        print(result.stderr, file=sys.stderr)
+        raise RuntimeError("Pinned E11 Git diff --check failed")
+    print("E11 GIT DIFF CHECK PASS (pager disabled)", flush=True)
+
+
+
 def gitblob(path: Path) -> str:
     raw = path.read_bytes()
     return hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest()
@@ -131,7 +152,7 @@ def main() -> None:
          and "#define FURI_HAL_GPIO_HAS_TRY_ADD_INT_CALLBACK 1" in gpio
          and "/* LabMate E11 native PWM lease owner:" in pwm,
          "E11 patch markers incomplete")
-    run(["git", "-C", sdk, "diff", "--check"])
+    verify_git_diff_without_pager(sdk)
     # Fail early if no executable host compiler, without touching worktree.
     cc = compiler_path()
     print("HOST C COMPILER:", cc, flush=True)
@@ -186,7 +207,7 @@ def main() -> None:
                 run([sys.executable, overlay, *args], env=env)
         else:
             run([sys.executable, script, *args], env=env)
-    run(["git", "-C", sdk, "diff", "--check"])
+    verify_git_diff_without_pager(sdk)
     target = sdk / "applications_user/labmate"
     must(not target.exists(), "Existing target app path; refuse unreviewed overwrite")
     target.mkdir(parents=True)
