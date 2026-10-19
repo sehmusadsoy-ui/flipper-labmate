@@ -10,6 +10,7 @@ on:
       - "tests/test_labmate_scope_timeguard.c"
       - "src/labmate_scope_plot.[ch]"
       - "tests/test_labmate_scope_plot.c"
+      - "tests/test_labmate_scope_focus.c"
       - "src/labmate_scope_compare.[ch]"
       - "tests/test_labmate_scope_compare.c"
       - "src/labmate_scope_pair.[ch]"
@@ -48,6 +49,7 @@ on:
       - "tests/test_labmate_scope_timeguard.c"
       - "src/labmate_scope_plot.[ch]"
       - "tests/test_labmate_scope_plot.c"
+      - "tests/test_labmate_scope_focus.c"
       - "src/labmate_scope_compare.[ch]"
       - "tests/test_labmate_scope_compare.c"
       - "src/labmate_scope_pair.[ch]"
@@ -237,6 +239,26 @@ jobs:
           ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 \
             UBSAN_OPTIONS=halt_on_error=1 "$RUNNER_TEMP/v19-scope-plot-sanitize"
 
+      - name: Focus latest real edges (GCC strict)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -O2 \
+            -Isrc src/labmate_scope_plot.c tests/test_labmate_scope_focus.c \
+            -o "$RUNNER_TEMP/v19-scope-focus"
+          "$RUNNER_TEMP/v19-scope-focus"
+
+      - name: Focus latest real edges (ASAN + UBSAN)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -g -O1 \
+            -fsanitize=address,undefined -fno-omit-frame-pointer \
+            -Isrc src/labmate_scope_plot.c tests/test_labmate_scope_focus.c \
+            -o "$RUNNER_TEMP/v19-scope-focus-sanitize"
+          ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 \
+            UBSAN_OPTIONS=halt_on_error=1 "$RUNNER_TEMP/v19-scope-focus-sanitize"
+
       - name: Render Flipper 128x64 view-only Canvas against mock GUI
         shell: bash
         run: |
@@ -298,7 +320,8 @@ jobs:
           assert 'labmate_scope_pair_save_b' in src['labmate_scope_bridge.c']
           assert 'scope_last_generation == a->scope_capture_generation' in src['labmate_scope_bridge.c']
           assert 'labmate_scope_pair_view_draw' in src['labmate_view.c']
-          assert 'labmate_scope_plot_project' in src['labmate_scope_bridge.c']
+          assert 'labmate_scope_plot_focus' in src['labmate_scope_bridge.c']
+          assert 'LABMATE_SCOPE_PLOT_FOCUS_EDGES' in Path('src/labmate_scope_plot.h').read_text()
           assert 'furi_kernel_get_tick_frequency' in src['labmate_scope_bridge.c']
           assert 'labmate_scope_native_stop' in src['labmate_scope_bridge.c']
           assert 'LABMATE_NAV_MAX_CHILDREN 6U' in Path('src/labmate_navigation.h').read_text()
