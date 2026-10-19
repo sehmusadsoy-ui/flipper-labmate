@@ -175,3 +175,23 @@ Authorized **exactly once, with no retry**, subject to fresh same-session identi
 Operator was explicitly warned and accepted that current installed STM32 firmware binary API exports for the 3 required v1.9 native HAL symbols are **NOT independently attested**, and the renames are **NOT atomic**; failure between the two may leave the live `.fap` path absent. NO firmware flash, FAP re-upload, deletion, CSV/Profile writes, automatic retry, rollback or restore authorized. The existing physical stage integrity and latest v1.8 preservation had previously independently passed.
 
 **At time of this entry: NOT ACTUALLY ACTIVATED.** Never claim real rename or functional GUI PASS until fresh operator-provided live command output plus independent postactivation strict read-only scan. Upon any error, preserve state, classify with new read-only tool, do not rerun the activation command; the initial permission is consumed once used.
+
+
+## 2026-10-19 — REAL experimental activation attempt NO-GO on KeyError; STOP, state uncertain
+
+The owner provided new, explicit one-attempt experimental activation approval, then actually ran the approval-scoped real Windows `run-v19-e11-activation-review.ps1 -Port COM7 -ApplyActivation -AcceptFirmwareABIRisk`. Real output includes `>100%, chunk 12 of 12` and `>100%, chunk 10 of 10`, then:
+
+```text
+V19 E11 ACTIVATE NO-GO: KeyError
+STOP. DO NOT RERUN, CLEAN, RENAME, ROLLBACK OR FLASH.
+The installed app may be ABSENT or already changed. Do not infer state.
+UNKNOWN POSSIBLE PARTIAL ACTIVATION. STOP; classify read-only. NO RE-RUN.
+```
+
+**REAL DEVICE STATUS: UNKNOWN, do not infer success or failure of renames from transfer-progress text.** The single authorized activation attempt is consumed. No further activation, rename, upload, overwrite, restore, reboot, or firmware operation is authorized.
+
+**Source-level likely root:** `scripts/activate_v19_e11_once_review_only.py` calls `identity_resources_ro()` at line 87, **before the first `rename_once` at line 91**. Its `PINNED_NATIVE` pairs the `js_gpio.fal` path with key `E11_JS_GPIO` while real `check_local()` returns a `js` dictionary keyed `js_gpio.module` and `event_loop` (`pinned_local_expectation` verifies `post['E11_JS_GPIO'] == js['js_gpio.module']`). `identity_resources_ro` then indexes `js['E11_JS_GPIO']`, throwing `KeyError`. The 17 mock adapter tests bypassed `identity_resources_ro`, and consequently **failed to catch the production dictionary-shape bug**. This offers a strong code-flow explanation for a **pre-rename stop**, but MUST be independently proven against the actual USB/microSD state before claiming no device rename occurred.
+
+**Immediate safe response:** keep Flipper connected, avoid app launch/reboot, and run ONLY the previously operator-proven **independent existing post-stage strict-read-only** tool `run-v19-e11-poststage-ro.ps1 -Port COM7` against the likely original active-v1.8/staged-v1.9 state. That tool was previously real COM7 PASS and has no mutation commands; a fresh PASS proves original stage/active/old-backup configuration; a NO-GO **does not itself license any recovery or retry**. For unknown/partial state use a separate independently reviewed read-only five-path classifier (not the activation runner), and STOP on surprising results. No changes to actual Flipper have been attempted by assistant.
+
+Activation implementation must be revised to use real `js_gpio.module` dict key and avoid masking `KeyError`, with a new non-mocked regression simulating the actual dictionary shape. Revalidate pinned wrapper source, unit tests and PC dry-run and separately seek **new explicit operator approval for any future attempt**. Installed firmware binary ABI remains UNATTESTED.
