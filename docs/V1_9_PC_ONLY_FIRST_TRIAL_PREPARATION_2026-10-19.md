@@ -347,7 +347,7 @@ Expected dry-run evidence: `PC_BACKUPS_PASS: 12 files, 2128 bytes`, `WINDOWS_PC_
 
 ## 2026-10-19 — corrected Windows PC-only dry run PASS; one static test typo fixed
 
-The operator ran `git pull --ff-only` to prior head `6231759`, then the **11-case** `tests/test_v19_e11_stage_only_windows_runner_static.py`. There were ten passing cases and **one failed assertion**, `test_all_fifteen_sources_pinned`, because one test line still expected `14` unique helper filenames after upgrading the inventory to **15**. This is a **test expectation error**, not an observed hash mismatch. Test source corrected in commit `569f3085494e3cd2ae677cba93bf4fe3cff58cda`; the repaired 11-case suite **has NOT yet been operator-reexecuted**.
+The operator ran `git pull --ff-only` to prior head `6231759`, then the **11-case** `tests/test_v19_e11_stage_only_windows_runner_static.py`. There were ten passing cases and **one failed assertion**, `test_all_fifteen_sources_pinned`, because one test line still expected `14` unique helper filenames after upgrading the inventory to **15**. This is a **test expectation error**, not an observed hash mismatch. Both outdated unique-count assertions were corrected in commits `569f3085494e3cd2ae677cba93bf4fe3cff58cda` and `17cb44f104f45b1a5bfb5d136b09219b29485c5a`; the repaired 11-case suite **has NOT yet been operator-reexecuted**.
 
 The operator also successfully ran the no-switch **Windows PC-only wrapper dry run** (this does NOT open COM7):
 
