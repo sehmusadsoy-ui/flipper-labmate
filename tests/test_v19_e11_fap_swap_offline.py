@@ -61,7 +61,7 @@ class OfflineV19SwapTest(unittest.TestCase):
 
     def test_virtual_full_protocol_and_fault_cases(self):
         result = m.run_virtual_scenarios(self.v18, self.legacy, self.new)
-        self.assertEqual(len(result), 7)
+        self.assertEqual(len(result), 9)
         self.assertEqual(result["NO_BLIND_STAGE_RETRY"], "PASS")
 
     def test_bad_ready_never_writes_even_virtual_stage(self):
@@ -121,6 +121,41 @@ class OfflineV19SwapTest(unittest.TestCase):
             m.stage_only(between, self.new)
         self.assertEqual(between.v18_backup, self.v18)
 
+    def test_manual_recovery_from_interrupted_first_rename_virtual(self):
+        between = m.first_rename(m.stage_only(self.initial, self.new))
+        recovered = m.manual_recover_first_rename_interruption(between)
+        self.assertEqual(m.state_of(recovered), "V19_STAGED_V18_ACTIVE")
+        self.assertEqual(recovered.active, self.v18)
+        self.assertEqual(recovered.stage, self.new)
+        self.assertEqual(recovered.legacy_backup, self.legacy)
+
+    def test_manual_virtual_rollback_both_safe_moves(self):
+        final = m.second_rename(m.first_rename(m.stage_only(self.initial, self.new)))
+        rollback_gap = m.manual_rollback_first_rename(final)
+        self.assertEqual(m.state_of(rollback_gap), "MANUAL_ROLLBACK_BETWEEN_RENAMES_STOP")
+        self.assertIsNone(rollback_gap.active)
+        restored = m.manual_rollback_second_rename(rollback_gap)
+        self.assertEqual(m.state_of(restored), "ROLLED_BACK_TO_V18_V19_PRESERVED")
+        self.assertEqual(restored.active, self.v18)
+        self.assertEqual(restored.failed_v19_backup, self.new)
+        self.assertEqual(restored.legacy_backup, self.legacy)
+
+    def test_no_manual_rollback_when_failed_v19_backup_occupied(self):
+        final = m.second_rename(m.first_rename(m.stage_only(self.initial, self.new)))
+        collision = replace(final, failed_v19_backup=self.new)
+        with self.assertRaises(m.TrialStop):
+            m.manual_rollback_first_rename(collision)
+
+    def test_no_second_manual_rollback_without_first(self):
+        final = m.second_rename(m.first_rename(m.stage_only(self.initial, self.new)))
+        with self.assertRaises(m.TrialStop):
+            m.manual_rollback_second_rename(final)
+
+    def test_no_manual_interrupted_recovery_after_fully_promoted(self):
+        final = m.second_rename(m.first_rename(m.stage_only(self.initial, self.new)))
+        with self.assertRaises(m.TrialStop):
+            m.manual_recover_first_rename_interruption(final)
+
     def test_corrupt_candidate_refused_without_staging(self):
         with self.assertRaises(ValueError):
             m.stage_only(self.initial, b"not-candidate")
@@ -142,7 +177,7 @@ class OfflineV19SwapTest(unittest.TestCase):
             m.stage_only(self.initial, self.new, fault="auto-rollback")
 
     def test_v18_and_legacy_paths_are_distinct(self):
-        self.assertEqual(len({m.ACTIVE, m.NEW, m.CURRENT_BACKUP, m.LEGACY_BACKUP}), 4)
+        self.assertEqual(len({m.ACTIVE, m.NEW, m.CURRENT_BACKUP, m.LEGACY_BACKUP, m.FAILED_V19_BACKUP}), 5)
         self.assertIn("/Tools/", m.ACTIVE)
         self.assertIn("/Tools/", m.CURRENT_BACKUP)
 
