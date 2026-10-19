@@ -8,13 +8,17 @@ It is NOT an installer or proof of firmware ABI compatibility.
 """
 from __future__ import annotations
 
+import argparse
 import hashlib
+from pathlib import Path
 import re
+import sys
 from dataclasses import dataclass, field
 
 from simulate_v19_e11_fap_swap_offline import (
     ACTIVE, NEW, CURRENT_BACKUP, LEGACY_BACKUP, FAILED_V19_BACKUP,
     V19_SIZE, V19_SHA, V18_SIZE, V18_SHA, LEGACY_SIZE, LEGACY_SHA,
+    verified_pc_artifact,
 )
 
 ABSENT = b"Storage error: file/dir not exist"
@@ -249,9 +253,27 @@ def simulate(v18: bytes, legacy: bytes, candidate: bytes) -> dict:
 
 
 def main() -> int:
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--candidate", required=True, type=Path)
+    p.add_argument("--current-v18-pc-backup", required=True, type=Path)
+    p.add_argument("--legacy-e11-pc-backup", required=True, type=Path)
+    args = p.parse_args()
     print("V19 E11 IN-MEMORY CLI PROTOCOL FIXTURE (NO DEVICE OR DISK WRITES)")
-    print("Run tests/test_v19_e11_storage_cli_protocol_offline.py for fault injection.")
-    print("This is NOT a COM installer, firmware ABI attestation or device readiness approval.")
+    try:
+        candidate = verified_pc_artifact(args.candidate, V19_SIZE, V19_SHA)
+        v18 = verified_pc_artifact(args.current_v18_pc_backup, V18_SIZE, V18_SHA)
+        prior = verified_pc_artifact(args.legacy_e11_pc_backup, LEGACY_SIZE, LEGACY_SHA)
+        results = simulate(v18, prior, candidate)
+    except Exception as exc:
+        reason = str(exc) if type(exc) is ValueError else type(exc).__name__
+        print("V19 IN-MEMORY NATIVE CLI MODEL NO-GO: " + reason, file=sys.stderr)
+        print("NO RETRY/INSTALL/DEVICE WRITE AUTHORIZED", file=sys.stderr)
+        return 1
+    for key, val in results.items():
+        print(key + ": " + str(val))
+    print("REAL-FAP INPUT MOCK NATIVE CLI E11 STAGE/TWO-RENAME: PASS")
+    print("USB_CALLS: 0 | DEVICE_WRITES: 0 | PC_WRITES: 0")
+    print("Firmware ABI attestation and real device write remain NOT AUTHORIZED.")
     return 0
 
 
