@@ -23,7 +23,7 @@ static void focus_real_100_hz(void) {
     assert(drawn[s.line_count-1].x1 == LABMATE_SCOPE_PLOT_X_RIGHT);
     /* At 100Hz, a half-period now spans ~10 pixels, not <=2px. */
     for(uint16_t k = 0U; k < s.line_count; k += 2U) {
-        assert(drawn[k].x1 - drawn[k].x0 >= 9U);
+        assert(drawn[k].x1 - drawn[k].x0 >= 9);
         assert(drawn[k].y0 == LABMATE_SCOPE_PLOT_Y_HIGH ||
                drawn[k].y0 == LABMATE_SCOPE_PLOT_Y_LOW);
         assert(drawn[k].y0 <= 35U && drawn[k].y1 <= 35U);
