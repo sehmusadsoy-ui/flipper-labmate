@@ -44,6 +44,16 @@ bool labmate_scope_display_draw(Canvas* c, const LabMateScopeDisplay* d) {
             return false;
     }
 
+    /* Build the footer status before drawing; malformed formatting must
+     * fail with zero screen changes, just like malformed trace geometry. */
+    const char* state = scope_state_label(d->state);
+    const char* suffix = d->plot.cropped_old_edges ?
+        (d->state == LabMateScopeDisplayNoTrigger ? " ZM" : " ZOOM") : "";
+    char summary[24];
+    const int used = snprintf(summary, sizeof(summary), "%u EDGES %s%s",
+        (unsigned)d->total_edges, state, suffix);
+    if(used < 0 || used > 20) return false;
+
     canvas_set_font(c, FontSecondary);
     canvas_draw_str(c, 3, 9, "LOGIC SCOPE");
     canvas_draw_str(c, 102, 9, "PC1");
