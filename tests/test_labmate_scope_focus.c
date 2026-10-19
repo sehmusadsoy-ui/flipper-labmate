@@ -34,6 +34,47 @@ static void focus_real_100_hz(void) {
     assert(edges[51].tick == 256000U);
     assert(edges[63].tick == 316000U);
 }
+/* A real-edge 1 kHz signal with 40% HIGH / 60% LOW MUST keep the
+ * observed duty asymmetry in a 13-edge focus viewport. This checks
+ * visualization geometry only; it is not Flipper hardware calibration. */
+static void focus_nonideal_1khz(void) {
+    LabMateScopeEdge edges[64] = {0};
+    LabMateScopePlotLine drawn[LABMATE_SCOPE_PLOT_MAX_LINES] = {0};
+    edges[0].tick = 250U;
+    edges[0].high = true;
+    /* One simulated MHz tick clock: 400us HIGH, 600us LOW. */
+    for(uint16_t i = 1U; i < 64U; ++i) {
+        const uint32_t interval = edges[i - 1U].high ? 400U : 600U;
+        edges[i].tick = edges[i - 1U].tick + interval;
+        edges[i].delta_ticks = interval;
+        edges[i].high = !edges[i - 1U].high;
+    }
+    const LabMateScopePlotStats s = labmate_scope_plot_focus(
+        edges, 64U, false, drawn, LABMATE_SCOPE_PLOT_MAX_LINES);
+    assert(s.result == LabMateScopePlotReady);
+    assert(s.visible_edges == 13U && s.line_count == 24U);
+    assert(s.window_cycles == 6000U && s.cropped_old_edges);
+    assert(drawn[0].x0 == LABMATE_SCOPE_PLOT_X_LEFT);
+    assert(drawn[s.line_count - 1U].x1 == LABMATE_SCOPE_PLOT_X_RIGHT);
+    uint16_t high_count = 0U, low_count = 0U;
+    for(uint16_t k = 0U; k < s.line_count; k += 2U) {
+        const LabMateScopePlotLine horizontal = drawn[k];
+        const uint8_t width = horizontal.x1 - horizontal.x0;
+        assert(horizontal.x1 > horizontal.x0);
+        assert(horizontal.y0 == horizontal.y1);
+        assert(drawn[k + 1U].x0 == horizontal.x1);
+        if(horizontal.y0 == LABMATE_SCOPE_PLOT_Y_HIGH) {
+            assert(width >= 7U && width <= 8U);
+            ++high_count;
+        } else {
+            assert(horizontal.y0 == LABMATE_SCOPE_PLOT_Y_LOW);
+            assert(width >= 11U && width <= 12U);
+            ++low_count;
+        }
+    }
+    assert(high_count == 6U && low_count == 6U);
+}
+
 static void empty_one_and_small_not_invented(void) {
     LabMateScopePlotLine lines[LABMATE_SCOPE_PLOT_MAX_LINES] = {0};
     LabMateScopeEdge edge[2] = {
@@ -68,6 +109,7 @@ static void corrupt_last_interval_denied(void) {
 }
 int main(void) {
     focus_real_100_hz();
+    focus_nonideal_1khz();
     empty_one_and_small_not_invented();
     corrupt_last_interval_denied();
     puts("v1.9 Logic Scope focused real-edge waveform viewport PASS");
