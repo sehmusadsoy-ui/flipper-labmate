@@ -318,3 +318,28 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command '& "$env:USERPROFILE\
 ```
 
 No device-write command is provided in this document prior to actual dry-run success and exact command verification. Stable/public v1.8 and custom firmware remain frozen; v1.9 draft PR #15.
+
+
+## 2026-10-19 — Windows PowerShell pre-stage PC dry-run argument quoting FIX
+
+The operator reported the **10/10 static Windows wrapper tests PASS** (`0.006s`, `OK`). They then ran `scripts/run-v19-e11-stage-only.ps1 -Port COM7` **without** `-ApplyStageOnly`, and the wrapper stopped at its preliminary Windows PC-only Python backup check:
+
+```text
+File "<string>", line 1
+print(PC_BACKUPS_PASS:,n,files,,b,bytes)
+SyntaxError: invalid syntax
+Actual backups changed. NO COM.
+```
+
+**Root cause:** PowerShell's native argument quotation removed the intended double quotes inside `py -c` Python code; this was a **code invocation bug, not evidence of changed backup files**. No COM device access was attempted, no Flipper microSD writes, no stage or install, and the backup verification did not run to completion.
+
+**Correction:** `scripts/check_v19_e11_pc_backups_windows_ro.py` is an independently pinned fifteenth Python helper that invokes the existing read-only `verify_backups` on three exact PC snapshot folders. The PowerShell wrapper now launches that verified **.py file** with an argument array instead of `-c`, eliminating Windows quote-loss ambiguity. All fifteen Python helper Git blobs and the upstream H0 `flipper/storage.py` Git blob must match before the PC dry run or any stage. New unit guard `tests/test_v19_e11_stage_only_windows_runner_static.py` expects **11 tests**, including rejection of a reintroduced `'-c'` path. Newly added independent helper/wrapper/test Git content checks were performed on GitHub; **neither the revised suite nor real Windows dry-run is yet operator-executed**.
+
+Next: pull `dev/v1.9-logic-scope`, run **11** static host tests, then rerun exactly the **no-switch dry run**:
+
+```bash
+python3 /mnt/c/Users/sehmu/labmate-src-v19/tests/test_v19_e11_stage_only_windows_runner_static.py -v
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command '& "$env:USERPROFILE\labmate-src-v19\scripts\run-v19-e11-stage-only.ps1" -Port COM7'
+```
+
+Expected dry-run evidence: `PC_BACKUPS_PASS: 12 files, 2128 bytes`, `WINDOWS_PC_BACKUPS_RO: PASS`, `V19 E11 LOCAL HASH / TRANSPORT PRE-STAGE GATE: PASS` and `DRY RUN ONLY - ZERO COM / DEVICE WRITES`. **STOP on any error and do not invoke `-ApplyStageOnly` until the user reports an actual corrected dry-run PASS**, despite their previously granted limited permission. Authorization scope unchanged: at most one fresh non-app stage sidecar; no active `labmate.fap` rename, deletion, firmware flash, backup overwrite or automatic retry.
