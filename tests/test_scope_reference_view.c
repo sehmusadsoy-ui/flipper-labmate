@@ -25,6 +25,7 @@ void canvas_draw_str(Canvas* canvas, int32_t x, int32_t y, const char* text) {
     assert(canvas && text);
     assert(x >= 0 && x < 128 && y >= 0 && y < 64);
     assert(canvas->count < 12U);
+    assert((size_t)x + strlen(text) * 6U <= 128U);
     (void)snprintf(
         canvas->lines[canvas->count], sizeof(canvas->lines[0]), "%s", text);
     ++canvas->count;
@@ -67,7 +68,7 @@ static void test_real_metrics_and_invalid_no_fake_pass(void) {
     Canvas canvas = {0};
     assert(labmate_scope_reference_view_draw(
         &canvas, LabMateScopeReference1kHz50, result, &m));
-    assert(contains(&canvas, "PASS"));
+    assert(contains(&canvas, "RESULT PASS"));
     assert(contains(&canvas, "MEAS 1000.00Hz"));
     assert(contains(&canvas, "DUTY 50.0%"));
     assert(contains(&canvas, "TARGET 1kHz 50%"));
@@ -101,7 +102,7 @@ static void test_real_metrics_and_invalid_no_fake_pass(void) {
     canvas = (Canvas){0};
     assert(labmate_scope_reference_view_draw(
         &canvas, LabMateScopeReference1kHz50, result, NULL));
-    assert(!contains(&canvas, "PASS"));
+    assert(!contains(&canvas, "RESULT PASS"));
     assert(contains(&canvas, "RESULT WAIT / INVALID"));
     assert(contains(&canvas, "NO VALID CAPTURE"));
 
@@ -112,7 +113,7 @@ static void test_real_metrics_and_invalid_no_fake_pass(void) {
     assert(labmate_scope_reference_view_draw(
         &canvas, LabMateScopeReference1kHz50, result, NULL));
     assert(contains(&canvas, "RESULT NO SIGNAL"));
-    assert(!contains(&canvas, "PASS"));
+    assert(!contains(&canvas, "RESULT PASS"));
 }
 
 static void test_busy_and_bad_data(void) {
@@ -124,8 +125,8 @@ static void test_busy_and_bad_data(void) {
         &reference, NULL, LabMateScopeObservationBusy);
     assert(labmate_scope_reference_view_draw(
         &canvas, LabMateScopeReference100Hz50, result, NULL));
-    assert(contains(&canvas, "BUSY"));
-    assert(!contains(&canvas, "PASS"));
+    assert(contains(&canvas, "RESULT BUSY"));
+    assert(!contains(&canvas, "RESULT PASS"));
 
     assert(!labmate_scope_reference_view_draw(
         NULL, LabMateScopeReference100Hz50, result, NULL));
