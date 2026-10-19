@@ -29,6 +29,12 @@ class PostactivationReadOnlyTest(unittest.TestCase):
                     x = patch.object(m, stem+"_SHA", sha(data))
                     x.start()
                     self.addCleanup(x.stop)
+        # The strict stat allowlist is bound at import-time to real FAP sizes.
+        # Match it to synthetic fixture sizes ONLY in this offline test.
+        sizes = patch.object(ro, "ALLOWED_SIZES",
+                             frozenset((len(self.v19), len(self.v18), len(self.legacy))))
+        sizes.start()
+        self.addCleanup(sizes.stop)
         idpatch = patch.object(ro, "identity")
         idpatch.start()
         self.addCleanup(idpatch.stop)
