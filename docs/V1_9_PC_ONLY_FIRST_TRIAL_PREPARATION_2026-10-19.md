@@ -362,3 +362,16 @@ Stage code is ready for separately controlled, stage-only device operation.
 ```
 
 **Physical v1.9 sidecar stage has NOT been performed.** The user's approval remains limited to **one first attempt** to create the NEW non-`.fap` sidecar, after a corrected 11/11 unit test PASS and fresh stage-run same-COM-session FAP/resource/prewrite checks. Any failure in the actual stage: preserve exact on-device state and STOP, no second attempt, deletion, recovery, or activation. No v1.9 firmware or app install/promotion authorization.
+
+
+## 2026-10-19 — repaired 11/11 static suite PASS; stage-only first trial released to operator
+
+User pulled the exact new head `079c12f462ab3eef37dc20395d946ffc29681843` and executed the corrected static runner suite: `Ran 11 tests in 0.006s`, `OK`. Prior Windows PC-only dry run of the real wrapper also reported: `PC_BACKUPS_PASS: 12 files, 2128 bytes`, `WINDOWS_PC_BACKUPS_RO: PASS`, `V19 E11 LOCAL HASH / TRANSPORT PRE-STAGE GATE: PASS`, `source 15/15 / transport Git blob PASS`, `DRY RUN ONLY - ZERO COM / DEVICE WRITES`. No v1.9 stage executed yet at the time of this documentation edit.
+
+The operator previously supplied explicit consent for **one** device write trial scoped only to the new non-app file `/ext/apps/Tools/labmate.v19-new-stage`. Following all above PASS gates, the operator was given the exact once-only Windows command:
+
+```bash
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command '& "$env:USERPROFILE\labmate-src-v19\scripts\run-v19-e11-stage-only.ps1" -Port COM7 -ApplyStageOnly'
+```
+
+This writes only through the E11 native CLI if in-session identity checks and absence checks pass. `-ApplyStageOnly` **really can change device microSD**. Active `/ext/apps/Tools/labmate.fap` final v1.8 and historical `.e11-pre-final.bak` must stay untouched; no firmware flash, rename, deletion or app activation permitted. If command fails/timeout/disconnect: **STOP, NO AUTO REPEAT**, and classify only by an independently controlled read-only device-state inspection. Any success must be recorded solely from operator-provided real output; no success claimed in advance.
