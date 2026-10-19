@@ -78,3 +78,25 @@ Before any FAP-only installation, determine the currently installed firmware bui
 Before any later separately authorized FAP-only trial, independently back up and verify the old v1.8 FAP, SD card `apps_data`, Profiles/S1 and CSV logs; establish the exact FAP replacement and rollback path; maintain 3.3V-only GPIO/PA7→PC1 safety. Full physical scope 100 Hz / 1 kHz, START/STOP/BACK, A/B, legacy-tool regression and firmware-wide native TIM2/SubGHz/RFID concurrency remain unresolved for v1.9.
 
 The development PR should remain **Draft**, stable v1.8 preserved. No flash, updater, SD cleanup or release was performed.
+
+
+## 2026-10-19 — REAL COM7 installed v1.8 final-FAP readback + independent PC backup PASS
+
+The operator first executed `scripts/run-v18-e11-phase2b-state-readonly.ps1 -Port COM7` (after the pinned local 10/10 helper-blob fallback fixed a private GitHub raw URL 404). The actual device reported `state: AFTER_PROMOTION`, `old_E11_FAP_preserved: PC_BACKUP_AND_DEVICE_BAK`, `new_v18_FAP: ACTIVE_MD5_AND_SIZE_PASS`, `firmware_JS_gpio_eventloop_manifest: PINNED_MD5_AND_LABEL_MATCH` and `device_writes: NONE`. This is live SD application/resource identity, NOT an internal-flash bytewise attestation.
+
+For a separate **real active final v1.8** PC backup, we added `scripts/backup_v19_active_v18_fap_ro.py` and `scripts/run-v19-active-v18-fap-backup-ro.ps1` on the v1.9 development branch. User's Windows Python offline negative tests `test_v19_active_v18_fap_backup_ro.py` reported **8/8 OK**. The operator then executed the exact read-only COM7 wrapper and got:
+
+```text
+LOCAL HELPER SOURCE: 11/11 PINNED GIT BLOBS PASS
+V19 PRETRIAL FINAL V1.8 LIVE FAP PC BACKUP PASS
+SAVED_PC_FAP: C:\\Users\\sehmu\\Documents\\LabMate-FAP-PC-Backups\\V19-pretrial-live-v18-5e5cf7bc9ade41289c870ed156864482\\installed_LabMate_v18_FINAL_E11_before_v19.fap
+FAP_BYTES: 81528
+FAP_SHA256: 393fe3e52aa710162a42d7299aa053f538b2ee1ad6542755cf402b83c1931b61
+E11_NATIVE_RESOURCE_SCREEN: PASS
+FLIPPER_WRITES: NONE; V19_FAP_INSTALL: NOT AUTHORIZED
+VERIFIED LIVE FINAL v1.8 FAP PC BACKUP - PASS.
+```
+
+This is **real device-to-PC byte readback**, checked against the independently pinned final v1.8 build and PC disk rehash, with live native resource state rechecked before/after. The historical 81,532-byte `v1.8DEV` PC backup remains preserved separately. `>100%` in a transfer progress line is a known progress-display quirk, not a claim about actual bytes transferred.
+
+**Remaining before v1.9 install:** refresh the PC-only snapshot of `/ext/apps_data/labmate` (Log History/CSV/Profiles/S1) with the existing read-only `scripts/snapshot_v18_e11_live_labmate_sd.py` workflow; verify its completed manifest and marker; review exact FAP-only replacement and rollback plan and obtain **separate explicit operator consent**. Even with matching source patches and working E11 GUI, live firmware image checksum and any v1.9 GPIO/EXTI acceptance are still unverified. No v1.9 installation was performed.
