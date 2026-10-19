@@ -21,6 +21,8 @@ NEW = "/ext/apps/Tools/labmate.v19-new-stage"
 ACTIVE = "/ext/apps/Tools/labmate.fap"
 CURRENT_BACKUP = "/ext/apps/Tools/labmate.v18-final-before-v19.bak"
 LEGACY_BACKUP = "/ext/apps/Tools/labmate.e11-pre-final.bak"
+# Reserved ONLY if a separately approved MANUAL rollback is requested.
+FAILED_V19_BACKUP = "/ext/apps/Tools/labmate.v19-failed-before-rollback.bak"
 
 V19_SIZE = 97540
 V19_SHA = "e1f43390c4078fbaad7e13124331926e0d6667294f2815e8b63762bd16f3ff90"
@@ -45,6 +47,7 @@ class Snapshot:
     stage: bytes | None
     v18_backup: bytes | None
     legacy_backup: bytes | None
+    failed_v19_backup: bytes | None = None
 
 
 def sha256(data: bytes) -> str:
@@ -77,19 +80,30 @@ def initial_state(v18: bytes, legacy: bytes) -> Snapshot:
 def state_of(state: Snapshot) -> str:
     if not matched(state.legacy_backup, LEGACY_SIZE, LEGACY_SHA):
         return "UNKNOWN_STOP"
+
     if matched(state.active, V18_SIZE, V18_SHA) and state.v18_backup is None:
         if state.stage is None:
-            return "ORIGINAL_V18_ACTIVE"
-        if matched(state.stage, V19_SIZE, V19_SHA):
-            return "V19_STAGED_V18_ACTIVE"
-        return "PARTIAL_STAGE_V18_ACTIVE_STOP"
+            if state.failed_v19_backup is None:
+                return "ORIGINAL_V18_ACTIVE"
+            if matched(state.failed_v19_backup, V19_SIZE, V19_SHA):
+                return "ROLLED_BACK_TO_V18_V19_PRESERVED"
+        if state.failed_v19_backup is None:
+            if matched(state.stage, V19_SIZE, V19_SHA):
+                return "V19_STAGED_V18_ACTIVE"
+            return "PARTIAL_STAGE_V18_ACTIVE_STOP"
     if (state.active is None and
             matched(state.stage, V19_SIZE, V19_SHA) and
-            matched(state.v18_backup, V18_SIZE, V18_SHA)):
+            matched(state.v18_backup, V18_SIZE, V18_SHA) and
+            state.failed_v19_backup is None):
         return "BETWEEN_RENAMES_ACTIVE_ABSENT_STOP"
     if (matched(state.active, V19_SIZE, V19_SHA) and state.stage is None and
-            matched(state.v18_backup, V18_SIZE, V18_SHA)):
+            matched(state.v18_backup, V18_SIZE, V18_SHA) and
+            state.failed_v19_backup is None):
         return "V19_ACTIVE_WITH_V18_BACKUP"
+    if (state.active is None and state.stage is None and
+            matched(state.v18_backup, V18_SIZE, V18_SHA) and
+            matched(state.failed_v19_backup, V19_SIZE, V19_SHA)):
+        return "MANUAL_ROLLBACK_BETWEEN_RENAMES_STOP"
     return "UNKNOWN_STOP"
 
 
@@ -141,6 +155,43 @@ def second_rename(state: Snapshot) -> Snapshot:
     return moved
 
 
+
+def manual_recover_first_rename_interruption(state: Snapshot) -> Snapshot:
+    """MANUAL VIRTUAL model only; require fresh evidence and express separate consent.
+
+    Between first and second promotion renames, old app path is empty. Restore
+    original v1.8 only into this ABSENT path; do not touch v1.9 stage or E11 bak.
+    """
+    if state_of(state) != "BETWEEN_RENAMES_ACTIVE_ABSENT_STOP":
+        raise TrialStop("interrupted first-rename recovery not in exact state", state)
+    recovered = replace(state, active=state.v18_backup, v18_backup=None)
+    if state_of(recovered) != "V19_STAGED_V18_ACTIVE":
+        raise TrialStop("manual virtual interrupted-state recovery failed", recovered)
+    return recovered
+
+
+def manual_rollback_first_rename(state: Snapshot) -> Snapshot:
+    """MANUAL virtual v1.9 app -> fresh FAILED_V19_BACKUP. Not a device CLI call."""
+    if state_of(state) != "V19_ACTIVE_WITH_V18_BACKUP":
+        raise TrialStop("manual rollback first move refused by state", state)
+    if state.failed_v19_backup is not None:
+        raise TrialStop("would overwrite reserved failed-v1.9 backup", state)
+    moved = replace(state, active=None, failed_v19_backup=state.active)
+    if state_of(moved) != "MANUAL_ROLLBACK_BETWEEN_RENAMES_STOP":
+        raise TrialStop("manual rollback first move postcondition failed", moved)
+    return moved
+
+
+def manual_rollback_second_rename(state: Snapshot) -> Snapshot:
+    """MANUAL virtual preserved v1.8 backup -> empty active; no cleanup."""
+    if state_of(state) != "MANUAL_ROLLBACK_BETWEEN_RENAMES_STOP":
+        raise TrialStop("manual rollback second move refused by state", state)
+    recovered = replace(state, active=state.v18_backup, v18_backup=None)
+    if state_of(recovered) != "ROLLED_BACK_TO_V18_V19_PRESERVED":
+        raise TrialStop("manual virtual rollback failed to preserve app pair", recovered)
+    return recovered
+
+
 def run_virtual_scenarios(v18: bytes, legacy: bytes, candidate: bytes) -> dict[str, str]:
     start = initial_state(v18, legacy)
     check(candidate, V19_SIZE, V19_SHA, "reviewed v1.9 FAP")
@@ -157,7 +208,23 @@ def run_virtual_scenarios(v18: bytes, legacy: bytes, candidate: bytes) -> dict[s
     if (state_of(final) != "V19_ACTIVE_WITH_V18_BACKUP" or
             final.v18_backup != v18 or final.legacy_backup != legacy):
         raise ValueError("virtual promotion lost original recovery artifacts")
+
     passed["CLEAN_VIRTUAL_PROMOTION"] = "PASS_WITH_V18_AND_LEGACY_BACKUPS"
+    # Deliberately requested MANUAL recovery sequences. These are virtual
+    # rehearsals only; never invoke device-side recovery automatically.
+    recovered_gap = manual_recover_first_rename_interruption(in_between)
+    if (recovered_gap.active != v18 or recovered_gap.stage != candidate or
+            recovered_gap.legacy_backup != legacy):
+        raise ValueError("virtual manual between-renames recovery lost artifacts")
+    passed["MANUAL_GAP_RECOVERY_MODEL"] = "PASS_ONLY_WITH_SEPARATE_CONSENT"
+    rb_gap = manual_rollback_first_rename(final)
+    if state_of(rb_gap) != "MANUAL_ROLLBACK_BETWEEN_RENAMES_STOP":
+        raise ValueError("manual rollback first move not correctly classified")
+    rolled_back = manual_rollback_second_rename(rb_gap)
+    if (rolled_back.active != v18 or rolled_back.failed_v19_backup != candidate or
+            rolled_back.legacy_backup != legacy):
+        raise ValueError("virtual manual rollback did not preserve both FAPs")
+    passed["MANUAL_VIRTUAL_ROLLBACK_MODEL"] = "PASS_ONLY_WITH_SEPARATE_CONSENT"
     for fault, label, expected in (
         ("bad-ready", "BAD_READY", "ORIGINAL_V18_ACTIVE"),
         ("short-first-chunk", "SHORT_WRITE", "PARTIAL_STAGE_V18_ACTIVE_STOP"),
@@ -200,7 +267,7 @@ def main() -> int:
         return 1
     for key, value in report.items():
         print(key + ": " + value)
-    print("V19 VIRTUAL STAGE/TWO-RENAME FAILURE SCREEN: PASS")
+    print("V19 VIRTUAL STAGE/TWO-RENAME AND MANUAL ROLLBACK MODELS: PASS")
     print("USB_CALLS: ZERO; DEVICE_WRITES: ZERO; PC_WRITES: ZERO")
     print("REAL COM WRITE TOOL / REAL DEVICE TRIAL: NOT AUTHORIZED OR EXECUTED")
     return 0
