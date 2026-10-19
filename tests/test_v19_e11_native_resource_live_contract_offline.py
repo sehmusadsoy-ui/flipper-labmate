@@ -147,6 +147,22 @@ class NativeResourceContractRegressionTest(unittest.TestCase):
             self.activate(d, js=js)
         self.assertEqual(d.rename_count, 0)
 
+    def test_missing_packed_gpio_parity_aborts_before_rename(self):
+        d = self.device()
+        post = dict(self.post)
+        post.pop("E11_JS_GPIO")
+        with self.assertRaisesRegex(ValueError, "packed JS GPIO module checksum parity drift"):
+            self.activate(d, post=post)
+        self.assertEqual(d.rename_count, 0)
+
+    def test_main_checks_real_source_contract_before_serial_connection(self):
+        main_source = Path(app.__file__).read_text("utf-8").split("def main() -> int:", 1)[1]
+        self.assertLess(
+            main_source.index("validate_local_native_expected(post, js)"),
+            main_source.index("sdk.FlipperStorage("),
+        )
+        app.validate_local_native_expected(self.post, self.js)
+
     def test_js_gpio_live_md5_drift_aborts_before_rename(self):
         d = self.device()
         d.native_files["/ext/apps_data/js_app/plugins/js_gpio.fal"] = "0" * 32
