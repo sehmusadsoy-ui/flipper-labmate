@@ -140,3 +140,31 @@ python3 /mnt/c/Users/sehmu/labmate-src-v19/scripts/simulate_v19_e11_fap_swap_off
 ```
 
 **Current status: device v1.9 NOT INSTALLED, no device write authorized.** Draft PR #15 / Stable v1.8 unchanged.
+
+
+## 2026-10-19 — actual real-artifact FAP staging and manual-rollback simulator PASS
+
+The operator used all **three actual SHA-pinned artifacts** (the prepared **97,540-byte** v1.9 E11 FAP, the real-device-readback **81,528-byte** final v1.8 FAP, and separately preserved **81,532-byte** older v1.8DEV E11 backup) as inputs for `scripts/simulate_v19_e11_fap_swap_offline.py`. Their reported output:
+
+```text
+CLEAN_STAGE: PASS
+INTERRUPTION_AFTER_FIRST_RENAME: STOP_PRESERVES_STAGED_V19_AND_V18_BACKUP
+CLEAN_VIRTUAL_PROMOTION: PASS_WITH_V18_AND_LEGACY_BACKUPS
+MANUAL_GAP_RECOVERY_MODEL: PASS_ONLY_WITH_SEPARATE_CONSENT
+MANUAL_VIRTUAL_ROLLBACK_MODEL: PASS_ONLY_WITH_SEPARATE_CONSENT
+BAD_READY: FAIL_CLOSED_OLD_V18_ACTIVE
+SHORT_WRITE: FAIL_CLOSED_OLD_V18_ACTIVE
+STAGED_SHA_MISMATCH: FAIL_CLOSED_OLD_V18_ACTIVE
+NO_BLIND_STAGE_RETRY: PASS
+V19 VIRTUAL STAGE/TWO-RENAME AND MANUAL ROLLBACK MODELS: PASS
+USB_CALLS: ZERO; DEVICE_WRITES: ZERO; PC_WRITES: ZERO
+REAL COM WRITE TOOL / REAL DEVICE TRIAL: NOT AUTHORIZED OR EXECUTED
+```
+
+This upgrades the previous synthetic-only FAP state-machine result to a **real PC artifact input** simulation; it remains a pure-memory transition model. It does not establish that the pinned Momentum storage CLI will behave correctly while writing the card, or that an actual v1.9 rollback can be performed safely.
+
+## Additional offline native-CLI protocol fixture — tests NOT yet run by operator
+
+`scripts/simulate_v19_e11_storage_cli_offline.py` and `tests/test_v19_e11_storage_cli_protocol_offline.py` (28 distinct synthetic cases) model the concrete legacy E11 `storage stat`, `storage write_chunk`, native command echo / `Ready` / result framing, 4096-byte append chunks, post-transfer MD5 and full binary readback, plus **two non-atomic same-folder renames** in an entirely in-memory fake transport. The fixture intentionally imports no serial/Flipper transport, offers no real-device entrypoint and writes nothing to the PC. Test cases include short write, incorrect Ready, ambiguous first/second rename result, changed staged bytes, occupied backup, old v1.8/legacy E11 backup corruption, blocked retry and forbidden target paths.
+
+The **mock state machine is not evidence of device-side FAT atomicity or transport implementation**. It is only an offline safeguard to catch our orchestration mistakes before deciding whether to author/review any real-device write tool. Real source inspection, exact installed E11 ABI compatibility and rollback-specific independent read-only state classification are still required. **No device write or firmware operation authorized.**
