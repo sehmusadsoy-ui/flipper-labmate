@@ -2,7 +2,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
-struct Canvas {uint16_t lines; uint16_t labels; bool found_wait; bool found_live; bool found_busy;};
+struct Canvas {uint16_t lines; uint16_t labels; bool found_wait; bool found_live; bool found_busy; bool found_zoom;};
 void canvas_set_font(Canvas* c, Font f) {(void)c; assert(f == FontSecondary);}
 void canvas_draw_str(Canvas* c, int32_t x, int32_t y, const char* text) {
     assert(x >= 0 && x < 128 && y >= 0 && y < 64 && text);
@@ -13,10 +13,22 @@ void canvas_draw_str(Canvas* c, int32_t x, int32_t y, const char* text) {
     if(strstr(text, "WAIT REAL EDGE")) c->found_wait = true;
     if(strstr(text, "LIVE")) c->found_live = true;
     if(strstr(text, "BUSY")) c->found_busy = true;
+    if(strstr(text, "ZOOM")) c->found_zoom = true;
+    if(strncmp(text, "E:", 2U) == 0) {
+        /* Summary baseline must sit below the bottom trace with clear pixels. */
+        assert(y >= 47 && y <= 50);
+        assert(LABMATE_SCOPE_PLOT_Y_LOW <= (uint8_t)(y - 11));
+    }
 }
 void canvas_draw_line(Canvas* c, int32_t x0, int32_t y0, int32_t x1, int32_t y1) {
     assert(x0 >= 0 && x0 < 128 && x1 >= 0 && x1 < 128);
     assert(y0 >= 0 && y0 < 64 && y1 >= 0 && y1 < 64);
+    if(y0 == 13 && y1 == 13) { /* header separator */ }
+    else if(y0 == 53 && y1 == 53) { /* footer separator */ }
+    else {
+        assert(y0 >= LABMATE_SCOPE_PLOT_Y_HIGH && y0 <= LABMATE_SCOPE_PLOT_Y_LOW);
+        assert(y1 >= LABMATE_SCOPE_PLOT_Y_HIGH && y1 <= LABMATE_SCOPE_PLOT_Y_LOW);
+    }
     ++c->lines;
 }
 int main(void) {
@@ -54,7 +66,7 @@ int main(void) {
     d.plot.cropped_old_edges = true;
     d.state = LabMateScopeDisplayNoTrigger;
     assert(labmate_scope_display_draw(&c,&d));
-    assert(c.labels > 0 && c.lines == 4); /* 128px-safe long terminal footer */
+    assert(c.labels > 0 && c.lines == 4 && c.found_zoom); /* readable status */
     c = (struct Canvas){0};
     d.state = LabMateScopeDisplayUnsupported;
     assert(labmate_scope_display_draw(&c,&d));
