@@ -179,3 +179,35 @@ python3 /mnt/c/Users/sehmu/labmate-src-v19/scripts/simulate_v19_e11_storage_cli_
 The command must conclude `REAL-FAP INPUT MOCK NATIVE CLI E11 STAGE/TWO-RENAME: PASS`, `USB_CALLS: 0 | DEVICE_WRITES: 0 | PC_WRITES: 0` before considering further work. The **28 synthetic unit tests were actually executed** by the operator on Ubuntu/WSL and reported `Ran 28 tests in 0.010s`, `OK`. The separate **three-real-FAP input mock run** is still pending; do not claim its PASS before operator output.
 
 The **mock state machine is not evidence of device-side FAT atomicity or transport implementation**. It is only an offline safeguard to catch our orchestration mistakes before deciding whether to author/review any real-device write tool. Real source inspection, exact installed E11 ABI compatibility and rollback-specific independent read-only state classification are still required. **No device write or firmware operation authorized.**
+
+
+## 2026-10-19 — real-FAP native CLI in-memory simulator PASS (operator)
+
+The operator ran `scripts/simulate_v19_e11_storage_cli_offline.py` against all THREE actual hash-pinned FAPs (v1.9 local 97,540 bytes; installed v1.8 final PC readback 81,528 bytes; historical original E11 v1.8DEV 81,532 bytes). They reported:
+
+```text
+V19 E11 IN-MEMORY CLI PROTOCOL FIXTURE (NO DEVICE OR DISK WRITES)
+MOCK_STAGE: PASS
+MOCK_RENAMED_TO_V18_BACKUP: PASS
+MOCK_V19_ACTIVATION: PASS
+MOCK_ORIGINAL_E11_PRESERVED: PASS
+MOCK_CHUNKS: 24
+MOCK_RENAME_COUNT: 2
+REAL-FAP INPUT MOCK NATIVE CLI E11 STAGE/TWO-RENAME: PASS
+USB_CALLS: 0 | DEVICE_WRITES: 0 | PC_WRITES: 0
+Firmware ABI attestation and real device write remain NOT AUTHORIZED.
+```
+
+This is another in-memory model using actual PC FAP bytes, NOT an actual USB write, firmware symbol lookup, or tested rollback on physical FAT. All original PC backup identities remain preserved.
+
+## 2026-10-19 — proposed NEW **stage-only** device writer — UNTESTED / NEVER RUN
+
+A limited review candidate is available at `scripts/stage_v19_e11_sidecar_only.py`; host tests at `tests/test_v19_e11_sidecar_stage_only.py` (**21 synthetic offline tests, not yet operator executed**).
+
+The proposed script is **capable of writing to the Flipper's SD card** if explicitly invoked later. It requires an exact separate authorization string and is **NOT AUTHORIZED BY EXISTING CONVERSATION CONSENT**. Do NOT invoke the stage script or give the authorization string in an operator-facing command yet. The ONLY permitted device write, *once it separately passes mock tests, native SDK/protocol review, source hash pinning and explicit operator approval*, would be append-chunks to a **new, previously ABSENT** non-`.fap` sidecar `/ext/apps/Tools/labmate.v19-new-stage`. It does **not** rename/overwrite/activate the current final v1.8, alter LabMate CSV/Profiles or flash firmware.
+
+Before any potential stage it re-verifies existing active final v1.8, previous E11 native JS/Manifest and historical E11 device backup, all three PC backup sources, and both proposed stage and dedicated-v1.8 backup paths ABSENT twice. After potential stage it verifies the NEW file's exact size, device MD5 and TWO complete binary SHA256 readbacks; re-verifies active v1.8/native resources and unchanged reserved v1.8 backup path. A failed or ambiguous write causes STOP, leaving any partial sidecar alone, with absolutely no automatic retry, rename, remove, cleanup or rollback.
+
+The reviewed synthetic `FakeCLI` tests cover echo/Ready drift, partial write, wrong tail, corrupt remote MD5/readback, occupied paths, changed old active/native identity, wrong candidate SHA, duplicate stage attempt, CLI-path allowlist, and missing authorization. **Do not claim test PASS until actually run.**
+
+A separately designed **activation tool**, separate manually authorized rollback tool, independent SDK symbol/image attestation and a host replay using the exact native CLI transport implementation remain outstanding. Stage-only work does not imply v1.9 installation readiness. Existing version 1.8 and published Stable remain unchanged.
