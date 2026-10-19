@@ -445,3 +445,27 @@ The operator pulled `a040832` and executed `tests/test_v19_e11_poststage_readonl
 Only the synthetic test assertions were edited: both cases now require the actual fail-closed parser error and assert no staged write/rename. A **new sixteenth test** verifies that even when the future recovery pathname is occupied by an exact allowed-size FAP, the higher-level absence gate separately rejects it with `unexpectedly occupied`. **`scripts/check_v19_e11_staged_device_ro.py` and the Windows wrapper were NOT changed**, preventing gratuitous alteration to the device inspection tool. The amended **16-case** suite and original **9-case** static suite are **pending operator execution**.
 
 New gate: pull dev/v1.9-logic-scope, run 16 synthetic tests AND 9 static tests, **stop if either fails**, then run `scripts/run-v19-e11-poststage-ro.ps1` (without any apply/write switch). The first physical sidecar stage remains confirmed PASS by its original real-device double binary readback. Current installed app still final v1.8 as most recently observed. No v1.9 app activation, firmware write, rename, delete or retry authorized.
+
+
+## 2026-10-19 — repaired poststage offline gate 25/25 PASS (operator)
+
+Operator pulled `dev/v1.9-logic-scope` through commit `0c367137dcd9b5802082ca2952bc99927080ae2d`, then actually ran both offline suites:
+
+```text
+python3 .../tests/test_v19_e11_poststage_readonly.py -v
+Ran 16 tests in 0.011s
+OK
+python3 .../tests/test_v19_e11_poststage_windows_runner_static.py -v
+Ran 9 tests in 0.006s
+OK
+```
+
+**25/25 PASS in host-only tests**; no poststage COM verification has yet been reported. The previous real COM7 sidecar-stage result remains PASS with FAP SHA256 `e1f43390c4078fbaad7e13124331926e0d6667294f2815e8b63762bd16f3ff90`, 97,540 bytes and twice-verified complete device readback; stage was not activated, and final v1.8 remains the last attested active app.
+
+Following those passing offline gates, the operator was given this **read-only** device command, which is the correct post-stage checker (NOT the old prewrite checker and NOT the stage writer):
+
+```bash
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command '& "$env:USERPROFILE\\labmate-src-v19\\scripts\\run-v19-e11-poststage-ro.ps1" -Port COM7'
+```
+
+The post-stage tool is separately Git-blob pinned, checks current live E11 resource IDs/active final v1.8 and historical device backup, compares the full staged v1.9 bytes twice, and confirms reserved recovery backup path remains absent. **No additional device write, rename, activation, restoration, firmware flash or automatic retry is authorized.** Await operator's fresh real-device output. The installed firmware ABI export-table still lacks independent attestation.
