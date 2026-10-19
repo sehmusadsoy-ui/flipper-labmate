@@ -58,8 +58,26 @@ def verified_pc(path: Path, size: int, sha: str) -> bytes:
     return b
 
 
+def validate_local_native_expected(post: dict, js: dict) -> None:
+    """Fail closed on REAL check_local dictionary shape before opening COM."""
+    if not isinstance(post, dict) or not isinstance(js, dict):
+        raise ValueError("native E11 source identity dictionaries unavailable")
+    for remote, key in PINNED_NATIVE.items():
+        if JS_REMOTE.get(key) != remote:
+            raise ValueError("original JS plugin paths changed")
+        expected = js.get(key)
+        if not isinstance(expected, str) or MD5_HEX.fullmatch(expected.lower()) is None:
+            raise ValueError("missing/malformed pinned E11 JS resource entry: " + key)
+    if post.get("E11_JS_GPIO") != js["js_gpio.module"]:
+        raise ValueError("E11 packed JS GPIO module checksum parity drift")
+    expected_manifest = post.get("E11_NEW_MANIFEST")
+    if not isinstance(expected_manifest, str) or MD5_HEX.fullmatch(expected_manifest.lower()) is None:
+        raise ValueError("missing/malformed pinned E11 resource Manifest identity")
+
+
 def identity_resources_ro(client, post: dict, js: dict) -> None:
     """Old E11 native-label/resources checked even between two renames."""
+    validate_local_native_expected(post, js)
     cmd = "device_info"
     if client.send_and_wait_eol(cmd + "\r") != cmd.encode("ascii"):
         raise ValueError("unexpected device_info CLI echo")
@@ -70,18 +88,12 @@ def identity_resources_ro(client, post: dict, js: dict) -> None:
     if EXPECTED_FIRMWARE_LABEL not in lower or EXPECTED_BASE not in lower:
         raise ValueError("installed E11 native firmware label/base drift")
     for remote, key in PINNED_NATIVE.items():
-        if JS_REMOTE.get(key) != remote:
-            raise ValueError("original JS plugin paths changed")
-        expected = js.get(key)
-        if not isinstance(expected, str) or MD5_HEX.fullmatch(expected.lower()) is None:
-            raise ValueError("missing/malformed pinned E11 JS resource entry: " + key)
+        expected = js[key]  # validated against exact check_local() dict contract
         digest = client.hash_flipper(remote)
         if (not isinstance(digest, str) or MD5_HEX.fullmatch(digest.strip().lower()) is None or
                 digest.strip().lower() != expected.lower()):
             raise ValueError("installed E11 native resource MD5 changed")
-    expected_manifest = post.get("E11_NEW_MANIFEST")
-    if not isinstance(expected_manifest, str) or MD5_HEX.fullmatch(expected_manifest.lower()) is None:
-        raise ValueError("missing/malformed pinned E11 resource Manifest identity")
+    expected_manifest = post["E11_NEW_MANIFEST"]  # validated before COM
     manifest = client.hash_flipper("/ext/Manifest")
     if (not isinstance(manifest, str) or MD5_HEX.fullmatch(manifest.strip().lower()) is None or
             manifest.strip().lower() != expected_manifest.lower()):
@@ -152,6 +164,8 @@ def main() -> int:
         post, js, v18_md5 = check_local(
             args.final_v18_fap, args.saved_old_fap_backup, args.old_candidate
         )
+        # Validate actual packed E11 post/js dict key contract BEFORE opening COM.
+        validate_local_native_expected(post, js)
         v19 = verified_candidate(args.candidate)
         v18 = verified_pc(args.active_v18_backup /
             "installed_LabMate_v18_FINAL_E11_before_v19.fap", V18_SIZE, V18_SHA)
