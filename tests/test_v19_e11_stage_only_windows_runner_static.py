@@ -43,7 +43,7 @@ class StaticWindowsStageRunnerTest(unittest.TestCase):
     def test_all_fifteen_sources_pinned(self):
         records = re.findall(r"(?m)^    '([^']+\.py)'='([0-9a-f]{40})'$", self.script)
         self.assertEqual(len(records), 15)
-        self.assertEqual(len(set(x for x, y in records)), 14)
+        self.assertEqual(len(set(x for x, y in records)), 15)
         self.assertEqual(len(set(records)), 14)
         self.assertIn("stage_v19_e11_sidecar_only.py", {x for x, y in records})
         self.assertIn("check_v19_e11_pc_backups_windows_ro.py", {x for x, y in records})
