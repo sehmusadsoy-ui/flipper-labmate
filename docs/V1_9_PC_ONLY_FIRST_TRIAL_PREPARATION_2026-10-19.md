@@ -469,3 +469,36 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command '& "$env:USERPROFILE\
 ```
 
 The post-stage tool is separately Git-blob pinned, checks current live E11 resource IDs/active final v1.8 and historical device backup, compares the full staged v1.9 bytes twice, and confirms reserved recovery backup path remains absent. **No additional device write, rename, activation, restoration, firmware flash or automatic retry is authorized.** Await operator's fresh real-device output. The installed firmware ABI export-table still lacks independent attestation.
+
+
+## 2026-10-19 — independent REAL COM7 post-stage READ-ONLY PASS (operator)
+
+Following the 16/16 + 9/9 offline security test PASS, operator executed `scripts/run-v19-e11-poststage-ro.ps1 -Port COM7` **on the real Flipper Zero**. Output:
+
+```text
+PC_BACKUPS_PASS: 12 files, 2128 bytes
+WINDOWS_PC_BACKUPS_RO: PASS | DEVICE_WRITES: ZERO | PC_WRITES: ZERO
+V19 E11 LOCAL HASH / TRANSPORT POST-STAGE READ-ONLY GATE: PASS
+FAP: 97540 bytes / pinned SHA256, source 15/15 / transport Git blob PASS
+V19 E11 INDEPENDENT POST-STAGE DEVICE READ ONLY
+V19 E11 INDEPENDENT REAL POST-STAGE STATE SCREEN - STRICT READ ONLY
+>100%, chunk 12 of 12 @ 124.63 kb/s
+>100%, chunk 12 of 12 @ 120.50 kb/s
+state: STAGED_V19_NONAPP_ACTIVE_V18
+v19_stage_size: 97540
+v19_stage_sha256_full_readback_twice: e1f43390c4078fbaad7e13124331926e0d6667294f2815e8b63762bd16f3ff90
+active_v18: FINAL_UNCHANGED_MD5_AND_SIZE_PASS
+old_e11_device_backup: PRESERVED_AND_PINNED
+firmware_js_manifest_label: PINNED_SCREEN_ONLY_NOT_FIRMWARE_ABI_ATTESTATION
+future_recovery_filename: ABSENT
+v19_active: NO
+device_writes: ZERO
+automatic_retry_rollback_rename: ZERO
+activation_authorized: NO
+V19 E11 INDEPENDENT POST-STAGE READ-ONLY PASS
+V18 STILL ACTIVE, V19 STAGED ONLY; ACTIVATION NOT AUTHORIZED
+V19 E11 STAGE VERIFIED INDEPENDENTLY - NO DEVICE WRITE; v1.8 STILL ACTIVE
+STOP: no v1.9 activation or firmware operation authorized.
+```
+
+**Evidence status:** two independent real-USB sessions now PASS: first authorized stage-only creation with double full binary readback, then *separate fresh COM7 read-only session* with another double full binary readback and unchanged active final v1.8/resource/old-backup proofs. **v1.9 real-stage-and-integrity gate CLOSED PASS**, but **activation remains NO-GO pending actual installed E11 firmware ABI evidence and separate explicit consent**, plus reviewed non-atomic state-aware activation/rollback plan. The independent test DOES NOT prove currently flashed firmware binary SHA256, firmware exported native symbol table identity, or runtime scope operation. Firmware and all original app/backup/data files preserved.
