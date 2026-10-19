@@ -259,3 +259,22 @@ NATIVE_E11_FIRMWARE_ABI: NOT_ATTESTED | INSTALL: NOT_AUTHORIZED
 Unlike the earlier virtual promotion model, this replay exercises the actual code that would stage a new non-app sidecar later. The on-device ABI remains un-attested at binary level; no FAP installation or COM stage has occurred. The 21 stage-only and 12 direct-code-replay offline suites and the actual PC backup hashes have now been checked by the operator.
 
 Next stage is Windows PC-only candidate transfer/integrity verification and independent host review of *any* authorized command that might later write ONLY one fresh sidecar. The final-v1.8 app, original E11 device backup, data snapshot, firmware and installed app remain untouched. **No stage-only device write is authorized by these results.**
+
+
+## Windows-side FAP candidate handoff — PC ONLY / operator action pending
+
+Files:
+- `scripts/copy_v19_e11_candidate_windows_pc_only.py` — WSL-local-to-Windows-mounted PC-only verified candidate copy;
+- `tests/test_v19_e11_windows_pc_copy_only.py` — nine **offline tests not yet run by the operator**.
+
+The tool first re-hashes the WSL candidate and all three preserved PC backup/snapshot roots. It only creates a NEW direct child `V19-WINDOWS-PC-CANDIDATE-...` of the original verified `/mnt/c/Users/sehmu/Documents/LabMate-FAP-PC-Backups` root. It rejects existing paths and symlinked sources. It writes a single reviewed FAP copy, provenance JSON, completion marker and checks the copied bytes from the Windows-mounted filesystem. Interrupted PC copies retain an incomplete guard; no overwrite/auto retry. Its output has no USB/COM device access and requires no Flipper connection.
+
+This is **not a Flipper SD staging operation**; separate source hashing/Windows native wrapper review and a newly explicit device-write authorization are necessary for any subsequent sidecar upload. The artifact hash remains `e1f43390c4078fbaad7e13124331926e0d6667294f2815e8b63762bd16f3ff90`. No new v1.9 build is requested or needed.
+
+Run the nine unit tests first:
+
+```bash
+python3 /mnt/c/Users/sehmu/labmate-src-v19/tests/test_v19_e11_windows_pc_copy_only.py -v
+```
+
+Wait for their actual result before invoking any PC-copy action. Do not run the real Flipper stage-only program or promote/flash firmware.
