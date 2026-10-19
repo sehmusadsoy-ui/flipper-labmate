@@ -75,8 +75,11 @@ class PoststageReadOnlyTest(unittest.TestCase):
     def test_stage_size_wrong_blocks_attestation(self):
         d = self.device()
         d.fs[ro.STAGE] = self.fap[:-1]
-        with self.assertRaisesRegex(ValueError, "not exactly present"):
+        # Strict stat parser rejects any unpinned size BEFORE content read.
+        with self.assertRaisesRegex(ValueError, "unrecognized post-stage status response"):
             self.attest(d)
+        self.assertEqual(d.chunk_count, 0)
+        self.assertEqual(d.rename_count, 0)
 
     def test_stage_same_size_mutation_blocks_md5(self):
         d = self.device()
@@ -97,8 +100,20 @@ class PoststageReadOnlyTest(unittest.TestCase):
     def test_no_future_backup_allowed(self):
         d = self.device()
         d.fs[ro.RECOVERY] = self.v18
+        # Any unexpected-size reply fails CLOSED at exact stat parser.
+        with self.assertRaisesRegex(ValueError, "unrecognized post-stage status response"):
+            self.attest(d)
+        self.assertEqual(d.chunk_count, 0)
+        self.assertEqual(d.rename_count, 0)
+
+    def test_reserved_recovery_filename_occupied_even_at_stage_size(self):
+        d = self.device()
+        d.fs[ro.RECOVERY] = self.fap
+        # A recognized-size file still fails the explicit absent-only gate.
         with self.assertRaisesRegex(ValueError, "unexpectedly occupied"):
             self.attest(d)
+        self.assertEqual(d.chunk_count, 0)
+        self.assertEqual(d.rename_count, 0)
 
     def test_installed_active_v18_identity_drift_blocks_attestation(self):
         d = self.device()
