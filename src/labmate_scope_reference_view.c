@@ -1,27 +1,23 @@
 #include "labmate_scope_reference_view.h"
 #include <stdio.h>
+#include <string.h>
 
-static const char* labmate_scope_reference_verdict_text(LabMateScopeVerdict verdict) {
+static const char* reference_verdict(LabMateScopeVerdict verdict) {
     switch(verdict) {
     case LabMateScopeVerdictPass: return "PASS";
-    case LabMateScopeVerdictOutOfTolerance: return "OUT OF TOLERANCE";
+    case LabMateScopeVerdictOutOfTolerance: return "OUT OF TOL";
     case LabMateScopeVerdictNoSignal: return "NO SIGNAL";
     case LabMateScopeVerdictBusy: return "BUSY";
     case LabMateScopeVerdictInvalid:
-    default: return "INVALID / WAIT";
+    default: return "WAIT / INVALID";
     }
 }
 
 bool labmate_scope_reference_view_draw(
-    Canvas* canvas,
-    LabMateScopeReferencePreset selected,
-    LabMateScopeToleranceResult result,
-    const LabMateScopeMetrics* measured) {
-    /* The enum starts at zero; unsigned upper-bound validation also
-     * rejects negative/invalid enum values after conversion on ARM. */
-    if(!canvas || (unsigned)result.verdict > (unsigned)LabMateScopeVerdictBusy)
+    Canvas* c, LabMateScopeReferencePreset selected,
+    LabMateScopeToleranceResult result, const LabMateScopeMetrics* measured) {
+    if(!c || (unsigned)result.verdict > (unsigned)LabMateScopeVerdictBusy)
         return false;
-
     LabMateScopeReference reference = {0};
     if(!labmate_scope_reference_preset(selected, &reference)) return false;
 
@@ -34,10 +30,8 @@ bool labmate_scope_reference_view_draw(
         measured->frequency_millihz == 0U ||
         measured->duty_permille > 1000U)) return false;
 
-    /* A reference can change after a verdict was computed. A stale PASS
-     * must never be painted alongside the new reference or another
-     * measurement. Recheck both classification and numeric errors from
-     * the supplied complete sample before displaying a pass/fail. */
+    /* Never show a stale PASS after reference selection or capture changes.
+     * Preserve the exact full-mHz/duty verdict; formatting is ONLY cosmetic. */
     if(has_metrics) {
         const LabMateScopeToleranceResult verified =
             labmate_scope_tolerance_evaluate(
@@ -48,42 +42,40 @@ bool labmate_scope_reference_view_draw(
             return false;
     }
 
-    canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 3, 9, "REF COMPARE PC1");
-    canvas_draw_line(canvas, 0, 13, 127, 13);
-
-    char title[24];
-    (void)snprintf(title, sizeof(title), "REF: %s", reference.name);
-    canvas_draw_str(canvas, 3, 24, title);
-    canvas_draw_str(canvas, 3, 36,
-        labmate_scope_reference_verdict_text(result.verdict));
-
+    char target[24];
+    char verdict[24];
+    char frequency[24] = "NO VALID CAPTURE";
+    char duty[24] = "";
+    (void)snprintf(target, sizeof(target), "TARGET %s", reference.name);
+    (void)snprintf(verdict, sizeof(verdict), "RESULT %s", reference_verdict(result.verdict));
     if(has_metrics) {
-        /* Keep enough room for the compiler's full unsigned-format bound.
-         * Physical LCD width is separately bounded by the measured ranges. */
-        char observed[48];
-        /* This line is for display only. The verdict uses full mHz
-         * precision from the pure-C evaluator, never rounded LCD text. */
         if(measured->frequency_millihz < UINT64_C(100000000)) {
             const uint64_t hz = measured->frequency_millihz / UINT64_C(1000);
-            const uint64_t hundredths =
+            const uint64_t fraction =
                 (measured->frequency_millihz % UINT64_C(1000)) / UINT64_C(10);
-            (void)snprintf(observed, sizeof(observed),
-                "%lu.%02luHz %u.%u%%",
-                (unsigned long)hz, (unsigned long)hundredths,
-                (unsigned)(measured->duty_permille / 10U),
-                (unsigned)(measured->duty_permille % 10U));
+            (void)snprintf(frequency, sizeof(frequency), "MEAS %lu.%02luHz",
+                (unsigned long)hz, (unsigned long)fraction);
         } else {
-            (void)snprintf(observed, sizeof(observed), ">99kHz %u.%u%%",
-                (unsigned)(measured->duty_permille / 10U),
-                (unsigned)(measured->duty_permille % 10U));
+            (void)snprintf(frequency, sizeof(frequency), "MEAS >99kHz");
         }
-        canvas_draw_str(canvas, 3, 49, observed);
+        (void)snprintf(duty, sizeof(duty), "DUTY %u.%u%%",
+            (unsigned)(measured->duty_permille / 10U),
+            (unsigned)(measured->duty_permille % 10U));
     } else {
-        canvas_draw_str(canvas, 3, 49, "NO VALID MEASUREMENT");
+        (void)snprintf(duty, sizeof(duty), "RUN, STOP, RETRY");
     }
+    if(strlen(target) > 20U || strlen(verdict) > 20U ||
+       strlen(frequency) > 20U || strlen(duty) > 20U) return false;
 
-    canvas_draw_line(canvas, 0, 53, 127, 53);
-    canvas_draw_str(canvas, 3, 62, "UP REF  DN PLOT");
+    canvas_set_font(c, FontSecondary);
+    canvas_draw_str(c, 3, 9, "REFERENCE");
+    canvas_draw_str(c, 102, 9, "PC1");
+    canvas_draw_line(c, 0, 13, 127, 13);
+    canvas_draw_str(c, 3, 23, target);
+    canvas_draw_str(c, 3, 34, verdict);
+    canvas_draw_str(c, 3, 44, frequency);
+    canvas_draw_str(c, 3, 51, duty);
+    canvas_draw_line(c, 0, 53, 127, 53);
+    canvas_draw_str(c, 3, 62, "UP:REF DN:PG BK:EXIT");
     return true;
 }
