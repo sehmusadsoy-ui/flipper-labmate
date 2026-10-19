@@ -127,7 +127,8 @@ void labmate_view_render_callback(
                     (!app->scope_pair.has_a ||
                      app->scope_last_generation > app->scope_pair.generation_a);
                 (void)labmate_scope_pair_view_draw(
-                    canvas, &app->scope_pair, fresh_candidate);
+                    canvas, &app->scope_pair, fresh_candidate,
+                    app->scope_compare_page);
             }
         } else {
             (void)labmate_scope_display_draw(canvas, &app->scope_display);
