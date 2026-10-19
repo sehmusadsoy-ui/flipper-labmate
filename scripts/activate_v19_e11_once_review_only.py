@@ -46,7 +46,7 @@ PINNED_NATIVE = {
     "/ext/apps_data/js_app/plugins/js_gpio.fal": "js_gpio.module",
     "/ext/apps_data/js_app/plugins/js_event_loop.fal": "event_loop",
 }
-MD5_HEX = re.compile(r"[a-f0-9]{32}\\Z")
+MD5_HEX = re.compile(r"[a-f0-9]{32}\Z")
 
 
 def verified_pc(path: Path, size: int, sha: str) -> bytes:
