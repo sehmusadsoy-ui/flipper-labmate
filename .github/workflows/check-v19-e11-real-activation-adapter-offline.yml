@@ -11,6 +11,7 @@ on:
       - "scripts/review_v19_e11_activation_recovery_offline.py"
       - "scripts/simulate_v19_e11_storage_cli_offline.py"
       - "tests/test_v19_e11_real_activation_adapter_offline.py"
+      - "tests/test_v19_e11_native_resource_live_contract_offline.py"
       - "tests/test_v19_e11_postactivation_readonly.py"
       - "tests/test_v19_e11_activation_windows_static.py"
       - ".github/workflows/check-v19-e11-real-activation-adapter-offline.yml"
@@ -23,7 +24,7 @@ permissions:
 
 jobs:
   host_tests_only:
-    name: Host-only 43 exact adapter and postactivation checks (NO COM/SD)
+    name: Host-only 58 adapter, actual-resource-contract and postactivation checks (NO COM/SD)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -35,6 +36,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 -B tests/test_v19_e11_real_activation_adapter_offline.py -v
+          python3 -B tests/test_v19_e11_native_resource_live_contract_offline.py -v
           python3 -B tests/test_v19_e11_postactivation_readonly.py -v
           python3 -B tests/test_v19_e11_activation_windows_static.py -v
-          echo "43 HOST-ONLY SAFETY TESTS PASS; NO COM, NO FIRMWARE, NO INSTALL."
+          echo "58 HOST-ONLY SAFETY TESTS PASS; NO COM, NO FIRMWARE, NO INSTALL."
