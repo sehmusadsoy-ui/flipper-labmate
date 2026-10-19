@@ -37,6 +37,34 @@ PC output includes `labmate-v1.9DEV-E11-PC-ONLY.fap`, `PC_PREPARATION_PROVENANCE
 
 **No file made by this stage is installed on the Flipper**. Passing this stage does NOT turn any old v1.8 hardware-install consent into v1.9 consent.
 
+## Real operator PC-only preparation PASS — 2026-10-19
+
+Following the independently run **12/12 offline synthetic tests PASS**, the operator executed `prepare_v19_e11_pc_only.py --prepare` against the **actual** local review ZIP/FAP and three real PC backup roots. Output:
+
+```text
+V19 E11 PC-ONLY REVIEW PREPARATION; NO USB/SD/FLASH
+V19 FAP SHA256: e1f43390c4078fbaad7e13124331926e0d6667294f2815e8b63762bd16f3ff90
+LIVE V18 + HISTORICAL E11 PC BACKUPS: PASS
+LABMATE DATA SNAPSHOT: PASS | files: 12 | bytes: 2128
+PC_ONLY_PREPARATION: PASS
+PC_OUTPUT: /home/adsoy/labmate-build/v19-pc-only-prepared-3d66658
+DEVICE_WRITES: NONE | FIRMWARE_FLASH: NONE | V19 INSTALL: NOT AUTHORIZED
+```
+
+The separate PC preparation folder exists; this report does not claim it has been copied to Windows or Flipper, nor that any new application is installed. Both original FAP backups and all **12** currently live LabMate data files were hashed and verified.
+
+## Stage 0.5: prospective v1.9 **device READ-ONLY** reserved-path preflight
+
+A newly added strict-purpose check is `scripts/check_v19_e11_device_prewrite_ro.py`; Windows wrapper is `scripts/run-v19-e11-device-prewrite-ro.ps1`. The wrapper accepts only **13 exact pinned Git blob identities** from the local authenticated source checkout; it fetches nothing via anonymous raw URLs. It rechecks the verified older/full E11 files, active final-v1.8 PC readback, the current **12-file** LabMate snapshot and the already present final-v1.8 build. It then issues only:
+
+- `device_info`, `storage md5`, `storage stat` of existing old/new v1.8 app and native plugin/resource paths via the previously operator-proven phase-2B `audit()`;
+- `storage stat` of two **new** proposed v1.9 paths to require both **ABSENT twice**: `/ext/apps/Tools/labmate.v19-new-stage` and `/ext/apps/Tools/labmate.v18-final-before-v19.bak`;
+- second `audit()` pass to reject mid-check installed v1.8 E11 identity drift.
+
+The remote communication is **read-only**; no `write_chunk`, `storage rename`, `storage remove`, FAP upload, GPIO toggling, app launch or firmware flash paths. Unexpected CLI echo, unexpected status, existing empty stage, altered old PC backups/CSV, or resource drift produce NO-GO, no automatic retry.
+
+Added **12 synthetic unit tests**: `tests/test_v19_e11_device_prewrite_ro.py`. **Not yet executed by the operator; no real COM7 result claimed.** Even a future PASS does not authorize any app replacement, which still needs a separate, reviewed staging/rollback implementation and express operator permission.
+
 ## Stage 1: separately designed, consent-gated future FAP-only trial — NOT YET IMPLEMENTED
 
 Before a device write, independently audit the active FAP and E11 native-resource identity **again**, verify that PC backup/data snapshot remained intact and establish whether these reserved proposed device paths are absent:
