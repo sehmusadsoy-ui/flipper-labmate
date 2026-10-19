@@ -92,3 +92,24 @@ Proposed conditional sequence, each step requiring a fail-closed readback gate a
 4. Check PWM generation / Frequency Meter / Pulse Analyzer / Button Analyzer / Counter / UART regression and resource BUSY behavior; firmware-wide TIM2/SubGHz/RFID concurrency acceptance remains separately open
 
 **No firmware flash, Momentum updater, user-data cleanup, SD reformat, merge to main, stable release or unattended background testing.**
+
+
+## 2026-10-19 — actual COM7 read-only device prewrite PASS
+
+The operator ran the 12 synthetic tests in \`tests/test_v19_e11_device_prewrite_ro.py\` and reported \`Ran 12 tests in 0.002s\`, \`OK\`. They then executed \`run-v19-e11-device-prewrite-ro.ps1 -Port COM7\`, which reported:
+
+\`\`\`text
+PINNED LOCAL HELPERS: 13/13 GIT BLOBS PASS
+device_firmware_identity: PINNED_E11_LABEL_BASE_AND_RESOURCE_MD5
+active_app: V18_FINAL_MD5_SIZE_PASS
+prior_v18dev_device_backup: PINNED_MD5_PASS
+v19_reserved_paths: BOTH_ABSENT_TWICE
+old_e11_backup_preserved: YES
+device_writes: NONE
+v19_installed: NO
+PC_LABMATE_DATA_BACKUP: VERIFIED (12 files, 2128 bytes)
+V19 E11 DEVICE PREWRITE READ-ONLY PASS
+NO DEVICE WRITES. INSTALL STILL REQUIRES NEW EXPLICIT CONSENT.
+\`\`\`
+
+This establishes the two exact proposed new staging/backup SD paths were absent **at the time of the read-only scan** and that the current installed v1.8 identity and older protected E11 sidecar matched. It does NOT authorize any write, attest the internally flashed firmware image by SHA256, or prove that the paths will stay absent later. Re-run an independent identity/absence preflight immediately before any later authorized device-side staging; do not blindly retry a failed operation.
