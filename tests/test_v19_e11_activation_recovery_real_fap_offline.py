@@ -161,9 +161,17 @@ class E11V19OfflineActivationRecoveryTest(unittest.TestCase):
 
     def test_unexpected_stat_echo_aborts_before_rename(self):
         d = self.mock(faults={"echo-fail"})
-        with self.assertRaisesRegex(ValueError, "stat echo"):
+        # FakeCLI intentionally raises at the transport boundary BEFORE the
+        # higher-level stat parser can produce its own echo-error message.
+        with self.assertRaisesRegex(ValueError, "simulated CLI command echo disagreement"):
             m.promote_two_renames(d, self.v19, self.v18, self.legacy)
         self.assertEqual(d.rename_count, 0)
+        self.assertEqual(d.chunk_count, 0)
+        self.assertEqual(len(d.commands), 1)
+        self.assertTrue(d.commands[0].startswith("storage stat "))
+        self.assertEqual(d.fs[m.ACTIVE], self.v18)
+        self.assertEqual(d.fs[m.NEW], self.v19)
+        self.assertEqual(d.fs[m.LEGACY_BACKUP], self.legacy)
 
     def test_repeated_activation_refused_with_no_new_rename(self):
         d = self.activated()
