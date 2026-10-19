@@ -375,3 +375,44 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command '& "$env:USERPROFILE\
 ```
 
 This writes only through the E11 native CLI if in-session identity checks and absence checks pass. `-ApplyStageOnly` **really can change device microSD**. Active `/ext/apps/Tools/labmate.fap` final v1.8 and historical `.e11-pre-final.bak` must stay untouched; no firmware flash, rename, deletion or app activation permitted. If command fails/timeout/disconnect: **STOP, NO AUTO REPEAT**, and classify only by an independently controlled read-only device-state inspection. Any success must be recorded solely from operator-provided real output; no success claimed in advance.
+
+
+## 2026-10-19 — FIRST REAL COM7 E11 v1.9 STAGE-ONLY PASS (operator)
+
+After explicit operator consent limited to the **one new non-app sidecar**, the user ACTUALLY executed:
+
+```bash
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command '& "$env:USERPROFILE\labmate-src-v19\scripts\run-v19-e11-stage-only.ps1" -Port COM7 -ApplyStageOnly'
+```
+
+The operator provided these complete relevant **real device** results (not a mock):
+
+```text
+PC_BACKUPS_PASS: 12 files, 2128 bytes
+WINDOWS_PC_BACKUPS_RO: PASS | DEVICE_WRITES: ZERO | PC_WRITES: ZERO
+V19 E11 LOCAL HASH / TRANSPORT PRE-STAGE GATE: PASS
+FAP: 97540 bytes / pinned SHA256, source 15/15 / transport Git blob PASS
+V19 E11 EXPLICIT STAGE-ONLY DEVICE WRITE: new non-app sidecar
+>100%, chunk 12 of 12 @ 114.15 kb/s
+>100%, chunk 12 of 12 @ 118.17 kb/s
+stage_only: PASS_FULL_DEVICE_BINARY_READBACK
+stage_path: /ext/apps/Tools/labmate.v19-new-stage
+stage_fap_sha256: e1f43390c4078fbaad7e13124331926e0d6667294f2815e8b63762bd16f3ff90
+stage_fap_bytes: 97540
+active_app: FINAL_V18_UNCHANGED
+old_e11_device_backup: UNCHANGED
+v19_active: NO
+rename_performed: NO
+firmware_flash: NO
+user_data_modified: NO
+next_action: STOP_FOR_SEPARATE_V19_ACTIVATION_APPROVAL
+V19 E11 STAGED SIDEcar VERIFIED; v1.8 STILL ACTIVE; STOP FOR REVIEW
+V19 E11 ONE NON-.FAP SIDECAR STAGE VERIFICATION PASS
+STOP: final v1.8 still active; v1.9 NOT installed/activated.
+```
+
+**Result: FIRST PHYSICAL SIDE-CAR STAGE PASS, NOT APP INSTALL/ACTIVATION.** The native CLI already did post-transfer two FULL on-device binary SHA-256 readbacks, before/after active final-v1.8/native E11 resource checks, and preserved the historical E11 device backup. The `>100%` transfer display originates from the pinned Momentum CLI progress printer; it is not used as byte-integrity proof. The readback/hash/size validation is the authoritative gate. Both reserved v1.8-before-v1.9 backup filename and original active `labmate.fap` remain unmodified, with no rename.
+
+**Critical next step: NO auto retry, upload, rename, delete or firmware flash.** The old `scripts/check_v19_e11_device_prewrite_ro.py` is no longer an applicable state checker because the stage filename is now expected to EXIST. A new **post-stage READ-ONLY** state attestation should independently reconnect to COM7, verify active final v1.8 + native E11 label/plugins/Manifest + original E11 backup and the new stage's exact remote length/MD5/entire SHA256, confirm the future v1.8 recovery filename remains absent, and stop without mutating any file. The code must be separately host-tested before operator use.
+
+**Still NOT proven:** exact flashed firmware image SHA256 and live loaded firmware ABI export-table equality for `furi_hal_resource_lease_try_acquire`, `furi_hal_resource_lease_release`, `furi_hal_gpio_try_add_int_callback`; compatibility across third-party/native services or real v1.9 Scope screen. No v1.9 activation or rollback authorization was requested or granted; stage-only consent has been consumed.
