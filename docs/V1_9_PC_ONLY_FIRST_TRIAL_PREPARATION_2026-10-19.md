@@ -265,7 +265,7 @@ Next stage is Windows PC-only candidate transfer/integrity verification and inde
 
 Files:
 - `scripts/copy_v19_e11_candidate_windows_pc_only.py` — WSL-local-to-Windows-mounted PC-only verified candidate copy;
-- `tests/test_v19_e11_windows_pc_copy_only.py` — nine **offline tests not yet run by the operator**.
+- `tests/test_v19_e11_windows_pc_copy_only.py` — nine **offline tests: operator-reported 9/9 PASS on 2026-10-19 (0.011s, `OK`)**.
 
 The tool first re-hashes the WSL candidate and all three preserved PC backup/snapshot roots. It only creates a NEW direct child `V19-WINDOWS-PC-CANDIDATE-...` of the original verified `/mnt/c/Users/sehmu/Documents/LabMate-FAP-PC-Backups` root. It rejects existing paths and symlinked sources. It writes a single reviewed FAP copy, provenance JSON, completion marker and checks the copied bytes from the Windows-mounted filesystem. Interrupted PC copies retain an incomplete guard; no overwrite/auto retry. Its output has no USB/COM device access and requires no Flipper connection.
 
