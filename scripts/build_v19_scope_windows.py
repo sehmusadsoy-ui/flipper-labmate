@@ -10,7 +10,7 @@ import re
 import shutil
 import subprocess
 import sys
-from zipfile import ZipFile
+from zipfile import ZipFile, is_zipfile
 
 SOURCE = "050ec62fe372422056e0e903cde6c5e6f54f10f2"
 E11_BASE = "d3f89dfe2ef6b01839201598e9be1590cba80322"
@@ -76,7 +76,7 @@ def main():
          "empty or invalid GitHub archive")
     need(archive.stat().st_size <= 50_000_000,
          "GitHub source archive exceeds 50 MB safety limit")
-    need(ZipFile.is_zipfile(archive), "GitHub CLI returned data that is not ZIP")
+    need(is_zipfile(archive), "GitHub CLI returned data that is not ZIP")
     with ZipFile(archive) as z:
         names = z.namelist()
         need(all(not n.startswith("/") and ".." not in n.split("/") and
