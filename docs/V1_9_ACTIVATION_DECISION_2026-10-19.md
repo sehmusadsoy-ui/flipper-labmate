@@ -50,3 +50,29 @@ The activated state (if ever authorized and reached) requires a **new independen
 - The operator may later expressly approve a bounded experimental v1.9 activation **after** understanding that firmware flash-image ABI attestation remains unavailable, or elect to hold v1.8 until stronger on-device firmware evidence can be obtained. Neither choice is implied by the prior stage-only approval.
 
 No more staging or extra device-side writes are required to preserve today's PASS state.
+
+
+## 2026-10-19 — one offline real-FAP activation and rollback rehearsal
+
+Reviewed injection-only implementation added to the **draft** `dev/v1.9-logic-scope` branch:
+- `scripts/review_v19_e11_activation_recovery_offline.py` uses the *same actual method-level* stat, MD5, full byte-readback and two protected rename command frames against the existing `FakeCLI` implementation, with all **three exact PC FAP** hashes. It checks the already-staged state twice, the intermediate missing-active state, and the promoted final state, never auto-retries, and refuses any previously occupied backup target. It models two separately manually requested recovery routes: restoring v1.8 after only the first activation rename, or preserving failed v1.9 and replacing it with the protected v1.8 file after activation.
+- `tests/test_v19_e11_activation_recovery_real_fap_offline.py` contains **22 synthetic positive and negative tests**, including fault injection after first or second rename, corruption, unexpected source states, repeat attempts, resource/backup conflicts and no automatic recovery. **These 22 tests have NOT yet been operator executed and no PASS is asserted.**
+
+Unlike earlier conceptual simulations, this rehearsal tests the reviewed rename orchestration function itself, including native-like response framing, and reads **full binary contents** at each important filesystem state. **But this is still a fake CLI, not an authenticated COM7 transport**, and its `main` cannot open COM nor write to disk. The real device state stays `STAGED_V19_NONAPP_ACTIVE_V18` with no v1.9 activation or firmware image attestation.
+
+Next: user pulls development branch and runs one host test and one real-3-FAP offline replay. Only after actual PASS may a separate narrowly scoped activation command and independent post-activation read-only checker be prepared. Any on-device activation still requires a **new explicit owner authorization** and a reviewed mechanism to handle non-atomic gap without blindly retrying or automatically restoring.
+
+```bash
+python3 /mnt/c/Users/sehmu/labmate-src-v19/tests/test_v19_e11_activation_recovery_real_fap_offline.py -v
+```
+
+Then, after 22/22 PASS, run:
+
+```bash
+python3 /mnt/c/Users/sehmu/labmate-src-v19/scripts/review_v19_e11_activation_recovery_offline.py \
+ --candidate /mnt/c/Users/sehmu/Documents/LabMate-FAP-PC-Backups/V19-WINDOWS-PC-CANDIDATE-3d66658-20261019/labmate-v1.9DEV-E11-WINDOWS-PC-ONLY.fap \
+ --current-v18-pc-backup /mnt/c/Users/sehmu/Documents/LabMate-FAP-PC-Backups/V19-pretrial-live-v18-5e5cf7bc9ade41289c870ed156864482/installed_LabMate_v18_FINAL_E11_before_v19.fap \
+ --legacy-e11-pc-backup /mnt/c/Users/sehmu/Documents/LabMate-FAP-PC-Backups/E11-before-v18-final-b7370882610140aa871dbdf8b61cf53d/installed_E11_v18DEV_before_final_label.fap
+```
+
+The historical 36/36 v1.8 hardware checks, paired JS resource MD5, and pinned build SDK exports support the custom E11 pairing but do NOT certify that the currently flashed firmware image actually exports those symbols. The exact runtime ABI discrepancy remains unresolved and must be disclosed before any later activation consent.
