@@ -43,6 +43,19 @@ A read-only authenticated GitHub retrieval of **`Next-Flip/Momentum-Firmware` at
 
 Therefore, **if the installed firmware is a normal/unpatched Momentum d3f89dfe build, this v1.9 FAP is NOT ABI-compatible**. Installed patch provenance is currently unknown; do not infer stock vs custom from the screenshot alone. Keep device install NO-GO pending exact installed firmware symbol/patch evidence. Do not flash firmware to overcome this gate without a separate, verified backup and explicit approved plan.
 
+## Historical E11 deployment recovered — correction to screenshot-only uncertainty
+
+The operator correctly recalled that an **E11 full firmware update was actually installed** while completing I2C Explorer and 1-Wire Temp. This is supported by the project's earlier records, not just inferred from the screenshot:
+
+- `docs/V1_8_E11_FIRST_LIVE_BOOT_AND_SMOKE_2026-10-17.md`: first **operator-authorized FULL E11 trial**, pinned source `ba379f20fb29369501e1057f570a911f71ac83f8`, Actions `#38966248325`; **read-only COM7 check** reported installed firmware label/base, FAP, native JS GPIO module and installed resource Manifest match the pinned E11 build, with later real-device functional rounds.
+- `docs/V1_8_E11_FINAL_RELEASE_GATE_2026-10-17.md`: an **FAP-only v1.8 final-label replacement** was later tested on this *already installed* custom E11 firmware. Actual 100 Hz / 1 kHz loopback and STOP/RESTART evidence is recorded there.
+- `docs/V1_8_E11_RELEASE_READINESS_2026-10-17.md`: independently logged original matched patched E11 source diff SHA-256: **`1b3851dfa4de1f62d33430c5a7a4cf563f68da4ebfa01fe332fe7984b7630d80`**.
+- Authenticated GitHub compare, deployed v1.8 source `ba379f20` → v1.9 built source `3d66658`, reports **no changed `scripts/patch_momentum_*.py` files**. Exact blob SHA reads of five critical patch scripts (timed I2C, resource lease, try-add GPIO, native JS lease, SubGHz status bridge) also match between those commits.
+
+**Corrected interpretation:** The operator's installed firmware is backed by historical actual custom-E11 deployment evidence. A hypothetical claim that it *must* be unpatched stock firmware is incorrect. However, the **screenshot by itself** proves only the base commit/API label, not firmware-image bytes or the full custom ABI. Historical readback of matching app/plugin + unchanged patch-source files greatly increases confidence, but does not automatically attest the currently running image after possible later actions.
+
+**Next read-only reproducibility comparison:** From the already-built local candidate, inspect `PATCH_DIFF_SHA256` in `/home/adsoy/labmate-build/v19-local-review-3d66658/PROVENANCE.txt` and compare to the previously pinned **`1b3851... `** E11 source-diff digest. If different, do not install; inspect precisely what changed. If identical, it is strong *source-patch parity evidence*, **not an installed-image SHA readback or an authorization to replace the FAP**. Preserve verified old FAP + Profiles/S1 + CSV backups; confirm exact working path and reversible FAP-only procedure before asking for an operator's explicit v1.9 trial consent. Never update firmware in this step.
+
 ## Device gate remains closed
 
 Before any FAP-only installation, determine the currently installed firmware build/version and **independently verify its exported APIs** (including `furi_hal_resource_lease_try_acquire`, `furi_hal_resource_lease_release`, `furi_hal_gpio_try_add_int_callback`) against the binary's required SDK ABI. A firmware version string alone is insufficient. If incompatible or unknown, **NO INSTALL**; do not flash firmware automatically as a workaround.
