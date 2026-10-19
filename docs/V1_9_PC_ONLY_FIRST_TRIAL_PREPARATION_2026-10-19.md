@@ -113,3 +113,30 @@ NO DEVICE WRITES. INSTALL STILL REQUIRES NEW EXPLICIT CONSENT.
 \`\`\`
 
 This establishes the two exact proposed new staging/backup SD paths were absent **at the time of the read-only scan** and that the current installed v1.8 identity and older protected E11 sidecar matched. It does NOT authorize any write, attest the internally flashed firmware image by SHA256, or prove that the paths will stay absent later. Re-run an independent identity/absence preflight immediately before any later authorized device-side staging; do not blindly retry a failed operation.
+
+
+## Offline FAP-only promotion and manual rollback state-machine simulator — REVIEW ONLY
+
+Source: \`scripts/simulate_v19_e11_fap_swap_offline.py\`. Fault-injection tests: \`tests/test_v19_e11_fap_swap_offline.py\` (**25 new tests**, user execution still pending). This virtual simulator imports no serial/COM Flipper transport, creates no files and performs no device calls. It reads only the three byte-pinned candidate and existing PC FAP backups; **it never writes anything**.
+
+The state machine proves in-memory classification for:
+
+- original FINAL v1.8 ACTIVE, **new** staged v1.9 VERIFIED with original v1.8 still ACTIVE;
+- first rename original v1.8 → separately reserved exact v1.8 backup (app temporarily absent), then second rename verified v1.9 stage → ACTIVE;
+- fault before stage's Ready response, short first chunk, wrong staged SHA, occupied stage, occupied recovery backup, unexpected or mutated legacy E11 backup; **STOP with old ACTIVE preserved**, no cleanup/retry;
+- specifically requested **manual recovery** from first-rename interruption: only after exact between-renames classification, put retained v1.8 from reserved backup back at the absent active path, while keeping new v1.9 stage;
+- specifically requested **manual rollback** after success, using **an additional dedicated absent path** \`/ext/apps/Tools/labmate.v19-failed-before-rollback.bak\`: first v1.9 active → failed backup; second retained v1.8 backup → absent active. Both steps are deliberately separate with a manual STOP state in between, and both original 1.8 / 1.8DEV backups must survive. **No real rollback tool has been created, tested or approved.**
+
+The **fifth** path for a hypothetical future rollback has NOT been stat-checked on the real device, and is NOT approved for use. Future real device stage/promote/rollback scripts need completely separate reviews, precise CLI protocol/SDK ABI checks, simulated readback and explicit distinct operator approvals. The Windows/Flipper real storage implementation does not gain safety guarantees from this in-memory simulator alone.
+
+Run first the 25 synthetic tests; if PASS, simulate using real PC-protected FAP bytes in WSL:
+
+\`\`\`bash
+python3 /mnt/c/Users/sehmu/labmate-src-v19/tests/test_v19_e11_fap_swap_offline.py -v
+python3 /mnt/c/Users/sehmu/labmate-src-v19/scripts/simulate_v19_e11_fap_swap_offline.py \
+  --candidate ~/labmate-build/v19-pc-only-prepared-3d66658/labmate-v1.9DEV-E11-PC-ONLY.fap \
+  --current-v18-pc-backup /mnt/c/Users/sehmu/Documents/LabMate-FAP-PC-Backups/V19-pretrial-live-v18-5e5cf7bc9ade41289c870ed156864482/installed_LabMate_v18_FINAL_E11_before_v19.fap \
+  --legacy-e11-pc-backup /mnt/c/Users/sehmu/Documents/LabMate-FAP-PC-Backups/E11-before-v18-final-b7370882610140aa871dbdf8b61cf53d/installed_E11_v18DEV_before_final_label.fap
+\`\`\`
+
+**Current status: device v1.9 NOT INSTALLED, no device write authorized.** Draft PR #15 / Stable v1.8 unchanged.
