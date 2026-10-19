@@ -209,7 +209,7 @@ class VirtualCliProtocolTest(unittest.TestCase):
     def test_second_rename_not_allowlisted_before_first(self):
         cli = self.make()
         m.stage(cli, self.new, self.v18, self.legacy)
-        with self.assertRaisesRegex(ValueError, "source/target"):
+        with self.assertRaisesRegex(ValueError, "occupied"):
             m.rename_once(cli, m.NEW, m.ACTIVE)
         self.assertEqual(cli.rename_count, 0)
 
