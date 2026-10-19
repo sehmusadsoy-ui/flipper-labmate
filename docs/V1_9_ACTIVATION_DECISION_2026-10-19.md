@@ -81,3 +81,25 @@ The historical 36/36 v1.8 hardware checks, paired JS resource MD5, and pinned bu
 ## GitHub CI review gate — workflow defined, result pending
 
 A branch-scoped `.github/workflows/check-v19-e11-activation-rollback-offline.yml` now exercises the 22 new activation/manual rollback fault-injection cases plus existing native CLI and virtual FAP-swap tests on GitHub-hosted Linux. The workflow has **no access to COM7 or Flipper**, uses no firmware updater, performs no stage/rename and has read-only repository token permission. **No independent CI run conclusion has been obtained yet; do not claim CI PASS.** The actual operator host suite and real-three-FAP replay are also pending, so activation is not ready. The public Stable and Draft PR state are unchanged.
+
+
+## Actual operator three-FAP offline promotion and manual recovery PASS; one mock test expectation corrected
+
+The operator executed `tests/test_v19_e11_activation_recovery_real_fap_offline.py -v` on the local repo and observed **21/22 PASS, one failure**: `test_unexpected_stat_echo_aborts_before_rename` expected error text `stat echo`, but the fake native transport itself first raises `ValueError: simulated CLI command echo disagreement`. The code correctly aborted before any rename. **No device-writing activation was attempted**.
+
+The operator separately ran the rehearsal against the **actual three pinned Windows PC FAP files**:
+
+```text
+V19 E11 ACTUAL RENAME ORCHESTRATION - THREE REAL FAPS, IN MEMORY ONLY
+OFFLINE_V19_PROMOTION: PASS_TWO_RENAMES
+OFFLINE_MANUAL_V18_ROLLBACK: PASS_V19_PRESERVED
+OFFLINE_MANUAL_INTERRUPTION_RECOVERY: PASS_V18_ACTIVE_AND_V19_STAGED
+USB_CALLS: ZERO | DEVICE_WRITES: ZERO | PC_WRITES: ZERO
+REAL V1.9 ACTIVATION: NOT AUTHORIZED | FIRMWARE ABI: NOT_ATTESTED
+```
+
+This is operator-proven **in-memory real-artifact** success only; not a live rename/rollback or a firmware compatibility attestation.
+
+In commit `ec2fc7a3accb01f318a04ee709d63988519b9757`, only the **test** was corrected to require the actual lower-level transport error and additionally require **zero renames, zero binary chunks, one read-only stat attempt, and unchanged active v1.8/staged v1.9/legacy backup bytes**. No application, fake native CLI, or real-device writer implementation was changed. The revised **22/22 test result is PENDING** until the operator reruns it.
+
+Until then and until a reviewed explicit activation grant, retain the real device in the currently independently verified `STAGED_V19_NONAPP_ACTIVE_V18` state. No more `-ApplyStageOnly`, no on-device rename/restore/flash/retry.
