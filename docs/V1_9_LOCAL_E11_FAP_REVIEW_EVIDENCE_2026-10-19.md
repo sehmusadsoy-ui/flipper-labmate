@@ -100,3 +100,27 @@ VERIFIED LIVE FINAL v1.8 FAP PC BACKUP - PASS.
 This is **real device-to-PC byte readback**, checked against the independently pinned final v1.8 build and PC disk rehash, with live native resource state rechecked before/after. The historical 81,532-byte `v1.8DEV` PC backup remains preserved separately. `>100%` in a transfer progress line is a known progress-display quirk, not a claim about actual bytes transferred.
 
 **Remaining before v1.9 install:** refresh the PC-only snapshot of `/ext/apps_data/labmate` (Log History/CSV/Profiles/S1) with the existing read-only `scripts/snapshot_v18_e11_live_labmate_sd.py` workflow; verify its completed manifest and marker; review exact FAP-only replacement and rollback plan and obtain **separate explicit operator consent**. Even with matching source patches and working E11 GUI, live firmware image checksum and any v1.9 GPIO/EXTI acceptance are still unverified. No v1.9 installation was performed.
+
+
+## 2026-10-19 — ACTUAL current LabMate CSV/Profiles app-data backup PASS
+
+The operator ran the previously established **read-only live LabMate data snapshot** on COM7. The actual operator-provided output (not simulated) includes:
+
+```text
+snapshot_file_bytes: 2128
+new_device_files_preserved: 7
+changed_device_files_preserved: 2
+historical_files_not_on_device: 9
+old_backup_preserved: YES
+flipper_files_modified: NO
+snapshot_full_microSD: NO
+restore_rehearsed: NO
+firmware_flash_authorized: NO
+LIVE LABMATE PC READBACK SNAPSHOT VERIFIED - NO FLASH / NO RESTORE
+LABMATE DATA BACKUP: PASS
+SAVED_TO: C:\Users\sehmu\Documents\LabMate-FAP-PC-Backups\V19-LabMate-Data-bbacf95032af4bf2bbb470614eaff1a0
+```
+
+Scope is **`/ext/apps_data/labmate` only**, containing the application's current CSV/Profile history; this is NOT a whole-card clone, not firmware backup, and not a restore rehearsal. The 7 added and 2 changed files are recorded in the *fresh snapshot*; 9 historical paths absent from the live tree remain in the *historical* PC backup, and the cause of absence is unknown. The actual file count and individual names are not in the excerpt provided; do not invent them or imply that deleted historical data reappeared.
+
+Current pretrial status: **source-patched E11 identity and local FAP review PASS**, currently installed **v1.8 final FAP** byte-level real-device PC backup PASS, **current LabMate app-data** real-device PC snapshot PASS. Pending: exact v1.9 FAP-only installation choreography with a verified no-overwrite staging path, fail-closed partial-transfer/rollback protocol, final read-only device state reconciliation, any missing native ABI/image attestation, **separate explicit owner consent to DEVICE WRITE**, and v1.9 real-device physical checks. This session authorized no device write or firmware flash. Current published Stable and development PR state unchanged.
