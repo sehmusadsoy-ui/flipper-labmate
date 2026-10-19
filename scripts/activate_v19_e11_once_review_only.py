@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import re
 from pathlib import Path
 import sys
 
@@ -39,10 +40,13 @@ from check_v18_e11_h_js_runtime_ro import REMOTE as JS_REMOTE
 
 AUTH = "I_EXPLICITLY_APPROVE_V19_TWO_NONATOMIC_RENAMES_ONLY"
 ABI_RISK = "I_ACCEPT_E11_INSTALLED_FIRMWARE_BINARY_ABI_NOT_ATTESTED"
+# Keys MUST match the actual 'js' dict returned by check_local() /
+# pinned_local_expectation(). 'E11_JS_GPIO' belongs to 'post', NOT 'js'.
 PINNED_NATIVE = {
-    "/ext/apps_data/js_app/plugins/js_gpio.fal": "E11_JS_GPIO",
+    "/ext/apps_data/js_app/plugins/js_gpio.fal": "js_gpio.module",
     "/ext/apps_data/js_app/plugins/js_event_loop.fal": "event_loop",
 }
+MD5_HEX = re.compile(r"[a-f0-9]{32}\\Z")
 
 
 def verified_pc(path: Path, size: int, sha: str) -> bytes:
@@ -66,12 +70,21 @@ def identity_resources_ro(client, post: dict, js: dict) -> None:
     if EXPECTED_FIRMWARE_LABEL not in lower or EXPECTED_BASE not in lower:
         raise ValueError("installed E11 native firmware label/base drift")
     for remote, key in PINNED_NATIVE.items():
-        if JS_REMOTE.get("js_gpio.module" if key == "E11_JS_GPIO" else key) != remote:
+        if JS_REMOTE.get(key) != remote:
             raise ValueError("original JS plugin paths changed")
+        expected = js.get(key)
+        if not isinstance(expected, str) or MD5_HEX.fullmatch(expected.lower()) is None:
+            raise ValueError("missing/malformed pinned E11 JS resource entry: " + key)
         digest = client.hash_flipper(remote)
-        if not isinstance(digest, str) or digest.strip().lower() != js[key].lower():
+        if (not isinstance(digest, str) or MD5_HEX.fullmatch(digest.strip().lower()) is None or
+                digest.strip().lower() != expected.lower()):
             raise ValueError("installed E11 native resource MD5 changed")
-    if client.hash_flipper("/ext/Manifest").strip().lower() != post["E11_NEW_MANIFEST"].lower():
+    expected_manifest = post.get("E11_NEW_MANIFEST")
+    if not isinstance(expected_manifest, str) or MD5_HEX.fullmatch(expected_manifest.lower()) is None:
+        raise ValueError("missing/malformed pinned E11 resource Manifest identity")
+    manifest = client.hash_flipper("/ext/Manifest")
+    if (not isinstance(manifest, str) or MD5_HEX.fullmatch(manifest.strip().lower()) is None or
+            manifest.strip().lower() != expected_manifest.lower()):
         raise ValueError("installed E11 Manifest MD5 changed")
 
 
