@@ -227,7 +227,8 @@ class NativeResourceContractRegressionTest(unittest.TestCase):
 
     def test_real_identity_function_cannot_be_mocked_in_this_regression(self):
         source = Path(__file__).read_text("utf-8")
-        self.assertNotIn('patch.object(app, "identity_resources_ro"', source)
+        forbidden = 'patch.object(app, ' + '"identity_resources_ro"'
+        self.assertNotIn(forbidden, source)
         self.assertEqual(app.PINNED_NATIVE[
             "/ext/apps_data/js_app/plugins/js_gpio.fal"], "js_gpio.module")
 
