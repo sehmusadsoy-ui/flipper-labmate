@@ -76,3 +76,8 @@ python3 /mnt/c/Users/sehmu/labmate-src-v19/scripts/review_v19_e11_activation_rec
 ```
 
 The historical 36/36 v1.8 hardware checks, paired JS resource MD5, and pinned build SDK exports support the custom E11 pairing but do NOT certify that the currently flashed firmware image actually exports those symbols. The exact runtime ABI discrepancy remains unresolved and must be disclosed before any later activation consent.
+
+
+## GitHub CI review gate — workflow defined, result pending
+
+A branch-scoped `.github/workflows/check-v19-e11-activation-rollback-offline.yml` now exercises the 22 new activation/manual rollback fault-injection cases plus existing native CLI and virtual FAP-swap tests on GitHub-hosted Linux. The workflow has **no access to COM7 or Flipper**, uses no firmware updater, performs no stage/rename and has read-only repository token permission. **No independent CI run conclusion has been obtained yet; do not claim CI PASS.** The actual operator host suite and real-three-FAP replay are also pending, so activation is not ready. The public Stable and Draft PR state are unchanged.
