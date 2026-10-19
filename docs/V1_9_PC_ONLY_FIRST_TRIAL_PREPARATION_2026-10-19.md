@@ -22,7 +22,7 @@ The real final v1.8 live FAP backup and v1.8DEV historical backup are protected 
 
 ## Stage 0: entirely OFFLINE PC candidate verification
 
-Script: `scripts/prepare_v19_e11_pc_only.py`. Offline synthetic tests: `tests/test_v19_e11_pc_only_preflight.py`. **Offline tests have not yet been reported by the operator; do not call them PASS in advance.**
+Script: `scripts/prepare_v19_e11_pc_only.py`. Offline synthetic tests: `tests/test_v19_e11_pc_only_preflight.py`. **Actual operator-reported Windows/WSL offline test result (2026-10-19): 12/12 PASS** using `python3 /mnt/c/Users/sehmu/labmate-src-v19/tests/test_v19_e11_pc_only_preflight.py -v`; output `Ran 12 tests in 0.031s` / `OK`. These are synthetic/unit tests, NOT yet an actual local review ZIP + PC backup integrity run; do not treat them as device installation authorization.
 
 The script has **no serial import, no USB/COM access, no device filesystem access, and no firmware logic**. Default behavior is verify-only; adding `--prepare` creates a NEW, separately named PC-only folder with a byte-verified candidate FAP and provenance, never writes to Flipper. It checks:
 
