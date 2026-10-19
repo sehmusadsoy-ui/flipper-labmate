@@ -33,6 +33,7 @@ from prepare_v19_e11_pc_only import (
 )
 
 BUF = 4096
+V18_ACTIVE_BYTES = 81528
 APP = "/ext/apps/Tools/labmate.fap"
 LEGACY = "/ext/apps/Tools/labmate.e11-pre-final.bak"
 STAGE = PROPOSED_STAGE
@@ -142,7 +143,7 @@ def stage_only(client, candidate: bytes, post: dict, js: dict, v18_md5: str) -> 
         raise ValueError("native E11 resources changed — STOP")
     if final["old_E11_FAP_preserved"] != "PC_BACKUP_AND_DEVICE_BAK":
         raise ValueError("historic E11 device backup changed — STOP")
-    if stat_exact(client, APP) != b"File, size: 81528b":
+    if stat_exact(client, APP) != f"File, size: {V18_ACTIVE_BYTES}b".encode("ascii"):
         raise ValueError("original v1.8 active size drift")
     require_md5(client, APP, v18_md5)
     stat_reserved_absent(client, BACKUP)
