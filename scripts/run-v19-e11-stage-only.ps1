@@ -103,6 +103,7 @@ $expected = @{
     'prepare_v19_e11_pc_only.py'='8cb273ae9833a6b71ce3733ff17ae1450212396f'
     'check_v19_e11_device_prewrite_ro.py'='2be0999cdab90d91113d1031f22d845b8dbfd326'
     'stage_v19_e11_sidecar_only.py'='509ef765fb9302ff4d6d361c0b28b24e9ca0f91b'
+    'check_v19_e11_pc_backups_windows_ro.py'='4ff782b0cbe239fe15e2029edd6b387862dff339'
 }
 $names = @(
     'audit_v18_e11_live_labmate_sd.py',
@@ -118,10 +119,11 @@ $names = @(
     'backup_v19_active_v18_fap_ro.py',
     'prepare_v19_e11_pc_only.py',
     'check_v19_e11_device_prewrite_ro.py',
-    'stage_v19_e11_sidecar_only.py'
+    'stage_v19_e11_sidecar_only.py',
+    'check_v19_e11_pc_backups_windows_ro.py'
 )
-if ($names.Count -ne 14 -or $expected.Count -ne 14) {
-    throw 'Expected fourteen audited Python helpers only. STOP.'
+if ($names.Count -ne 15 -or $expected.Count -ne 15) {
+    throw 'Expected fifteen audited Python helpers only. STOP.'
 }
 $working = Join-Path $env:TEMP ('LabMate-V19-E11-STAGE-ONE-PC-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $working -ErrorAction Stop | Out-Null
@@ -144,19 +146,21 @@ foreach($name in $names) {
     }
 }
 
-# PC re-verify actual backup JSONs and all labmate files BEFORE opening COM.
-$verifyArgs = @('-3','-B','-c',
-    'from pathlib import Path; from prepare_v19_e11_pc_only import verify_backups; import sys; n,b=verify_backups(*map(Path,sys.argv[1:])); print("PC_BACKUPS_PASS:",n,"files,",b,"bytes")',
-    $active,$saved,$data)
-$env:PYTHONPATH = $working
-try {
-    & py @verifyArgs
-    if ($LASTEXITCODE -ne 0) { throw 'Actual backups changed. NO COM.' }
-} finally {
-    Remove-Item Env:PYTHONPATH -ErrorAction SilentlyContinue
+# Call a pin-verified file directly; Windows PowerShell can remove quotes
+# from a Python -c string, yielding SyntaxError despite sound backup files.
+# No COM transport is imported or opened by this PC-only verification.
+$verifyArgs = @(
+    '-3','-B',(Join-Path $working 'check_v19_e11_pc_backups_windows_ro.py'),
+    '--active-v18-backup',$active,
+    '--historical-e11-backup',$saved,
+    '--data-snapshot',$data
+)
+& py @verifyArgs
+if ($LASTEXITCODE -ne 0) {
+    throw 'PC backup verification failed; check helper output. NO COM.'
 }
 Write-Host 'V19 E11 LOCAL HASH / TRANSPORT PRE-STAGE GATE: PASS' -ForegroundColor Green
-Write-Host 'FAP: 97540 bytes / pinned SHA256, source 14/14 / transport Git blob PASS'
+Write-Host 'FAP: 97540 bytes / pinned SHA256, source 15/15 / transport Git blob PASS'
 Write-Host 'Original v1.8, E11 v1.8DEV and 12 LabMate data files preserved on PC.'
 if (-not $ApplyStageOnly) {
     Write-Host 'DRY RUN ONLY - ZERO COM / DEVICE WRITES / NO INSTALL AUTHORIZED BY THIS COMMAND'
