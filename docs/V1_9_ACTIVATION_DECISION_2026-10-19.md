@@ -242,3 +242,30 @@ The original pre-rename E11 JS resource dictionary mismatch was fixed in `script
 - Combined updated safety matrix **60 cases** = 17 original activation adapter + **17** true native contract + 15 postactivation independent read-only + 11 Windows static. Dedicated host-only CI workflow updated accordingly. These operator-run tests and fresh Windows dry-run are **NOT YET REPORTED**. An actual source audit confirmed Windows review wrapper pins exactly **19** sources, including the corrected activation Python Git blob `a2a9c2c0cc3b72c72695ef1bb6186aad0e2192e2`. This is only source integrity, not runtime safety proof.
 
 **NO DEVICE OPERATION OR INSTALL AUTHORIZED AT THIS TIME.** Previous explicit one-attempt permission was consumed by the aborted `KeyError` run; real USB postfailure scan already independently proved v1.8 FINAL unchanged, v1.9 stage unchanged, no rename. Further on-device activation would require a **new express approval** after host tests and dry run pass. Installed STM32 native firmware binary exported API list remains independently un-attested. Avoid old activation command.
+
+
+## 2026-10-19 — operator-reported 60/60 host safety and activation PC dry-run PASS after KeyError correction
+
+The operator actually ran (after fetching the revised development checkout) the new **unmocked E11 native-resource contract** synthetic suite, the preexisting client-injected activation adapter synthetic suite, independent postactivation read-only synthetic suite, Windows wrapper static suite and default **PC-only** activation Windows dry-run, in that order. Pasted results:
+
+```text
+test_v19_e11_native_resource_live_contract_offline.py: Ran 17 tests in 0.013s — OK
+test_v19_e11_real_activation_adapter_offline.py: Ran 17 tests in 0.012s — OK
+test_v19_e11_postactivation_readonly.py: Ran 15 tests in 0.011s — OK
+test_v19_e11_activation_windows_static.py: Ran 11 tests in 0.010s — OK
+PC_BACKUPS_PASS: 12 files, 2128 bytes
+WINDOWS_PC_BACKUPS_RO: PASS | DEVICE_WRITES: ZERO | PC_WRITES: ZERO
+V19 E11 ACTIVATION LOCAL HASH / BACKUP / TRANSPORT REVIEW PASS
+FAP: 97540 bytes / pinned SHA256, source 19/19 / transport Git blob PASS
+DRY RUN: NO COM / NO DEVICE WRITES / NO RENAMES / NO FIRMWARE FLASH
+Native E11 installed firmware ABI: NOT ATTESTED.
+Activation requires separate, explicit owner approval; NEVER imply permission.
+```
+
+**Status: 60/60 synthetic/static tests and actual Windows default dry-run PASS.** The intentional `ACTIVATE NO-GO` text inside two negative unit tests is expected and their test methods report `ok` and thus does not mean the real device operation ran. Crucially, the new test suite no longer mocks `identity_resources_ro`, the gate that failed in the one prior physical activation attempt.
+
+The prior real post-KeyError COM7 independent read-only scan already confirmed **STAGED_V19_NONAPP_ACTIVE_V18** with original active v1.8 hash/size intact, exact 97,540-byte v1.9 sidecar read back twice, historical E11 backup preserved and new recovery filename absent. The **60/60 tests and PC dry-run do not change this real device state**.
+
+**Decision:** revised activation code and its pin-verified PC wrapper may now be presented for a **new, independent informed authorization**; however the previous one-attempt activation approval was consumed by the prior attempt, so it must NOT be replayed by assumption. The new activation still executes exactly two **non-atomic** guarded microSD renames and no firmware flash, user-data writes, automatic retry/recovery/restore. An interrupted rename can leave the active application filename absent. The STM32's actually installed firmware native binary export table is still **not independently attested**. Following any new separately approved on-device operation, require separate fresh strict read-only postactivation reconciliation before opening the v1.9 GUI. On error STOP and reclassify read-only, never rerun on ambiguous device state.
+
+No actual new v1.9 activation, firmware/SD writes or v1.9 GUI test is evidenced by this operator log. Draft PR #15 and Stable must remain untouched pending physical tests.
