@@ -64,3 +64,19 @@ LabMateScopePlotStats labmate_scope_plot_project(
     result.result = LabMateScopePlotReady;
     return result;
 }
+
+/* Read-only focus window: last 13 stored edges = at most 12 measured
+ * intervals (~6 periods for a square wave). NEVER interpolate fake edges.
+ * This view is independent of full 256-edge A/B and reference metrics. */
+LabMateScopePlotStats labmate_scope_plot_focus(
+    const LabMateScopeEdge* edges, uint16_t available, bool cropped_old_edges,
+    LabMateScopePlotLine* out, uint16_t max_lines) {
+    if(available > LABMATE_SCOPE_PLOT_MAX_EDGES || (available && !edges)) {
+        return (LabMateScopePlotStats){.result = LabMateScopePlotInvalid};
+    }
+    const uint16_t shown = available > LABMATE_SCOPE_PLOT_FOCUS_EDGES ?
+        LABMATE_SCOPE_PLOT_FOCUS_EDGES : available;
+    const LabMateScopeEdge* selected = shown ? edges + (available - shown) : NULL;
+    return labmate_scope_plot_project(
+        selected, shown, cropped_old_edges || available > shown, out, max_lines);
+}
