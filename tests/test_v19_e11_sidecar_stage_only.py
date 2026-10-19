@@ -32,6 +32,7 @@ class StageOnlyMockTest(unittest.TestCase):
             (fake, "LEGACY_SHA"): hashlib.sha256(self.legacy).hexdigest(),
             (fake, "V19_SIZE"): len(self.fap),
             (fake, "V19_SHA"): self.digest,
+            (m, "V18_ACTIVE_BYTES"): len(self.v18),
             (m, "FAP_BYTES"): len(self.fap),
             (m, "FAP_SHA"): self.digest,
         }
