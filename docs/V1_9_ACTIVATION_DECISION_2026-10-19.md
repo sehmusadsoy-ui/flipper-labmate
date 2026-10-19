@@ -302,3 +302,31 @@ Do not start app before post-activation identity PASS.
 **REAL ACTIVATION FILE-PROMOTION SUCCESS:** Two device FAP rename operations completed with in-session exact full binary FAP readback. Pinned v1.9 is now at `/ext/apps/Tools/labmate.fap`, exact v1.8 FINAL at `/ext/apps/Tools/labmate.v18-final-before-v19.bak`, earlier E11 backup still preserved, staging path absent. No firmware flash or LabMate data access claimed. **Independent postactivation read-only run is now the mandatory next gate**, using `scripts/run-v19-e11-postactivation-ro.ps1 -Port COM7`. It is separate from the mutating activation wrapper and is already source-reviewed, not yet operator-executed in this state. Do not launch the v1.9 GUI until it independently reports PASS, and do not mark installed native firmware ABI or GUI functionality as proven. If the independent checker reports NO-GO, STOP without blind retry, rollback or firmware flash.
 
 PR #15 should remain Draft and Stable untouched until independently accepted hardware functionality evidence.
+
+
+## Independent real COM7 postactivation full binary state — PASS (GUI pending)
+
+Following the explicitly approved successful physical v1.9 two-rename activation, the operator executed the **separate independent read-only** Windows runner `scripts/run-v19-e11-postactivation-ro.ps1 -Port COM7` and supplied the complete real COM7 output. This source was separately hash-pinned and did not issue any device write or rename.
+
+```text
+PC_BACKUPS_PASS: 12 files, 2128 bytes
+WINDOWS_PC_BACKUPS_RO: PASS | DEVICE_WRITES: ZERO | PC_WRITES: ZERO
+V19 E11 LOCAL HASH / TRANSPORT POST-ACTIVATION READ-ONLY GATE: PASS
+FAP: 97540 bytes / pinned SHA256, source 17/17 / transport Git blob PASS
+v19_active: CONFIRMED_BY_TWO_FULL_SHA256_READBACKS
+active_v19_sha256: e1f43390c4078fbaad7e13124331926e0d6667294f2815e8b63762bd16f3ff90
+final_v18_device_backup: PRESERVED_TWICE_READBACK
+historical_e11_backup: UNCHANGED_TWICE_READBACK
+staging_path: ABSENT
+failed_v19_backup: ABSENT
+native_E11_resources: PINNED_LABEL_AND_JS_MANIFEST_MD5
+installed_firmware_binary_abi: NOT_ATTESTED
+gui_boot: NOT_TESTED
+device_writes: ZERO
+V19 E11 INDEPENDENT REAL POSTACTIVATION STATE PASS
+V19 E11 ACTIVE FAP VERIFIED INDEPENDENTLY - NO DEVICE WRITE
+```
+
+**Decision:** v1.9 is confirmed physically installed at the active Flipper application path; the backup of FINAL v1.8 and historical E11 artifact are preserved, and 12 backed-up LabMate data files unchanged on PC. The independent full-binary check validates the FAP bytes and state, **not runtime correctness or installed internal firmware export-table ABI compatibility**.
+
+**Next:** permit carefully observed first GUI launch with NO external GPIO wiring or generation; if GUI fails to start/crashes, STOP and report exact observable error, do NOT rerun activation or firmware flash. Only after basic GUI launch passes proceed to controlled non-destructive native scope/GPIO functionality tests. Draft PR #15 and Stable remain unchanged until actual runtime evidence exists.
