@@ -163,7 +163,7 @@ REAL COM WRITE TOOL / REAL DEVICE TRIAL: NOT AUTHORIZED OR EXECUTED
 
 This upgrades the previous synthetic-only FAP state-machine result to a **real PC artifact input** simulation; it remains a pure-memory transition model. It does not establish that the pinned Momentum storage CLI will behave correctly while writing the card, or that an actual v1.9 rollback can be performed safely.
 
-## Additional offline native-CLI protocol fixture — tests NOT yet run by operator
+## Additional offline native-CLI protocol fixture — operator-reported 28/28 PASS
 
 `scripts/simulate_v19_e11_storage_cli_offline.py` and `tests/test_v19_e11_storage_cli_protocol_offline.py` (28 distinct synthetic cases) model the concrete legacy E11 `storage stat`, `storage write_chunk`, native command echo / `Ready` / result framing, 4096-byte append chunks, post-transfer MD5 and full binary readback, plus **two non-atomic same-folder renames** in an entirely in-memory fake transport. The fixture intentionally imports no serial/Flipper transport, offers no real-device entrypoint and writes nothing to the PC. Test cases include short write, incorrect Ready, ambiguous first/second rename result, changed staged bytes, occupied backup, old v1.8/legacy E11 backup corruption, blocked retry and forbidden target paths.
 
@@ -176,6 +176,6 @@ python3 /mnt/c/Users/sehmu/labmate-src-v19/scripts/simulate_v19_e11_storage_cli_
   --legacy-e11-pc-backup /mnt/c/Users/sehmu/Documents/LabMate-FAP-PC-Backups/E11-before-v18-final-b7370882610140aa871dbdf8b61cf53d/installed_E11_v18DEV_before_final_label.fap
 ```
 
-The command must conclude `REAL-FAP INPUT MOCK NATIVE CLI E11 STAGE/TWO-RENAME: PASS`, `USB_CALLS: 0 | DEVICE_WRITES: 0 | PC_WRITES: 0` before considering further work. Both the unit and real-FAP mock runs are **pending actual operator execution** as of this document update.
+The command must conclude `REAL-FAP INPUT MOCK NATIVE CLI E11 STAGE/TWO-RENAME: PASS`, `USB_CALLS: 0 | DEVICE_WRITES: 0 | PC_WRITES: 0` before considering further work. The **28 synthetic unit tests were actually executed** by the operator on Ubuntu/WSL and reported `Ran 28 tests in 0.010s`, `OK`. The separate **three-real-FAP input mock run** is still pending; do not claim its PASS before operator output.
 
 The **mock state machine is not evidence of device-side FAT atomicity or transport implementation**. It is only an offline safeguard to catch our orchestration mistakes before deciding whether to author/review any real-device write tool. Real source inspection, exact installed E11 ABI compatibility and rollback-specific independent read-only state classification are still required. **No device write or firmware operation authorized.**
