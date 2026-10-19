@@ -436,3 +436,12 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command '& "$env:USERPROFILE\
 ```
 
 No post-stage read-only device result is claimed until the operator posts it. Firmware native ABI source-export parity versus **installed binary** remains NOT ATTESTED; no activation/rollback/rename consent. No stage retry.
+
+
+## 2026-10-19 — poststage synthetic negative-case assertion alignment (no device change)
+
+The operator pulled `a040832` and executed `tests/test_v19_e11_poststage_readonly.py -v && tests/test_v19_e11_poststage_windows_runner_static.py -v`. First suite produced `Ran 15 tests in 0.017s`, `FAILED (failures=2)`: `test_no_future_backup_allowed` and `test_stage_size_wrong_blocks_attestation`, **both rejecting their injected unsafe state with `ValueError: unrecognized post-stage status response`** before the test's expected semantic error message. This reflects the intentionally strict post-stage `stat_exact` parser: only the exact staged v1.9 FAP size or ABSENT state can leave the parser. No unsafe state was accepted. Because shell used `&&`, the **9-case Windows wrapper static suite did not execute**.
+
+Only the synthetic test assertions were edited: both cases now require the actual fail-closed parser error and assert no staged write/rename. A **new sixteenth test** verifies that even when the future recovery pathname is occupied by an exact allowed-size FAP, the higher-level absence gate separately rejects it with `unexpectedly occupied`. **`scripts/check_v19_e11_staged_device_ro.py` and the Windows wrapper were NOT changed**, preventing gratuitous alteration to the device inspection tool. The amended **16-case** suite and original **9-case** static suite are **pending operator execution**.
+
+New gate: pull dev/v1.9-logic-scope, run 16 synthetic tests AND 9 static tests, **stop if either fails**, then run `scripts/run-v19-e11-poststage-ro.ps1` (without any apply/write switch). The first physical sidecar stage remains confirmed PASS by its original real-device double binary readback. Current installed app still final v1.8 as most recently observed. No v1.9 app activation, firmware write, rename, delete or retry authorized.
