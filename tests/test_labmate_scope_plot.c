@@ -28,11 +28,17 @@ static void check_real_duty(void) {
     assert(s.result == LabMateScopePlotReady && s.line_count == 4U);
     assert(s.window_cycles == 60U && s.cropped_old_edges);
     assert(lines[0].x0 == 5U && lines[0].x1 == 44U);
-    assert(lines[0].y0 == 23U && lines[0].y1 == 23U);
-    assert(lines[1].x0 == 44U && lines[1].y0 == 23U && lines[1].y1 == 43U);
+    assert(lines[0].y0 == LABMATE_SCOPE_PLOT_Y_HIGH &&
+           lines[0].y1 == LABMATE_SCOPE_PLOT_Y_HIGH);
+    assert(lines[1].x0 == 44U &&
+           lines[1].y0 == LABMATE_SCOPE_PLOT_Y_HIGH &&
+           lines[1].y1 == LABMATE_SCOPE_PLOT_Y_LOW);
     assert(lines[2].x0 == 44U && lines[2].x1 == 122U);
-    assert(lines[2].y0 == 43U && lines[2].y1 == 43U);
-    assert(lines[3].x0 == 122U && lines[3].y0 == 43U && lines[3].y1 == 23U);
+    assert(lines[2].y0 == LABMATE_SCOPE_PLOT_Y_LOW &&
+           lines[2].y1 == LABMATE_SCOPE_PLOT_Y_LOW);
+    assert(lines[3].x0 == 122U &&
+           lines[3].y0 == LABMATE_SCOPE_PLOT_Y_LOW &&
+           lines[3].y1 == LABMATE_SCOPE_PLOT_Y_HIGH);
 }
 static void check_overflow_wrap_invalid(void) {
     LabMateScopeEdge wrap[] = {
@@ -68,8 +74,10 @@ static void check_full_real_capture(void) {
     for(uint16_t i = 0; i < s.line_count; ++i) {
         assert(line[i].x0 >= 5U && line[i].x0 <= 122U);
         assert(line[i].x1 >= 5U && line[i].x1 <= 122U);
-        assert(line[i].y0 == 23U || line[i].y0 == 43U);
-        assert(line[i].y1 == 23U || line[i].y1 == 43U);
+        assert(line[i].y0 == LABMATE_SCOPE_PLOT_Y_HIGH ||
+               line[i].y0 == LABMATE_SCOPE_PLOT_Y_LOW);
+        assert(line[i].y1 == LABMATE_SCOPE_PLOT_Y_HIGH ||
+               line[i].y1 == LABMATE_SCOPE_PLOT_Y_LOW);
     }
     e[63].delta_ticks = LABMATE_SCOPE_MAX_SAFE_DELTA;
     s = labmate_scope_plot_project(e, 64, true, line, 126);
