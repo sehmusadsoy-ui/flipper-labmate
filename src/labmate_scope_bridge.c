@@ -90,6 +90,7 @@ bool labmate_scope_bridge_init(LabMateApp* a) {
 void labmate_scope_bridge_enter(LabMateApp* a) {
     if(!a) return;
     a->scope_show_compare = false;
+    a->scope_compare_page = 0U;
     a->scope_show_reference = false;
     a->scope_display.state =
         !labmate_scope_native_stop_confirmed(
@@ -204,20 +205,29 @@ void labmate_scope_bridge_input(LabMateApp* a, InputEvent event) {
         if(a->scope_show_reference) {
             a->scope_show_reference = false;
             a->scope_show_compare = false;
+            a->scope_compare_page = 0U;
         } else if(a->scope_show_compare) {
             a->scope_show_compare = false;
             a->scope_show_reference = true;
+            a->scope_compare_page = 0U;
         } else {
             a->scope_show_compare = true;
+            a->scope_compare_page = 0U;
         }
         return;
     }
-    if(event.key == InputKeyUp && a->scope_show_reference &&
-       !a->scope_native.active) {
-        a->scope_reference_preset =
-            a->scope_reference_preset == LabMateScopeReference100Hz50 ?
-                LabMateScopeReference1kHz50 : LabMateScopeReference100Hz50;
-        return;
+    if(event.key == InputKeyUp && !a->scope_native.active) {
+        if(a->scope_show_reference) {
+            a->scope_reference_preset =
+                a->scope_reference_preset == LabMateScopeReference100Hz50 ?
+                    LabMateScopeReference1kHz50 : LabMateScopeReference100Hz50;
+            return;
+        }
+        if(a->scope_show_compare) {
+            /* Read-only frequency summary -> A times -> B times. */
+            a->scope_compare_page = (uint8_t)((a->scope_compare_page + 1U) % 3U);
+            return;
+        }
     }
     if((event.key == InputKeyLeft || event.key == InputKeyRight) &&
        !a->scope_native.active && !a->scope_show_reference) {
@@ -235,6 +245,7 @@ void labmate_scope_bridge_input(LabMateApp* a, InputEvent event) {
             (void)labmate_scope_pair_save_b(
                 &a->scope_pair, metric, a->scope_last_generation);
         a->scope_show_compare = true;
+        a->scope_compare_page = 0U; /* show save result before details */
         return;
     }
     if(event.key != InputKeyOk) return;
@@ -260,6 +271,7 @@ void labmate_scope_bridge_input(LabMateApp* a, InputEvent event) {
         a->scope_clock_fault = a->scope_capture_hz == 0U;
         a->scope_last_valid = false;
         a->scope_show_compare = false;
+        a->scope_compare_page = 0U;
         a->scope_show_reference = false;
         a->gpio_index = LABMATE_MONITOR_PC1_INDEX;
         a->capture_pin_index = LABMATE_MONITOR_PC1_INDEX;
