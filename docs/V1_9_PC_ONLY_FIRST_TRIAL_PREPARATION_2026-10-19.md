@@ -343,3 +343,22 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command '& "$env:USERPROFILE\
 ```
 
 Expected dry-run evidence: `PC_BACKUPS_PASS: 12 files, 2128 bytes`, `WINDOWS_PC_BACKUPS_RO: PASS`, `V19 E11 LOCAL HASH / TRANSPORT PRE-STAGE GATE: PASS` and `DRY RUN ONLY - ZERO COM / DEVICE WRITES`. **STOP on any error and do not invoke `-ApplyStageOnly` until the user reports an actual corrected dry-run PASS**, despite their previously granted limited permission. Authorization scope unchanged: at most one fresh non-app stage sidecar; no active `labmate.fap` rename, deletion, firmware flash, backup overwrite or automatic retry.
+
+
+## 2026-10-19 — corrected Windows PC-only dry run PASS; one static test typo fixed
+
+The operator ran `git pull --ff-only` to prior head `6231759`, then the **11-case** `tests/test_v19_e11_stage_only_windows_runner_static.py`. There were ten passing cases and **one failed assertion**, `test_all_fifteen_sources_pinned`, because one test line still expected `14` unique helper filenames after upgrading the inventory to **15**. This is a **test expectation error**, not an observed hash mismatch. Test source corrected in commit `569f3085494e3cd2ae677cba93bf4fe3cff58cda`; the repaired 11-case suite **has NOT yet been operator-reexecuted**.
+
+The operator also successfully ran the no-switch **Windows PC-only wrapper dry run** (this does NOT open COM7):
+
+```text
+PC_BACKUPS_PASS: 12 files, 2128 bytes
+WINDOWS_PC_BACKUPS_RO: PASS | DEVICE_WRITES: ZERO | PC_WRITES: ZERO
+V19 E11 LOCAL HASH / TRANSPORT PRE-STAGE GATE: PASS
+FAP: 97540 bytes / pinned SHA256, source 15/15 / transport Git blob PASS
+Original v1.8, E11 v1.8DEV and 12 LabMate data files preserved on PC.
+DRY RUN ONLY - ZERO COM / DEVICE WRITES / NO INSTALL AUTHORIZED BY THIS COMMAND
+Stage code is ready for separately controlled, stage-only device operation.
+```
+
+**Physical v1.9 sidecar stage has NOT been performed.** The user's approval remains limited to **one first attempt** to create the NEW non-`.fap` sidecar, after a corrected 11/11 unit test PASS and fresh stage-run same-COM-session FAP/resource/prewrite checks. Any failure in the actual stage: preserve exact on-device state and STOP, no second attempt, deletion, recovery, or activation. No v1.9 firmware or app install/promotion authorization.
