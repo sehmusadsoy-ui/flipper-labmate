@@ -278,3 +278,25 @@ python3 /mnt/c/Users/sehmu/labmate-src-v19/tests/test_v19_e11_windows_pc_copy_on
 ```
 
 Wait for their actual result before invoking any PC-copy action. Do not run the real Flipper stage-only program or promote/flash firmware.
+
+
+## 2026-10-19 — real Windows-mounted PC candidate copy PASS (operator)
+
+The operator executed `scripts/copy_v19_e11_candidate_windows_pc_only.py` on the actual pinned WSL FAP, into a **new Windows-only PC folder** after 9/9 synthetic unit tests PASS, and reported:
+
+```text
+V19 E11 WINDOWS PC-ONLY TRANSFER - NO COM/DEVICE OPERATIONS
+status: V19 WINDOWS PC-ONLY CANDIDATE COPY PASS
+candidate_file: /mnt/c/Users/sehmu/Documents/LabMate-FAP-PC-Backups/V19-WINDOWS-PC-CANDIDATE-3d66658-20261019/labmate-v1.9DEV-E11-WINDOWS-PC-ONLY.fap
+candidate_bytes: 97540
+candidate_sha256: e1f43390c4078fbaad7e13124331926e0d6667294f2815e8b63762bd16f3ff90
+backup_files_verified: 12
+backup_bytes_verified: 2128
+device_writes: NONE
+firmware_flash: NONE
+install_authorized: NO
+```
+
+**PC handoff is closed PASS**; both original existing v1.8/v1.8DEV PC FAP backups and current 12-file LabMate data snapshot still verify. This is *not* the entire microSD and not a restore rehearsal. The stage-only writer remains unexecuted. Real on-device v1.9 APP ACTIVE = NO; v1.8 remains installed. Draft PR #15; published v1.8 immutable.
+
+**Next permission decision:** only if separately authorized, consider writing the new **non-.fap** staging sidecar `/ext/apps/Tools/labmate.v19-new-stage`; do not promote, rename the active `labmate.fap`, flash firmware, or touch any backups. This is a genuine microSD device write and must have an independent exact-command Windows transport provenance review and fresh same-session live preflight. Regardless of stage outcome, no v1.9 activation without separate installed E11 SDK ABI compatibility and an independent express permission.
