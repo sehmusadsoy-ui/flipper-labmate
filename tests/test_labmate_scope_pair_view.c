@@ -24,7 +24,7 @@ void canvas_draw_str(Canvas* c, int32_t x, int32_t y, const char* s) {
     assert((size_t)x + strlen(s)*6U <= 128U);
     ++c->labels;
     if(s[0]=='A' && (s[1]==':' || s[1]=='*')) c->saw_a=true;
-    if(s[0]=='B' && (s[1]==':' || s[1]=='*')) c->saw_b=true;
+    if(s[0]=='B' && (s[1]==':' || s[1]=='*') && !strstr(s,"NOT SAVED")) c->saw_b=true;
     if(!strncmp(s,"F DIFF ",7)) c->saw_delta_freq=true;
     if(!strncmp(s,"D DIFF ",7)) c->saw_delta_duty=true;
     if(!strncmp(s,"HIGH ",5)) c->saw_high=true;
