@@ -101,7 +101,11 @@ class FakeCLI:
             # Native rename takes effect during command execution before the
             # response arrives. The fail mode leaves changed, uncertain state.
             self.fs[target] = self.fs.pop(source)
-            self.replies.append(b"ambiguous" if "rename-reply-fail" in self.faults else b"\r\n")
+            self.replies.append(
+                b"ambiguous" if ("rename-reply-fail" in self.faults or
+                                 ("rename-reply-fail-second" in self.faults and
+                                  self.rename_count == 2)) else b"\r\n"
+            )
         else:
             raise ValueError("unrecognized native CLI command")
         return cmd.encode("ascii")
