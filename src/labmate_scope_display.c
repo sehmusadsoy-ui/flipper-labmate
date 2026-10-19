@@ -101,13 +101,7 @@ bool labmate_scope_display_draw(Canvas* c, const LabMateScopeDisplay* d) {
 
     /* Cropped = latest 13 observed edges, never a fabricated full trace.
      * Use ZM only for the longest state label to stay inside 20 glyphs. */
-    const char* state = scope_state_label(d->state);
-    const char* suffix = d->plot.cropped_old_edges ?
-        (d->state == LabMateScopeDisplayNoTrigger ? " ZM" : " ZOOM") : "";
-    char summary[24];
-    const int used = snprintf(summary, sizeof(summary), "%u EDGES %s%s",
-        (unsigned)d->total_edges, state, suffix);
-    if(used < 0 || used > 20) return false;
+
     canvas_draw_str(c, 3, 50, summary);
     canvas_draw_line(c, 0, 53, 127, 53);
     canvas_draw_str(c, 3, 62,
