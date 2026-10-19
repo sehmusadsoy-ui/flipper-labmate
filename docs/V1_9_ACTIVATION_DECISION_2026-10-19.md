@@ -103,3 +103,8 @@ This is operator-proven **in-memory real-artifact** success only; not a live ren
 In commit `ec2fc7a3accb01f318a04ee709d63988519b9757`, only the **test** was corrected to require the actual lower-level transport error and additionally require **zero renames, zero binary chunks, one read-only stat attempt, and unchanged active v1.8/staged v1.9/legacy backup bytes**. No application, fake native CLI, or real-device writer implementation was changed. The revised **22/22 test result is PENDING** until the operator reruns it.
 
 Until then and until a reviewed explicit activation grant, retain the real device in the currently independently verified `STAGED_V19_NONAPP_ACTIVE_V18` state. No more `-ApplyStageOnly`, no on-device rename/restore/flash/retry.
+
+
+## 2026-10-19 — operator confirms corrected 22/22 offline fault cases PASS
+
+The operator pulled `dev/v1.9-logic-scope` from `766a100` to `aafb860`, then actually reran `tests/test_v19_e11_activation_recovery_real_fap_offline.py -v` with **all 22 tests PASS**, `Ran 22 tests in 0.007s`, `OK`. The previously reported real-three-PC-FAP in-memory activation + manual rollback + interrupted first-rename recovery rehearsal also PASS. The 22/22 result closes **host-only** behavior checking of the current fake CLI and reviewed in-memory transition function. It does **not** authenticate the STM32 installed firmware ABI, does not prove a live rename/restore, and does not authorize activation. The real v1.9 FAP stays staged, with final v1.8 still active. Next work: review a separately constrained real COM7 activation adapter and independent post-activation state checker, fully offline tested, with explicit separate activation permission before first actual mutation.
