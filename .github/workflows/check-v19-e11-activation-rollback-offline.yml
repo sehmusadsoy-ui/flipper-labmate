@@ -1,0 +1,37 @@
+name: LabMate v1.9 E11 activation and recovery OFFLINE safety gate
+
+on:
+  push:
+    branches: [dev/v1.9-logic-scope]
+    paths:
+      - "scripts/review_v19_e11_activation_recovery_offline.py"
+      - "tests/test_v19_e11_activation_recovery_real_fap_offline.py"
+      - "scripts/simulate_v19_e11_storage_cli_offline.py"
+      - "scripts/simulate_v19_e11_fap_swap_offline.py"
+      - "tests/test_v19_e11_storage_cli_protocol_offline.py"
+      - "tests/test_v19_e11_fap_swap_offline.py"
+      - ".github/workflows/check-v19-e11-activation-rollback-offline.yml"
+  pull_request:
+    branches: [dev/v1.8-completion]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  simulate_only:
+    name: Pure host-only paired FAP rename and manual rollback tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check offline-only sources and exercise stop-on-fault states
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -B tests/test_v19_e11_activation_recovery_real_fap_offline.py -v
+          python3 -B tests/test_v19_e11_storage_cli_protocol_offline.py -v
+          python3 -B tests/test_v19_e11_fap_swap_offline.py -v
+          echo "OFFLINE FAP safety gate complete; ZERO COM, ZERO firmware, ZERO SD."
