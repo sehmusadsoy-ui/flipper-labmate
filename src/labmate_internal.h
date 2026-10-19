@@ -281,6 +281,7 @@ typedef struct {
     bool scope_last_valid;
     bool scope_clock_fault;
     bool scope_show_compare;
+    uint8_t scope_compare_page; /* 0 summary, 1 A timing, 2 B timing */
     bool scope_show_reference; /* read-only named reference result page */
     LabMateScopeReferencePreset scope_reference_preset;
 
