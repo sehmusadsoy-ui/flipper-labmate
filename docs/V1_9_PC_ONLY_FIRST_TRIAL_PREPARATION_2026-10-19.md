@@ -416,3 +416,23 @@ STOP: final v1.8 still active; v1.9 NOT installed/activated.
 **Critical next step: NO auto retry, upload, rename, delete or firmware flash.** The old `scripts/check_v19_e11_device_prewrite_ro.py` is no longer an applicable state checker because the stage filename is now expected to EXIST. A new **post-stage READ-ONLY** state attestation should independently reconnect to COM7, verify active final v1.8 + native E11 label/plugins/Manifest + original E11 backup and the new stage's exact remote length/MD5/entire SHA256, confirm the future v1.8 recovery filename remains absent, and stop without mutating any file. The code must be separately host-tested before operator use.
 
 **Still NOT proven:** exact flashed firmware image SHA256 and live loaded firmware ABI export-table equality for `furi_hal_resource_lease_try_acquire`, `furi_hal_resource_lease_release`, `furi_hal_gpio_try_add_int_callback`; compatibility across third-party/native services or real v1.9 Scope screen. No v1.9 activation or rollback authorization was requested or granted; stage-only consent has been consumed.
+
+
+## 2026-10-19 — independent post-stage READ-ONLY verification gate authored (PENDING)
+
+After actual physical sidecar stage and two native real-device full readbacks PASS, new **strictly read-only** verification scripts were authored and source-Git-blob reviewed:
+
+- `scripts/check_v19_e11_staged_device_ro.py`: fresh independent COM7 reconnection, all 12 PC data snapshot and pinned original v1.8 and E11 backup provenance, native E11 firmware label + external JS GPIO/event-loop/Manifest resource MD5 and original E11 device backup state, expected **present** 97,540-byte v1.9 non-app stage and expected **absent** future v1.8 backup path. Compares TWO new full binary stage readbacks and remote MD5 against the independently pinned actual Windows PC FAP. Requires all v1.8/native resource screens to remain identical across three audits, and no device-side mutation.
+- `scripts/run-v19-e11-poststage-ro.ps1`: exact hash-pinned **15/15** local Python helper inventory, pinned original E11 upstream `flipper/storage.py` Git blob, Windows PC candidate SHA256/size and PC backups check. Runs ONLY the new read-only checker; no `-ApplyStageOnly`, stage writer, rename or flash invocation. Fixed COM7, requires qFlipper closed. All 15 Python helper blob IDs were independently re-read from GitHub and matched.
+- `tests/test_v19_e11_poststage_readonly.py`: **15 synthetic tests** (not yet operator run) for changed stage size/bytes, wrong MD5, corrupt readback, occupied future backup, v1.8/native resource drift, forbidden stat paths, and exact twice-read safety.
+- `tests/test_v19_e11_poststage_windows_runner_static.py`: **9 static Windows wrapper tests** (not yet operator run) for read-only source, 15 pinned helpers, exact COM7, E11 transport provenance, rejection of stage writer, and immutable backup data sources.
+
+No new device writes are permitted or required for these tests or the planned poststage check. The **old prewrite checker is NOT valid after a successful stage**, since that checker expects the new staging filename to be absent.
+
+Run the two test suites after Git pull, inspect operator output, then separately run the new **read-only** poststage Windows command:
+
+```bash
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command '& "$env:USERPROFILE\labmate-src-v19\scripts\run-v19-e11-poststage-ro.ps1" -Port COM7'
+```
+
+No post-stage read-only device result is claimed until the operator posts it. Firmware native ABI source-export parity versus **installed binary** remains NOT ATTESTED; no activation/rollback/rename consent. No stage retry.
