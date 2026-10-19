@@ -6,6 +6,10 @@
  * No floating-point output and no extrapolation from a partial capture. */
 static void format_frequency(char* out, size_t cap, uint64_t mhz, bool negative) {
     const char* unit = "Hz";
+    if(mhz > UINT64_C(999999999999)) {
+        (void)snprintf(out, cap, "RANGE");
+        return;
+    }
     uint64_t hundredths = (mhz + 5U) / 10U;
     if(mhz >= UINT64_C(1000000000)) {
         unit = "MHz";
@@ -33,12 +37,15 @@ static void metric_line(char* out, size_t cap, char prefix, const LabMateScopeMe
 }
 
 static void format_duration(char* out, size_t cap, uint64_t ticks, const LabMateScopeMetrics* m) {
-    if(!m->timebase_hz || !m->completed_cycles ||
-       ticks > UINT64_MAX / UINT64_C(1000000)) {
+    if(!m->timebase_hz || !m->completed_cycles) {
         (void)snprintf(out, cap, "RANGE");
         return;
     }
     const uint64_t divisor = (uint64_t)m->timebase_hz * m->completed_cycles;
+    if(ticks > (UINT64_MAX - divisor / 2U) / UINT64_C(1000000)) {
+        (void)snprintf(out, cap, "RANGE");
+        return;
+    }
     const uint64_t us = (ticks * UINT64_C(1000000) + divisor / 2U) / divisor;
     if(us >= 1000U) {
         const uint64_t centims = (us + 5U) / 10U;
@@ -61,9 +68,11 @@ bool labmate_scope_pair_view_draw(Canvas* c, const LabMateScopePair* p,
     if(!c || !p || page > 2U ||
        (p->has_b && (!p->has_a || !p->delta.comparable)) ||
        (p->has_a && (p->a.status != LabMateScopeMetricsReady ||
-                     !p->a.completed_cycles)) ||
+                     !p->a.completed_cycles || !p->a.timebase_hz ||
+                     p->a.duty_permille > 1000U)) ||
        (p->has_b && (p->b.status != LabMateScopeMetricsReady ||
-                     !p->b.completed_cycles))) return false;
+                     !p->b.completed_cycles || !p->b.timebase_hz ||
+                     p->b.duty_permille > 1000U))) return false;
 
     /* Guard every dynamic text line BEFORE the first pixel. */
     char lines[4][48] = {{0}};
@@ -112,7 +121,8 @@ bool labmate_scope_pair_view_draw(Canvas* c, const LabMateScopePair* p,
             format_duration(time, sizeof(time), m->total_low_ticks, m);
             (void)snprintf(lines[1], sizeof(lines[1]), "LOW     %s", time);
             format_duration(time, sizeof(time),
-                m->total_high_ticks + m->total_low_ticks, m);
+                m->total_high_ticks > UINT64_MAX - m->total_low_ticks ?
+                    UINT64_MAX : m->total_high_ticks + m->total_low_ticks, m);
             (void)snprintf(lines[2], sizeof(lines[2]), "PERIOD  %s", time);
             (void)snprintf(lines[3], sizeof(lines[3]), "DUTY    %u.%u%%",
                 (unsigned)(m->duty_permille / 10U),
