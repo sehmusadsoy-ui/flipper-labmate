@@ -236,3 +236,26 @@ python3 /mnt/c/Users/sehmu/labmate-src-v19/scripts/replay_v19_e11_real_fap_stage
 ```
 
 **No operator result is claimed in advance.** The standalone, dangerous real USB stage-only writer **MUST NOT be run** until a new, separately reviewed and explicitly authorized stage-only operation. Its use is NOT part of either of these offline commands. A successful offline replay will not imply native firmware ABI hash attestation or authorization to replace the active v1.8.
+
+
+## 2026-10-19 — actual three-FAP direct stage-only code offline replay PASS
+
+The operator ran `scripts/replay_v19_e11_real_fap_stage_offline.py` on the exact three verified PC artifacts after **12/12 synthetic replay unit tests PASS** (0.004s). User-provided output:
+
+```text
+V19 E11 REAL-FAP STAGE-ONLY REPLAY - IN MEMORY / NEVER DEVICE
+FAP_CANDIDATE_BYTES: 97540
+FAP_CANDIDATE_SHA256: e1f43390c4078fbaad7e13124331926e0d6667294f2815e8b63762bd16f3ff90
+STAGE_CHUNKS: 24
+STAGE_ONLY_FULL_READBACK_TWICE: PASS
+ACTIVE_FINAL_V18_UNCHANGED: YES
+LEGACY_E11_BACKUP_UNCHANGED: YES
+RENAME_ATTEMPTS: 0
+REAL_FAP_ACTUAL_STAGE_CODE_OFFLINE_REPLAY: PASS
+USB_CALLS: 0 | DEVICE_WRITES: 0 | PC_WRITES: 0
+NATIVE_E11_FIRMWARE_ABI: NOT_ATTESTED | INSTALL: NOT_AUTHORIZED
+```
+
+Unlike the earlier virtual promotion model, this replay exercises the actual code that would stage a new non-app sidecar later. The on-device ABI remains un-attested at binary level; no FAP installation or COM stage has occurred. The 21 stage-only and 12 direct-code-replay offline suites and the actual PC backup hashes have now been checked by the operator.
+
+Next stage is Windows PC-only candidate transfer/integrity verification and independent host review of *any* authorized command that might later write ONLY one fresh sidecar. The final-v1.8 app, original E11 device backup, data snapshot, firmware and installed app remain untouched. **No stage-only device write is authorized by these results.**
