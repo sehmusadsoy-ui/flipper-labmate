@@ -73,7 +73,7 @@ bool labmate_scope_reference_view_draw(
     canvas_draw_line(c, 0, 13, 127, 13);
     canvas_draw_str(c, 3, 23, target);
     canvas_draw_str(c, 3, 34, verdict);
-    canvas_draw_str(c, 3, 44, frequency);
+    canvas_draw_str(c, 3, 43, frequency);
     canvas_draw_str(c, 3, 51, duty);
     canvas_draw_line(c, 0, 53, 127, 53);
     canvas_draw_str(c, 3, 62, "UP:REF DN:PG BK:EXIT");
