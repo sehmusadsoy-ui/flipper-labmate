@@ -167,4 +167,15 @@ This upgrades the previous synthetic-only FAP state-machine result to a **real P
 
 `scripts/simulate_v19_e11_storage_cli_offline.py` and `tests/test_v19_e11_storage_cli_protocol_offline.py` (28 distinct synthetic cases) model the concrete legacy E11 `storage stat`, `storage write_chunk`, native command echo / `Ready` / result framing, 4096-byte append chunks, post-transfer MD5 and full binary readback, plus **two non-atomic same-folder renames** in an entirely in-memory fake transport. The fixture intentionally imports no serial/Flipper transport, offers no real-device entrypoint and writes nothing to the PC. Test cases include short write, incorrect Ready, ambiguous first/second rename result, changed staged bytes, occupied backup, old v1.8/legacy E11 backup corruption, blocked retry and forbidden target paths.
 
+After all **28 offline tests** pass, run the memory-only mock command using the three existing hash-pinned PC FAPs:
+
+```bash
+python3 /mnt/c/Users/sehmu/labmate-src-v19/scripts/simulate_v19_e11_storage_cli_offline.py \
+  --candidate ~/labmate-build/v19-pc-only-prepared-3d66658/labmate-v1.9DEV-E11-PC-ONLY.fap \
+  --current-v18-pc-backup /mnt/c/Users/sehmu/Documents/LabMate-FAP-PC-Backups/V19-pretrial-live-v18-5e5cf7bc9ade41289c870ed156864482/installed_LabMate_v18_FINAL_E11_before_v19.fap \
+  --legacy-e11-pc-backup /mnt/c/Users/sehmu/Documents/LabMate-FAP-PC-Backups/E11-before-v18-final-b7370882610140aa871dbdf8b61cf53d/installed_E11_v18DEV_before_final_label.fap
+```
+
+The command must conclude `REAL-FAP INPUT MOCK NATIVE CLI E11 STAGE/TWO-RENAME: PASS`, `USB_CALLS: 0 | DEVICE_WRITES: 0 | PC_WRITES: 0` before considering further work. Both the unit and real-FAP mock runs are **pending actual operator execution** as of this document update.
+
 The **mock state machine is not evidence of device-side FAT atomicity or transport implementation**. It is only an offline safeguard to catch our orchestration mistakes before deciding whether to author/review any real-device write tool. Real source inspection, exact installed E11 ABI compatibility and rollback-specific independent read-only state classification are still required. **No device write or firmware operation authorized.**
