@@ -132,3 +132,8 @@ python3 /mnt/c/Users/sehmu/labmate-src-v19/tests/test_v19_e11_activation_windows
 ```
 
 Expected only if actually successful: **17/17, 15/15, 11/11 PASS**. If these pass, separate Windows review dry-run (NO `-ApplyActivation` switch) should be executed and reported before an activation decision.
+
+
+### Additional source checks and test-run caveat
+
+All **19/19 activation-wrapper** and **17/17 postactivation-wrapper** pinned Python Git SHA-1 blobs were independently fetched and matched source, and each of those Windows wrappers uses the exact previously reviewed Momentum CLI transport Git blob. In the synthetic postactivation suite, the strict stat-size allowlist is now patched to synthetic FAP byte lengths **inside the test only** (`232b236b2c5ccb67da30e3eabbba89f42963195e`); production read-only checker and real-size pins are unchanged. The 43 operator tests remain PENDING. A separate restricted GitHub Actions CI workflow `.github/workflows/check-v19-e11-real-activation-adapter-offline.yml` was added for these three host-only suites, but its actual run conclusion has NOT been obtained and cannot be called PASS yet. **Do not treat GitHub source upload, mocked E11 identity, or future host-only PASS as evidence that firmware currently flashed exports the v1.9 scope lease APIs.**
