@@ -32,6 +32,17 @@ The developer created the local review ZIP in WSL2:
 
 **Do not confuse successful matching-source SDK and ELF checks with ABI compatibility of the firmware already installed on a particular Flipper.** The patched E11 firmware ABI used to link the external FAP was not installed or verified on the user's device during this session.
 
+## Installed firmware display — 2026-10-19 (read-only)
+
+The operator supplied a screenshot of Flipper firmware info showing **Momentum mntm-dev [6-10-2026]**, abbreviated base commit **`d3f89dfe`**, and SDK/API **`87.1`**. The abbreviated commit matches the first eight characters of the pinned E11 source base, and the API version matches that unpatched source. **Neither the commit string nor the 87.1 SDK label establishes that the installed firmware includes the E11 resource-lease and nonasserting GPIO callback ABI patches.** Custom firmware compiled on the same base could report those same identifiers.
+
+A read-only authenticated GitHub retrieval of **`Next-Flip/Momentum-Firmware` at exact original commit `d3f89dfe2ef6b01839201598e9be1590cba80322`**, file `targets/f7/api_symbols.csv` (unmodified upstream), confirms that its API 87.1 list contains **none** of these E11-only FAP imports:
+- `furi_hal_resource_lease_try_acquire`
+- `furi_hal_resource_lease_release`
+- `furi_hal_gpio_try_add_int_callback`
+
+Therefore, **if the installed firmware is a normal/unpatched Momentum d3f89dfe build, this v1.9 FAP is NOT ABI-compatible**. Installed patch provenance is currently unknown; do not infer stock vs custom from the screenshot alone. Keep device install NO-GO pending exact installed firmware symbol/patch evidence. Do not flash firmware to overcome this gate without a separate, verified backup and explicit approved plan.
+
 ## Device gate remains closed
 
 Before any FAP-only installation, determine the currently installed firmware build/version and **independently verify its exported APIs** (including `furi_hal_resource_lease_try_acquire`, `furi_hal_resource_lease_release`, `furi_hal_gpio_try_add_int_callback`) against the binary's required SDK ABI. A firmware version string alone is insufficient. If incompatible or unknown, **NO INSTALL**; do not flash firmware automatically as a workaround.
