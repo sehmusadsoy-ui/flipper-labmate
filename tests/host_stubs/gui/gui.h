@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 typedef struct Canvas Canvas;
-typedef enum { FontSecondary = 0 } Font;
+typedef enum { FontSecondary = 0, FontPrimary = 1 } Font;
 void canvas_set_font(Canvas* canvas, Font font);
 void canvas_draw_str(Canvas* canvas, int32_t x, int32_t y, const char* text);
 void canvas_draw_line(
