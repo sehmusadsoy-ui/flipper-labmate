@@ -30,7 +30,7 @@ void canvas_draw_str(Canvas* c, int x, int y, const char* s) {
     if(c->drawn<24) (void)snprintf(c->strings[c->drawn++],48,"%s",s);
 }
 void canvas_draw_line(Canvas* c, int x0, int y0, int x1, int y1) {
-    if(!c || x0<0 || x1<0 || y0<0 || x0>=128 || x1>=128 || y0>=64 || y1>=64) {
+    if(!c || x0<0 || x1<0 || y0<0 || y1<0 || x0>=128 || x1>=128 || y0>=64 || y1>=64) {
         fprintf(stderr,"LINE BOUNDS\n"); if(c)c->errors++;
     }
 }
