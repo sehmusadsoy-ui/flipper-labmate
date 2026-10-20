@@ -16,7 +16,7 @@ import subprocess
 import sys
 from zipfile import ZipFile, is_zipfile
 
-SOURCE = "3f2f132a178bec725f21e7994a775dbb2f3d2426"
+SOURCE = "6d258bff2f2f0473d24aea0d9fc563ba3ef6293b"
 MOMENTUM = "d3f89dfe2ef6b01839201598e9be1590cba80322"
 OLD_FAP_BYTES = 97724
 OLD_FAP_SHA = "b5a4e3dc4a8b03f89f115180ba335963b2bb7a0d42713bbc25e056d07abe55b8"
@@ -30,7 +30,7 @@ UI = {
     "labmate_scope_pair_view.h": ("6820b39eaeccb7c744dfecb5f773c2ad316f9009",
                                    "616713f3b278f6dfde9122911fa1cc0957213419"),
     "labmate_scope_reference_view.c": ("a76d86128e7aeef325b7a57d6ea70ad8f5b8ef72",
-                                        "76171fcf86818520488ccaa041ff42c3dc8a23ed"),
+                                        "41734b19cf5ed15129aa5fdf670a725e70bb24c7"),
     "labmate_internal.h": ("0262efdaa5662e61ee7156045f6b6f86b9cb339f",
                             "afca584528de85788df0589f3e22ac3fbe1a98ff"),
     "labmate_view.c": ("d39f2a71b6233fef38fa9af84871da9950f0a933",
@@ -41,7 +41,7 @@ UI = {
 HOST_TESTS = {
     "test_labmate_scope_display.c": "85b979c8c4c3813d4b2929671ffcca6ad5bfd897",
     "test_labmate_scope_pair_view.c": "b880791fada9fc8c690911cf20805b65898ead1c",
-    "test_scope_reference_view.c": "46e2f70183250381d530c0298efe6e1e766092c6",
+    "test_scope_reference_view.c": "ad176aa87484df5803d401909dc15fa1395a513c",
     "test_labmate_scope_focus.c": "7530cfee04c230eca3a705a346e8bd6d219b00c3",
 }
 REVIEW = "841eb5f982e5c2e951cc98278060eedac078941b"
