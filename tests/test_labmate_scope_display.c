@@ -54,8 +54,10 @@ void canvas_draw_line(Canvas* c, int32_t x0, int32_t y0, int32_t x1, int32_t y1)
     } else {
         /* Only the original hardware-observed rising/falling trace can be
          * drawn here, inside the boxed viewport's two digital levels. */
-        assert(x0 >= LABMATE_SCOPE_PLOT_X_LEFT && x0 <= LABMATE_SCOPE_PLOT_X_RIGHT);
-        assert(x1 >= LABMATE_SCOPE_PLOT_X_LEFT && x1 <= LABMATE_SCOPE_PLOT_X_RIGHT);
+        assert(x0 >= (int32_t)LABMATE_SCOPE_PLOT_X_LEFT &&
+               x0 <= (int32_t)LABMATE_SCOPE_PLOT_X_RIGHT);
+        assert(x1 >= (int32_t)LABMATE_SCOPE_PLOT_X_LEFT &&
+               x1 <= (int32_t)LABMATE_SCOPE_PLOT_X_RIGHT);
         assert((y0 == LABMATE_SCOPE_PLOT_Y_HIGH || y0 == LABMATE_SCOPE_PLOT_Y_LOW) &&
                (y1 == LABMATE_SCOPE_PLOT_Y_HIGH || y1 == LABMATE_SCOPE_PLOT_Y_LOW));
         ++c->trace;
