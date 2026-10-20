@@ -9,7 +9,7 @@ for name in onewire uart; do
   test -s "$tmp/labmate_${name}_ui_body.inc"
 done
 for cc in gcc clang; do
-  "$cc" -std=c11 -O1 -g -Wall -Wextra -Werror -pedantic -fsanitize=undefined -fno-omit-frame-pointer \
+  "$cc" -std=c11 -O1 -g -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -fno-omit-frame-pointer \
     -I"$tmp" "$root/tests/test_v20_ui03_comm.c" -o "$tmp/ui03-$cc"
   "$tmp/ui03-$cc"
 done
