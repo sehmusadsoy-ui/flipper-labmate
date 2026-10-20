@@ -84,7 +84,6 @@ def source_checkout(folder: Path) -> Path:
     endpoint = "repos/sehmusadsoy-ui/flipper-labmate/zipball/" + SOURCE
     print("AUTHENTICATED_PINNED_UI_SOURCE:", SOURCE, flush=True)
     with archive.open("xb") as output:
-        run(["gh", "api", endpoint], env=None, timeout=180) if False else None
         # Binary stdout must never pass through Windows PowerShell redirection.
         rc = subprocess.run(["gh", "api", endpoint],
                             stdout=output, timeout=180).returncode
