@@ -52,3 +52,11 @@ The tested, new source is `tests/test_v20_ui_geometry.c` (local Git blob `c06eb2
 ## NEXT: UI-01 continuation
 
 After GitHub test source blob confirmation, extend Canvas host fixtures to every current renderer and control state, establish repeatable host suite/CI, and only then perform one UI-only renderer change. Preserve original app/tool IDs, Profile CRC, legacy CSV, E11 native ownership, STOP/BACK and original releases. Keep PR #21 draft and targeted at `dev/v1.9-logic-scope`.
+
+## Additional independent compiler check
+
+The exact same locally verified test/source files were compiled and run with **Clang 17.0.0** using the same `-std=c11 -O1 -g -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -fno-omit-frame-pointer -Itests/host_stubs -Isrc` options. Exit status **0**, with the same two test output lines. Host PASS now has **GCC + Clang** independent compiler evidence; neither run is a device or firmware test.
+
+After GitHub upload, `tests/test_v20_ui_geometry.c` was fetched again and the **Git blob SHA matched exactly**: `c06eb25936066de3017f208c2978c6c0b35bf79e`. PR #21 remains Draft against `dev/v1.9-logic-scope`, and contains **only Markdown documentation and the new host test**, no application renderer edit.
+
+**Legacy-test note:** `tests/test_navigation.c.inc` refers to an older 14-tool/5-item MEASURE inventory. Do not use it as current 15-tool release evidence without updating or retiring that obsolete fixture; `test_labmate_scope_navigation.c` and this UI-01 test reflect the current 15-tool baseline.
