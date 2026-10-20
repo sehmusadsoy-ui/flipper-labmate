@@ -76,3 +76,17 @@ UI-02 HOST PASS: 16 renderer states per compiler (GCC + Clang)
 **UI-01 whole-app / Phase 1: PENDING**: actual pixel-font raster, Frequency/Pulse/PWM/UART, History/Profiles/Logger, mixed overflow states, real GUI draw calls and E11 on-device review still require separate tests. Later revalidate oneWire numeric formatting for extreme/malformed data, including unsafe negative integer edge cases, without fabricating a sensor result.
 
 The branch remains `dev/v2.0-signal-doctor`; PR remains draft against `dev/v1.9-logic-scope`. The previous v1.8 (normal Momentum) and v1.9 (E11) Stable releases remain immutable.
+
+
+## 6. Final combined local regression check
+
+After GitHub SHA verification, both host scripts were rerun in the current local workspace:
+
+```sh
+sh scripts/test-v20-ui01-host.sh
+sh scripts/test-v20-ui02-host.sh
+```
+
+Recorded **exit statuses: UI-01 = 0, UI-02 = 0**. UI-01 exercised three existing navigation/geometry cases with GCC and Clang (six test executions). UI-02 exercised all sixteen predefined I2C/1-Wire renderer states with each compiler (32 status executions). Both used sanitizers in their respective scripts. This is a local host regression check, **not** proof of GitHub Actions, E11 SDK compilation or actual Flipper screen pixels.
+
+**GitHub file diff scope after UI-02:** only two production `src/` files changed: `src/labmate_i2c_ui.c` and `src/labmate_onewire_ui.c`, each a one-line badge geometry adjustment; other PR files are docs, scripts or host tests. No firmware image, release, profile, CSV, pin or native resource implementation changed.
