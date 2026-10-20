@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-21  
 **Branch:** `dev/v2.0-signal-doctor`; PR #21 remains **Draft**, base `dev/v1.9-logic-scope`.  
-**Status:** **12 SOURCE-BASED STATIC LAYOUT CHECKS PASS; NEW GCC/CLANG UI-05B C EXECUTIONS PENDING.**  
+**Status:** **12 source-based static layout checks PASS + UI-05B executable host regression PASS (GCC and Clang).**  
 **Do not infer:** real device PASS, firmware build, full six-renderer linked PASS, CI pass, stable readiness or actual pixel font raster inspection.
 
 ## 1. Source evidence and actual work
@@ -32,7 +32,7 @@ A connected-GitHub read-only source check verified presence of the actual fixed 
 
 **Limit:** these twelve static checks do not execute any Canvas callback. Actual renderer data bounds and read-only behavior require an executable host test.
 
-## 2. New real-renderer host test — awaiting run
+## 2. New real-renderer host test — executed locally
 
 Added:
 - `tests/test_v20_ui05b_button_threshold.c` — test-only Canvas model and state stubs; includes verbatim extracted `draw_button` and `draw_alerts` from production via the runner. Checks ASCII bounding rectangles, label intersection, badge/footer clipping, and that rendering does not change app state. Button fixtures include max uint32 press/release/hold and uint16 bounce counts with legitimate quiet-time selections. Threshold fixtures use each source's **actual configured maximum**.
@@ -45,7 +45,7 @@ Added:
 sh scripts/test-v20-ui05b-host.sh
 ```
 
-The Button fixture sweeps **96** combinations and Threshold sweeps **48** valid-source combinations per compiler. These counts are test design, **NOT yet successful executions**; runner success and errors must be recorded before accepting this gate.
+The Button fixture sweeps **96** combinations and Threshold sweeps **48** valid-source combinations per compiler. The exact test and renderer function bodies were subsequently executed under both compilers, with details in section 5.
 
 ## 3. CI status not falsely upgraded
 
@@ -53,9 +53,37 @@ At the time of this review, the connected GitHub read of the repository's Action
 
 ## 4. Next gate
 
-1. Execute `sh scripts/test-v20-ui05b-host.sh` with the exact reviewed source, capture full GCC/Clang output and exit codes; fix only genuine reproducible failures.
+1. Retain the exact UI-05B host PASS evidence (section 5) and obtain an independent GitHub Actions workflow success; do not equate local tests with CI.
 2. Finish linked renderer state fixtures for **Frequency, Pulse, PWM Studio and Counter**, then GPIO, and rerun UI-01..05 regressions.
 3. Only after the complete host geometry gate, begin the common professional 128×64 UI system as isolated reviewable source changes, followed by Dashboard and Signal Doctor (pure deterministic C host tests).
 4. E11 SDK and physical Flipper tests stay independent; do not call a source/host pass physical calibration.
 
-**Release decision: UI-05B PENDING, v2.0 Stable NO-GO.** Published v1.8/v1.9 releases, firmware, stable tags, Profile CRC and user SD/CSV data are unchanged.
+**Release decision: UI-05B limited host PASS; GitHub Actions CI PENDING; whole-app UI gate PENDING; v2.0 Stable NO-GO.** Published v1.8/v1.9 releases, firmware, stable tags, Profile CRC and user SD/CSV data are unchanged.
+
+## 5. Executed UI-05B host gate and source fidelity (same date)
+
+Unlike the original source-only preflight above, the actual C test has now been compiled and executed. Test assets were recreated in an isolated **local** Linux work directory; `git hash-object` confirmed these exact GitHub blob identities:
+
+| Artifact | Git blob SHA |
+|---|---|
+| `tests/test_v20_ui05b_button_threshold.c` | `8bac86a4bbffde478c2c6e5b885ee897680c9792` |
+| `scripts/test-v20-ui05b-host.sh` | `4685cd6945b8d5d168cc95219e7611b8314c71aa` |
+| `src/labmate_threshold.c` | `51cc44e228f04c20713c406e4301af2f49e52806` |
+| `src/labmate_threshold.h` | `f3815f561c3c817af6fbf6ee25fe60d413551454` |
+
+The two production drawing function bodies were copied into the local fixture with exactly matching source character counts and CRC32 values from the connected GitHub source: `draw_button` 3,068 characters / `0da9c80b`, `draw_alerts` 1,687 characters / `2ce26163`. The local `src/labmate_ui_screens.c` is **an isolated two-function extraction, not the full GitHub source file**; the test runner uses these byte-identical function bodies. The actual `labmate_threshold.c` and its header are Git-blob-identical to GitHub. This is source-geometry host testing, not SDK integration.
+
+From the local fixture root:
+
+```sh
+sh scripts/test-v20-ui05b-host.sh
+```
+
+The GCC 14.2 and Clang 17.0 invocations use `-std=c11 -O1 -g -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -fno-omit-frame-pointer`. Both actually exited **0**:
+
+```text
+UI-05B Button/Threshold host PASS: 96 + 48 states
+UI-05B Button/Threshold host PASS: 96 + 48 states
+```
+
+**Result:** Button 96/96 and Threshold 48/48 cases **for each compiler**, with ASan/UBSan enabled, against the identical production function bodies and pure threshold code. No production renderer edit was required. **CI remains unproven**: GitHub Actions run listing at the time of source review returned `total_count=0`. Full Flipper E11 SDK build and device observation are still untested by this gate.
