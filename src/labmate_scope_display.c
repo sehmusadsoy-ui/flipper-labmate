@@ -105,11 +105,10 @@ bool labmate_scope_display_draw(Canvas* c, const LabMateScopeDisplay* d) {
         canvas_draw_line(c, x, 16, x, 17);
         canvas_draw_line(c, x, 40, x, 41);
     }
-    for(int32_t x = 14; x <= 110; x += 16) {
-        canvas_draw_line(c, x, 28, x + 1, 28);
-    }
-
     if(has_waveform(d)) {
+        /* Keep text-only empty states free of grid strokes behind glyphs. */
+        for(int32_t x = 14; x <= 110; x += 16)
+            canvas_draw_line(c, x, 28, x + 1, 28);
         for(uint16_t i = 0U; i < d->plot.line_count; ++i) {
             const LabMateScopePlotLine* p = &d->lines[i];
             canvas_draw_line(c, p->x0, p->y0, p->x1, p->y1);
