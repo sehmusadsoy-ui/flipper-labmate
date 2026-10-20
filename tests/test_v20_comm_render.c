@@ -84,25 +84,27 @@ void ui_footer_pair(Canvas* c, const char* lk, const char* la, const char* rk, c
     canvas_draw_str(c,66,61,label);
 }
 
+/* Keep host status discriminants identical to src/labmate_i2c_runtime.h. */
 typedef enum {
-    LabMateI2cRuntimeApiMissing, LabMateI2cRuntimeBusy,
-    LabMateI2cRuntimeScanning, LabMateI2cRuntimeResults,
-    LabMateI2cRuntimeNoDevices, LabMateI2cRuntimeCancelled,
-    LabMateI2cRuntimeFailed, LabMateI2cRuntimeReady
+    LabMateI2cRuntimeReady = 0, LabMateI2cRuntimeApiMissing,
+    LabMateI2cRuntimeBusy, LabMateI2cRuntimeScanning,
+    LabMateI2cRuntimeResults, LabMateI2cRuntimeNoDevices,
+    LabMateI2cRuntimeCancelled, LabMateI2cRuntimeFailed
 } LabMateI2cRuntimeStatus;
 typedef struct {
     uint8_t found_total,page,page_count,row_count,row_address[4];
 } LabMateI2cView;
+/* Keep host status discriminants identical to src/labmate_onewire_hw.h. */
 typedef enum {
-    LabMateOneWireHwConverting, LabMateOneWireHwMeasured,
-    LabMateOneWireHwNoSensor, LabMateOneWireHwBusy,
-    LabMateOneWireHwDataError, LabMateOneWireHwPowerCheck,
-    LabMateOneWireHwStopped, LabMateOneWireHwReady
+    LabMateOneWireHwIdle = 0, LabMateOneWireHwConverting,
+    LabMateOneWireHwMeasured, LabMateOneWireHwNoSensor,
+    LabMateOneWireHwBusy, LabMateOneWireHwDataError,
+    LabMateOneWireHwPowerCheck, LabMateOneWireHwStopped
 } LabMateOneWireHwStatus;
 typedef struct {
     LabMateOneWireHwStatus status;
     bool has_temperature;
-    int32_t temperature_tenths;
+    int16_t temperature_tenths;
     uint8_t resolution_bits;
 } LabMateOneWireHw;
 typedef struct {
@@ -124,14 +126,14 @@ static LabMateI2cRuntimeStatus labmate_i2c_runtime_snapshot(
 
 int main(void) {
     unsigned failures=0;
-    for(int i=LabMateI2cRuntimeApiMissing;i<=LabMateI2cRuntimeReady;i++) {
+    for(int i=LabMateI2cRuntimeReady;i<=LabMateI2cRuntimeFailed;i++) {
         Canvas c={0}; LabMateApp app={0};current_status=(LabMateI2cRuntimeStatus)i;
         fprintf(stdout,"I2C case %d: ",i);fflush(stdout);
         draw_i2c(&c,&app);
         failures+=c.faults;
         fprintf(stdout,"%s\n",c.faults?"FAIL":"PASS");
     }
-    for(int i=LabMateOneWireHwConverting;i<=LabMateOneWireHwReady;i++) {
+    for(int i=LabMateOneWireHwIdle;i<=LabMateOneWireHwStopped;i++) {
         Canvas c={0};LabMateApp app={0};
         app.thermometer.status=(LabMateOneWireHwStatus)i;
         app.thermometer.has_temperature=true;
