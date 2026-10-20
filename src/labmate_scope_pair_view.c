@@ -59,6 +59,10 @@ static void format_duration(char* out, size_t cap, uint64_t ticks,
     }
     const uint64_t us = (ticks * UINT64_C(1000000) + divisor / 2U) / divisor;
     if(us >= UINT64_C(1000)) {
+        if(us > UINT64_C(42949672950)) {
+            (void)snprintf(out, cap, "RANGE");
+            return;
+        }
         const uint64_t centims = (us + 5U) / 10U;
         if(centims > UINT32_MAX) {
             (void)snprintf(out, cap, "RANGE");
