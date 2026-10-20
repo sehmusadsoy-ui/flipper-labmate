@@ -11,7 +11,7 @@ static const char* verdict_text(LabMateScopeVerdict v) {
     case LabMateScopeVerdictNoSignal: return "NO SIGNAL";
     case LabMateScopeVerdictBusy: return "BUSY";
     case LabMateScopeVerdictInvalid:
-    default: return "NO CAPTURE";
+    default: return "NOT READY";
     }
 }
 
