@@ -23,14 +23,14 @@ static void label(Canvas* c, Font font, int32_t x, int32_t y, const char* s) {
     canvas_draw_str(c, x, y, s);
 }
 
-static void footer(Canvas* c, const char* action) {
+static void footer(Canvas* c, const char* action, bool active) {
     /* Three visually independent key hints; never a continuous 20-glyph
      * command string. DOWN changes page only when acquisition is stopped. */
     canvas_draw_line(c, 0, 54, 127, 54);
     canvas_draw_line(c, 46, 56, 46, 63);
     canvas_draw_line(c, 92, 56, 92, 63);
     label(c, FontSecondary, 3, 62, action); /* <= 6 characters */
-    label(c, FontSecondary, 52, 62, "v PAGE");
+    label(c, FontSecondary, 52, 62, active ? "ACTIVE" : "v PAGE");
     label(c, FontSecondary, 101, 62, "BACK");
 }
 
@@ -146,7 +146,8 @@ bool labmate_scope_display_draw(Canvas* c, const LabMateScopeDisplay* d) {
                           d->state == LabMateScopeDisplayArmed ? 93 : 96;
         label(c, FontSecondary, x, 51, state);
     }
-    footer(c, (d->state == LabMateScopeDisplayArmed ||
-               d->state == LabMateScopeDisplayRunning) ? "OK STOP" : "OK RUN");
+    const bool active = d->state == LabMateScopeDisplayArmed ||
+                        d->state == LabMateScopeDisplayRunning;
+    footer(c, active ? "OK STOP" : "OK RUN", active);
     return true;
 }
