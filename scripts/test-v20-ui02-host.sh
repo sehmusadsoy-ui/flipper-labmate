@@ -13,7 +13,7 @@ for name in i2c onewire; do
         echo "UI-02: renderer signature missing: $file" >&2
         exit 2
     fi
-    awk "/^void draw_${name}\(/,0" "$file" > "$tmp/labmate_${name}_ui_body.inc"
+    awk "/^void draw_${name}[(]/,0" "$file" > "$tmp/labmate_${name}_ui_body.inc"
     test -s "$tmp/labmate_${name}_ui_body.inc"
 done
 
