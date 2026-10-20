@@ -81,7 +81,7 @@ static void test_real_metrics_and_invalid_no_fake_pass(void) {
     assert(labmate_scope_reference_view_draw(
         &canvas, LabMateScopeReference1kHz50, result, &m));
     assert(contains(&canvas, "PASS"));
-    assert(contains(&canvas, "1000.00Hz"));
+    assert(contains(&canvas, "1.00kHz"));
     assert(contains(&canvas, "50.0%"));
     assert(contains(&canvas, "1kHz 50%"));
     assert(contains(&canvas, "REFERENCE"));
