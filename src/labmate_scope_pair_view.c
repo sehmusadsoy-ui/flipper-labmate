@@ -187,10 +187,10 @@ bool labmate_scope_pair_view_draw(Canvas* c, const LabMateScopePair* p,
             label(c, FontSecondary, 6, 46,
                 last_valid ? "RIGHT saves B" : "Capture B next");
         } else {
-            label(c, FontSecondary, 5, 43, "Freq diff");
+            label(c, FontSecondary, 5, 43, "F change");
             label(c, FontSecondary, 58, 43, d_freq);
-            label(c, FontSecondary, 5, 52, "Duty diff");
-            label(c, FontSecondary, 70, 52, d_duty);
+            label(c, FontSecondary, 5, 52, "D change");
+            label(c, FontSecondary, 58, 52, d_duty);
             (void)partial; /* A* / B* already identify measured prefix only. */
         }
         footer(c, !p->has_b ? (last_valid ? "> SAVE" : "OK RUN") : "^ MORE");
