@@ -224,8 +224,13 @@ void labmate_scope_bridge_input(LabMateApp* a, InputEvent event) {
             return;
         }
         if(a->scope_show_compare) {
-            /* Read-only frequency summary -> A times -> B times. */
-            a->scope_compare_page = (uint8_t)((a->scope_compare_page + 1U) % 3U);
+            /* Do not show empty A/B detail pages. When only A exists, skip
+             * the nonexistent B detail; these are read-only UI changes. */
+            if(a->scope_pair.has_a) {
+                const uint8_t count = a->scope_pair.has_b ? 3U : 2U;
+                a->scope_compare_page =
+                    (uint8_t)((a->scope_compare_page + 1U) % count);
+            }
             return;
         }
     }
