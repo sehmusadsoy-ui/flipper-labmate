@@ -11,23 +11,35 @@
 #include <string.h>
 #include "labmate_scope_reference_view.h"
 
+typedef struct {int32_t x0,y0,x1,y1;} Rect;
 struct Canvas {
     unsigned count;
-    char lines[12][32];
+    Font font;
+    Rect labels[16];
+    char lines[16][32];
 };
 
 void canvas_set_font(Canvas* canvas, Font font) {
-    (void)canvas;
-    assert(font == FontSecondary);
+    assert(canvas && (font == FontPrimary || font == FontSecondary));
+    canvas->font = font;
 }
 
 void canvas_draw_str(Canvas* canvas, int32_t x, int32_t y, const char* text) {
-    assert(canvas && text);
-    assert(x >= 0 && x < 128 && y >= 0 && y < 64);
-    assert(canvas->count < 12U);
-    assert((size_t)x + strlen(text) * 6U <= 128U);
-    (void)snprintf(
-        canvas->lines[canvas->count], sizeof(canvas->lines[0]), "%s", text);
+    assert(canvas && text && x >= 0 && x < 128 && y >= 0 && y < 64);
+    const int32_t width = (int32_t)strlen(text) *
+                          (canvas->font == FontPrimary ? 8 : 6);
+    const int32_t height = canvas->font == FontPrimary ? 11 : 8;
+    assert(width > 0 && x + width <= 128 && y >= height - 1);
+    assert(canvas->count < 16U);
+    const Rect next = {x, y-height+1, x+width-1, y};
+    for(unsigned i = 0; i < canvas->count; ++i) {
+        const Rect other = canvas->labels[i];
+        assert(next.x1 < other.x0 || next.x0 > other.x1 ||
+               next.y1 < other.y0 || next.y0 > other.y1);
+    }
+    canvas->labels[canvas->count] = next;
+    (void)snprintf(canvas->lines[canvas->count],
+                   sizeof(canvas->lines[0]), "%s", text);
     ++canvas->count;
 }
 
@@ -68,11 +80,13 @@ static void test_real_metrics_and_invalid_no_fake_pass(void) {
     Canvas canvas = {0};
     assert(labmate_scope_reference_view_draw(
         &canvas, LabMateScopeReference1kHz50, result, &m));
-    assert(contains(&canvas, "RESULT PASS"));
-    assert(contains(&canvas, "MEAS 1000.00Hz"));
-    assert(contains(&canvas, "DUTY 50.0%"));
-    assert(contains(&canvas, "TARGET 1kHz 50%"));
-    assert(contains(&canvas, "UP:REF DN:PG BK:EXIT"));
+    assert(contains(&canvas, "PASS"));
+    assert(contains(&canvas, "1000.00Hz"));
+    assert(contains(&canvas, "50.0%"));
+    assert(contains(&canvas, "1kHz 50%"));
+    assert(contains(&canvas, "^ REF"));
+    assert(contains(&canvas, "v PAGE"));
+    assert(contains(&canvas, "BACK"));
 
     /* Same metrics but changed 100 Hz preset: previous 1 kHz PASS cannot
      * be reused as a plausible new PASS. */
@@ -95,6 +109,21 @@ static void test_real_metrics_and_invalid_no_fake_pass(void) {
         &canvas, LabMateScopeReference1kHz50, result, &altered));
     assert(canvas.count == 0U);
 
+    /* 1 kHz physical value checked against 100 Hz preset is a real FAIL,
+     * not an overflowed label or a stale PASS from previous selection. */
+    LabMateScopeReference target100 = {0};
+    assert(labmate_scope_reference_preset(
+        LabMateScopeReference100Hz50, &target100));
+    const LabMateScopeToleranceResult failed =
+        labmate_scope_tolerance_evaluate(
+            &target100, &m, LabMateScopeObservationComplete);
+    assert(failed.verdict == LabMateScopeVerdictOutOfTolerance);
+    canvas = (Canvas){0};
+    assert(labmate_scope_reference_view_draw(
+        &canvas, LabMateScopeReference100Hz50, failed, &m));
+    assert(contains(&canvas, "FAIL"));
+    assert(!contains(&canvas, "PASS"));
+
     m.truncated = true;
     result = labmate_scope_tolerance_evaluate(
         &reference, &m, LabMateScopeObservationComplete);
@@ -102,9 +131,9 @@ static void test_real_metrics_and_invalid_no_fake_pass(void) {
     canvas = (Canvas){0};
     assert(labmate_scope_reference_view_draw(
         &canvas, LabMateScopeReference1kHz50, result, NULL));
-    assert(!contains(&canvas, "RESULT PASS"));
-    assert(contains(&canvas, "RESULT WAIT/INVALID"));
-    assert(contains(&canvas, "NO VALID CAPTURE"));
+    assert(!contains(&canvas, "PASS"));
+    assert(contains(&canvas, "NO CAPTURE"));
+    assert(contains(&canvas, "--"));
 
     result = labmate_scope_tolerance_evaluate(
         &reference, NULL, LabMateScopeObservationNoSignalConfirmed);
@@ -112,8 +141,8 @@ static void test_real_metrics_and_invalid_no_fake_pass(void) {
     canvas = (Canvas){0};
     assert(labmate_scope_reference_view_draw(
         &canvas, LabMateScopeReference1kHz50, result, NULL));
-    assert(contains(&canvas, "RESULT NO SIGNAL"));
-    assert(!contains(&canvas, "RESULT PASS"));
+    assert(contains(&canvas, "NO SIGNAL"));
+    assert(!contains(&canvas, "PASS"));
 }
 
 static void test_busy_and_bad_data(void) {
@@ -125,8 +154,8 @@ static void test_busy_and_bad_data(void) {
         &reference, NULL, LabMateScopeObservationBusy);
     assert(labmate_scope_reference_view_draw(
         &canvas, LabMateScopeReference100Hz50, result, NULL));
-    assert(contains(&canvas, "RESULT BUSY"));
-    assert(!contains(&canvas, "RESULT PASS"));
+    assert(contains(&canvas, "BUSY"));
+    assert(!contains(&canvas, "PASS"));
 
     assert(!labmate_scope_reference_view_draw(
         NULL, LabMateScopeReference100Hz50, result, NULL));
