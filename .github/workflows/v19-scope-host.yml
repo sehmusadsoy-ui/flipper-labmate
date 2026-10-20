@@ -1,0 +1,106 @@
+name: v1.9 Logic Scope host regressions
+
+on:
+  pull_request:
+    branches:
+      - dev/v1.8-completion
+      - main
+    paths:
+      - "src/labmate_scope_*.c"
+      - "src/labmate_scope_*.h"
+      - "src/labmate_resource_policy.c"
+      - "src/labmate_resource_policy.h"
+      - "src/labmate_comm_resource.h"
+      - "src/labmate_internal.h"
+      - "src/labmate_view.c"
+      - "src/labmate.c"
+      - "tests/test_scope_*.c"
+      - "tests/host_stubs/gui/gui.h"
+      - "scripts/check_v19_review_bundle.py"
+      - "tests/test_check_v19_review_bundle.py"
+      - ".github/workflows/v19-scope-host.yml"
+  push:
+    branches:
+      - dev/v1.9-logic-scope
+    paths:
+      - "src/labmate_scope_*.c"
+      - "src/labmate_scope_*.h"
+      - "src/labmate_resource_policy.c"
+      - "src/labmate_resource_policy.h"
+      - "src/labmate_comm_resource.h"
+      - "src/labmate_internal.h"
+      - "src/labmate_view.c"
+      - "src/labmate.c"
+      - "tests/test_scope_*.c"
+      - "tests/host_stubs/gui/gui.h"
+      - "scripts/check_v19_review_bundle.py"
+      - "tests/test_check_v19_review_bundle.py"
+      - ".github/workflows/v19-scope-host.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  scope-host:
+    name: Pure C Scope safety, Compare and tolerance
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exact branch commit
+        uses: actions/checkout@v4
+      - name: Build host tests with strict warnings
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/scope-host
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc \
+            tests/test_scope_pc1_pin_gate.c \
+            src/labmate_scope_gate.c src/labmate_resource_policy.c \
+            -o build/scope-host/pc1-pin-gate
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc \
+            tests/test_scope_buffer_timeguard.c \
+            src/labmate_scope_buffer.c src/labmate_scope_timeguard.c \
+            -o build/scope-host/buffer-timeguard
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc \
+            tests/test_scope_compare_pair.c \
+            src/labmate_scope_compare.c src/labmate_scope_pair.c \
+            -o build/scope-host/compare-pair
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc \
+            tests/test_scope_tolerance.c \
+            src/labmate_scope_tolerance.c src/labmate_scope_compare.c \
+            -o build/scope-host/tolerance
+          cc -std=c11 -Wall -Wextra -Werror -pedantic \
+            -Itests/host_stubs -Isrc \
+            tests/test_scope_reference_view.c \
+            src/labmate_scope_reference_view.c \
+            src/labmate_scope_tolerance.c src/labmate_scope_compare.c \
+            -o build/scope-host/reference-view
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -Isrc \
+            tests/test_scope_exit_guard.c \
+            src/labmate_scope_exit_guard.c \
+            -o build/scope-host/exit-guard
+      - name: Verify read-only FAP bundle gate test matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -v -s tests -p test_check_v19_review_bundle.py
+      - name: Execute host regressions with retained review log
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/scope-host
+          printf 'LABMATE_V19_HOST_TEST_COMMIT=%s\n' "$GITHUB_SHA" > build/scope-host-results.txt
+          printf 'COMPILER=%s\n' "$(cc --version | head -n 1)" >> build/scope-host-results.txt
+          for name in pc1-pin-gate buffer-timeguard compare-pair tolerance reference-view exit-guard; do
+            printf '\n=== %s ===\n' "$name" | tee -a build/scope-host-results.txt
+            "./build/scope-host/$name" 2>&1 | tee -a build/scope-host-results.txt
+          done
+          printf '\nALL HOST EXECUTABLES PASS\n' | tee -a build/scope-host-results.txt
+      - name: Retain host test output (even on failure, never a release)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v19-scope-host-review-log
+          path: build/scope-host-results.txt
+          retention-days: 7
+          if-no-files-found: warn

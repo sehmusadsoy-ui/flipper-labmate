@@ -11,7 +11,7 @@ import tempfile
 
 STUB=r"""
 #include <cassert>
-#include <cstdbool>
+// C++ has a built-in bool type; <cstdbool> is deprecated in C++17 on GCC 15.
 #include <cstdint>
 #include <cstddef>
 #include <cstdio>

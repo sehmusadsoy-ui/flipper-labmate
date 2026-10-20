@@ -4,6 +4,10 @@
 #include <input/input.h>
 #include "labmate_view.h"
 #include "labmate_ui_screens.h"
+#include "labmate_scope_display.h"
+#include "labmate_scope_pair_view.h"
+#include "labmate_scope_reference_view.h"
+#include "labmate_scope_exit_guard.h"
 
 /* ---------- DRAWING (stateful screens) ---------- */
 
@@ -78,6 +82,68 @@ void labmate_view_render_callback(
         break;
     case LabMateScreenAlerts:
         draw_alerts(canvas, app);
+        break;
+    case LabMateScreenScope:
+        if(app->scope_show_reference) {
+            const bool lease_clear =
+                labmate_scope_native_reinit_safe(&app->scope_native) &&
+                app->capture_owner == LabMateCaptureNone;
+            const bool same_generation = app->scope_capture_generation != 0U &&
+                app->scope_last_generation == app->scope_capture_generation;
+            const bool complete = lease_clear && same_generation &&
+                app->scope_last_valid && !app->scope_clock_fault;
+            const LabMateScopeMetrics* measured =
+                complete ? &app->scope_last_metrics : NULL;
+            LabMateScopeObservation observation = LabMateScopeObservationInvalid;
+            if(app->scope_display.state == LabMateScopeDisplayBusy) {
+                observation = LabMateScopeObservationBusy;
+            } else if(lease_clear && same_generation && !app->scope_clock_fault &&
+                      app->scope_display.state == LabMateScopeDisplayNoTrigger &&
+                      app->scope_display.total_edges == 0U) {
+                observation = LabMateScopeObservationNoSignalConfirmed;
+            } else if(complete) {
+                observation = LabMateScopeObservationComplete;
+            }
+            LabMateScopeReference reference = {0};
+            (void)labmate_scope_reference_preset(
+                app->scope_reference_preset, &reference);
+            const LabMateScopeToleranceResult result =
+                labmate_scope_tolerance_evaluate(&reference, measured, observation);
+            (void)labmate_scope_reference_view_draw(
+                canvas, app->scope_reference_preset, result, measured);
+        } else if(app->scope_show_compare || app->scope_show_details) {
+            if(!labmate_scope_native_stop_confirmed(
+                   &app->scope_native, app->capture_owner)) {
+                /* A/B data is historical, not proof that the IRQ has been
+                 * detached. Never present it over a native cleanup fault. */
+                canvas_set_font(canvas, FontSecondary);
+                canvas_draw_str(canvas, 3, 23, "SCOPE IRQ FAULT");
+                canvas_draw_str(canvas, 3, 37, "RESTART REQUIRED");
+            } else {
+                /* A and B must come from distinct complete generations. */
+                const bool fresh_candidate =
+                    app->scope_last_valid && !app->scope_clock_fault &&
+                    app->capture_owner == LabMateCaptureNone &&
+                    (!app->scope_pair.has_a ||
+                     app->scope_last_generation > app->scope_pair.generation_a);
+                (void)labmate_scope_pair_view_draw(
+                    canvas, &app->scope_pair, fresh_candidate,
+                    app->scope_show_details ? app->scope_compare_page : 0U);
+            }
+        } else {
+            /* Capture summaries are STOP-only: never expose a stale value
+             * while a callback/lease exists, or across capture generations. */
+            LabMateScopeDisplay display = app->scope_display;
+            display.completed = NULL;
+            if(!app->scope_native.active &&
+               labmate_scope_native_stop_confirmed(
+                   &app->scope_native, app->capture_owner) &&
+               app->scope_capture_generation != 0U &&
+               app->scope_last_generation == app->scope_capture_generation &&
+               app->scope_last_valid && !app->scope_clock_fault)
+                display.completed = &app->scope_last_metrics;
+            (void)labmate_scope_display_draw(canvas, &display);
+        }
         break;
     }
 

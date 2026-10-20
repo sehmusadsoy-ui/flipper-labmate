@@ -18,6 +18,8 @@
 #include "labmate_logger_storage.h"
 #include "labmate_uart.h"
 #include "labmate_monitor_gpio.h"
+#include "labmate_scope_bridge.h"
+#include "labmate_scope_exit_guard.h"
 
 /* App coordinator: lifecycle, sampling, dispatch and teardown only. */
 int32_t labmate_app(void* p) {
@@ -34,6 +36,12 @@ int32_t labmate_app(void* p) {
         app,
         0,
         sizeof(LabMateApp));
+    /* Scope's 256-edge buffer belongs to heap-allocated app state,
+     * not the Flipper's 4 KiB application call stack. */
+    if(!labmate_scope_bridge_init(app)) {
+        free(app);
+        return -1;
+    }
 
     app->running = true;
     app->hold = false;
@@ -145,6 +153,9 @@ int32_t labmate_app(void* p) {
         if(app->screen == LabMateScreenButton) {
             labmate_button_capture_poll(app);
         }
+        if(app->screen == LabMateScreenScope) {
+            labmate_scope_bridge_poll(app);
+        }
         threshold_update_from_measurement(app);
         if(app->screen == LabMateScreenUart) labmate_uart_poll(&app->uart);
         if(app->screen == LabMateScreenOneWire) labmate_onewire_hw_poll(&app->thermometer);
@@ -203,6 +214,22 @@ int32_t labmate_app(void* p) {
 
     furi_mutex_free(
         app->mutex);
+
+    /* A native IRQ callback points to app-owned state AND executable FAP
+     * code. If owned teardown is uncertain, returning from labmate_app()
+     * risks unloading the callback's code even if the heap is leaked.
+     * Quiesce our own handler flag first, then trigger Furi's controlled
+     * crash/reboot path rather than return with a potentially live IRQ.
+     * NEVER release another owner's callback or modify foreign GPIO here.
+     * This emergency path requires a separate native fault-injection test;
+     * ordinary successful STOP/BACK still exits normally. */
+    if(!labmate_scope_exit_storage_safe(&app->scope_native)) {
+        FURI_CRITICAL_ENTER();
+        app->scope_native.irq_enabled = false;
+        FURI_CRITICAL_EXIT();
+        FURI_LOG_E("LabMate", "Scope IRQ cleanup uncertain; reboot required");
+        furi_crash("LabMate Scope IRQ cleanup fault");
+    }
 
     free(app);
 

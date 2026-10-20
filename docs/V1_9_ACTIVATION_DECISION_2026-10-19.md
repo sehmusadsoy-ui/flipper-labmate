@@ -1,0 +1,341 @@
+# LabMate v1.9 E11 — Activation decision after independent physical staging
+
+**Date:** 2026-10-19  
+**Branch/PR:** `dev/v1.9-logic-scope`, Draft PR #15.  
+**Current real device status:** **v1.8 FINAL ACTIVE; v1.9 STAGED AND TWICE INDEPENDENTLY READ BACK.**  
+**Activation permission:** **NOT GRANTED.** The previously granted one-time *stage-only* consent has been consumed. No rename, rollback, firmware flash, user-data write or Stable merge is authorized.
+
+## Confirmed physical device evidence
+
+Operator executed the once-authorized COM7 stage-only operation and the separate independent COM7 poststage read-only verification. Both PASS.
+
+- Exact candidate `/ext/apps/Tools/labmate.v19-new-stage`: **97,540 bytes** SHA-256 `e1f43390c4078fbaad7e13124331926e0d6667294f2815e8b63762bd16f3ff90`, twice read back by each separate real-USB session.
+- Active `/ext/apps/Tools/labmate.fap`: pinned v1.8 FINAL, **81,528 bytes**, SHA-256 of prior real COM7 readback `393fe3e52aa710162a42d7299aa053f538b2ee1ad6542755cf402b83c1931b61`. Independent poststage device MD5/size PASS.
+- Preserved existing historical `/ext/apps/Tools/labmate.e11-pre-final.bak`: read-only identity PASS.
+- Future reserved v1.8 backup filename `/ext/apps/Tools/labmate.v18-final-before-v19.bak`: **ABSENT** in the independent poststage scan.
+- PC-only fallbacks: actual live v1.8 FINAL FAP PC readback and historical E11 v1.8DEV FAP both hash-pinned; current LabMate data snapshot **12 files / 2,128 bytes**; not a full microSD backup, not proof of a successful restore.
+- No v1.9 application activation, Flipper firmware update, device rename, or rollback has yet been performed.
+
+## Native E11 SDK compatibility: evidence and the remaining hole
+
+The pinned v1.9 build was compiled against the same **Momentum base** `d3f89dfe2ef6b01839201598e9be1590cba80322` plus documented E11 patches, matching the provenance established for the earlier custom E11 release.
+
+The local build/review script `scripts/verify_v19_e11_sdk_fap.py` checks the patched SDK's `targets/f7/api_symbols.csv`, patched headers, code and ARM ELF header. Its required symbols are:
+
+1. `furi_hal_resource_lease_try_acquire`
+2. `furi_hal_resource_lease_release`
+3. `furi_hal_gpio_try_add_int_callback`
+
+The exact patched source-chain also explicitly inserts the third export (`scripts/patch_momentum_gpio_tryadd.py`), while the resource lease patch inserts the first two (`scripts/patch_momentum_resource_lease.py`). The v1.9 `src/labmate_scope_native.c` calls these APIs with a fail-closed compile-time header gate, but **compile-time matching does not detect a different installed binary at runtime**.
+
+**Remaining gap:** Neither Momentum `device_info` nor the on-microSD JS plugins/Manifest MD5 proves the SHA256 or exported-symbol table of the firmware currently flashed inside the STM32. The earlier real v1.8 E11 execution supports that this is a paired custom-E11 firmware, but is not byte-exact proof of all three required v1.9 exports. No such independent installed-firmware image/export attestation has been produced. Do not mark native ABI VERIFIED or claim universal v1.9 compatibility.
+
+## Promotion design: two separate non-atomic renames — NOT AUTHORIZED
+
+Any future *single controlled activation attempt* must first use a **fresh read-only state classifier for the poststage state** (not the prewrite checker). It must abort if current v1.8, staged v1.9, old E11 backup, E11 native resources or empty new v1.8 backup name has drifted.
+
+Only after a code review, offline fault-injection tests of the **actual** future activation implementation, clear residual-ABI-risk decision and separate explicit owner consent may the two target-limited SD renames be attempted:
+
+1. `/ext/apps/Tools/labmate.fap` -> `/ext/apps/Tools/labmate.v18-final-before-v19.bak` (preserves exact final v1.8 device bytes).
+2. `/ext/apps/Tools/labmate.v19-new-stage` -> `/ext/apps/Tools/labmate.fap`.
+
+They are **not atomic together**. After step 1 and before step 2, the normal application filename is temporarily absent. Timeout, power loss, ambiguous CLI reply or any hash/status mismatch means STOP. The original E11 backup and CSV/Profiles must not be moved or modified. No implicit recovery or automatic rollback.
+
+The activated state (if ever authorized and reached) requires a **new independent read-only three-path reconciliation** before even considering first GUI launch. The existing stage-only checker would no longer describe that state. A separate exact-state/manual v1.8 restoration procedure, requiring its own new authorization, must be reviewed and fail closed: a hypothetical restore cannot be asserted or executed from these successful simulations alone.
+
+## Decision today
+
+- **GO:** Retain v1.9 staged bytes, current v1.8 active, and work PC-only on the production activation/rollback review.
+- **NO-GO:** Immediate device activation, automatic recovery, firmware flash or Main/Stable promotion. A proven staged FAP is **not** an approved activation.
+- The operator may later expressly approve a bounded experimental v1.9 activation **after** understanding that firmware flash-image ABI attestation remains unavailable, or elect to hold v1.8 until stronger on-device firmware evidence can be obtained. Neither choice is implied by the prior stage-only approval.
+
+No more staging or extra device-side writes are required to preserve today's PASS state.
+
+
+## 2026-10-19 — one offline real-FAP activation and rollback rehearsal
+
+Reviewed injection-only implementation added to the **draft** `dev/v1.9-logic-scope` branch:
+- `scripts/review_v19_e11_activation_recovery_offline.py` uses the *same actual method-level* stat, MD5, full byte-readback and two protected rename command frames against the existing `FakeCLI` implementation, with all **three exact PC FAP** hashes. It checks the already-staged state twice, the intermediate missing-active state, and the promoted final state, never auto-retries, and refuses any previously occupied backup target. It models two separately manually requested recovery routes: restoring v1.8 after only the first activation rename, or preserving failed v1.9 and replacing it with the protected v1.8 file after activation.
+- `tests/test_v19_e11_activation_recovery_real_fap_offline.py` contains **22 synthetic positive and negative tests**, including fault injection after first or second rename, corruption, unexpected source states, repeat attempts, resource/backup conflicts and no automatic recovery. **These 22 tests have NOT yet been operator executed and no PASS is asserted.**
+
+Unlike earlier conceptual simulations, this rehearsal tests the reviewed rename orchestration function itself, including native-like response framing, and reads **full binary contents** at each important filesystem state. **But this is still a fake CLI, not an authenticated COM7 transport**, and its `main` cannot open COM nor write to disk. The real device state stays `STAGED_V19_NONAPP_ACTIVE_V18` with no v1.9 activation or firmware image attestation.
+
+Next: user pulls development branch and runs one host test and one real-3-FAP offline replay. Only after actual PASS may a separate narrowly scoped activation command and independent post-activation read-only checker be prepared. Any on-device activation still requires a **new explicit owner authorization** and a reviewed mechanism to handle non-atomic gap without blindly retrying or automatically restoring.
+
+```bash
+python3 /mnt/c/Users/sehmu/labmate-src-v19/tests/test_v19_e11_activation_recovery_real_fap_offline.py -v
+```
+
+Then, after 22/22 PASS, run:
+
+```bash
+python3 /mnt/c/Users/sehmu/labmate-src-v19/scripts/review_v19_e11_activation_recovery_offline.py \
+ --candidate /mnt/c/Users/sehmu/Documents/LabMate-FAP-PC-Backups/V19-WINDOWS-PC-CANDIDATE-3d66658-20261019/labmate-v1.9DEV-E11-WINDOWS-PC-ONLY.fap \
+ --current-v18-pc-backup /mnt/c/Users/sehmu/Documents/LabMate-FAP-PC-Backups/V19-pretrial-live-v18-5e5cf7bc9ade41289c870ed156864482/installed_LabMate_v18_FINAL_E11_before_v19.fap \
+ --legacy-e11-pc-backup /mnt/c/Users/sehmu/Documents/LabMate-FAP-PC-Backups/E11-before-v18-final-b7370882610140aa871dbdf8b61cf53d/installed_E11_v18DEV_before_final_label.fap
+```
+
+The historical 36/36 v1.8 hardware checks, paired JS resource MD5, and pinned build SDK exports support the custom E11 pairing but do NOT certify that the currently flashed firmware image actually exports those symbols. The exact runtime ABI discrepancy remains unresolved and must be disclosed before any later activation consent.
+
+
+## GitHub CI review gate — workflow defined, result pending
+
+A branch-scoped `.github/workflows/check-v19-e11-activation-rollback-offline.yml` now exercises the 22 new activation/manual rollback fault-injection cases plus existing native CLI and virtual FAP-swap tests on GitHub-hosted Linux. The workflow has **no access to COM7 or Flipper**, uses no firmware updater, performs no stage/rename and has read-only repository token permission. **No independent CI run conclusion has been obtained yet; do not claim CI PASS.** The actual operator host suite and real-three-FAP replay are also pending, so activation is not ready. The public Stable and Draft PR state are unchanged.
+
+
+## Actual operator three-FAP offline promotion and manual recovery PASS; one mock test expectation corrected
+
+The operator executed `tests/test_v19_e11_activation_recovery_real_fap_offline.py -v` on the local repo and observed **21/22 PASS, one failure**: `test_unexpected_stat_echo_aborts_before_rename` expected error text `stat echo`, but the fake native transport itself first raises `ValueError: simulated CLI command echo disagreement`. The code correctly aborted before any rename. **No device-writing activation was attempted**.
+
+The operator separately ran the rehearsal against the **actual three pinned Windows PC FAP files**:
+
+```text
+V19 E11 ACTUAL RENAME ORCHESTRATION - THREE REAL FAPS, IN MEMORY ONLY
+OFFLINE_V19_PROMOTION: PASS_TWO_RENAMES
+OFFLINE_MANUAL_V18_ROLLBACK: PASS_V19_PRESERVED
+OFFLINE_MANUAL_INTERRUPTION_RECOVERY: PASS_V18_ACTIVE_AND_V19_STAGED
+USB_CALLS: ZERO | DEVICE_WRITES: ZERO | PC_WRITES: ZERO
+REAL V1.9 ACTIVATION: NOT AUTHORIZED | FIRMWARE ABI: NOT_ATTESTED
+```
+
+This is operator-proven **in-memory real-artifact** success only; not a live rename/rollback or a firmware compatibility attestation.
+
+In commit `ec2fc7a3accb01f318a04ee709d63988519b9757`, only the **test** was corrected to require the actual lower-level transport error and additionally require **zero renames, zero binary chunks, one read-only stat attempt, and unchanged active v1.8/staged v1.9/legacy backup bytes**. No application, fake native CLI, or real-device writer implementation was changed. The revised **22/22 test result is PENDING** until the operator reruns it.
+
+Until then and until a reviewed explicit activation grant, retain the real device in the currently independently verified `STAGED_V19_NONAPP_ACTIVE_V18` state. No more `-ApplyStageOnly`, no on-device rename/restore/flash/retry.
+
+
+## 2026-10-19 — operator confirms corrected 22/22 offline fault cases PASS
+
+The operator pulled `dev/v1.9-logic-scope` from `766a100` to `aafb860`, then actually reran `tests/test_v19_e11_activation_recovery_real_fap_offline.py -v` with **all 22 tests PASS**, `Ran 22 tests in 0.007s`, `OK`. The previously reported real-three-PC-FAP in-memory activation + manual rollback + interrupted first-rename recovery rehearsal also PASS. The 22/22 result closes **host-only** behavior checking of the current fake CLI and reviewed in-memory transition function. It does **not** authenticate the STM32 installed firmware ABI, does not prove a live rename/restore, and does not authorize activation. The real v1.9 FAP stays staged, with final v1.8 still active. Next work: review a separately constrained real COM7 activation adapter and independent post-activation state checker, fully offline tested, with explicit separate activation permission before first actual mutation.
+
+
+## 2026-10-19 — real COM7 activation review adapter + independent postactivation classifier prepared
+
+After **22/22** operator-run offline activation/rollback fault cases PASS, the following source was drafted on the isolated development branch for separate audit:
+
+- `scripts/activate_v19_e11_once_review_only.py`: real COM7 capable **only with a separate new precise two-rename approval** plus independent acknowledgment that installed STM32 firmware native exported ABI has not been attested. Before any mutation, checks three PC FAP hashes, 12-file data snapshot, local pinned E11 provenance, **fresh same-COM7 full staged v1.9 readbacks + v1.8/legacy backup state** and native E11 label/JS resources/Manifest. Then and only then two non-atomic, allowlisted, guarded renames (active v1.8 → reserved v1.8 backup; staged v1.9 → active). It inspects the full binary active and backups after each rename; never retries/rolls back automatically. **No firmware flash**. Interrupted first rename can temporarily remove installed app path.
+- `scripts/run-v19-e11-activation-review.ps1`: Windows fixed COM7 wrapper whose **DEFAULT IS PC-only DRY RUN with ZERO COM**. The dangerous `-ApplyActivation` branch requires simultaneous explicit ABI-risk flag and a separately owner-approved trial, performs all original candidate + backup validations, and checks **19 exact Git Python helper blobs** plus pinned native Momentum `flipper/storage.py` blob before any COM access. All 19 pinned SHA IDs were individually cross-checked against GitHub source contents and matched. This script has **NOT** been operator executed, including dry run. **Do not run `-ApplyActivation` yet**.
+- `scripts/check_v19_e11_postactivation_ro.py`: completely separate **read-only**, fixed COM7 postactivation state checker. Requires staged filename ABSENT; active v1.9 PRESENT (pinned SHA and two complete byte readbacks), protected final v1.8 backup PRESENT (2 complete readbacks), original E11 backup unchanged, failed-v1.9 reserved filename ABSENT, and native E11 firmware label/JS GPIO/event_loop/Manifest MD5 parity. Not valid for the existing, still-staged real device.
+- `scripts/run-v19-e11-postactivation-ro.ps1`: no-write Windows wrapper with **17 exact pinned Git Python source blobs** plus original native Momentum storage transport identity, PC candidate and backups. All 17 pinned Python blob IDs were independently matched against GitHub; this wrapper is only appropriate AFTER separately authorized activation. Do not invoke it before then.
+- New **43 offline synthetic/static unit tests**: `tests/test_v19_e11_real_activation_adapter_offline.py` (17); `tests/test_v19_e11_postactivation_readonly.py` (15); `tests/test_v19_e11_activation_windows_static.py` (11). Their actual execution is **PENDING**. Source presence and hash audit does not imply these tests passed.
+
+**Current GO/NO-GO:** GO for running these **host-only tests** and **default PC-only dry run** of the Windows activation review wrapper, after the operator pulls dev. NO-GO for `-ApplyActivation`, either real on-device rename, firmware flash, automatic rollback/restore, app first boot, Main/Stable merge. All v1.9 real-device FAP integrity stages PASS, but the installed firmware binary native API/export-table remains independently **UNATTESTED**. The owner has not consented to the two non-atomic renames nor accepted this separate ABI risk.
+
+**Next operator host-only commands**:
+
+```bash
+powershell.exe -NoProfile -Command 'git -C "$env:USERPROFILE\labmate-src-v19" pull --ff-only origin dev/v1.9-logic-scope'
+python3 /mnt/c/Users/sehmu/labmate-src-v19/tests/test_v19_e11_real_activation_adapter_offline.py -v &&
+python3 /mnt/c/Users/sehmu/labmate-src-v19/tests/test_v19_e11_postactivation_readonly.py -v &&
+python3 /mnt/c/Users/sehmu/labmate-src-v19/tests/test_v19_e11_activation_windows_static.py -v
+```
+
+Expected only if actually successful: **17/17, 15/15, 11/11 PASS**. If these pass, separate Windows review dry-run (NO `-ApplyActivation` switch) should be executed and reported before an activation decision.
+
+
+### Additional source checks and test-run caveat
+
+All **19/19 activation-wrapper** and **17/17 postactivation-wrapper** pinned Python Git SHA-1 blobs were independently fetched and matched source, and each of those Windows wrappers uses the exact previously reviewed Momentum CLI transport Git blob. In the synthetic postactivation suite, the strict stat-size allowlist is now patched to synthetic FAP byte lengths **inside the test only** (`232b236b2c5ccb67da30e3eabbba89f42963195e`); production read-only checker and real-size pins are unchanged. The 43 operator tests remain PENDING. A separate restricted GitHub Actions CI workflow `.github/workflows/check-v19-e11-real-activation-adapter-offline.yml` was added for these three host-only suites, but its actual run conclusion has NOT been obtained and cannot be called PASS yet. **Do not treat GitHub source upload, mocked E11 identity, or future host-only PASS as evidence that firmware currently flashed exports the v1.9 scope lease APIs.**
+
+
+## 2026-10-19 — operator runs 43/43 adapter/postactivation tests and Windows PC-only activation gate PASS
+
+The operator supplied a complete pasted terminal log confirming the local Windows repo was fast-forwarded from `aafb860` to `efcae40` on `dev/v1.9-logic-scope`, and **ACTUALLY** executed the new activation/postactivation offline gates:
+
+```text
+test_v19_e11_real_activation_adapter_offline.py: Ran 17 tests in 0.012s — OK
+test_v19_e11_postactivation_readonly.py: Ran 15 tests in 0.009s — OK
+test_v19_e11_activation_windows_static.py: Ran 11 tests in 0.011s — OK
+PC_BACKUPS_PASS: 12 files, 2128 bytes
+WINDOWS_PC_BACKUPS_RO: PASS | DEVICE_WRITES: ZERO | PC_WRITES: ZERO
+V19 E11 ACTIVATION LOCAL HASH / BACKUP / TRANSPORT REVIEW PASS
+FAP: 97540 bytes / pinned SHA256, source 19/19 / transport Git blob PASS
+DRY RUN: NO COM / NO DEVICE WRITES / NO RENAMES / NO FIRMWARE FLASH
+Native E11 installed firmware ABI: NOT ATTESTED.
+Activation requires separate, explicit owner approval; NEVER imply permission.
+```
+
+**STATUS: 43/43 host-only verification PASS; production Windows PC-only activation dry-run PASS.** The mock tests intentionally trigger expected `ACTIVATE NO-GO` text in some negative cases while returning unit test `ok`; those are not real COM7 attempts or defects.
+
+**ACTUAL DEVICE STATUS REMAINS** independently last-attested `STAGED_V19_NONAPP_ACTIVE_V18`: 97,540-byte SHA256 `e1f43390c4078fbaad7e13124331926e0d6667294f2815e8b63762bd16f3ff90` staged only, v1.8 FINAL active and historical E11 backup unmodified. No app activation, device file renames, firmware update or data write occurred in the log. Draft PR #15 is still open/draft/unmerged (independently rechecked).
+
+**Separate consent NOW REQUIRED:** Owner must acknowledge (a) exact installed firmware binary native ABI remains un-attested, so v1.9 may fail to load/behave; and (b) the two serial-storage renames are NOT atomic, so an interruption/ambiguous reply may leave the LabMate active filename absent while v1.8 is at a protected backup path. No automatic retry, rollback, restore or delete is permitted; any failure needs fresh independent read-only classification and separate owner action. Do not run the activation branch or leak approval flags as an implied command before new express authorization. The only permitted next action without this approval is additional PC-only review.
+
+
+## Owner's fresh experimental activation consent — granted; NOT yet executed
+
+After the operator actually reported **43/43** host tests PASS and the Windows script default **PC-only dry-run PASS**, the owner explicitly replied **"ONAY VERİYORUM"** to the following precise question: "bu riskleri kabul ederek v1.9'un gerçek Flipper'da deneysel olarak etkinleştirilmesine ve yalnızca gerekli iki dosya yeniden adlandırmasına onay veriyor musun?". This is a new **experimental activation permission**, NOT a general firmware permission.
+
+Authorized **exactly once, with no retry**, subject to fresh same-session identity/hash/backup gate:
+
+1. `/ext/apps/Tools/labmate.fap` (v1.8 FINAL) → `/ext/apps/Tools/labmate.v18-final-before-v19.bak` (new, previously absent)
+2. `/ext/apps/Tools/labmate.v19-new-stage` (97,540-byte pinned candidate) → `/ext/apps/Tools/labmate.fap`
+
+Operator was explicitly warned and accepted that current installed STM32 firmware binary API exports for the 3 required v1.9 native HAL symbols are **NOT independently attested**, and the renames are **NOT atomic**; failure between the two may leave the live `.fap` path absent. NO firmware flash, FAP re-upload, deletion, CSV/Profile writes, automatic retry, rollback or restore authorized. The existing physical stage integrity and latest v1.8 preservation had previously independently passed.
+
+**At time of this entry: NOT ACTUALLY ACTIVATED.** Never claim real rename or functional GUI PASS until fresh operator-provided live command output plus independent postactivation strict read-only scan. Upon any error, preserve state, classify with new read-only tool, do not rerun the activation command; the initial permission is consumed once used.
+
+
+## 2026-10-19 — REAL experimental activation attempt NO-GO on KeyError; STOP, state uncertain
+
+The owner provided new, explicit one-attempt experimental activation approval, then actually ran the approval-scoped real Windows `run-v19-e11-activation-review.ps1 -Port COM7 -ApplyActivation -AcceptFirmwareABIRisk`. Real output includes `>100%, chunk 12 of 12` and `>100%, chunk 10 of 10`, then:
+
+```text
+V19 E11 ACTIVATE NO-GO: KeyError
+STOP. DO NOT RERUN, CLEAN, RENAME, ROLLBACK OR FLASH.
+The installed app may be ABSENT or already changed. Do not infer state.
+UNKNOWN POSSIBLE PARTIAL ACTIVATION. STOP; classify read-only. NO RE-RUN.
+```
+
+**REAL DEVICE STATUS: UNKNOWN, do not infer success or failure of renames from transfer-progress text.** The single authorized activation attempt is consumed. No further activation, rename, upload, overwrite, restore, reboot, or firmware operation is authorized.
+
+**Source-level likely root:** `scripts/activate_v19_e11_once_review_only.py` calls `identity_resources_ro()` at line 87, **before the first `rename_once` at line 91**. Its `PINNED_NATIVE` pairs the `js_gpio.fal` path with key `E11_JS_GPIO` while real `check_local()` returns a `js` dictionary keyed `js_gpio.module` and `event_loop` (`pinned_local_expectation` verifies `post['E11_JS_GPIO'] == js['js_gpio.module']`). `identity_resources_ro` then indexes `js['E11_JS_GPIO']`, throwing `KeyError`. The 17 mock adapter tests bypassed `identity_resources_ro`, and consequently **failed to catch the production dictionary-shape bug**. This offers a strong code-flow explanation for a **pre-rename stop**, but MUST be independently proven against the actual USB/microSD state before claiming no device rename occurred.
+
+**Immediate safe response:** keep Flipper connected, avoid app launch/reboot, and run ONLY the previously operator-proven **independent existing post-stage strict-read-only** tool `run-v19-e11-poststage-ro.ps1 -Port COM7` against the likely original active-v1.8/staged-v1.9 state. That tool was previously real COM7 PASS and has no mutation commands; a fresh PASS proves original stage/active/old-backup configuration; a NO-GO **does not itself license any recovery or retry**. For unknown/partial state use a separate independently reviewed read-only five-path classifier (not the activation runner), and STOP on surprising results. No changes to actual Flipper have been attempted by assistant.
+
+Activation implementation must be revised to use real `js_gpio.module` dict key and avoid masking `KeyError`, with a new non-mocked regression simulating the actual dictionary shape. Revalidate pinned wrapper source, unit tests and PC dry-run and separately seek **new explicit operator approval for any future attempt**. Installed firmware binary ABI remains UNATTESTED.
+
+
+## 2026-10-19 — physical post-KeyError read-only state PASS; original v1.8 untouched
+
+Immediately after the unsuccessful one-attempt real COM7 activation (`KeyError`), operator ran the **previously validated independent** `run-v19-e11-poststage-ro.ps1 -Port COM7` (without any approval or apply switch). Full actual device output confirmed:
+
+```text
+PC_BACKUPS_PASS: 12 files, 2128 bytes
+V19 E11 LOCAL HASH / TRANSPORT POST-STAGE READ-ONLY GATE: PASS
+FAP: 97540 bytes / pinned SHA256, source 15/15 / transport Git blob PASS
+state: STAGED_V19_NONAPP_ACTIVE_V18
+v19_stage_size: 97540
+v19_stage_sha256_full_readback_twice: e1f43390c4078fbaad7e13124331926e0d6667294f2815e8b63762bd16f3ff90
+active_v18: FINAL_UNCHANGED_MD5_AND_SIZE_PASS
+old_e11_device_backup: PRESERVED_AND_PINNED
+firmware_js_manifest_label: PINNED_SCREEN_ONLY_NOT_FIRMWARE_ABI_ATTESTATION
+future_recovery_filename: ABSENT
+v19_active: NO
+device_writes: ZERO
+automatic_retry_rollback_rename: ZERO
+activation_authorized: NO
+V19 E11 INDEPENDENT POST-STAGE READ-ONLY PASS
+V18 STILL ACTIVE, V19 STAGED ONLY; ACTIVATION NOT AUTHORIZED
+```
+
+**REAL DEVICE RECOVERED STATUS:** live FAP v1.8 FINAL unchanged, v1.9 full-stage sidecar unchanged with two complete reads, E11 backup intact and reserved final-v1.8 backup absent. Therefore the first physical two-rename activation attempt **did not move either original or stage FAP**. The independent poststage checker is read-only; it effected no rename. No device repair, recovery upload or firmware work necessary.
+
+**Root cause confirmed by source:** `activate_v19_e11_once_review_only.py` accidentally selected `PINNED_NATIVE[js_gpio.fal] = 'E11_JS_GPIO'` (a `post` dict key) and tried `js['E11_JS_GPIO']`, whereas `pinned_local_expectation` returns the JS dict with key `js['js_gpio.module']`. This throws `KeyError` at the first `identity_resources_ro` call **before** the first rename. Previous 17 mocked activation adapter tests had masked this exact check. Full device read-only result independently proves the pre-rename safe outcome.
+
+**Corrective source review (NO activation permission):**
+- Set `PINNED_NATIVE[js_gpio.fal] = 'js_gpio.module'`, match exact `JS_REMOTE` mapping, retrieve hash with `js.get(key)` and explicit 32-hex MD5 validation. Refuse absent/malformed plugin or Manifest expected keys with explicit `ValueError`, and compare each to actual remote digest. Keep two same-directory rename allowlist, all byte-readback and resource gates, no retry/restore/flash behavior intact.
+- Update exact source Git SHA-1 pin for corrected `activate_v19_e11_once_review_only.py` in Windows `run-v19-e11-activation-review.ps1`; new blob is `755f8b62ed566903881370f577a1c2eedf63b320` and the wrapper pin was independently checked to match. Wrapper still requires separate exact two-rename approval, explicit ABI-risk acknowledgment, and is default dry run with no COM.
+- New `tests/test_v19_e11_native_resource_live_contract_offline.py` adds **15 concrete dict-contract regressions** and does NOT mock `identity_resources_ro`: successful real-shaped JS GPIO/event_loop/native-label/Manifest checks at all three positions (pre-rename, between-renames, after), missing/malformed key, wrong hex/MD5, resource path drift, firmware identity drift, dangerous post-first-rename drift preservation, and zero unintended mutation. This suite uses ONLY an in-memory FakeCLI, no actual COM.
+- CI host-only workflow updated to run **58** tests (17 existing adapter, 15 new native contract, 15 independent reader, 11 Windows static). **ALL 58 OPERATOR RESULTS AND UPDATED WINDOWS DEFAULT DRY-RUN ARE PENDING.** Do not assert PASS or claim activation ready.
+
+**Strict approval boundary:** Previous express consent was for the *one attempted* experimental activation and is **consumed**. Successful source corrections/host tests would **not** renew it. A new express informed approval must be requested for any later real on-device rename; no auto replay permitted. Firmware currently flashed has NOT been independently attested at binary/export-table level. Main/Stable and PR #15 remain untouched.
+
+
+## Pre-COM packed native contract hardening after physical unchanged-state PASS
+
+The original pre-rename E11 JS resource dictionary mismatch was fixed in `scripts/activate_v19_e11_once_review_only.py`. A second review also moved **packed source dictionary contract validation before COM opens** in the activation entrypoint, then repeats it on each native E11 resource check:
+- `validate_local_native_expected(post, js)` requires both dictionaries have their **original** keys, `js['js_gpio.module']` and `js['event_loop']` with exactly 32 hex MD5 characters, valid E11 `post['E11_NEW_MANIFEST']`, and independent `post['E11_JS_GPIO'] == js['js_gpio.module']` parity. `JS_REMOTE` must match the two fixed plugin paths.
+- This is invoked on the **actual `post, js, v18_md5 = check_local(...)` return values before importing/opening a COM client**. During the later real-device run, it also verifies live JS plugin & Manifest MD5 and native firmware label/base at all three relevant phases. The code does not add any device-write path, rollback, retry, flash or new filenames.
+- New `tests/test_v19_e11_native_resource_live_contract_offline.py` now covers **17** host-only **unmocked `identity_resources_ro`** regressions, including the previously missed real `js_gpio.module` dictionary shape, missing/corrupt keys, packed source MD5 parity, label/base/resource drift, and fail-closed intermediate state.
+- Combined updated safety matrix **60 cases** = 17 original activation adapter + **17** true native contract + 15 postactivation independent read-only + 11 Windows static. Dedicated host-only CI workflow updated accordingly. These operator-run tests and fresh Windows dry-run are **NOT YET REPORTED**. An actual source audit confirmed Windows review wrapper pins exactly **19** sources, including the corrected activation Python Git blob `a2a9c2c0cc3b72c72695ef1bb6186aad0e2192e2`. This is only source integrity, not runtime safety proof.
+
+**NO DEVICE OPERATION OR INSTALL AUTHORIZED AT THIS TIME.** Previous explicit one-attempt permission was consumed by the aborted `KeyError` run; real USB postfailure scan already independently proved v1.8 FINAL unchanged, v1.9 stage unchanged, no rename. Further on-device activation would require a **new express approval** after host tests and dry run pass. Installed STM32 native firmware binary exported API list remains independently un-attested. Avoid old activation command.
+
+
+## 2026-10-19 — operator-reported 60/60 host safety and activation PC dry-run PASS after KeyError correction
+
+The operator actually ran (after fetching the revised development checkout) the new **unmocked E11 native-resource contract** synthetic suite, the preexisting client-injected activation adapter synthetic suite, independent postactivation read-only synthetic suite, Windows wrapper static suite and default **PC-only** activation Windows dry-run, in that order. Pasted results:
+
+```text
+test_v19_e11_native_resource_live_contract_offline.py: Ran 17 tests in 0.013s — OK
+test_v19_e11_real_activation_adapter_offline.py: Ran 17 tests in 0.012s — OK
+test_v19_e11_postactivation_readonly.py: Ran 15 tests in 0.011s — OK
+test_v19_e11_activation_windows_static.py: Ran 11 tests in 0.010s — OK
+PC_BACKUPS_PASS: 12 files, 2128 bytes
+WINDOWS_PC_BACKUPS_RO: PASS | DEVICE_WRITES: ZERO | PC_WRITES: ZERO
+V19 E11 ACTIVATION LOCAL HASH / BACKUP / TRANSPORT REVIEW PASS
+FAP: 97540 bytes / pinned SHA256, source 19/19 / transport Git blob PASS
+DRY RUN: NO COM / NO DEVICE WRITES / NO RENAMES / NO FIRMWARE FLASH
+Native E11 installed firmware ABI: NOT ATTESTED.
+Activation requires separate, explicit owner approval; NEVER imply permission.
+```
+
+**Status: 60/60 synthetic/static tests and actual Windows default dry-run PASS.** The intentional `ACTIVATE NO-GO` text inside two negative unit tests is expected and their test methods report `ok` and thus does not mean the real device operation ran. Crucially, the new test suite no longer mocks `identity_resources_ro`, the gate that failed in the one prior physical activation attempt.
+
+The prior real post-KeyError COM7 independent read-only scan already confirmed **STAGED_V19_NONAPP_ACTIVE_V18** with original active v1.8 hash/size intact, exact 97,540-byte v1.9 sidecar read back twice, historical E11 backup preserved and new recovery filename absent. The **60/60 tests and PC dry-run do not change this real device state**.
+
+**Decision:** revised activation code and its pin-verified PC wrapper may now be presented for a **new, independent informed authorization**; however the previous one-attempt activation approval was consumed by the prior attempt, so it must NOT be replayed by assumption. The new activation still executes exactly two **non-atomic** guarded microSD renames and no firmware flash, user-data writes, automatic retry/recovery/restore. An interrupted rename can leave the active application filename absent. The STM32's actually installed firmware native binary export table is still **not independently attested**. Following any new separately approved on-device operation, require separate fresh strict read-only postactivation reconciliation before opening the v1.9 GUI. On error STOP and reclassify read-only, never rerun on ambiguous device state.
+
+No actual new v1.9 activation, firmware/SD writes or v1.9 GUI test is evidenced by this operator log. Draft PR #15 and Stable must remain untouched pending physical tests.
+
+
+## Physical v1.9 activation file promotion PASS — independent postactivation check pending
+
+After **60/60 corrected offline host tests** PASS and an updated Windows default NO-COM dry-run PASS, the owner explicitly instructed immediate activation ("ARTIK GEÇ ŞU CİHAZA YÜKLE ŞUNU YA BIKTIM"). In the subsequent assistant reply, this was treated as **fresh separate consent for the second bounded experimental activation attempt**, retaining the disclosed un-attested native firmware binary ABI, non-atomic two-rename risk, no firmware flash, no automatic retry or restoration. The operator then executed `run-v19-e11-activation-review.ps1 -Port COM7 -ApplyActivation -AcceptFirmwareABIRisk` in Windows PowerShell.
+
+**Actual physical COM7 command output**:
+
+```text
+PC_BACKUPS_PASS: 12 files, 2128 bytes
+WINDOWS_PC_BACKUPS_RO: PASS | DEVICE_WRITES: ZERO | PC_WRITES: ZERO
+V19 E11 ACTIVATION LOCAL HASH / BACKUP / TRANSPORT REVIEW PASS
+FAP: 97540 bytes / pinned SHA256, source 19/19 / transport Git blob PASS
+V19 E11 REAL TWO-RENAME ACTIVATION REVIEW ADAPTER - NO AUTORETRY
+[real binary readback chunk progress]
+v19_file_promotion: PASS_TWO_NONATOMIC_RENAMES
+installed_app: V19_SHA256_FULL_READBACK
+preserved_final_v18: V18_BAK_FULL_READBACK
+original_e11_backup: UNCHANGED_FULL_READBACK
+stage_path: ABSENT
+other_files_user_data: NOT_ACCESSED
+firmware_flash: NO
+gui_boot: NOT_TESTED
+installed_firmware_binary_abi: NOT_ATTESTED
+next_action: STOP_FOR_INDEPENDENT_READ_ONLY_ACTIVATED_STATE_SCAN
+STOP: independent post-activation READ-ONLY classifier required.
+STAGED v1.9 FILE ACTIVATED BY RENAME: INDEPENDENT READ-ONLY SCREEN STILL REQUIRED.
+Do not start app before post-activation identity PASS.
+```
+
+**REAL ACTIVATION FILE-PROMOTION SUCCESS:** Two device FAP rename operations completed with in-session exact full binary FAP readback. Pinned v1.9 is now at `/ext/apps/Tools/labmate.fap`, exact v1.8 FINAL at `/ext/apps/Tools/labmate.v18-final-before-v19.bak`, earlier E11 backup still preserved, staging path absent. No firmware flash or LabMate data access claimed. **Independent postactivation read-only run is now the mandatory next gate**, using `scripts/run-v19-e11-postactivation-ro.ps1 -Port COM7`. It is separate from the mutating activation wrapper and is already source-reviewed, not yet operator-executed in this state. Do not launch the v1.9 GUI until it independently reports PASS, and do not mark installed native firmware ABI or GUI functionality as proven. If the independent checker reports NO-GO, STOP without blind retry, rollback or firmware flash.
+
+PR #15 should remain Draft and Stable untouched until independently accepted hardware functionality evidence.
+
+
+## Independent real COM7 postactivation full binary state — PASS (GUI pending)
+
+Following the explicitly approved successful physical v1.9 two-rename activation, the operator executed the **separate independent read-only** Windows runner `scripts/run-v19-e11-postactivation-ro.ps1 -Port COM7` and supplied the complete real COM7 output. This source was separately hash-pinned and did not issue any device write or rename.
+
+```text
+PC_BACKUPS_PASS: 12 files, 2128 bytes
+WINDOWS_PC_BACKUPS_RO: PASS | DEVICE_WRITES: ZERO | PC_WRITES: ZERO
+V19 E11 LOCAL HASH / TRANSPORT POST-ACTIVATION READ-ONLY GATE: PASS
+FAP: 97540 bytes / pinned SHA256, source 17/17 / transport Git blob PASS
+v19_active: CONFIRMED_BY_TWO_FULL_SHA256_READBACKS
+active_v19_sha256: e1f43390c4078fbaad7e13124331926e0d6667294f2815e8b63762bd16f3ff90
+final_v18_device_backup: PRESERVED_TWICE_READBACK
+historical_e11_backup: UNCHANGED_TWICE_READBACK
+staging_path: ABSENT
+failed_v19_backup: ABSENT
+native_E11_resources: PINNED_LABEL_AND_JS_MANIFEST_MD5
+installed_firmware_binary_abi: NOT_ATTESTED
+gui_boot: NOT_TESTED
+device_writes: ZERO
+V19 E11 INDEPENDENT REAL POSTACTIVATION STATE PASS
+V19 E11 ACTIVE FAP VERIFIED INDEPENDENTLY - NO DEVICE WRITE
+```
+
+**Decision:** v1.9 is confirmed physically installed at the active Flipper application path; the backup of FINAL v1.8 and historical E11 artifact are preserved, and 12 backed-up LabMate data files unchanged on PC. The independent full-binary check validates the FAP bytes and state, **not runtime correctness or installed internal firmware export-table ABI compatibility**.
+
+**Next:** permit carefully observed first GUI launch with NO external GPIO wiring or generation; if GUI fails to start/crashes, STOP and report exact observable error, do NOT rerun activation or firmware flash. Only after basic GUI launch passes proceed to controlled non-destructive native scope/GPIO functionality tests. Draft PR #15 and Stable remain unchanged until actual runtime evidence exists.
+
+
+## v1.9 physical GUI first launch — owner confirms opens
+
+After independently attested on-device v1.9 active FAP postactivation PASS, the owner directly reported **"açılıyor"** (LabMate opens on the Flipper), providing the first physical **GUI launch PASS** evidence. This is not yet evidence of menu navigation, clean BACK exit, actual native firmware-export ABI compatibility under v1.9 tools, or core measurement/signal operation; those remain to be checked only as useful.
+
+The owner also questioned why the old, convenient PowerShell installation/automatic app-opening workflow had been replaced by a laborious multi-step activate/verify process. Explain clearly: that extra conservative process was limited to safeguarding v1.8 FINAL, pinned Momentum E11 firmware and user data during experimental v1.9 activation. It did not imply the previous simple install-and-open workflow was intrinsically broken. Do not make the user repeat successful stage or rename operations. After functionality is verified, plan a simpler, safely constrained future install-and-launch developer workflow while keeping pinned old-version backups and one-time risk checkpoints for first experimental swaps.
+
+Current physical evidence: **v1.9 file active and two SHA256 readbacks PASS; human-observed GUI opens PASS.** No user confirmation for menu/back/functional checks has been provided yet. Never claim v1.9 fully stable or publish to Stable solely on "açılıyor".

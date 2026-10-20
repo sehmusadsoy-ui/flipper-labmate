@@ -1,0 +1,289 @@
+name: LabMate v1.9 exact E11 Momentum FAP REVIEW BUILD (NO FLASH)
+
+on:
+  push:
+    branches: [dev/v1.9-logic-scope]
+    paths:
+      - "application.fam"
+      - "src/**"
+      - "tests/test_labmate_scope_navigation.c"
+      - "tests/test_labmate_scope_plot.c"
+      - "tests/test_labmate_scope_focus.c"
+      - "tests/test_labmate_scope_display.c"
+      - "tests/test_verify_v19_e11_sdk_fap.py"
+      - "scripts/verify_v19_e11_sdk_fap.py"
+      - "scripts/check_v19_review_bundle.py"
+      - "tests/test_check_v19_review_bundle.py"
+      - ".github/workflows/build-v19-e11-fap-review-only.yml"
+  pull_request:
+    branches: [dev/v1.8-completion]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Each push of this very workflow on the isolated development branch is a
+# FAP review-only build request. No browser dispatch, release or flash.
+# Serializing rather than cancelling preserves compiler failure evidence.
+concurrency:
+  group: v19-e11-review-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  compile_matched_fap:
+    name: Build v1.9DEV FAP on PINNED E11 patched Momentum source
+    # Manual builds are allowed ONLY when selecting the v1.9 development branch.
+    if: github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/dev/v1.9-logic-scope'
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Record CI trigger and guard development ref (READ ONLY)
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'EVENT=%s\nREF=%s\nSOURCE_SHA=%s\n' "$GITHUB_EVENT_NAME" "$GITHUB_REF" "$GITHUB_SHA"
+          # A push or manual run must never build application code from main.
+          if [[ "$GITHUB_EVENT_NAME" != "pull_request" ]]; then
+            test "$GITHUB_REF" = "refs/heads/dev/v1.9-logic-scope"
+          fi
+
+      - name: Checkout LabMate v1.9 draft; never checkout Stable for this build
+        uses: actions/checkout@v4
+        with:
+          path: labmate
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Test fail-closed SDK/API/ELF verifier, including negative cases
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd labmate
+          python3 -m unittest discover -v -s tests -p test_verify_v19_e11_sdk_fap.py
+          python3 -m unittest discover -v -s tests -p test_check_v19_review_bundle.py
+
+      - name: Checkout exact previous E11 Momentum source; never use floating main
+        uses: actions/checkout@v4
+        with:
+          repository: Next-Flip/Momentum-Firmware
+          ref: d3f89dfe2ef6b01839201598e9be1590cba80322
+          path: momentum-src
+          persist-credentials: false
+
+      - name: Reapply the previously audited E11 patch chain (SOURCE ONLY)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          # This records ONLY the failing shell line and return code.
+          # No firmware build, flash or working tree edits beyond E11 patch.
+          trap 'rc=$?; printf "E11_PATCH_CHAIN_FAILURE_EXIT=%s\nSHELL_LINE=%s\n" "$rc" "$LINENO" > "$GITHUB_WORKSPACE/v19-e11-patch-failure.txt"' ERR
+          test "$(git -C momentum-src rev-parse HEAD)" = "d3f89dfe2ef6b01839201598e9be1590cba80322"
+          python3 labmate/scripts/patch_momentum_i2c_timeout.py momentum-src
+          python3 labmate/scripts/patch_momentum_i2c_timeout.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_resource_lease.py momentum-src --allow-timed-i2c --apply
+          python3 labmate/scripts/patch_momentum_gpio_tryadd.py momentum-src --allow-prepatched --apply
+          python3 labmate/scripts/patch_momentum_native_pwm_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_pwm_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_pwm_lease.py momentum-src
+          python3 labmate/tests/test_v18_pwm_native_joint.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_js_gpio_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_js_gpio_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_js_gpio_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_pulse_reader_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_pulse_reader_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_pulse_reader_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_pulse_lease_firmware.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_digital_sequence_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_digital_sequence_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_digital_sequence_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_ibutton_tim1_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_ibutton_tim1_lease.py momentum-src --apply
+          python3 labmate/scripts/patch_momentum_native_ibutton_protocol_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_ibutton_protocol_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_ibutton_tim1_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_ibutton_protocol_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_nfc_timers_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_nfc_timers_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_nfc_tim1_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_infrared_rx_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_infrared_rx_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_infrared_rx_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_infrared_tx_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_infrared_tx_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_infrared_tx_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_infrared_rx_worker_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_infrared_rx_worker_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_infrared_rx_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_infrared_rx_worker_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_rfid_read_tim1_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_rfid_read_tim1_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_rfid_read_tim1_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_rfid_capture_tim2_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_rfid_capture_tim2_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_rfid_capture_tim2_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_lfrfid_read_worker_busy.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_lfrfid_read_worker_busy.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_lfrfid_read_worker_busy.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_lfrfid_raw_read_busy.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_lfrfid_raw_read_busy.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_lfrfid_raw_read_busy.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_lfrfid_busy_ui.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_lfrfid_busy_ui.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_lfrfid_busy_ui.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_rfid_emulate_dma_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_rfid_emulate_dma_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_rfid_emulate_dma_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_lfrfid_emulate_busy.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_lfrfid_emulate_busy.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_lfrfid_emulate_worker_busy.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_rfid_field_owner.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_rfid_field_owner.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_rfid_field_owner.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_subghz_rx_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_subghz_rx_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_subghz_rx_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_subghz_rx_busy_callers.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_subghz_rx_busy_callers.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_subghz_rx_callers.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_subghz_tx_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_subghz_tx_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_subghz_tx_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_onewire_slave_exti_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_onewire_slave_exti_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_onewire_slave_exti_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_nfc_irq_exti_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_nfc_irq_exti_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_nfc_irq_exti_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_serial_expansion_exti_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_serial_expansion_exti_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_serial_expansion_exti_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_ext_cc1101_rx_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_ext_cc1101_rx_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_ext_cc1101_rx_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_ext_cc1101_free_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_e11_extended_dma_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_e11_extended_dma_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_extended_dma_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_iso15693_irq_restore_busy.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_iso15693_irq_restore_busy.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_iso15693_irq_restore_busy.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_signal_reader_e11_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_signal_reader_e11_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_signal_reader_e11_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_ext_cc1101_tx_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_ext_cc1101_tx_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_ext_cc1101_tx_lease.py momentum-src
+          python3 labmate/tests/test_v18_native_ext_cc1101_free_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_wiegand_exti_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_wiegand_exti_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_wiegand_exti_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_imu_fifo_exti_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_imu_fifo_exti_lease.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_imu_fifo_exti_lease.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_js_gpio_callback_cleanup.py momentum-src
+          python3 labmate/scripts/patch_momentum_native_js_gpio_callback_cleanup.py momentum-src --apply
+          python3 labmate/tests/test_v18_native_js_gpio_callback_cleanup.py momentum-src
+          python3 labmate/scripts/patch_momentum_subghz_ext_rx_status_bridge.py momentum-src
+          python3 labmate/scripts/patch_momentum_subghz_ext_rx_status_bridge.py momentum-src --apply
+          python3 labmate/tests/test_v18_subghz_ext_rx_status_bridge.py momentum-src
+          python3 labmate/scripts/check_v18_e11_direct_ll_boundary.py momentum-src
+          python3 labmate/tests/test_v18_native_subghz_rx_callers.py momentum-src
+          python3 labmate/scripts/check_v18_e11_native_irq_callback_inventory.py momentum-src
+          python3 labmate/tests/test_v18_signal_reader_iso15693_route_audit.py momentum-src
+          python3 labmate/tests/test_v18_tim2_lease_integration.py
+          python3 labmate/scripts/check_v18_native_legacy_tim2_contract.py momentum-src labmate
+          git -C momentum-src diff --check
+          echo "E11 SOURCE PATCH PARITY PASS; NO FIRMWARE UPDATE OR DEVICE WRITE."
+
+      - name: Stage v1.9DEV into native FAP source (no install)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p momentum-src/applications_user/labmate/src
+          cp labmate/application.fam labmate/labmate_10px.png momentum-src/applications_user/labmate/
+          cp labmate/src/*.c labmate/src/*.h momentum-src/applications_user/labmate/src/
+          test -f momentum-src/applications_user/labmate/src/labmate_scope_bridge.c
+          test -f momentum-src/applications_user/labmate/src/labmate_scope_native.c
+          grep -Fqx '#define LABMATE_VERSION_TEXT "v1.9DEV"' momentum-src/applications_user/labmate/src/labmate_internal.h
+          grep -Fqx '    fap_version="1.9",' momentum-src/applications_user/labmate/application.fam
+          test "$(git -C labmate rev-parse HEAD)" = "$GITHUB_SHA"
+          echo "v1.9DEV STAGED; no firmware/SD/user-device access."
+
+      - name: Compile linked v1.9 FAP using exact patched E11 SDK (NO FLASH)
+        shell: bash
+        working-directory: momentum-src
+        timeout-minutes: 40
+        env:
+          FBT_GIT_SUBMODULE_SHALLOW: "1"
+        run: |
+          set -euo pipefail
+          # No updater_package, flash_usb, selfupdate.py, runfap.py or target device.
+          # Keep the exact compiler/linker transcript for review even on
+          # a failed build. pipefail preserves a nonzero FBT exit code.
+          ./fbt fap_labmate 2>&1 | tee ../v19-fap-build-output.log
+          test -s build/f7-firmware-C/.extapps/labmate.fap
+          python3 ../labmate/scripts/verify_v19_e11_sdk_fap.py \
+            . build/f7-firmware-C/.extapps/labmate.fap
+          sha256sum build/f7-firmware-C/.extapps/labmate.fap
+
+      - name: Prepare REVIEW ONLY FAP with provenance and SHA256
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p v19-review
+          cp momentum-src/build/f7-firmware-C/.extapps/labmate.fap v19-review/labmate-v1.9DEV-E11-review.fap
+          cd v19-review
+          sha256sum labmate-v1.9DEV-E11-review.fap > SHA256SUMS.txt
+          sha256sum -c SHA256SUMS.txt
+          printf 'SOURCE_SHA=%s\n' "$GITHUB_SHA" > PROVENANCE.txt
+          printf 'MOMENTUM_BASE=%s\n' 'd3f89dfe2ef6b01839201598e9be1590cba80322' >> PROVENANCE.txt
+          printf 'GITHUB_RUN_ID=%s\n' "$GITHUB_RUN_ID" >> PROVENANCE.txt
+          cat > READ_ME_FIRST.txt <<'EOF'
+          LabMate v1.9DEV candidate — SOURCE/BUILD REVIEW ONLY.
+          E11 exact patched Momentum ABI ONLY. NOT Stable, NOT a release.
+          NOT authorized for FAP installation until operator backup and
+          physical acceptance plan. Do NOT flash any firmware or modify SD.
+          UART/CSV/S1/Profile old behavior still requires regression checks.
+          EOF
+          python3 ../labmate/scripts/check_v19_review_bundle.py . --source-sha "$GITHUB_SHA"
+          echo "BINARY + SHA256 WRITTEN TO ACTIONS ARTIFACT. NO DEVICE OPERATION."
+
+      - name: Store review files, NOT a GitHub Release
+        uses: actions/upload-artifact@v4
+        with:
+          name: v19-E11-FAP-REVIEW-ONLY-DO-NOT-INSTALL
+          path: v19-review/
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Collect read-only build diagnostics (including failed builds)
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p v19-diagnostics
+          printf 'SOURCE_SHA=%s\n' "$GITHUB_SHA" > v19-diagnostics/RUN_INFO.txt
+          printf 'RUN_ID=%s\n' "$GITHUB_RUN_ID" >> v19-diagnostics/RUN_INFO.txt
+          printf 'EVENT=%s\n' "$GITHUB_EVENT_NAME" >> v19-diagnostics/RUN_INFO.txt
+          printf 'PINNED_MOMENTUM_BASE=%s\n' 'd3f89dfe2ef6b01839201598e9be1590cba80322' >> v19-diagnostics/RUN_INFO.txt
+          if test -f v19-fap-build-output.log; then
+            tail -n 2000 v19-fap-build-output.log > v19-diagnostics/FBT_LAST_2000_LINES.txt
+          else
+            printf 'No FBT transcript; inspect preceding checkout, patch or SDK steps.\n' > v19-diagnostics/FBT_NOT_STARTED.txt
+          fi
+          if test -f v19-e11-patch-failure.txt; then
+            cp v19-e11-patch-failure.txt v19-diagnostics/E11_PATCH_FAILURE.txt
+          fi
+          echo '## LabMate v1.9 E11 FAP review build' >> "$GITHUB_STEP_SUMMARY"
+          echo "Source commit: \`$GITHUB_SHA\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Run ID: \`$GITHUB_RUN_ID\`" >> "$GITHUB_STEP_SUMMARY"
+          echo 'Review-only: no firmware flash, FAP installation or release.' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload compile diagnostics only (never failed binaries)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v19-E11-COMPILE-LOG-REVIEW-ONLY
+          path: v19-diagnostics/
+          retention-days: 7
+          if-no-files-found: warn

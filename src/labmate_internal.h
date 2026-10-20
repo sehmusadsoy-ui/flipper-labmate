@@ -17,8 +17,13 @@
 #include "labmate_comm_resource.h"
 #include "labmate_onewire_hw.h"
 #include "labmate_i2c_runtime.h"
+#include "labmate_scope_native.h"
+#include "labmate_scope_plot.h"
+#include "labmate_scope_display.h"
+#include "labmate_scope_pair.h"
+#include "labmate_scope_tolerance.h"
 
-#define LABMATE_VERSION_TEXT "v1.8DEV"
+#define LABMATE_VERSION_TEXT "v1.9DEV"
 /* Shared menu/pin counts: UI and input handling must agree. */
 #define MENU_COUNT LabMateToolCount
 #define GPIO_COUNT LABMATE_MONITOR_PIN_COUNT
@@ -48,6 +53,7 @@ typedef enum {
     LabMateScreenUart, /* v1.8 UART: append, preserve stable screen IDs */
     LabMateScreenOneWire, /* append only; previous screen IDs preserved */
     LabMateScreenI2c, /* real I2C only on a firmware with bounded HAL API */
+    LabMateScreenScope, /* v1.9 append only; historical screen values preserved */
 } LabMateScreen;
 
 typedef enum {
@@ -258,6 +264,27 @@ typedef struct {
     uint8_t history_mode;
     char history_first_row[80];
     uint8_t history_first_row_len;
+
+    /* Scope's 256 real-edge ISR buffer and 64-edge UI window are kept in
+     * heap-allocated LabMateApp, NEVER on the 4 KiB app stack. */
+    LabMateScopeNative scope_native;
+    LabMateScopeEdge scope_recent[LABMATE_SCOPE_PLOT_MAX_EDGES];
+    LabMateScopePlotLine scope_lines[LABMATE_SCOPE_PLOT_MAX_LINES];
+    LabMateScopeDisplay scope_display;
+    /* A and B store only summaries of two confirmed, non-overlapping PC1
+     * sessions. NO stored raw ISR pointers and NO SD profile/CSV writes. */
+    LabMateScopePair scope_pair;
+    LabMateScopeMetrics scope_last_metrics;
+    uint32_t scope_capture_generation;
+    uint32_t scope_last_generation;
+    uint32_t scope_capture_hz;
+    bool scope_last_valid;
+    bool scope_clock_fault;
+    bool scope_show_compare;
+    bool scope_show_details; /* distinct fourth-page navigation */
+    uint8_t scope_compare_page; /* 0 summary, 1 A timing, 2 B timing */
+    bool scope_show_reference; /* read-only named reference result page */
+    LabMateScopeReferencePreset scope_reference_preset;
 
     LabMateUart uart; /* USART external GPIO 13/14, no TIM1/TIM2 ownership */
     LabMateCommOwner comm_owner; /* local exclusive I2C/1Wire sessions */

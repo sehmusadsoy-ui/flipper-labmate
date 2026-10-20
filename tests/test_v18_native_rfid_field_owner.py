@@ -256,8 +256,8 @@ static pthread_mutex_t critical=PTHREAD_MUTEX_INITIALIZER;
                       res.index("const GpioPinRecord* furi_hal_resources_pin_by_number")]
         (d/"lease.c").write_text(pre+masks+allocator+MASK)
         subprocess.run(["cc","-std=c11","-Wall","-Wextra","-Werror","-pedantic",
-                        "-pthread",str(d/"lease.c"),"-o",str(exe)],check=True)
-        subprocess.run([str(exe)],check=True)
+                        "-pthread",str(d/"lease.c"),"-o",str(d/"allocator_test")],check=True)
+        subprocess.run([str(d/"allocator_test")],check=True)
     print("RFID native field actual production C and E11 allocator HOST PASS")
     print("Native internal GPIO/EXTI and physical field recovery still OPEN")
 

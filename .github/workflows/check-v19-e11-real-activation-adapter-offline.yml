@@ -1,0 +1,42 @@
+name: LabMate v1.9 E11 activation adapter and post-state OFFLINE gate
+
+on:
+  push:
+    branches: [dev/v1.9-logic-scope]
+    paths:
+      - "scripts/activate_v19_e11_once_review_only.py"
+      - "scripts/check_v19_e11_postactivation_ro.py"
+      - "scripts/run-v19-e11-activation-review.ps1"
+      - "scripts/run-v19-e11-postactivation-ro.ps1"
+      - "scripts/review_v19_e11_activation_recovery_offline.py"
+      - "scripts/simulate_v19_e11_storage_cli_offline.py"
+      - "tests/test_v19_e11_real_activation_adapter_offline.py"
+      - "tests/test_v19_e11_native_resource_live_contract_offline.py"
+      - "tests/test_v19_e11_postactivation_readonly.py"
+      - "tests/test_v19_e11_activation_windows_static.py"
+      - ".github/workflows/check-v19-e11-real-activation-adapter-offline.yml"
+  pull_request:
+    branches: [dev/v1.8-completion]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  host_tests_only:
+    name: Host-only 60 adapter, actual-resource-contract and postactivation checks (NO COM/SD)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Test real activation adapter against synthetic native CLI only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -B tests/test_v19_e11_real_activation_adapter_offline.py -v
+          python3 -B tests/test_v19_e11_native_resource_live_contract_offline.py -v
+          python3 -B tests/test_v19_e11_postactivation_readonly.py -v
+          python3 -B tests/test_v19_e11_activation_windows_static.py -v
+          echo "60 HOST-ONLY SAFETY TESTS PASS; NO COM, NO FIRMWARE, NO INSTALL."

@@ -1,0 +1,443 @@
+name: LabMate v1.9 digital edge buffer host gate (NO FIRMWARE / NO FLASH)
+
+on:
+  push:
+    branches: [dev/v1.9-logic-scope]
+    paths:
+      - "src/labmate_scope_buffer.[ch]"
+      - "tests/test_labmate_scope_buffer.c"
+      - "src/labmate_scope_timeguard.[ch]"
+      - "tests/test_labmate_scope_timeguard.c"
+      - "src/labmate_scope_plot.[ch]"
+      - "tests/test_labmate_scope_plot.c"
+      - "tests/test_labmate_scope_focus.c"
+      - "src/labmate_scope_compare.[ch]"
+      - "tests/test_labmate_scope_compare.c"
+      - "src/labmate_scope_pair.[ch]"
+      - "tests/test_labmate_scope_pair.c"
+      - "src/labmate_scope_pair_view.[ch]"
+      - "tests/test_labmate_scope_pair_view.c"
+      - "src/labmate_scope_display.[ch]"
+      - "tests/test_labmate_scope_display.c"
+      - "src/labmate_scope_bridge.[ch]"
+      - "src/labmate_navigation.[ch]"
+      - "tests/test_labmate_scope_navigation.c"
+      - "src/labmate_internal.h"
+      - "src/labmate_ui_primitives.c"
+      - "src/labmate_ui_screens.c"
+      - "application.fam"
+      - "src/labmate_input_menu.c"
+      - "src/labmate_input.c"
+      - "src/labmate_view.c"
+      - "src/labmate_capture_session.c"
+      - "src/labmate.c"
+      - "src/labmate_scope_native.[ch]"
+      - "tests/test_labmate_scope_native.c"
+      - "tests/test_labmate_scope_native_unpatched.c"
+      - "tests/mock_v19/**"
+      - "src/labmate_scope_gate.[ch]"
+      - "tests/test_labmate_scope_gate.c"
+      - "src/labmate_resource_policy.[ch]"
+      - "src/labmate_comm_resource.[ch]"
+      - ".github/workflows/check-v19-scope-buffer-host.yml"
+  pull_request:
+    branches: [dev/v1.8-completion]
+    paths:
+      - "src/labmate_scope_buffer.[ch]"
+      - "tests/test_labmate_scope_buffer.c"
+      - "src/labmate_scope_timeguard.[ch]"
+      - "tests/test_labmate_scope_timeguard.c"
+      - "src/labmate_scope_plot.[ch]"
+      - "tests/test_labmate_scope_plot.c"
+      - "tests/test_labmate_scope_focus.c"
+      - "src/labmate_scope_compare.[ch]"
+      - "tests/test_labmate_scope_compare.c"
+      - "src/labmate_scope_pair.[ch]"
+      - "tests/test_labmate_scope_pair.c"
+      - "src/labmate_scope_pair_view.[ch]"
+      - "tests/test_labmate_scope_pair_view.c"
+      - "src/labmate_scope_display.[ch]"
+      - "tests/test_labmate_scope_display.c"
+      - "src/labmate_scope_bridge.[ch]"
+      - "src/labmate_navigation.[ch]"
+      - "tests/test_labmate_scope_navigation.c"
+      - "src/labmate_internal.h"
+      - "src/labmate_ui_primitives.c"
+      - "src/labmate_ui_screens.c"
+      - "application.fam"
+      - "src/labmate_input_menu.c"
+      - "src/labmate_input.c"
+      - "src/labmate_view.c"
+      - "src/labmate_capture_session.c"
+      - "src/labmate.c"
+      - "src/labmate_scope_native.[ch]"
+      - "tests/test_labmate_scope_native.c"
+      - "tests/test_labmate_scope_native_unpatched.c"
+      - "tests/mock_v19/**"
+      - "src/labmate_scope_gate.[ch]"
+      - "tests/test_labmate_scope_gate.c"
+      - "src/labmate_resource_policy.[ch]"
+      - "src/labmate_comm_resource.[ch]"
+      - ".github/workflows/check-v19-scope-buffer-host.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scope_host:
+    name: Verify bounded digital edge timestamps, strict C + ASAN/UBSAN
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exact v1.9 development source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Strict C11 host compile and functional tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -O2 \
+            -Isrc src/labmate_scope_buffer.c \
+            tests/test_labmate_scope_buffer.c \
+            -o "$RUNNER_TEMP/v19-scope-host"
+          "$RUNNER_TEMP/v19-scope-host"
+
+      - name: Compile PC1 preflight and STOP/BACK pure model against REAL existing E11 resource policies
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -O2 \
+            -Isrc src/labmate_scope_gate.c src/labmate_resource_policy.c \
+            src/labmate_comm_resource.c tests/test_labmate_scope_gate.c \
+            -o "$RUNNER_TEMP/v19-scope-gate"
+          "$RUNNER_TEMP/v19-scope-gate"
+
+      - name: PC1 ownership model ASAN and UBSAN regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -g -O1 \
+            -fsanitize=address,undefined -fno-omit-frame-pointer \
+            -Isrc src/labmate_scope_gate.c src/labmate_resource_policy.c \
+            src/labmate_comm_resource.c tests/test_labmate_scope_gate.c \
+            -o "$RUNNER_TEMP/v19-scope-gate-sanitize"
+          ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 \
+            UBSAN_OPTIONS=halt_on_error=1 "$RUNNER_TEMP/v19-scope-gate-sanitize"
+
+      - name: AddressSanitizer and UndefinedBehaviorSanitizer host tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -g -O1 \
+            -fsanitize=address,undefined -fno-omit-frame-pointer \
+            -Isrc src/labmate_scope_buffer.c \
+            tests/test_labmate_scope_buffer.c \
+            -o "$RUNNER_TEMP/v19-scope-sanitize"
+          ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 \
+            UBSAN_OPTIONS=halt_on_error=1 "$RUNNER_TEMP/v19-scope-sanitize"
+
+      - name: Scope timebase/no-trigger watchdog - strict C11 with real edge buffer
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -O2 \
+            -Isrc src/labmate_scope_timeguard.c src/labmate_scope_buffer.c \
+            tests/test_labmate_scope_timeguard.c \
+            -o "$RUNNER_TEMP/v19-scope-timeguard"
+          "$RUNNER_TEMP/v19-scope-timeguard"
+
+      - name: Scope timebase/no-trigger watchdog - ASAN + UBSAN
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -g -O1 \
+            -fsanitize=address,undefined -fno-omit-frame-pointer \
+            -Isrc src/labmate_scope_timeguard.c src/labmate_scope_buffer.c \
+            tests/test_labmate_scope_timeguard.c \
+            -o "$RUNNER_TEMP/v19-scope-timeguard-san"
+          ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 \
+            UBSAN_OPTIONS=halt_on_error=1 "$RUNNER_TEMP/v19-scope-timeguard-san"
+
+      - name: Compare sequential actual PC1 captures (strict GCC C11)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -O2 \
+            -Isrc src/labmate_scope_compare.c tests/test_labmate_scope_compare.c \
+            -o "$RUNNER_TEMP/v19-compare"
+          "$RUNNER_TEMP/v19-compare"
+
+      - name: Compare A/B real measurements (ASAN UBSAN)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -O1 -g \
+            -fsanitize=address,undefined -fno-omit-frame-pointer \
+            -Isrc src/labmate_scope_compare.c tests/test_labmate_scope_compare.c \
+            -o "$RUNNER_TEMP/v19-compare-sanitize"
+          ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 \
+            UBSAN_OPTIONS=halt_on_error=1 "$RUNNER_TEMP/v19-compare-sanitize"
+
+      - name: A/B sequential references with strict GCC C11
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -O2 -Isrc \
+            src/labmate_scope_compare.c src/labmate_scope_pair.c \
+            tests/test_labmate_scope_pair.c -o "$RUNNER_TEMP/v19-ab-pair"
+          "$RUNNER_TEMP/v19-ab-pair"
+
+      - name: A/B sequential references ASAN UBSAN
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -g -O1 \
+            -fsanitize=address,undefined -fno-omit-frame-pointer -Isrc \
+            src/labmate_scope_compare.c src/labmate_scope_pair.c \
+            tests/test_labmate_scope_pair.c -o "$RUNNER_TEMP/v19-ab-pair-sanitize"
+          ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 \
+            UBSAN_OPTIONS=halt_on_error=1 "$RUNNER_TEMP/v19-ab-pair-sanitize"
+
+      - name: A/B true metrics view 128x64 Canvas mock (GCC + ASAN UBSAN)
+        shell: bash
+        run: |
+          set -euo pipefail
+          for mode in fast sanitize; do
+            flags="-O2"
+            if [ "$mode" = sanitize ]; then
+              flags="-O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer"
+            fi
+            cc -std=c11 -Wall -Wextra -Werror -Wpedantic $flags \
+              -Itests/mock_v19 -Isrc \
+              src/labmate_scope_compare.c src/labmate_scope_pair.c \
+              src/labmate_scope_pair_view.c tests/test_labmate_scope_pair_view.c \
+              -o "$RUNNER_TEMP/v19-pair-view-$mode"
+            ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 \
+              UBSAN_OPTIONS=halt_on_error=1 "$RUNNER_TEMP/v19-pair-view-$mode"
+          done
+
+      - name: Render real bounded waveform coordinates (GCC strict C11)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -O2 \
+            -Isrc src/labmate_scope_plot.c tests/test_labmate_scope_plot.c \
+            -o "$RUNNER_TEMP/v19-scope-plot"
+          "$RUNNER_TEMP/v19-scope-plot"
+
+      - name: Render real waveform coordinates (ASAN + UBSAN)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -g -O1 \
+            -fsanitize=address,undefined -fno-omit-frame-pointer \
+            -Isrc src/labmate_scope_plot.c tests/test_labmate_scope_plot.c \
+            -o "$RUNNER_TEMP/v19-scope-plot-sanitize"
+          ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 \
+            UBSAN_OPTIONS=halt_on_error=1 "$RUNNER_TEMP/v19-scope-plot-sanitize"
+
+      - name: Focus latest real edges (GCC strict)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -O2 \
+            -Isrc src/labmate_scope_plot.c tests/test_labmate_scope_focus.c \
+            -o "$RUNNER_TEMP/v19-scope-focus"
+          "$RUNNER_TEMP/v19-scope-focus"
+
+      - name: Focus latest real edges (ASAN + UBSAN)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -g -O1 \
+            -fsanitize=address,undefined -fno-omit-frame-pointer \
+            -Isrc src/labmate_scope_plot.c tests/test_labmate_scope_focus.c \
+            -o "$RUNNER_TEMP/v19-scope-focus-sanitize"
+          ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 \
+            UBSAN_OPTIONS=halt_on_error=1 "$RUNNER_TEMP/v19-scope-focus-sanitize"
+
+      - name: Render Flipper 128x64 view-only Canvas against mock GUI
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -O2 \
+            -Itests/mock_v19 -Isrc src/labmate_scope_display.c \
+            src/labmate_scope_plot.c tests/test_labmate_scope_display.c \
+            -o "$RUNNER_TEMP/v19-scope-display"
+          "$RUNNER_TEMP/v19-scope-display"
+
+      - name: Render Flipper Canvas mock with ASAN and UBSAN
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -O1 -g \
+            -fsanitize=address,undefined -fno-omit-frame-pointer \
+            -Itests/mock_v19 -Isrc src/labmate_scope_display.c \
+            src/labmate_scope_plot.c tests/test_labmate_scope_display.c \
+            -o "$RUNNER_TEMP/v19-scope-display-sanitize"
+          ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 \
+            UBSAN_OPTIONS=halt_on_error=1 "$RUNNER_TEMP/v19-scope-display-sanitize"
+
+      - name: Check legacy menu IDs, Scope inclusion and INFO final position
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -O2 \
+            -Isrc src/labmate_navigation.c tests/test_labmate_scope_navigation.c \
+            -o "$RUNNER_TEMP/v19-nav"
+          "$RUNNER_TEMP/v19-nav"
+
+      - name: Check Scope UI integration source contracts without invoking HAL
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          src = {x: Path('src/'+x).read_text() for x in (
+              'labmate.c', 'labmate_capture_session.c', 'labmate_input_menu.c',
+              'labmate_input.c', 'labmate_view.c', 'labmate_internal.h',
+              'labmate_scope_bridge.c', 'labmate_navigation.c',
+              'labmate_ui_screens.c')}
+          assert 'labmate_scope_bridge_init(app)' in src['labmate.c']
+          assert 'labmate_scope_bridge_poll(app)' in src['labmate.c']
+          assert 'labmate_capture_stop_all(app)' in src['labmate.c']
+          assert 'labmate_scope_bridge_stop(app)' in src['labmate_capture_session.c']
+          assert '!app->scope_native.owner.handle' in src['labmate_capture_session.c']
+          assert 'case LabMateToolScope:' in src['labmate_input_menu.c']
+          assert 'case LabMateScreenScope:' in src['labmate_input.c']
+          assert 'case LabMateScreenScope:' in src['labmate_view.c']
+          assert 'LabMateScreenScope,' in src['labmate_internal.h']
+          assert '#define LABMATE_VERSION_TEXT "v1.9DEV"' in src['labmate_internal.h']
+          assert 'fap_version="1.9"' in Path('application.fam').read_text()
+          assert 'LabMateToolScope' in src['labmate_navigation.c']
+          assert '[LabMateToolScope]' in src['labmate_ui_screens.c']
+          assert 'labmate_scope_native_read' in src['labmate_scope_bridge.c']
+          assert 'labmate_scope_bridge_latch' in src['labmate_scope_bridge.c']
+          assert 'labmate_scope_pair_save_a' in src['labmate_scope_bridge.c']
+          assert 'labmate_scope_pair_save_b' in src['labmate_scope_bridge.c']
+          assert 'scope_last_generation == a->scope_capture_generation' in src['labmate_scope_bridge.c']
+          assert 'labmate_scope_pair_view_draw' in src['labmate_view.c']
+          assert 'labmate_scope_plot_focus' in src['labmate_scope_bridge.c']
+          assert 'LABMATE_SCOPE_PLOT_FOCUS_EDGES' in Path('src/labmate_scope_plot.h').read_text()
+          assert 'furi_kernel_get_tick_frequency' in src['labmate_scope_bridge.c']
+          assert 'labmate_scope_native_stop' in src['labmate_scope_bridge.c']
+          assert 'LABMATE_NAV_MAX_CHILDREN 6U' in Path('src/labmate_navigation.h').read_text()
+          assert src['labmate_navigation.c'].index('LabMateToolAbout, LabMateToolInvalid') > (
+              src['labmate_navigation.c'].index('LabMateToolScope'))
+          assert Path('application.fam').read_text().count('sources=["src/*.c"]') == 1
+          for forbidden in ('storage_file_', 'furi_hal_gpio_init(', 'furi_hal_gpio_add_int_callback('):
+              assert forbidden not in src['labmate_scope_bridge.c'], forbidden
+          print('v1.9 staged app/UI/STOP routing source contracts PASS')
+          PY
+
+      - name: Mock actual PC1 / EXTI1 matched-Momentum GPIO and firmware leases
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -O2 \
+            -Itests/mock_v19 -Isrc \
+            src/labmate_scope_native.c src/labmate_scope_gate.c \
+            src/labmate_scope_buffer.c src/labmate_scope_timeguard.c \
+            src/labmate_resource_policy.c src/labmate_comm_resource.c \
+            tests/mock_v19/mock_runtime.c tests/test_labmate_scope_native.c \
+            -o "$RUNNER_TEMP/v19-native-mock"
+          "$RUNNER_TEMP/v19-native-mock"
+
+      - name: Mock native IRQ + ownership fault matrix with ASAN UBSAN
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -O1 -g \
+            -fsanitize=address,undefined -fno-omit-frame-pointer \
+            -Itests/mock_v19 -Isrc \
+            src/labmate_scope_native.c src/labmate_scope_gate.c \
+            src/labmate_scope_buffer.c src/labmate_scope_timeguard.c \
+            src/labmate_resource_policy.c src/labmate_comm_resource.c \
+            tests/mock_v19/mock_runtime.c tests/test_labmate_scope_native.c \
+            -o "$RUNNER_TEMP/v19-native-mock-sanitize"
+          ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 \
+            UBSAN_OPTIONS=halt_on_error=1 "$RUNNER_TEMP/v19-native-mock-sanitize"
+
+      - name: Stock Momentum absent patched ABI must fail closed without touching GPIO
+        shell: bash
+        run: |
+          set -euo pipefail
+          cc -std=c11 -Wall -Wextra -Werror -Wpedantic -O2 \
+            -DLABMATE_SCOPE_TEST_UNPATCHED \
+            -Itests/mock_v19 -Isrc \
+            src/labmate_scope_native.c src/labmate_scope_gate.c \
+            src/labmate_scope_buffer.c src/labmate_scope_timeguard.c \
+            src/labmate_resource_policy.c src/labmate_comm_resource.c \
+            tests/mock_v19/mock_runtime.c \
+            tests/test_labmate_scope_native_unpatched.c \
+            -o "$RUNNER_TEMP/v19-native-stock-mock"
+          "$RUNNER_TEMP/v19-native-stock-mock"
+
+      - name: Assert pure host math stays HAL-free and native UI stays review-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          h = Path("src/labmate_scope_buffer.h").read_text()
+          c = Path("src/labmate_scope_buffer.c").read_text()
+          assert "LABMATE_SCOPE_MAX_EDGES 256U" in h
+          assert "LABMATE_SCOPE_MAX_SAFE_DELTA" in h
+          assert "labmate_scope_buffer_push_edge" in c
+          timeguard = Path("src/labmate_scope_timeguard.c").read_text()
+          assert "LabMateScopeGuardClockUnsafe" in timeguard
+          assert "LabMateScopeGuardNoTrigger" in timeguard
+          assert "max_session_ms" in timeguard
+          for forbidden in ("furi_hal_", "LL_EXTI_", "storage_file_", "gpio_init(", "malloc(", "free("):
+              assert forbidden not in timeguard, forbidden
+          pair = Path("src/labmate_scope_pair.c").read_text()
+          assert "gen <= p->generation_a" in pair
+          assert "p->has_b = false" in pair
+          for forbidden in ("furi_hal_", "LL_EXTI_", "storage_file_", "gpio_init(", "malloc("):
+              assert forbidden not in pair, forbidden
+          pair_view = Path("src/labmate_scope_pair_view.c").read_text()
+          assert "COMPARE PC1 A/B" in pair_view
+          assert "format_frequency" in pair_view
+          for forbidden in ("furi_hal_", "LL_EXTI_", "storage_file_", "gpio_init("):
+              assert forbidden not in pair_view, forbidden
+          compare = Path("src/labmate_scope_compare.c").read_text()
+          assert "LabMateScopeMetricsInsufficient" in compare
+          assert "LABMATE_SCOPE_MAX_SAFE_DELTA" in compare
+          assert "frequency_delta_millihz" in compare
+          for forbidden in ("furi_hal_", "LL_EXTI_", "storage_file_", "gpio_init(", "malloc(", "free("):
+              assert forbidden not in compare, forbidden
+          plot = Path("src/labmate_scope_plot.c").read_text()
+          assert "LabMateScopePlotTimebaseError" in plot
+          assert "window_cycles" in plot
+          for forbidden in ("furi_hal_", "LL_EXTI_", "storage_file_", "gpio_init(", "malloc(", "free("):
+              assert forbidden not in plot, forbidden
+          display = Path("src/labmate_scope_display.c").read_text()
+          assert "labmate_scope_display_draw" in display
+          assert "LabMateScopeDisplayBusy" in display
+          assert 'short_state = "NO TRG"' in display
+          assert 'short_state = "UNSUP"' in display
+          assert "d->total_edges > LABMATE_SCOPE_MAX_EDGES" in display
+          for forbidden in ("furi_hal_", "LL_EXTI_", "storage_file_", "gpio_init(", "malloc(", "free("):
+              assert forbidden not in display, forbidden
+          native = Path("src/labmate_scope_native.c").read_text()
+          assert "furi_hal_gpio_try_add_int_callback" in native
+          assert "FURI_HAL_LEASE_IRQ_PC1" in native
+          assert "labmate_capture_exti_clear(LL_EXTI_LINE_1" in native
+          assert "LabMateCaptureScope" in native
+          for forbidden in ("furi_hal_gpio_add_int_callback(", "storage_file_", "malloc(", "calloc(", "realloc("):
+              assert forbidden not in native, forbidden
+          scope = Path("src/labmate_scope_gate.c").read_text()
+          assert "labmate_capture_can_acquire" in scope
+          assert "LabMateScopeOwnerReleaseFault" in scope
+          for forbidden in ("furi_hal_", "LL_EXTI_", "gpio_init(", "malloc(", "free(", "storage_file_"):
+              assert forbidden not in scope, forbidden
+          for forbidden in ("furi_hal_", "gpio_init", "gpio_add_int_callback",
+                            "LL_EXTI_", "storage_file_", "malloc(", "calloc(",
+                            "realloc(", "free("):
+              assert forbidden not in c, forbidden
+          assert not Path("build/").exists(), "Unexpected generated firmware output"
+          PY
+          echo "HOST TEST ONLY. Logic Scope is source-wired to dev UI; native FAP build and device validation remain UNVERIFIED. NO USB/SD writes, FAP install, firmware flash or Stable release."
