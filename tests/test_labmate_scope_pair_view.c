@@ -64,6 +64,9 @@ int main(void) {
     assert(c.saw_a && c.saw_b && c.saw_save_hint && c.saw_ref_hint);
     assert(!c.saw_freq_diff);
     c=(struct Canvas){0};
+    assert(labmate_scope_pair_view_draw(&c,&p,false,1U));
+    assert(c.saw_unsaved); /* renderer safe if invoked outside guarded navigation */
+    c=(struct Canvas){0};
     const LabMateScopeMetrics a=measure(100000U,500U,640000U,640000U);
     assert(labmate_scope_pair_save_a(&p,&a,1U));
     assert(labmate_scope_pair_view_draw(&c,&p,false,0U));
