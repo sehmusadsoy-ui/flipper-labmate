@@ -13,6 +13,7 @@ on:
       - "src/labmate_uart_ui.c"
       - "src/labmate_threshold.[ch]"
       - "src/labmate_button_capture.c"
+      - "src/labmate_counter_math.[ch]"
       - "tests/test_v20_*.c"
       - "tests/test_v20_*.h"
       - "tests/test_navigation.c.inc"
@@ -32,6 +33,7 @@ on:
       - "src/labmate_uart_ui.c"
       - "src/labmate_threshold.[ch]"
       - "src/labmate_button_capture.c"
+      - "src/labmate_counter_math.[ch]"
       - "tests/test_v20_*.c"
       - "tests/test_v20_*.h"
       - "tests/test_navigation.c.inc"
@@ -45,7 +47,7 @@ permissions:
 
 jobs:
   ui-host-only:
-    name: UI-01..05B source-linked host verification (GCC and Clang)
+    name: UI-01..05C source-linked host verification (GCC and Clang)
     if: github.event_name == 'push' || github.head_ref == 'dev/v2.0-signal-doctor'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -92,3 +94,7 @@ jobs:
       - name: UI-05B Button and Threshold renderer geometry
         shell: bash
         run: sh scripts/test-v20-ui05b-host.sh
+
+      - name: UI-05C Counter 64-bit renderer and formatter
+        shell: bash
+        run: sh scripts/test-v20-ui05c-host.sh
