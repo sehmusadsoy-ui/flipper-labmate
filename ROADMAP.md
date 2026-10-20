@@ -1,5 +1,13 @@
 # LabMate Master Roadmap — v1.0 to v2.0
 
+> **Current milestone status — 2026-10-20 (supersedes older dated status paragraphs below):**
+> **[v1.9 Stable — Logic Scope & Signal Compare](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.9) has been released** as a non-prerelease app for **exactly matched E11-patched Momentum firmware only**. The single-channel PC1 digital waveform, bounded timestamp capture (256 edge records; max 5 s), sequential A/B saved signal metrics, 100 Hz / 1 kHz tolerance profiles and guarded STOP/BACK were accepted on the operator's already-matched device. Frequency/duty observed at 100 Hz and 1 kHz / 50%; A/B compare +900 Hz and wrong-reference FAIL / correct-reference PASS were captured in device screenshots. No analog, independently calibrated, simultaneous multichannel or high-speed sampling throughput claim.
+>
+> The **ordinary Momentum [v1.8 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8)** remains GitHub's **Latest** as a separate compatibility profile. `main` still points to the ordinary v1.8 source/manifest; the exact physically accepted v1.9 source is **[tag v1.9](https://github.com/sehmusadsoy-ui/flipper-labmate/tree/v1.9)** (commit `72eb58d6c65d31f510acf6f532ee23c543a9149d`) and its FAP SHA256 is `d8bb04cf6de6ebaa466e7487e619d9f68af21dac49df2aa51e91dfae1f9f55c2`. v1.9 native E11 code remains unmerged in [engineering PR #15](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/15). These compatibility branches must not be confused or combined without a separately tested ordinary Momentum build.
+>
+> **Next active milestone: v2.0 — LabMate Ultimate / Signal Doctor**, unified dashboard and professional UX redesign. External oscilloscope calibration, real foreign native contention and optional sensor fixtures are still deferred where not physically validated. Older 2026-10-14/17 statuses below are historical snapshots, not statements that v1.9 is still planned.
+
+
 **Two complementary planning documents:** This is the **canonical feature roadmap**
 and has precedence for version goals. The
 [Master Roadmap V2 quality and firmware-compatibility addendum](docs/MASTER_ROADMAP_V2_ADDENDUM.md)
