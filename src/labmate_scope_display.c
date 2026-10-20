@@ -27,11 +27,11 @@ static void footer(Canvas* c, const char* action) {
     /* Three visually independent key hints; never a continuous 20-glyph
      * command string. DOWN changes page only when acquisition is stopped. */
     canvas_draw_line(c, 0, 54, 127, 54);
-    canvas_draw_line(c, 44, 56, 44, 63);
-    canvas_draw_line(c, 90, 56, 90, 63);
-    label(c, FontSecondary, 4, 62, action); /* <= 6 characters */
-    label(c, FontSecondary, 51, 62, "v NEXT");
-    label(c, FontSecondary, 99, 62, "BACK");
+    canvas_draw_line(c, 46, 56, 46, 63);
+    canvas_draw_line(c, 92, 56, 92, 63);
+    label(c, FontSecondary, 3, 62, action); /* <= 6 characters */
+    label(c, FontSecondary, 52, 62, "v PAGE");
+    label(c, FontSecondary, 101, 62, "BACK");
 }
 
 static bool ready_trace(const LabMateScopeDisplay* d) {
@@ -135,7 +135,7 @@ bool labmate_scope_display_draw(Canvas* c, const LabMateScopeDisplay* d) {
        d->state != LabMateScopeDisplayNoTrigger) {
         /* Full count shown at left; FOCUS announces a cropped viewport. */
         label(c, FontSecondary, 69, 51, state);
-        label(c, FontSecondary, 99, 51, "FOCUS");
+        label(c, FontSecondary, 101, 51, "ZOOM");
     } else {
         const int32_t x = d->state == LabMateScopeDisplayUnsupported ? 61 :
                           d->state == LabMateScopeDisplayNoTrigger ? 70 :
