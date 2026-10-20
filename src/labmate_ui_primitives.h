@@ -19,9 +19,10 @@ void ui_key(
     const char* key,
     const char* label);
 
-/* Compact two-action footer for 128x64 screens. Each action has its own
- * outlined keycap; two actions are deliberately shown instead of cramped
- * multi-command strings. The app's existing controls remain unchanged.
+/* Compact two-action footer for 128x64 screens, using parenthesized
+ * key labels: (OK) START, (BACK)EXIT. 10 secondary glyphs max per 62px
+ * cell; long actions use no intervening space to prevent clipping.
+ * Visual-only: all existing button meanings remain unchanged.
  */
 void ui_footer_pair(
     Canvas* canvas,
