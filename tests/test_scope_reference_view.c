@@ -132,7 +132,7 @@ static void test_real_metrics_and_invalid_no_fake_pass(void) {
     assert(labmate_scope_reference_view_draw(
         &canvas, LabMateScopeReference1kHz50, result, NULL));
     assert(!contains(&canvas, "PASS"));
-    assert(contains(&canvas, "NO CAPTURE"));
+    assert(contains(&canvas, "NOT READY"));
     assert(contains(&canvas, "--"));
 
     result = labmate_scope_tolerance_evaluate(
