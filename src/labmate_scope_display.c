@@ -1,26 +1,48 @@
 #include "labmate_scope_display.h"
 #include <stdio.h>
 
-/* Flipper 128x64: one mono pixel per trace/grid point; all labels fit the
- * 20-cell secondary-font width. No GPIO/IRQ, measurement or allocation. */
-static const char* scope_state_label(LabMateScopeDisplayState s) {
-    switch(s) {
+/* One deliberately quiet 128x64 UI. The viewport shows measured transitions
+ * only; tick marks are uncalibrated navigation guides, not time divisions. */
+static const char* scope_status(LabMateScopeDisplayState state) {
+    switch(state) {
     case LabMateScopeDisplayArmed: return "ARMED";
     case LabMateScopeDisplayRunning: return "LIVE";
     case LabMateScopeDisplayStopped: return "HOLD";
-    case LabMateScopeDisplayNoTrigger: return "NO TRIG";
+    case LabMateScopeDisplayNoTrigger: return "NO SIGNAL";
     case LabMateScopeDisplayQuiet: return "QUIET";
     case LabMateScopeDisplayFull: return "FULL";
     case LabMateScopeDisplayBusy: return "BUSY";
-    case LabMateScopeDisplayUnsupported: return "UNSUP";
+    case LabMateScopeDisplayUnsupported: return "UNSUPPORTED";
     case LabMateScopeDisplayError: return "ERROR";
     default: return "ERROR";
     }
 }
 
+static void label(Canvas* c, Font font, int32_t x, int32_t y, const char* s) {
+    canvas_set_font(c, font);
+    canvas_draw_str(c, x, y, s);
+}
+
+static void footer(Canvas* c, const char* action) {
+    /* Three visually independent key hints; never a continuous 20-glyph
+     * command string. DOWN changes page only when acquisition is stopped. */
+    canvas_draw_line(c, 0, 54, 127, 54);
+    canvas_draw_line(c, 44, 56, 44, 63);
+    canvas_draw_line(c, 90, 56, 90, 63);
+    label(c, FontSecondary, 4, 62, action); /* <= 6 characters */
+    label(c, FontSecondary, 51, 62, "v NEXT");
+    label(c, FontSecondary, 99, 62, "BACK");
+}
+
+static bool ready_trace(const LabMateScopeDisplay* d) {
+    return d->plot.result == LabMateScopePlotReady &&
+           d->state != LabMateScopeDisplayBusy &&
+           d->state != LabMateScopeDisplayUnsupported &&
+           d->state != LabMateScopeDisplayError;
+}
+
 bool labmate_scope_display_draw(Canvas* c, const LabMateScopeDisplay* d) {
-    /* Validate the entire immutable IRQ-excluded snapshot BEFORE painting.
-     * Never turn a partially invalid waveform into a plausible measurement. */
+    /* Fail closed BEFORE the first pixel. Source is an IRQ-excluded copy. */
     if(!c || !d ||
        (unsigned)d->state > (unsigned)LabMateScopeDisplayError ||
        d->total_edges > LABMATE_SCOPE_MAX_EDGES ||
@@ -32,81 +54,95 @@ bool labmate_scope_display_draw(Canvas* c, const LabMateScopeDisplay* d) {
     if(d->plot.result == LabMateScopePlotReady) {
         if(d->plot.visible_edges < 2U ||
            d->plot.line_count != 2U * (d->plot.visible_edges - 1U)) return false;
-    } else if(d->plot.line_count) return false;
+    } else if(d->plot.line_count) {
+        return false;
+    }
     for(uint16_t i = 0U; i < d->plot.line_count; ++i) {
         const LabMateScopePlotLine* p = &d->lines[i];
         if(p->x0 < LABMATE_SCOPE_PLOT_X_LEFT ||
            p->x0 > LABMATE_SCOPE_PLOT_X_RIGHT ||
            p->x1 < LABMATE_SCOPE_PLOT_X_LEFT ||
            p->x1 > LABMATE_SCOPE_PLOT_X_RIGHT ||
-           (p->y0 != LABMATE_SCOPE_PLOT_Y_HIGH && p->y0 != LABMATE_SCOPE_PLOT_Y_LOW) ||
-           (p->y1 != LABMATE_SCOPE_PLOT_Y_HIGH && p->y1 != LABMATE_SCOPE_PLOT_Y_LOW))
-            return false;
+           (p->y0 != LABMATE_SCOPE_PLOT_Y_HIGH &&
+            p->y0 != LABMATE_SCOPE_PLOT_Y_LOW) ||
+           (p->y1 != LABMATE_SCOPE_PLOT_Y_HIGH &&
+            p->y1 != LABMATE_SCOPE_PLOT_Y_LOW)) return false;
     }
+    char count[20];
+    const int count_len = snprintf(count, sizeof(count), "%u edges",
+                                   (unsigned)d->total_edges);
+    if(count_len < 0 || count_len > 14) return false;
 
-    /* Build the footer status before drawing; malformed formatting must
-     * fail with zero screen changes, just like malformed trace geometry. */
-    const char* state = scope_state_label(d->state);
-    const char* suffix = d->plot.cropped_old_edges ?
-        (d->state == LabMateScopeDisplayNoTrigger ? " ZM" : " ZOOM") : "";
-    char summary[24];
-    const int used = snprintf(summary, sizeof(summary), "%u EDGES %s%s",
-        (unsigned)d->total_edges, state, suffix);
-    if(used < 0 || used > 20) return false;
-
-    canvas_set_font(c, FontSecondary);
-    canvas_draw_str(c, 3, 9, "LOGIC SCOPE");
-    canvas_draw_str(c, 102, 9, "PC1");
+    /* Consistent header: tool, page index and pin. Primary is used ONLY for
+     * the heading or a single short empty-state message. */
+    label(c, FontPrimary, 3, 11, "SCOPE");
+    label(c, FontSecondary, 82, 9, "1/3");
+    label(c, FontSecondary, 105, 9, "PC1");
     canvas_draw_line(c, 0, 13, 127, 13);
 
-    /* Fixed oscilloscope viewport. Border encloses both real HIGH/LOW
-     * levels (y=20/35); grid never touches the status or help rows. */
-    canvas_draw_line(c, 1, 15, 126, 15);
-    canvas_draw_line(c, 1, 40, 126, 40);
-    canvas_draw_line(c, 1, 15, 1, 40);
-    canvas_draw_line(c, 126, 15, 126, 40);
-    const bool can_draw = d->plot.result == LabMateScopePlotReady &&
-        d->state != LabMateScopeDisplayBusy &&
-        d->state != LabMateScopeDisplayUnsupported &&
-        d->state != LabMateScopeDisplayError;
-    if(can_draw) {
-        /* Sparse dashed divisions: visible timebase cues, never fake edges.
-         * Draw before the trace so the real waveform stays dominant. */
-        for(uint8_t x = 26U; x <= 101U; x += 25U) {
-            canvas_draw_line(c, x, 17, x, 18);
-            canvas_draw_line(c, x, 26, x, 27);
-            canvas_draw_line(c, x, 37, x, 38);
-        }
-        for(uint8_t x = 12U; x <= 108U; x += 16U) {
-            canvas_draw_line(c, x, 28, x + 2, 28);
-        }
+    /* Clean waveform window: frame and border-adjacent timing ticks only.
+     * NO full-height grid lines through the waveform, NO fake trigger. */
+    canvas_draw_line(c, 2, 15, 125, 15);
+    canvas_draw_line(c, 2, 42, 125, 42);
+    canvas_draw_line(c, 2, 15, 2, 42);
+    canvas_draw_line(c, 125, 15, 125, 42);
+    for(int32_t x = 33; x <= 95; x += 31) {
+        canvas_draw_line(c, x, 16, x, 18);
+        canvas_draw_line(c, x, 39, x, 41);
+    }
+    if(ready_trace(d)) {
         for(uint16_t i = 0U; i < d->plot.line_count; ++i) {
             const LabMateScopePlotLine* p = &d->lines[i];
             canvas_draw_line(c, p->x0, p->y0, p->x1, p->y1);
         }
-    } else if(d->state == LabMateScopeDisplayBusy ||
-              d->state == LabMateScopeDisplayUnsupported ||
-              d->state == LabMateScopeDisplayError) {
-        canvas_draw_str(c, 9, 31, scope_state_label(d->state));
-    } else if(d->plot.result == LabMateScopePlotTimebaseError ||
-              d->plot.result == LabMateScopePlotInvalid) {
-        canvas_draw_str(c, 9, 31, "DATA INVALID");
-    } else if(d->plot.result == LabMateScopePlotNoEdges) {
-        canvas_draw_str(c, 9, 31,
-            d->state == LabMateScopeDisplayNoTrigger ?
-                "NO TRIGGER - PC1" : "WAIT PC1 EDGE");
     } else {
-        canvas_draw_str(c, 9, 31, "WAIT 2 EDGES");
+        const char* title = "READY";
+        const char* info = "OK starts capture";
+        int32_t title_x = 44;
+        int32_t info_x = 16;
+        if(d->state == LabMateScopeDisplayBusy) {
+            title = "BUSY"; title_x = 47;
+            info = "PC1 is in use"; info_x = 26;
+        } else if(d->state == LabMateScopeDisplayUnsupported) {
+            title = "UNAVAILABLE"; title_x = 16;
+            info = "Firmware mismatch"; info_x = 16;
+        } else if(d->state == LabMateScopeDisplayError ||
+                  d->plot.result == LabMateScopePlotInvalid ||
+                  d->plot.result == LabMateScopePlotTimebaseError) {
+            title = "INVALID"; title_x = 35;
+            info = "Check capture"; info_x = 29;
+        } else if(d->plot.result == LabMateScopePlotOneEdge) {
+            title = "1 EDGE"; title_x = 36;
+            info = "Need another edge"; info_x = 13;
+        } else if(d->state == LabMateScopeDisplayNoTrigger) {
+            title = "NO SIGNAL"; title_x = 24;
+            info = "Check PC1 input"; info_x = 20;
+        } else if(d->state == LabMateScopeDisplayArmed ||
+                  d->state == LabMateScopeDisplayRunning) {
+            title = "LISTENING"; title_x = 24;
+            info = "Waiting for edges"; info_x = 13;
+        }
+        label(c, FontPrimary, title_x, 30, title);
+        label(c, FontSecondary, info_x, 39, info);
     }
 
-    /* Cropped = latest 13 observed edges, never a fabricated full trace.
-     * Use ZM only for the longest state label to stay inside 20 glyphs. */
-
-    canvas_draw_str(c, 3, 50, summary);
-    canvas_draw_line(c, 0, 53, 127, 53);
-    canvas_draw_str(c, 3, 62,
-        (d->state == LabMateScopeDisplayArmed ||
-         d->state == LabMateScopeDisplayRunning) ?
-            "OK:STOP BK:EXIT" : "OK:RUN DN:PG BK:EXIT");
+    label(c, FontSecondary, 4, 51, count);
+    const char* state = scope_status(d->state);
+    if(d->plot.cropped_old_edges &&
+       d->state != LabMateScopeDisplayError &&
+       d->state != LabMateScopeDisplayBusy &&
+       d->state != LabMateScopeDisplayUnsupported &&
+       d->state != LabMateScopeDisplayNoTrigger) {
+        /* Full count shown at left; FOCUS announces a cropped viewport. */
+        label(c, FontSecondary, 69, 51, state);
+        label(c, FontSecondary, 99, 51, "FOCUS");
+    } else {
+        const int32_t x = d->state == LabMateScopeDisplayUnsupported ? 61 :
+                          d->state == LabMateScopeDisplayNoTrigger ? 70 :
+                          d->state == LabMateScopeDisplayArmed ? 93 : 96;
+        label(c, FontSecondary, x, 51, state);
+    }
+    footer(c, (d->state == LabMateScopeDisplayArmed ||
+               d->state == LabMateScopeDisplayRunning) ? "OK STOP" : "OK RUN");
     return true;
 }
