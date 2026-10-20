@@ -1,4 +1,4 @@
-/* Portable navigation tests: exhaustive access to all 14 tools.
+/* Portable navigation tests: exhaustive access to all 15 tools (including v1.9 Scope).
  * Do not include this host test in the firmware FAP build.
  */
 #include "labmate_navigation.h"
@@ -7,9 +7,12 @@
 #include <stdio.h>
 
 int main(void) {
-    const uint8_t expected_sizes[] = {5U, 2U, 3U, 3U, 1U};
+    _Static_assert(LabMateToolScope == 14, "historical tool IDs must not shift");
+    _Static_assert(LabMateToolCount == 15, "v1.9 tool set changed");
+    _Static_assert(LabMateGroupInfo == LabMateGroupCount - 1, "INFO must remain last");
+    const uint8_t expected_sizes[] = {6U, 2U, 3U, 3U, 1U};
     const uint8_t expected_tools[][LABMATE_NAV_MAX_CHILDREN] = {
-        {LabMateToolGpio, LabMateToolFrequency, LabMateToolPulse, LabMateToolCounter, LabMateToolButton},
+        {LabMateToolGpio, LabMateToolFrequency, LabMateToolPulse, LabMateToolCounter, LabMateToolButton, LabMateToolScope},
         {LabMateToolGenerator, LabMateToolAlerts, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
         {LabMateToolLogger, LabMateToolHistory, LabMateToolProfiles, LabMateToolInvalid, LabMateToolInvalid},
         {LabMateToolUart, LabMateToolI2c, LabMateToolOneWire, LabMateToolInvalid, LabMateToolInvalid},
@@ -62,7 +65,8 @@ int main(void) {
     assert(labmate_nav_tool_at(255U, 0U) == LabMateToolInvalid);
     assert(labmate_nav_tool_at(0U, 3U) == LabMateToolCounter);
     assert(labmate_nav_tool_at(0U, 4U) == LabMateToolButton);
-    assert(labmate_nav_tool_at(0U, 5U) == LabMateToolInvalid);
+    assert(labmate_nav_tool_at(0U, 5U) == LabMateToolScope);
+    assert(labmate_nav_tool_at(0U, 6U) == LabMateToolInvalid);
     assert(labmate_nav_tool_at(1U, 1U) == LabMateToolAlerts);
     assert(labmate_nav_tool_at(LabMateGroupComm, 0U) == LabMateToolUart);
     assert(strcmp(labmate_nav_tool_title(LabMateToolGenerator), "PWM Studio") == 0);
@@ -91,6 +95,6 @@ int main(void) {
             assert(start <= selected && selected < (uint8_t)(start + 3U));
         }
     }
-    puts("LabMate v1.6 navigation mapping/wrap: all 14 tools reachable once");
+    puts("LabMate v2.0 baseline navigation: all 15 tools reachable once; INFO last PASS");
     return 0;
 }
