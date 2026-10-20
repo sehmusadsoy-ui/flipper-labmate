@@ -175,7 +175,9 @@ def main() -> None:
     )
     package = home / ("Documents/LabMate-Releases/v1.9-STABLE-E11-" + SOURCE[:7])
     require(not package.exists(), "previous release package exists: inspect before retry")
-    require(package.parent.is_dir(), "create Documents/LabMate-Releases manually first")
+    require(package.parent.parent.is_dir() and
+            not package.parent.parent.is_symlink(), "Documents directory not trusted")
+    require(not package.parent.is_symlink(), "release parent must not be a symlink")
     checked_file(fap, FAP_SIZE, FAP_SHA, "PINNED_WINDOWS_NATIVE_FAP")
     checked_file(previous, PREVIOUS_SIZE, PREVIOUS_SHA, "PRESERVED_PREVIOUS_PC_FAP")
     print("OLD_AND_NEW_FAP_PC_SHA256_CHECKS: PASS", flush=True)
@@ -189,7 +191,7 @@ def main() -> None:
     require("--latest" in gh_args and "--target" in gh_args and
             "--latest" in edit_args and "--draft" in edit_args,
             "GitHub CLI version lacks required draft/latest protection flags")
-    assert source_commit_is_real(api_json(API + "/git/commits/" + SOURCE))
+    source_commit_is_real(api_json(API + "/git/commits/" + SOURCE))
     main_fam = api_json(API + "/contents/application.fam?ref=main")
     require(main_fam.get("sha") == MAIN_APP_FAM_BLOB,
             "ordinary main v1.8 has changed: stop")
@@ -206,7 +208,8 @@ def main() -> None:
     print("PRIOR_STABLE_TAGS_AND_MAIN: PASS", flush=True)
 
     raw_notes = attested_notes()
-    package.mkdir(parents=True)
+    package.parent.mkdir(mode=0o700, exist_ok=True)
+    package.mkdir(mode=0o700)
     clean_fap = package / FAP_NAME
     with fap.open("rb") as inp, clean_fap.open("xb") as out:
         shutil.copyfileobj(inp, out)
