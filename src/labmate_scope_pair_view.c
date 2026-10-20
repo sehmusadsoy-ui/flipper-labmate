@@ -82,7 +82,7 @@ static bool valid_metrics(const LabMateScopeMetrics* m) {
 static void measured_row(Canvas* c, int32_t y, char id, bool partial,
                          const char* frequency, const char* duty) {
     char id_s[] = {id, partial ? '*' : '\0', '\0'};
-    label(c, FontPrimary, 5, y + 1, id_s);
+    label(c, FontSecondary, 5, y, id_s);
     label(c, FontSecondary, 24, y, frequency);
     label(c, FontSecondary, 90, y, duty);
 }
@@ -179,6 +179,7 @@ bool labmate_scope_pair_view_draw(Canvas* c, const LabMateScopePair* p,
               last_valid ? "LEFT: save A now" : "Run, stop, save A");
         footer(c, last_valid ? "< SAVE" : "OK RUN");
     } else {
+        canvas_draw_line(c, 19, 16, 19, 32);
         measured_row(c, 22, 'A', p->a.truncated, a_freq, a_duty);
         measured_row(c, 31, 'B', p->has_b && p->b.truncated, b_freq, b_duty);
         canvas_draw_line(c, 4, 34, 123, 34);
