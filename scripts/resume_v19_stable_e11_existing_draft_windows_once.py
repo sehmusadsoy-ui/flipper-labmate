@@ -49,7 +49,9 @@ def git_blob(p: Path) -> str:
 def run(argv, *, capture=True, timeout=90):
     cmd = [str(x) for x in argv]
     print("COMMAND:", " ".join(cmd), flush=True)
-    p = subprocess.run(cmd, capture_output=capture, text=capture, timeout=timeout)
+    p = subprocess.run(
+        cmd, capture_output=capture, text=capture, timeout=timeout,
+        encoding="utf-8" if capture else None, errors="strict" if capture else None)
     if p.returncode != 0:
         if capture:
             print((p.stderr or "")[-1600:], file=sys.stderr)
@@ -70,7 +72,9 @@ def draft() -> dict:
             "exact v1.9 unpublished Stable draft not present")
     require(data.get("targetCommitish") == SOURCE,
             "draft target commit differs from the ACTUALLY TESTED FAP source")
-    require(data.get("name") == TITLE, "release name/compatibility notice drift")
+    require(data.get("name") == TITLE,
+            "release name/compatibility notice drift: received " +
+            repr(data.get("name")) + "; expected " + repr(TITLE))
     description = str(data.get("body") or "")
     for marker in ("E11-patched Momentum firmware ONLY",
                    SOURCE, FAP_SHA, "ordinary/stock Momentum",
