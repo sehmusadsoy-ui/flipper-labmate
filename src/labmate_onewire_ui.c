@@ -41,7 +41,7 @@ void draw_onewire(Canvas* canvas, LabMateApp* app) {
     }
 
     ui_draw_header(canvas, "1-WIRE TEMP");
-    ui_badge(canvas, 93, 1, 33, label, active);
+    ui_badge(canvas, 91, 1, 35, label, active);
     canvas_set_font(canvas, FontSecondary);
     canvas_draw_str(canvas, 3, 22, "PA4 DQ / 3.3V");
     canvas_draw_str(canvas, 3, 32, "EXTERNAL VDD ONLY");
