@@ -131,7 +131,18 @@ void labmate_view_render_callback(
                     app->scope_compare_page);
             }
         } else {
-            (void)labmate_scope_display_draw(canvas, &app->scope_display);
+            /* Capture summaries are STOP-only: never expose a stale value
+             * while a callback/lease exists, or across capture generations. */
+            LabMateScopeDisplay display = app->scope_display;
+            display.completed = NULL;
+            if(!app->scope_native.active &&
+               labmate_scope_native_stop_confirmed(
+                   &app->scope_native, app->capture_owner) &&
+               app->scope_capture_generation != 0U &&
+               app->scope_last_generation == app->scope_capture_generation &&
+               app->scope_last_valid && !app->scope_clock_fault)
+                display.completed = &app->scope_last_metrics;
+            (void)labmate_scope_display_draw(canvas, &display);
         }
         break;
     }
