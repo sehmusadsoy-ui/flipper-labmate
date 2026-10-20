@@ -60,3 +60,34 @@ The exact same locally verified test/source files were compiled and run with **C
 After GitHub upload, `tests/test_v20_ui_geometry.c` was fetched again and the **Git blob SHA matched exactly**: `c06eb25936066de3017f208c2978c6c0b35bf79e`. PR #21 remains Draft against `dev/v1.9-logic-scope`, and contains **only Markdown documentation and the new host test**, no application renderer edit.
 
 **Legacy-test note:** `tests/test_navigation.c.inc` refers to an older 14-tool/5-item MEASURE inventory. Do not use it as current 15-tool release evidence without updating or retiring that obsolete fixture; `test_labmate_scope_navigation.c` and this UI-01 test reflect the current 15-tool baseline.
+
+
+## UI-01 NAV-01: stale legacy navigation fixture repaired and actually rerun (2026-10-21)
+
+The formerly stored `tests/test_navigation.c.inc` was still a **v1.6 / 14-tool** expected-result fixture: MEASURE count 5 and index 5 invalid. Source-matched v1.9 has **15 tools**, **MEASURE count 6**, and `LabMateToolScope` at index 5.
+
+**Reproduced before correction:** Copied `src/labmate_navigation.c` and `src/labmate_navigation.h` from read-only GitHub at blob hashes `762571cb1b03d168330a99194929ba79a994a527` and `8e2a3cd99f364bbce6930e639640313fcc2371b0`. A copy of the exact pre-patch fixture matched Git blob `f1dd231f1edf593f1c49f26b3b7394bfcececda0`. It compiled, but runtime aborted at the group-size assertion (exit status 134). This is a test fixture mismatch, **not an application navigation bug**.
+
+**Correction committed as test-only:** `tests/test_navigation.c.inc` now expects all 15 tools and Scope in MEASURE, retains legacy IDs and INFO position assertions, and reports the true v1.9/v2.0 navigation baseline. GitHub returned updated blob `6423fc2bc99a5a145127153b489043f2394c419b`; this exactly matched the locally tested file's `git hash-object`.
+
+Host command (from repository root; executable outside device):
+
+```sh
+for CC in gcc clang; do
+  "$CC" -std=c11 -O1 -g -Wall -Wextra -Werror -pedantic \
+    -fsanitize=address,undefined -fno-omit-frame-pointer \
+    -Isrc -x c tests/test_navigation.c.inc -x none \
+    src/labmate_navigation.c -o "/tmp/labmate_v20_nav_$CC"
+  "/tmp/labmate_v20_nav_$CC"
+done
+```
+
+**Actual observed output (both compilers, zero exit status):**
+
+```text
+LabMate v2.0 baseline navigation: all 15 tools reachable once; INFO last PASS
+```
+
+The independent existing test `tests/test_labmate_scope_navigation.c` was also reproduced byte-exact (blob `7fce8dd497da1534ca03a1544205032b828967a4`) and executed with both toolchains, each producing `v1.9 Scope menu legacy IDs, navigation and final INFO PASS` with exit status zero.
+
+**Scope of NAV-01 PASS:** host navigation table/order/wrap and stability of the tool IDs only. This does not demonstrate renderer pixel clipping, input-event timing, GUI redraw performance, FAP SDK ABI or physical Flipper behavior. UI-01 full-screen gate remains **PENDING**; do not mark it complete.
