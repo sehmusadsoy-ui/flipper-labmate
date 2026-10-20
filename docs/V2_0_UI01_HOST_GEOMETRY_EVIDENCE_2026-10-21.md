@@ -91,3 +91,44 @@ LabMate v2.0 baseline navigation: all 15 tools reachable once; INFO last PASS
 The independent existing test `tests/test_labmate_scope_navigation.c` was also reproduced byte-exact (blob `7fce8dd497da1534ca03a1544205032b828967a4`) and executed with both toolchains, each producing `v1.9 Scope menu legacy IDs, navigation and final INFO PASS` with exit status zero.
 
 **Scope of NAV-01 PASS:** host navigation table/order/wrap and stability of the tool IDs only. This does not demonstrate renderer pixel clipping, input-event timing, GUI redraw performance, FAP SDK ABI or physical Flipper behavior. UI-01 full-screen gate remains **PENDING**; do not mark it complete.
+
+
+## UI-01 repeatable host smoke runner (2026-10-21)
+
+Created **`scripts/test-v20-ui01-host.sh`**; SHA-1 Git blob **`c02cf5e2845ae2ceaff8d14d27301a355defab57`**, byte-exact match between locally executed script and the new GitHub file. It writes executable artifacts **only to a unique temporary host directory** and removes them on exit. It performs **no** on-device, microSD, firmware, Flipper-USB, FAP, or release operations.
+
+For GCC 14.2 and Clang 17.0, the script compiles and runs all of these **six actual host executions** with `-std=c11 -O1 -g -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -fno-omit-frame-pointer`:
+
+1. Current `tests/test_v20_ui_geometry.c` against pinned `src/labmate_navigation.c` and `src/labmate_scope_ui.h` with real host Canvas stub.
+2. Repaired legacy `tests/test_navigation.c.inc` against pinned `src/labmate_navigation.c`.
+3. Exact existing `tests/test_labmate_scope_navigation.c` against pinned `src/labmate_navigation.c`.
+
+**Command actually run on Linux local host:**
+
+```sh
+sh scripts/test-v20-ui01-host.sh
+```
+
+**Observed (exit status 0):**
+
+```text
+UI-01 [gcc] pinned navigation + Scope geometry
+UI-01 HOST PASS: pinned navigation + scope chrome 128x64 geometry
+COVERAGE LIMIT: other renderers, SDK build, device remain UNTESTED
+UI-01 [gcc] historical navigation fixture
+LabMate v2.0 baseline navigation: all 15 tools reachable once; INFO last PASS
+UI-01 [gcc] v1.9 Scope navigation regression
+v1.9 Scope menu legacy IDs, navigation and final INFO PASS
+UI-01 [clang] pinned navigation + Scope geometry
+UI-01 HOST PASS: pinned navigation + scope chrome 128x64 geometry
+COVERAGE LIMIT: other renderers, SDK build, device remain UNTESTED
+UI-01 [clang] historical navigation fixture
+LabMate v2.0 baseline navigation: all 15 tools reachable once; INFO last PASS
+UI-01 [clang] v1.9 Scope navigation regression
+v1.9 Scope menu legacy IDs, navigation and final INFO PASS
+UI-01 HOST SMOKE PASS (3 cases x 2 compilers); full UI coverage NOT claimed
+```
+
+`tests/test_v20_ui_geometry.c` reproduced exactly blob `c06eb25936066de3017f208c2978c6c0b35bf79e`, `src/labmate_scope_ui.h` `ed7379c877c541228f0395710091680b7276d800`, host stub `tests/host_stubs/gui/gui.h` `7a909b0a5f65469851a16976251380ffea5fa704`. This **independently repeats** and strengthens earlier UI-01 host evidence, rather than just trusting documentation.
+
+**Remaining open:** all 17 screen renderers and adverse/error states still need linked draw tests; actual GUI font raster and on-device presentation require inspection. **UI-01 full acceptance remains PENDING.**
