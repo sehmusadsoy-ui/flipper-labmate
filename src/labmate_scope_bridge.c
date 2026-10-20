@@ -90,6 +90,7 @@ bool labmate_scope_bridge_init(LabMateApp* a) {
 void labmate_scope_bridge_enter(LabMateApp* a) {
     if(!a) return;
     a->scope_show_compare = false;
+    a->scope_show_details = false;
     a->scope_compare_page = 0U;
     a->scope_show_reference = false;
     a->scope_display.state =
@@ -200,16 +201,20 @@ void labmate_scope_bridge_input(LabMateApp* a, InputEvent event) {
         return;
     }
     if(event.key == InputKeyDown && !a->scope_native.active) {
-        /* Read-only page rotation: PLOT -> A/B -> REFERENCE -> PLOT.
-         * Changing display pages never touches the IRQ or capture data. */
+        /* True four-page navigation: SCOPE -> A/B -> DETAILS -> REF -> SCOPE.
+         * Drawing/page changes never acquire hardware resources. */
         if(a->scope_show_reference) {
             a->scope_show_reference = false;
             a->scope_show_compare = false;
+            a->scope_show_details = false;
             a->scope_compare_page = 0U;
+        } else if(a->scope_show_details) {
+            a->scope_show_details = false;
+            a->scope_show_reference = true;
         } else if(a->scope_show_compare) {
             a->scope_show_compare = false;
-            a->scope_show_reference = true;
-            a->scope_compare_page = 0U;
+            a->scope_show_details = true;
+            a->scope_compare_page = 1U;
         } else {
             a->scope_show_compare = true;
             a->scope_compare_page = 0U;
@@ -223,13 +228,18 @@ void labmate_scope_bridge_input(LabMateApp* a, InputEvent event) {
                     LabMateScopeReference1kHz50 : LabMateScopeReference100Hz50;
             return;
         }
-        if(a->scope_show_compare) {
-            /* Do not show empty A/B detail pages. When only A exists, skip
-             * the nonexistent B detail; these are read-only UI changes. */
-            if(a->scope_pair.has_a) {
-                const uint8_t count = a->scope_pair.has_b ? 3U : 2U;
+        if(a->scope_show_details) {
+            /* UP switches the saved A/B detail source when B exists. */
+            if(a->scope_pair.has_b)
                 a->scope_compare_page =
-                    (uint8_t)((a->scope_compare_page + 1U) % count);
+                    a->scope_compare_page == 1U ? 2U : 1U;
+            return;
+        }
+        if(a->scope_show_compare) {
+            if(a->scope_pair.has_a) {
+                a->scope_show_compare = false;
+                a->scope_show_details = true;
+                a->scope_compare_page = 1U;
             }
             return;
         }
@@ -250,6 +260,7 @@ void labmate_scope_bridge_input(LabMateApp* a, InputEvent event) {
             (void)labmate_scope_pair_save_b(
                 &a->scope_pair, metric, a->scope_last_generation);
         a->scope_show_compare = true;
+        a->scope_show_details = false;
         a->scope_compare_page = 0U; /* show save result before details */
         return;
     }
@@ -276,6 +287,7 @@ void labmate_scope_bridge_input(LabMateApp* a, InputEvent event) {
         a->scope_clock_fault = a->scope_capture_hz == 0U;
         a->scope_last_valid = false;
         a->scope_show_compare = false;
+        a->scope_show_details = false;
         a->scope_compare_page = 0U;
         a->scope_show_reference = false;
         a->gpio_index = LABMATE_MONITOR_PC1_INDEX;
