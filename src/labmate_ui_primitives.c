@@ -1,6 +1,7 @@
 #include "labmate_ui_primitives.h"
 #include "labmate_navigation.h"
 #include <string.h>
+#include <stdio.h>
 
 /* ---------- STATELESS DRAWING PRIMITIVES (v1.6-dev) ---------- */
 
@@ -27,42 +28,40 @@ void ui_badge(
     }
 }
 
-void ui_key(
-    Canvas* canvas,
-    uint8_t x,
-    const char* key,
-    const char* label) {
-
-    canvas_draw_frame(canvas, x, 53, 18, 10);
-    canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, x + 3, 61, key);
-    canvas_draw_str(canvas, x + 21, 61, label);
+/* One shared parenthesized-key system across existing LabMate screens.
+ * Two 62px cells; all current key+action combinations fit within 10 glyphs.
+ * No GPIO changes, no hidden key bindings, no decorative inactive actions. */
+static bool ui_format_key(char* out, size_t cap, const char* key,
+                          const char* action, size_t max_chars) {
+    if(!out || !key || !action || !*key || !*action) return false;
+    int n = snprintf(out, cap, "(%s) %s", key, action);
+    if(n < 0 || (size_t)n >= cap) return false;
+    if((size_t)n > max_chars)
+        n = snprintf(out, cap, "(%s)%s", key, action);
+    return n >= 0 && (size_t)n <= max_chars && (size_t)n < cap;
 }
 
-/* Two balanced 62px footer zones with readable outlined keycaps.
- * A max 4-letter key + 4-letter action fits inside each 62px zone;
- * short keys can pair with longer actions (e.g. LR/SOURCE).
- * Avoid glyph arrows: they are not reliably legible on all LCD fonts.
- */
-static void ui_footer_action(
-    Canvas* canvas,
-    uint8_t x,
-    const char* key,
-    const char* action) {
-    const size_t key_chars = strlen(key);
-    const uint8_t key_width = (uint8_t)(key_chars * 6U + 6U);
-    canvas_draw_frame(canvas, x, 54, key_width, 10);
+void ui_key(Canvas* canvas, uint8_t x, const char* key, const char* action) {
+    char label[24];
+    if(!canvas || !ui_format_key(label, sizeof(label), key, action, 10U))
+        return;
     canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, x + 3, 62, key);
-    canvas_draw_str(canvas, x + key_width + 3, 62, action);
+    canvas_draw_str(canvas, x, 61, label);
 }
 
-void ui_footer_pair(
-    Canvas* canvas,
-    const char* left_key,
-    const char* left_action,
-    const char* right_key,
-    const char* right_action) {
+static void ui_footer_action(Canvas* canvas, uint8_t x,
+                             const char* key, const char* action) {
+    ui_key(canvas, x, key, action);
+}
+
+void ui_footer_pair(Canvas* canvas, const char* left_key,
+                    const char* left_action, const char* right_key,
+                    const char* right_action) {
+    if(!canvas) return;
+    char left[24], right[24];
+    if(!ui_format_key(left, sizeof(left), left_key, left_action, 10U) ||
+       !ui_format_key(right, sizeof(right), right_key, right_action, 10U))
+        return; /* Never paint a half-footer on malformed arguments. */
     canvas_draw_line(canvas, 0, 52, 127, 52);
     ui_footer_action(canvas, 2, left_key, left_action);
     ui_footer_action(canvas, 66, right_key, right_action);
