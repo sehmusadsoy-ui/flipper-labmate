@@ -160,7 +160,7 @@ bool labmate_scope_pair_view_draw(Canvas* c, const LabMateScopePair* p,
     if(page != 0U) {
         if(!saved) {
             label(c, FontPrimary, 23, 30, "NOT SAVED");
-            label(c, FontSecondary, 22, 43, "Save a capture first");
+            label(c, FontSecondary, 10, 43, "Save capture first");
         } else {
             const char* row[4] = {"HIGH", "LOW", "PERIOD", "DUTY"};
             const int32_t y[4] = {22, 31, 40, 50};
