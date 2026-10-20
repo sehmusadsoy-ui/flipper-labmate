@@ -131,8 +131,17 @@ bool labmate_scope_display_draw(Canvas* c, const LabMateScopeDisplay* d) {
     }
 
     label(c, FontSecondary, 4, 51, count);
+    /* Empty/error messages are already legible in the main panel. Do not
+     * repeat NO SIGNAL, BUSY or ERROR immediately underneath. */
+    const bool message_only = !ready_trace(d) &&
+        (d->state == LabMateScopeDisplayNoTrigger ||
+         d->state == LabMateScopeDisplayBusy ||
+         d->state == LabMateScopeDisplayUnsupported ||
+         d->state == LabMateScopeDisplayError);
     const char* state = scope_status(d->state);
-    if(d->plot.cropped_old_edges &&
+    if(message_only) {
+        /* Keep quiet space around the primary message. */
+    } else if(d->plot.cropped_old_edges &&
        d->state != LabMateScopeDisplayError &&
        d->state != LabMateScopeDisplayBusy &&
        d->state != LabMateScopeDisplayUnsupported &&
