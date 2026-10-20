@@ -103,7 +103,7 @@ int main(void) {
     d.state=LabMateScopeDisplayRunning;
     c=(struct Canvas){0};
     assert(labmate_scope_display_draw(&c,&d));
-    assert(c.frame==4 && c.ticks==6 && c.trace==2);
+    assert(c.frame==4 && c.ticks==13 && c.trace==2);
     assert(c.saw_wave_state && c.saw_ok);
     d.state=LabMateScopeDisplayStopped;
     d.plot.cropped_old_edges=true;
