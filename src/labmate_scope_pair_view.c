@@ -79,9 +79,9 @@ static bool valid_metrics(const LabMateScopeMetrics* m) {
            m->total_high_ticks <= UINT64_MAX - m->total_low_ticks;
 }
 
-static void measured_row(Canvas* c, int32_t y, char id,
+static void measured_row(Canvas* c, int32_t y, char id, bool partial,
                          const char* frequency, const char* duty) {
-    char id_s[] = {id, '\0'};
+    char id_s[] = {id, partial ? '*' : '\0', '\0'};
     label(c, FontPrimary, 5, y + 1, id_s);
     label(c, FontSecondary, 24, y, frequency);
     label(c, FontSecondary, 90, y, duty);
@@ -137,7 +137,7 @@ bool labmate_scope_pair_view_draw(Canvas* c, const LabMateScopePair* p,
     }
     if(strlen(a_freq) > 10U || strlen(b_freq) > 10U ||
        strlen(a_duty) > 6U || strlen(b_duty) > 6U ||
-       strlen(d_freq) > 11U || strlen(d_duty) > 11U)
+       strlen(d_freq) > 11U || strlen(d_duty) > 9U)
         return false;
     for(uint8_t i = 0U; i < 4U; ++i)
         if(strlen(times[i]) > 17U) return false;
@@ -159,7 +159,7 @@ bool labmate_scope_pair_view_draw(Canvas* c, const LabMateScopePair* p,
             label(c, FontSecondary, 22, 43, "Save a capture first");
         } else {
             const char* row[4] = {"HIGH", "LOW", "PERIOD", "DUTY"};
-            const int32_t y[4] = {23, 32, 41, 51};
+            const int32_t y[4] = {22, 31, 40, 50};
             canvas_draw_line(c, 68, 17, 68, 52);
             for(uint8_t i = 0U; i < 4U; ++i) {
                 label(c, FontSecondary, 5, y[i], row[i]);
@@ -170,27 +170,23 @@ bool labmate_scope_pair_view_draw(Canvas* c, const LabMateScopePair* p,
         footer(c, "^ NEXT");
     } else if(!p->has_a) {
         label(c, FontPrimary, 15, 30, "SAVE A FIRST");
-        label(c, FontSecondary, 16, 42, "Run Scope, then stop");
+        label(c, FontSecondary, 7, 42, "Run Scope, then stop");
         label(c, FontSecondary, 22, 51,
               last_valid ? "LEFT: save A now" : "LEFT: save A");
         footer(c, last_valid ? "< SAVE" : "OK RUN");
     } else {
-        measured_row(c, 24, 'A', a_freq, a_duty);
-        measured_row(c, 35, 'B', b_freq, b_duty);
-        canvas_draw_line(c, 4, 39, 123, 39);
+        measured_row(c, 22, 'A', p->a.truncated, a_freq, a_duty);
+        measured_row(c, 31, 'B', p->has_b && p->b.truncated, b_freq, b_duty);
+        canvas_draw_line(c, 4, 34, 123, 34);
         if(!p->has_b) {
-            label(c, FontSecondary, 6, 48, "Next: capture B");
-            label(c, FontSecondary, 6, 52,
-                last_valid ? "RIGHT: save B" : "Run again, then RIGHT");
+            label(c, FontSecondary, 6, 46,
+                last_valid ? "RIGHT saves B" : "Capture B next");
         } else {
-            label(c, FontSecondary, 5, 47, "Freq diff");
-            label(c, FontSecondary, 58, 47, d_freq);
+            label(c, FontSecondary, 5, 43, "Freq diff");
+            label(c, FontSecondary, 58, 43, d_freq);
             label(c, FontSecondary, 5, 52, "Duty diff");
             label(c, FontSecondary, 70, 52, d_duty);
-            if(partial) {
-                /* Saved prefix only, not the entire capture duration. */
-                label(c, FontSecondary, 115, 11, "*");
-            }
+            (void)partial; /* A* / B* already identify measured prefix only. */
         }
         footer(c, !p->has_b ? (last_valid ? "> SAVE" : "OK RUN") : "^ MORE");
     }
