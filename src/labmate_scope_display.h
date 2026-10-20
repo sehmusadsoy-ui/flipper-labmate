@@ -4,6 +4,7 @@
  */
 #include <gui/gui.h>
 #include "labmate_scope_plot.h"
+#include "labmate_scope_compare.h"
 
 typedef enum {
     LabMateScopeDisplayArmed = 0,
@@ -22,6 +23,7 @@ typedef struct {
     LabMateScopePlotStats plot;
     LabMateScopeDisplayState state;
     uint16_t total_edges; /* consistent IRQ-excluded snapshot count */
+    const LabMateScopeMetrics* completed; /* optional verified STOP-only data; never live */
 } LabMateScopeDisplay;
 
 /* Return false rather than drawing any unchecked/out-of-bounds traces. */
