@@ -1,5 +1,15 @@
 # Changelog
 
+## [v1.9 Stable — Logic Scope & Signal Compare (E11 Custom Momentum ONLY)] — 2026-10-20
+
+- **[Published v1.9 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.9)**: public, non-prerelease, **restricted to already verified, matching E11-patched Momentum firmware**. Ordinary Momentum / unpatched stock firmware cannot use this app FAP; existing v1.8 Stable remains GitHub's ordinary **Latest**.
+- **Real digital PC1 Logic Scope** shows captured HIGH/LOW transitions in a framed 128×64 display; this is neither an analog oscilloscope nor a calibrated time/div or voltage/div instrument. No simultaneous multichannel support.
+- **Timestamp capture:** O(1) interrupt-side DWT edge timestamps, statically bounded 256-edge buffer, trigger-on-either observed edge in this UI, capped capture duration and watchdog; overflow, loss, clock gaps and safety conflicts fail closed.
+- **A/B Signal Compare:** sequential saved captures, frequency/duty deltas, actual observed HIGH/LOW/PERIOD, plus 100 Hz and 1 kHz reference profiles with defined tolerances. Source tests reject stale/truncated/invalid samples and prevent fabricated PASS.
+- **Physical testing on one matched Flipper:** operator screenshots show PA7→PC1 loopback at 100 Hz / 50% and 1 kHz / 50%; saved A/B delta +900 Hz and duty difference 0%; A period 10.00 ms, B period 1.00 ms; correct target reference PASS and incorrect target FAIL. Operator reported final STOP/BACK/other-tools resource release PASS. This is not independent oscillator calibration.
+- **Exact source and bytes:** [v1.9 tag](https://github.com/sehmusadsoy-ui/flipper-labmate/tree/v1.9) points to `72eb58d6c65d31f510acf6f532ee23c543a9149d`; released `labmate.fap` = **101,468 bytes**, SHA256 `d8bb04cf6de6ebaa466e7487e619d9f68af21dac49df2aa51e91dfae1f9f55c2`. Downloaded all 3 release assets and compared SHA256/full bytes before publishing.
+- **Source/release distinction:** ordinary `main` code and `application.fam` remain v1.8; the v1.9 production source is preserved under its immutable source tag. Draft PR #15 remains engineering history, not the basis for an ordinary-Momentum compatibility claim. Comprehensive UI redesign moves to v2.0.
+
 ## [v1.8 E11 — Custom Momentum Edition] — 2026-10-17 (public compatibility pre-release)
 
 - [Public E11 GitHub release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8-e11-custom-momentum) is a separately tagged **pre-release** of the integrated `v1.8` app. It does **not** replace or alter original v1.8 Stable.
