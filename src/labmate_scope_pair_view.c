@@ -2,41 +2,52 @@
 #include <stdio.h>
 #include <string.h>
 
-/* All formats are bounded to the Flipper's 20-column secondary font.
- * No floating-point output and no extrapolation from a partial capture. */
-static void format_frequency(char* out, size_t cap, uint64_t mhz, bool negative) {
-    const char* unit = "Hz";
+/* LabMate's 128x64 A/B layout deliberately uses two quiet aligned columns:
+ * source name -> measured value, with a distinct right-aligned duty column.
+ * A and B are sequential captures on ONE PC1, never simultaneous channels. */
+static void label(Canvas* c, Font font, int32_t x, int32_t y, const char* s) {
+    canvas_set_font(c, font);
+    canvas_draw_str(c, x, y, s);
+}
+
+static void footer(Canvas* c, const char* action) {
+    canvas_draw_line(c, 0, 54, 127, 54);
+    canvas_draw_line(c, 46, 56, 46, 63);
+    canvas_draw_line(c, 92, 56, 92, 63);
+    label(c, FontSecondary, 3, 62, action);
+    label(c, FontSecondary, 52, 62, "v PAGE");
+    label(c, FontSecondary, 101, 62, "BACK");
+}
+
+static void format_frequency(char* out, size_t cap, uint64_t mhz) {
+    const char* units = "Hz";
+    uint64_t hundreds;
     if(mhz > UINT64_C(999999999999)) {
         (void)snprintf(out, cap, "RANGE");
         return;
     }
-    uint64_t hundredths = (mhz + 5U) / 10U;
     if(mhz >= UINT64_C(1000000000)) {
-        unit = "MHz";
-        hundredths = (mhz + UINT64_C(5000000)) / UINT64_C(10000000);
+        units = "MHz";
+        hundreds = (mhz + UINT64_C(5000000)) / UINT64_C(10000000);
     } else if(mhz >= UINT64_C(1000000)) {
-        unit = "kHz";
-        hundredths = (mhz + UINT64_C(5000)) / UINT64_C(10000);
+        units = "kHz";
+        hundreds = (mhz + UINT64_C(5000)) / UINT64_C(10000);
+    } else {
+        hundreds = (mhz + 5U) / 10U;
     }
-    if(hundredths > UINT32_MAX) {
+    if(hundreds > UINT32_MAX) {
         (void)snprintf(out, cap, "RANGE");
         return;
     }
-    (void)snprintf(out, cap, "%s%lu.%02lu%s", negative ? "-" : "",
-        (unsigned long)(hundredths / 100U),
-        (unsigned long)(hundredths % 100U), unit);
+    (void)snprintf(out, cap, "%lu.%02lu%s",
+                   (unsigned long)(hundreds / 100U),
+                   (unsigned long)(hundreds % 100U), units);
 }
 
-static void metric_line(char* out, size_t cap, char prefix, const LabMateScopeMetrics* m) {
-    char freq[20];
-    format_frequency(freq, sizeof(freq), m->frequency_millihz, false);
-    (void)snprintf(out, cap, "%c%s %s %u.%u%%", prefix,
-        m->truncated ? "*" : ":", freq,
-        (unsigned)(m->duty_permille / 10U),
-        (unsigned)(m->duty_permille % 10U));
-}
-
-static void format_duration(char* out, size_t cap, uint64_t ticks, const LabMateScopeMetrics* m) {
+/* Mean observed high/low interval over complete H-L-H cycles. Never
+ * generate intervals outside the observed edges or claim calibrated time. */
+static void format_duration(char* out, size_t cap, uint64_t ticks,
+                            const LabMateScopeMetrics* m) {
     if(!m->timebase_hz || !m->completed_cycles) {
         (void)snprintf(out, cap, "RANGE");
         return;
@@ -47,105 +58,141 @@ static void format_duration(char* out, size_t cap, uint64_t ticks, const LabMate
         return;
     }
     const uint64_t us = (ticks * UINT64_C(1000000) + divisor / 2U) / divisor;
-    if(us >= 1000U) {
+    if(us >= UINT64_C(1000)) {
         const uint64_t centims = (us + 5U) / 10U;
         if(centims > UINT32_MAX) {
             (void)snprintf(out, cap, "RANGE");
             return;
         }
         (void)snprintf(out, cap, "%lu.%02lums",
-            (unsigned long)(centims / 100U), (unsigned long)(centims % 100U));
+            (unsigned long)(centims / 100U),
+            (unsigned long)(centims % 100U));
     } else {
         (void)snprintf(out, cap, "%luus", (unsigned long)us);
     }
 }
 
-/* page=0 summary and B-A deltas; 1=A's genuine cycle averages; 2=B's.
- * If a single capture was only a PREFIX, use * in the heading; never
- * imply that it represents an unobserved complete test window. */
+static bool valid_metrics(const LabMateScopeMetrics* m) {
+    return m->status == LabMateScopeMetricsReady &&
+           m->completed_cycles > 0U && m->timebase_hz > 0U &&
+           m->duty_permille <= 1000U &&
+           m->total_high_ticks <= UINT64_MAX - m->total_low_ticks;
+}
+
+static void measured_row(Canvas* c, int32_t y, char id,
+                         const char* frequency, const char* duty) {
+    char id_s[] = {id, '\0'};
+    label(c, FontPrimary, 5, y + 1, id_s);
+    label(c, FontSecondary, 24, y, frequency);
+    label(c, FontSecondary, 90, y, duty);
+}
+
 bool labmate_scope_pair_view_draw(Canvas* c, const LabMateScopePair* p,
-                                   bool last_valid, uint8_t page) {
+                                  bool last_valid, uint8_t page) {
     if(!c || !p || page > 2U ||
        (p->has_b && (!p->has_a || !p->delta.comparable)) ||
-       (p->has_a && (p->a.status != LabMateScopeMetricsReady ||
-                     !p->a.completed_cycles || !p->a.timebase_hz ||
-                     p->a.duty_permille > 1000U)) ||
-       (p->has_b && (p->b.status != LabMateScopeMetricsReady ||
-                     !p->b.completed_cycles || !p->b.timebase_hz ||
-                     p->b.duty_permille > 1000U))) return false;
+       (p->has_a && !valid_metrics(&p->a)) ||
+       (p->has_b && !valid_metrics(&p->b))) return false;
 
-    /* Guard every dynamic text line BEFORE the first pixel. */
-    char lines[4][48] = {{0}};
+    /* Format and check ALL dynamic text before changing the framebuffer. */
+    char a_freq[20] = "--", b_freq[20] = "--";
+    char a_duty[16] = "", b_duty[16] = "";
+    char d_freq[20] = "", d_duty[20] = "";
+    char times[4][20] = {{0}};
+    const LabMateScopeMetrics* m = page == 1U ? &p->a : &p->b;
+    const bool saved = page == 1U ? p->has_a : p->has_b;
+
+    if(p->has_a) {
+        format_frequency(a_freq, sizeof(a_freq), p->a.frequency_millihz);
+        (void)snprintf(a_duty, sizeof(a_duty), "%u.%u%%",
+            (unsigned)(p->a.duty_permille / 10U),
+            (unsigned)(p->a.duty_permille % 10U));
+    }
+    if(p->has_b) {
+        format_frequency(b_freq, sizeof(b_freq), p->b.frequency_millihz);
+        (void)snprintf(b_duty, sizeof(b_duty), "%u.%u%%",
+            (unsigned)(p->b.duty_permille / 10U),
+            (unsigned)(p->b.duty_permille % 10U));
+        const int64_t df = p->delta.frequency_delta_millihz;
+        const bool negative = df < 0;
+        const uint64_t mag = negative ?
+            (uint64_t)(-(df + 1)) + 1U : (uint64_t)df;
+        char frequency[20];
+        format_frequency(frequency, sizeof(frequency), mag);
+        (void)snprintf(d_freq, sizeof(d_freq), "%c%s", negative ? '-' : '+', frequency);
+        const int16_t dd = p->delta.duty_delta_permille;
+        const uint16_t abs_dd = dd < 0 ? (uint16_t)(-(int32_t)dd) : (uint16_t)dd;
+        (void)snprintf(d_duty, sizeof(d_duty), "%c%u.%u%%",
+                       dd < 0 ? '-' : '+',
+                       (unsigned)(abs_dd / 10U), (unsigned)(abs_dd % 10U));
+    }
+    if(page != 0U && saved) {
+        format_duration(times[0], sizeof(times[0]), m->total_high_ticks, m);
+        format_duration(times[1], sizeof(times[1]), m->total_low_ticks, m);
+        format_duration(times[2], sizeof(times[2]),
+                        m->total_high_ticks + m->total_low_ticks, m);
+        (void)snprintf(times[3], sizeof(times[3]), "%u.%u%%",
+                       (unsigned)(m->duty_permille / 10U),
+                       (unsigned)(m->duty_permille % 10U));
+    }
+    if(strlen(a_freq) > 10U || strlen(b_freq) > 10U ||
+       strlen(a_duty) > 6U || strlen(b_duty) > 6U ||
+       strlen(d_freq) > 11U || strlen(d_duty) > 11U)
+        return false;
+    for(uint8_t i = 0U; i < 4U; ++i)
+        if(strlen(times[i]) > 17U) return false;
+
     const bool partial = (p->has_a && p->a.truncated) ||
                          (p->has_b && p->b.truncated);
     if(page == 0U) {
-        if(!p->has_a) {
-            (void)snprintf(lines[0], sizeof(lines[0]), "SAVE FIRST CAPTURE");
-            (void)snprintf(lines[1], sizeof(lines[1]),
-                "%s", last_valid ? "LEFT = STORE A" : "RUN, THEN STOP");
-            (void)snprintf(lines[2], sizeof(lines[2]), "A/B USES ONE PC1");
+        label(c, FontPrimary, 3, 11, "COMPARE");
+    } else {
+        label(c, FontPrimary, 3, 11, page == 1U ? "A DETAILS" : "B DETAILS");
+    }
+    label(c, FontSecondary, 82, 9, "2/3");
+    label(c, FontSecondary, 105, 9, "PC1");
+    canvas_draw_line(c, 0, 13, 127, 13);
+
+    if(page != 0U) {
+        if(!saved) {
+            label(c, FontPrimary, 23, 30, "NOT SAVED");
+            label(c, FontSecondary, 22, 43, "Save a capture first");
         } else {
-            metric_line(lines[0], sizeof(lines[0]), 'A', &p->a);
-            if(!p->has_b) {
-                (void)snprintf(lines[1], sizeof(lines[1]), "B: NOT SAVED");
-                (void)snprintf(lines[2], sizeof(lines[2]),
-                    "%s", last_valid ? "RIGHT = STORE NEW B" : "RUN NEW CAPTURE");
-            } else {
-                metric_line(lines[1], sizeof(lines[1]), 'B', &p->b);
-                char frequency[20];
-                const int64_t diff = p->delta.frequency_delta_millihz;
-                const bool negative = diff < 0;
-                const uint64_t magnitude = negative ?
-                    (uint64_t)(-(diff + 1)) + 1U : (uint64_t)diff;
-                format_frequency(frequency, sizeof(frequency), magnitude, false);
-                (void)snprintf(lines[2], sizeof(lines[2]), "F DIFF %c%s",
-                    negative ? '-' : '+', frequency);
-                const int16_t dd = p->delta.duty_delta_permille;
-                const uint16_t mag = dd < 0 ? (uint16_t)(-(int32_t)dd) : (uint16_t)dd;
-                (void)snprintf(lines[3], sizeof(lines[3]), "D DIFF %c%u.%u%%",
-                    dd < 0 ? '-' : '+', (unsigned)(mag / 10U),
-                    (unsigned)(mag % 10U));
+            const char* row[4] = {"HIGH", "LOW", "PERIOD", "DUTY"};
+            const int32_t y[4] = {23, 32, 41, 51};
+            canvas_draw_line(c, 68, 17, 68, 52);
+            for(uint8_t i = 0U; i < 4U; ++i) {
+                label(c, FontSecondary, 5, y[i], row[i]);
+                const int32_t x = 124 - (int32_t)strlen(times[i]) * 6;
+                label(c, FontSecondary, x, y[i], times[i]);
             }
         }
+        footer(c, "^ NEXT");
+    } else if(!p->has_a) {
+        label(c, FontPrimary, 15, 30, "SAVE A FIRST");
+        label(c, FontSecondary, 16, 42, "Run Scope, then stop");
+        label(c, FontSecondary, 22, 51,
+              last_valid ? "LEFT: save A now" : "LEFT: save A");
+        footer(c, last_valid ? "< SAVE" : "OK RUN");
     } else {
-        const LabMateScopeMetrics* m = page == 1U ? &p->a : &p->b;
-        const bool exists = page == 1U ? p->has_a : p->has_b;
-        if(!exists) {
-            (void)snprintf(lines[0], sizeof(lines[0]),
-                "%s", page == 1U ? "A: NOT SAVED" : "B: NOT SAVED");
-            (void)snprintf(lines[1], sizeof(lines[1]), "RUN, STOP, SAVE");
+        measured_row(c, 24, 'A', a_freq, a_duty);
+        measured_row(c, 35, 'B', b_freq, b_duty);
+        canvas_draw_line(c, 4, 39, 123, 39);
+        if(!p->has_b) {
+            label(c, FontSecondary, 6, 48, "Next: capture B");
+            label(c, FontSecondary, 6, 52,
+                last_valid ? "RIGHT: save B" : "Run again, then RIGHT");
         } else {
-            char time[20];
-            format_duration(time, sizeof(time), m->total_high_ticks, m);
-            (void)snprintf(lines[0], sizeof(lines[0]), "HIGH    %s", time);
-            format_duration(time, sizeof(time), m->total_low_ticks, m);
-            (void)snprintf(lines[1], sizeof(lines[1]), "LOW     %s", time);
-            format_duration(time, sizeof(time),
-                m->total_high_ticks > UINT64_MAX - m->total_low_ticks ?
-                    UINT64_MAX : m->total_high_ticks + m->total_low_ticks, m);
-            (void)snprintf(lines[2], sizeof(lines[2]), "PERIOD  %s", time);
-            (void)snprintf(lines[3], sizeof(lines[3]), "DUTY    %u.%u%%",
-                (unsigned)(m->duty_permille / 10U),
-                (unsigned)(m->duty_permille % 10U));
+            label(c, FontSecondary, 5, 47, "Freq diff");
+            label(c, FontSecondary, 58, 47, d_freq);
+            label(c, FontSecondary, 5, 52, "Duty diff");
+            label(c, FontSecondary, 70, 52, d_duty);
+            if(partial) {
+                /* Saved prefix only, not the entire capture duration. */
+                label(c, FontSecondary, 115, 11, "*");
+            }
         }
+        footer(c, !p->has_b ? (last_valid ? "> SAVE" : "OK RUN") : "^ MORE");
     }
-    for(unsigned i = 0U; i < 4U; ++i) {
-        if(strlen(lines[i]) > 20U) return false;
-    }
-
-    canvas_set_font(c, FontSecondary);
-    if(page == 0U)
-        canvas_draw_str(c, 3, 9, partial ? "A/B *PARTIAL" : "A/B COMPARE");
-    else
-        canvas_draw_str(c, 3, 9, page == 1U ? "A DETAILS" : "B DETAILS");
-    canvas_draw_str(c, 102, 9, "PC1");
-    canvas_draw_line(c, 0, 13, 127, 13);
-    const int32_t y[4] = {23, 32, 42, 51};
-    for(unsigned i = 0U; i < 4U; ++i) {
-        if(lines[i][0]) canvas_draw_str(c, 3, y[i], lines[i]);
-    }
-    canvas_draw_line(c, 0, 53, 127, 53);
-    canvas_draw_str(c, 3, 62,
-        page == 0U ? "UP:MORE DN:PG BK:OUT" : "UP:NEXT DN:PG BK:OUT");
     return true;
 }
