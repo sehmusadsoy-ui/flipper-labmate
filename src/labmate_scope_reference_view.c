@@ -9,7 +9,7 @@ static const char* reference_verdict(LabMateScopeVerdict verdict) {
     case LabMateScopeVerdictNoSignal: return "NO SIGNAL";
     case LabMateScopeVerdictBusy: return "BUSY";
     case LabMateScopeVerdictInvalid:
-    default: return "WAIT / INVALID";
+    default: return "WAIT/INVALID";
     }
 }
 
