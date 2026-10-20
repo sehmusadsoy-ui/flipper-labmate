@@ -2,15 +2,29 @@
 #include <stdio.h>
 #include <string.h>
 
-static const char* reference_verdict(LabMateScopeVerdict verdict) {
-    switch(verdict) {
+/* Four aligned labelled rows; no paragraphs, repeated errors or false PASS.
+ * All GUI work is read-only, with a bounded 128x64 monochrome layout. */
+static const char* verdict_text(LabMateScopeVerdict v) {
+    switch(v) {
     case LabMateScopeVerdictPass: return "PASS";
-    case LabMateScopeVerdictOutOfTolerance: return "OUT OF TOL";
+    case LabMateScopeVerdictOutOfTolerance: return "OUT OF RANGE";
     case LabMateScopeVerdictNoSignal: return "NO SIGNAL";
     case LabMateScopeVerdictBusy: return "BUSY";
     case LabMateScopeVerdictInvalid:
-    default: return "WAIT/INVALID";
+    default: return "NO CAPTURE";
     }
+}
+
+static void label(Canvas* c, Font font, int32_t x, int32_t y, const char* s) {
+    canvas_set_font(c, font);
+    canvas_draw_str(c, x, y, s);
+}
+
+static bool right_value(Canvas* c, int32_t y, const char* value) {
+    const size_t n = strlen(value);
+    if(n > 11U) return false;
+    label(c, FontSecondary, 124 - (int32_t)n * 6, y, value);
+    return true;
 }
 
 bool labmate_scope_reference_view_draw(
@@ -18,64 +32,69 @@ bool labmate_scope_reference_view_draw(
     LabMateScopeToleranceResult result, const LabMateScopeMetrics* measured) {
     if(!c || (unsigned)result.verdict > (unsigned)LabMateScopeVerdictBusy)
         return false;
-    LabMateScopeReference reference = {0};
-    if(!labmate_scope_reference_preset(selected, &reference)) return false;
-
-    const bool has_metrics =
+    LabMateScopeReference ref = {0};
+    if(!labmate_scope_reference_preset(selected, &ref)) return false;
+    const bool complete =
         result.verdict == LabMateScopeVerdictPass ||
         result.verdict == LabMateScopeVerdictOutOfTolerance;
-    if(has_metrics &&
+    if(complete &&
        (!measured || measured->status != LabMateScopeMetricsReady ||
         measured->truncated || measured->completed_cycles == 0U ||
         measured->frequency_millihz == 0U ||
         measured->duty_permille > 1000U)) return false;
-
-    /* Never show a stale PASS after reference selection or capture changes.
-     * Preserve the exact full-mHz/duty verdict; formatting is ONLY cosmetic. */
-    if(has_metrics) {
-        const LabMateScopeToleranceResult verified =
+    if(complete) {
+        /* Do not reuse a stale PASS after changing reference or capture.
+         * Exact mHz/permille comparison always precedes display rounding. */
+        const LabMateScopeToleranceResult checked =
             labmate_scope_tolerance_evaluate(
-                &reference, measured, LabMateScopeObservationComplete);
-        if(verified.verdict != result.verdict ||
-           verified.frequency_error_millihz != result.frequency_error_millihz ||
-           verified.duty_error_permille != result.duty_error_permille)
+                &ref, measured, LabMateScopeObservationComplete);
+        if(checked.verdict != result.verdict ||
+           checked.frequency_error_millihz != result.frequency_error_millihz ||
+           checked.duty_error_permille != result.duty_error_permille)
             return false;
     }
 
-    char target[24];
-    char verdict[24];
-    char frequency[24] = "NO VALID CAPTURE";
-    char duty[24] = "";
-    (void)snprintf(target, sizeof(target), "TARGET %s", reference.name);
-    (void)snprintf(verdict, sizeof(verdict), "RESULT %s", reference_verdict(result.verdict));
-    if(has_metrics) {
+    char freq[24] = "--";
+    char duty[24] = "--";
+    if(complete) {
         if(measured->frequency_millihz < UINT64_C(100000000)) {
             const uint64_t hz = measured->frequency_millihz / UINT64_C(1000);
-            const uint64_t fraction =
+            const uint64_t dec =
                 (measured->frequency_millihz % UINT64_C(1000)) / UINT64_C(10);
-            (void)snprintf(frequency, sizeof(frequency), "MEAS %lu.%02luHz",
-                (unsigned long)hz, (unsigned long)fraction);
+            (void)snprintf(freq, sizeof(freq), "%lu.%02luHz",
+                           (unsigned long)hz, (unsigned long)dec);
         } else {
-            (void)snprintf(frequency, sizeof(frequency), "MEAS >99kHz");
+            (void)snprintf(freq, sizeof(freq), ">99kHz");
         }
-        (void)snprintf(duty, sizeof(duty), "DUTY %u.%u%%",
+        (void)snprintf(duty, sizeof(duty), "%u.%u%%",
             (unsigned)(measured->duty_permille / 10U),
             (unsigned)(measured->duty_permille % 10U));
-    } else {
-        (void)snprintf(duty, sizeof(duty), "RUN, STOP, RETRY");
     }
-    if(strlen(target) > 20U || strlen(verdict) > 20U ||
-       strlen(frequency) > 20U || strlen(duty) > 20U) return false;
+    const char* verdict = verdict_text(result.verdict);
+    /* All labels and values must fit their own columns BEFORE any paint. */
+    if(strlen(ref.name) > 11U || strlen(freq) > 11U ||
+       strlen(duty) > 11U || strlen(verdict) > 11U) return false;
 
-    canvas_set_font(c, FontSecondary);
-    canvas_draw_str(c, 3, 9, "REFERENCE");
-    canvas_draw_str(c, 102, 9, "PC1");
+    label(c, FontPrimary, 3, 11, "REFERENCE");
+    label(c, FontSecondary, 82, 9, "3/3");
+    label(c, FontSecondary, 105, 9, "PC1");
     canvas_draw_line(c, 0, 13, 127, 13);
-    canvas_draw_str(c, 3, 23, target);
-    canvas_draw_str(c, 3, 34, verdict);
-    canvas_draw_str(c, 3, 43, frequency);
-    canvas_draw_str(c, 3, 51, duty);
-    canvas_draw_line(c, 0, 53, 127, 53);
-    canvas_draw_str(c, 3, 62, "UP:REF DN:PG BK:EXIT");
+    canvas_draw_line(c, 49, 16, 49, 52);
+
+    label(c, FontSecondary, 4, 22, "TARGET");
+    (void)right_value(c, 22, ref.name);
+    label(c, FontSecondary, 4, 32, "FREQ");
+    (void)right_value(c, 32, freq);
+    label(c, FontSecondary, 4, 42, "DUTY");
+    (void)right_value(c, 42, duty);
+    label(c, FontSecondary, 4, 51, "RESULT");
+    (void)right_value(c, 51, verdict);
+
+    canvas_draw_line(c, 0, 54, 127, 54);
+    canvas_draw_line(c, 46, 56, 46, 63);
+    canvas_draw_line(c, 92, 56, 92, 63);
+    label(c, FontSecondary, 3, 62, "^ REF");
+    label(c, FontSecondary, 52, 62, "v PAGE");
+    label(c, FontSecondary, 101, 62, "BACK");
     return true;
 }
