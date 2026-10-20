@@ -45,8 +45,8 @@ void canvas_draw_line(Canvas* c,int32_t x0,int32_t y0,int32_t x1,int32_t y1) {
         ++c->frames;
     } else if((x0==x1 && ((y0==16 && y1==17) || (y0==40 && y1==41)) &&
                 x0>=25 && x0<=105 && (x0-25)%20==0) ||
-              (y0==28 && y1==28 && x1==x0+1 && x0>=14 && x0<=110 &&
-               (x0-14)%16==0)) {
+              (y0==y1 && x0==x1 && x0>=20 && x0<=104 &&
+               (x0-20)%14==0 && (y0==22 || y0==28 || y0==34))) {
         ++c->guides;
     } else if((x0==0 && x1==127 && y0==y1 && (y0==13 || y0==54)) ||
               ((x0==45 || x0==82) && x0==x1 && y0==56 && y1==63)) {
@@ -86,7 +86,7 @@ int main(void) {
     d.state=LabMateScopeDisplayRunning;
     c=(struct Canvas){0};
     assert(labmate_scope_display_draw(&c,&d));
-    assert(c.frames==4 && c.guides==17 && c.wave==2);
+    assert(c.frames==4 && c.guides==31 && c.wave==2);
     assert(c.stop && !c.page && c.exit);
     LabMateScopeMetrics valid={
         .status=LabMateScopeMetricsReady, .completed_cycles=2,
