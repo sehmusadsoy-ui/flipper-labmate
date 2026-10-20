@@ -111,7 +111,7 @@ void labmate_view_render_callback(
                 labmate_scope_tolerance_evaluate(&reference, measured, observation);
             (void)labmate_scope_reference_view_draw(
                 canvas, app->scope_reference_preset, result, measured);
-        } else if(app->scope_show_compare) {
+        } else if(app->scope_show_compare || app->scope_show_details) {
             if(!labmate_scope_native_stop_confirmed(
                    &app->scope_native, app->capture_owner)) {
                 /* A/B data is historical, not proof that the IRQ has been
@@ -128,7 +128,7 @@ void labmate_view_render_callback(
                      app->scope_last_generation > app->scope_pair.generation_a);
                 (void)labmate_scope_pair_view_draw(
                     canvas, &app->scope_pair, fresh_candidate,
-                    app->scope_compare_page);
+                    app->scope_show_details ? app->scope_compare_page : 0U);
             }
         } else {
             /* Capture summaries are STOP-only: never expose a stale value
