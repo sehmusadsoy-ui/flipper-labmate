@@ -95,7 +95,7 @@ void draw_profiles(Canvas* canvas, LabMateApp* app) {
 
     if(app->profile_busy) {
         canvas_draw_line(canvas, 0, 52, 127, 52);
-        canvas_draw_str(canvas, 7, 62, "SD BUSY - PLEASE WAIT");
+        canvas_draw_str(canvas, 7, 62, "SD BUSY - WAIT");
     } else {
         /* Even under PWM ON, LR always names the operation and OK says
          * BLOCK. No hidden route to SAVE or DELETE under live PWM. */
