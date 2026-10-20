@@ -43,7 +43,7 @@ void canvas_draw_line(Canvas* c,int32_t x0,int32_t y0,int32_t x1,int32_t y1) {
     if((x0==2 && x1==125 && y0==y1 && (y0==15 || y0==42)) ||
        ((x0==2 || x0==125) && x0==x1 && y0==15 && y1==42)) {
         ++c->frames;
-    } else if((x0==x1 && (y0==16 && y1==17 || y0==40 && y1==41) &&
+    } else if((x0==x1 && ((y0==16 && y1==17) || (y0==40 && y1==41)) &&
                 x0>=25 && x0<=105 && (x0-25)%20==0) ||
               (y0==28 && y1==28 && x1==x0+1 && x0>=14 && x0<=110 &&
                (x0-14)%16==0)) {
@@ -62,8 +62,6 @@ void canvas_draw_line(Canvas* c,int32_t x0,int32_t y0,int32_t x1,int32_t y1) {
     }
 }
 int main(void) {
-    Canvas* none = NULL;
-    (void)none; /* Canvas is only forward-declared by the production GUI. */
     struct Canvas c={0};
     LabMateScopeDisplay d={
         .state=LabMateScopeDisplayStopped,
