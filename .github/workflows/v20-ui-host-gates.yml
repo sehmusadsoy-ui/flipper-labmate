@@ -45,7 +45,8 @@ permissions:
 
 jobs:
   ui-host-only:
-    name: UI-01..05 source-linked host verification (GCC and Clang)
+    name: UI-01..05B source-linked host verification (GCC and Clang)
+    if: github.event_name == 'push' || github.head_ref == 'dev/v2.0-signal-doctor'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
