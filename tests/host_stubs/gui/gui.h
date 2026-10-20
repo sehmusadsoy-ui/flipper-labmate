@@ -1,6 +1,6 @@
 #pragma once
 /* Host-only stub for read-only Canvas renderer regression.
- * This is NEVER included by application.fam (src/*.c).
+ * This stub is used ONLY by native host unit tests, not firmware.
  */
 #include <stdint.h>
 
