@@ -84,7 +84,7 @@ static void measured_row(Canvas* c, int32_t y, char id, bool partial,
     char id_s[] = {id, partial ? '*' : '\0', '\0'};
     label(c, FontSecondary, 5, y, id_s);
     label(c, FontSecondary, 24, y, frequency);
-    label(c, FontSecondary, 90, y, duty);
+    if(duty[0]) label(c, FontSecondary, 90, y, duty);
 }
 
 bool labmate_scope_pair_view_draw(Canvas* c, const LabMateScopePair* p,
