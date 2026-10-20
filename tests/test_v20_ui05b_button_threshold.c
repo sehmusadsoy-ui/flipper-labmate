@@ -121,7 +121,8 @@ static unsigned check_button(void) {
         a.button_hold_ms=big?UINT32_MAX:50U;
         a.threshold.source=LabMateAlertButtonSettle;
         a.threshold.armed=(status==2);a.threshold.latched=(status==2);
-        const LabMateApp before=a;
+        LabMateApp before;
+        memcpy(&before,&a,sizeof(a));
         draw_button(&c,&a);
         assert(memcmp(&a,&before,sizeof(a))==0);
         if(c.faults) {
@@ -149,7 +150,8 @@ static unsigned check_threshold(void) {
         a.threshold.latched=arm==2;
         a.threshold.has_sample=sample!=0;
         a.threshold.active=sample!=0;
-        const LabMateApp before=a;
+        LabMateApp before;
+        memcpy(&before,&a,sizeof(a));
         draw_alerts(&c,&a);
         assert(memcmp(&a,&before,sizeof(a))==0);
         if(c.faults) {
