@@ -65,10 +65,10 @@ void canvas_draw_line(Canvas* c,int32_t x0,int32_t y0,int32_t x1,int32_t y1) {
               ((x0==46 || x0==92) && x0==x1 && y0==56 && y1==63)) {
         /* header/footer navigation strokes */
     } else {
-        assert(x0>=LABMATE_SCOPE_PLOT_X_LEFT &&
-               x0<=LABMATE_SCOPE_PLOT_X_RIGHT &&
-               x1>=LABMATE_SCOPE_PLOT_X_LEFT &&
-               x1<=LABMATE_SCOPE_PLOT_X_RIGHT &&
+        assert(x0>=(int32_t)LABMATE_SCOPE_PLOT_X_LEFT &&
+               x0<=(int32_t)LABMATE_SCOPE_PLOT_X_RIGHT &&
+               x1>=(int32_t)LABMATE_SCOPE_PLOT_X_LEFT &&
+               x1<=(int32_t)LABMATE_SCOPE_PLOT_X_RIGHT &&
                (y0==LABMATE_SCOPE_PLOT_Y_HIGH ||
                 y0==LABMATE_SCOPE_PLOT_Y_LOW) &&
                (y1==LABMATE_SCOPE_PLOT_Y_HIGH ||
