@@ -32,9 +32,10 @@ static inline bool labmate_scope_ui_header(
 static inline bool labmate_scope_ui_footer(
     Canvas* c, const char* left, const char* center) {
     if(!c || !left || !center ||
-       strlen(left) > 7U || strlen(center) > 5U) return false;
+       strlen(left) > (center[0] ? 7U : 11U) ||
+       strlen(center) > 5U) return false;
     canvas_draw_line(c, 0, 54, 127, 54);
-    canvas_draw_line(c, 45, 56, 45, 63);
+    if(center[0]) canvas_draw_line(c, 45, 56, 45, 63);
     canvas_draw_line(c, 82, 56, 82, 63);
     if(left[0]) labmate_scope_ui_text(c, FontSecondary, 2, 62, left);
     if(center[0]) labmate_scope_ui_text(c, FontSecondary, 47, 62, center);
