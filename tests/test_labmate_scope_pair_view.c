@@ -32,8 +32,8 @@ void canvas_draw_str(Canvas* c,int32_t x,int32_t y,const char* s) {
     c->labels[c->label_count++]=next;
     if(s[0]=='A' && (s[1]=='\0' || s[1]=='*')) c->saw_a=true;
     if(s[0]=='B' && (s[1]=='\0' || s[1]=='*')) c->saw_b=true;
-    if(strstr(s,"Freq diff")) c->saw_freq_diff=true;
-    if(strstr(s,"Duty diff")) c->saw_duty_diff=true;
+    if(strstr(s,"F change")) c->saw_freq_diff=true;
+    if(strstr(s,"D change")) c->saw_duty_diff=true;
     if(!strcmp(s,"HIGH")) c->saw_high=true;
     if(!strcmp(s,"LOW")) c->saw_low=true;
     if(!strcmp(s,"PERIOD")) c->saw_period=true;
