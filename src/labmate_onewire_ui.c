@@ -7,14 +7,21 @@ void draw_onewire(Canvas* canvas, LabMateApp* app) {
     const char* label = "READY";
     const char* message = "EXT. VDD REQUIRED";
     const bool active = s->status == LabMateOneWireHwConverting;
+    /* The driver accepts only converted DS18B20 data in [-55, +125] C
+     * at 9..12 bit resolution. Reject inconsistent snapshots rather than
+     * displaying an impossible sensor value as a successful reading. */
+    const bool valid_temperature = s->has_temperature &&
+        s->temperature_tenths >= -550 && s->temperature_tenths <= 1250 &&
+        s->resolution_bits >= 9U && s->resolution_bits <= 12U;
     switch(s->status) {
     case LabMateOneWireHwConverting:
         label = "RUN";
         message = "CONVERTING...";
         break;
     case LabMateOneWireHwMeasured:
-        label = "DONE";
-        message = "DS18B20 CRC OK";
+        label = valid_temperature ? "DONE" : "ERR";
+        message = valid_temperature ? "DS18B20 CRC OK" :
+                  (s->has_temperature ? "INVALID TEMP DATA" : "NO VALID SAMPLE");
         break;
     case LabMateOneWireHwNoSensor:
         label = "NONE";
@@ -47,7 +54,7 @@ void draw_onewire(Canvas* canvas, LabMateApp* app) {
     canvas_draw_str(canvas, 3, 32, "EXTERNAL VDD ONLY");
     canvas_draw_line(canvas, 2, 35, 126, 35);
 
-    if(s->status == LabMateOneWireHwMeasured && s->has_temperature) {
+    if(s->status == LabMateOneWireHwMeasured && valid_temperature) {
         const int32_t value = s->temperature_tenths;
         const uint32_t magnitude = (uint32_t)(value < 0 ? -value : value);
         char text[32];
