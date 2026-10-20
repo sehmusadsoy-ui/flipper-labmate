@@ -46,7 +46,7 @@ void draw_i2c(Canvas* canvas, LabMateApp* app) {
     }
 
     ui_draw_header(canvas, "I2C");
-    ui_badge(canvas, 91U, 1U, 35U, badge, scanning);
+    ui_badge(canvas, 82U, 1U, 44U, badge, scanning);
     canvas_set_font(canvas, FontSecondary);
     canvas_draw_str(canvas, 3U, 22U, "PC0 SCL / PC1 SDA");
     canvas_draw_line(canvas, 2U, 25U, 125U, 25U);
