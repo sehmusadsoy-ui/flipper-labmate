@@ -135,6 +135,8 @@ static unsigned check_button(void) {
     return cases;
 }
 static unsigned check_threshold(void) {
+    /* Real configured maxima from src/labmate_threshold.c, not fake UINT32_MAX limits. */
+    const uint32_t maximum[]={50000U,95U,1000000U,1000U};
     unsigned cases=0;
     for(unsigned source=0;source<LabMateAlertSourceCount;source++)
     for(unsigned arm=0;arm<3;arm++)
@@ -142,7 +144,7 @@ static unsigned check_threshold(void) {
     for(unsigned big=0;big<2;big++){
         LabMateApp a={0};Canvas c={0};
         a.threshold.source=(LabMateAlertSource)source;
-        a.threshold.limit=big?UINT32_MAX:100U;
+        a.threshold.limit=big?maximum[source]:100U;
         a.threshold.armed=arm!=0;
         a.threshold.latched=arm==2;
         a.threshold.has_sample=sample!=0;
