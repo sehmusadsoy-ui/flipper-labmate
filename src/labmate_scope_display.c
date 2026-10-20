@@ -91,6 +91,10 @@ bool labmate_scope_display_draw(Canvas* c, const LabMateScopeDisplay* d) {
         canvas_draw_line(c, x, 39, x, 41);
     }
     if(ready_trace(d)) {
+        /* Seven isolated, uncalibrated midline dots make a light graticule;
+         * unlike long dashed lines they cannot visually erase the waveform. */
+        for(int32_t x = 14; x <= 110; x += 16)
+            canvas_draw_line(c, x, 28, x, 28);
         for(uint16_t i = 0U; i < d->plot.line_count; ++i) {
             const LabMateScopePlotLine* p = &d->lines[i];
             canvas_draw_line(c, p->x0, p->y0, p->x1, p->y1);
