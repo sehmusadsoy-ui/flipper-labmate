@@ -1,0 +1,85 @@
+name: LabMate v2.0 UI host regressions (NO FLASH)
+
+on:
+  push:
+    branches:
+      - dev/v2.0-signal-doctor
+    paths:
+      - "src/labmate_navigation.[ch]"
+      - "src/labmate_ui_screens.c"
+      - "src/labmate_scope_ui.h"
+      - "src/labmate_i2c_ui.c"
+      - "src/labmate_onewire_ui.c"
+      - "src/labmate_uart_ui.c"
+      - "tests/test_v20_*.c"
+      - "tests/test_v20_*.h"
+      - "tests/test_navigation.c.inc"
+      - "tests/test_labmate_scope_navigation.c"
+      - "tests/host_stubs/**"
+      - "scripts/test-v20-ui*-host.sh"
+      - ".github/workflows/v20-ui-host-gates.yml"
+  pull_request:
+    branches:
+      - dev/v1.9-logic-scope
+    paths:
+      - "src/labmate_navigation.[ch]"
+      - "src/labmate_ui_screens.c"
+      - "src/labmate_scope_ui.h"
+      - "src/labmate_i2c_ui.c"
+      - "src/labmate_onewire_ui.c"
+      - "src/labmate_uart_ui.c"
+      - "tests/test_v20_*.c"
+      - "tests/test_v20_*.h"
+      - "tests/test_navigation.c.inc"
+      - "tests/test_labmate_scope_navigation.c"
+      - "tests/host_stubs/**"
+      - "scripts/test-v20-ui*-host.sh"
+      - ".github/workflows/v20-ui-host-gates.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  ui-host-only:
+    name: UI-01..05 source-linked host verification (GCC and Clang)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact reviewed commit, no persistent credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Assert compiler and source-only prerequisites
+        shell: bash
+        run: |
+          set -euo pipefail
+          command -v gcc
+          command -v clang
+          command -v awk
+          command -v mktemp
+          test -f src/labmate_ui_screens.c
+          test -f src/labmate_scope_ui.h
+          test -f scripts/test-v20-ui01-host.sh
+          test -f scripts/test-v20-ui05-host.sh
+          echo "UI HOST ONLY: no Flipper USB, SDK, firmware, SD, FAP deploy or release"
+
+      - name: UI-01 menu and Scope geometry
+        shell: bash
+        run: sh scripts/test-v20-ui01-host.sh
+
+      - name: UI-02 I2C and 1-Wire geometry (current enum contract)
+        shell: bash
+        run: sh scripts/test-v20-ui02-host.sh
+
+      - name: UI-03 1-Wire validity and UART RX/TX
+        shell: bash
+        run: sh scripts/test-v20-ui03-host.sh
+
+      - name: UI-04 Profiles and History
+        shell: bash
+        run: sh scripts/test-v20-ui04-host.sh
+
+      - name: UI-05A Logger geometry
+        shell: bash
+        run: sh scripts/test-v20-ui05-host.sh
