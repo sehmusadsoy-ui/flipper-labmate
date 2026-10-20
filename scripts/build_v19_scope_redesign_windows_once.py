@@ -17,7 +17,7 @@ import subprocess
 import sys
 from zipfile import ZipFile, is_zipfile
 
-SOURCE = "5c34ac6e140b5e8276338beb91ea2f9dff76fc84"
+SOURCE = "72eb58d6c65d31f510acf6f532ee23c543a9149d"
 MOMENTUM = "d3f89dfe2ef6b01839201598e9be1590cba80322"
 OLD_FAP_SHA = "0f0b246d042c45eabe2c29dab692dbc7df20817c419c011ca31a313d4b62141a"
 OLD_FAP_SIZE = 99376
@@ -26,7 +26,7 @@ CHECKER = "841eb5f982e5c2e951cc98278060eedac078941b"
 # Source basename: (old installed SDK Git blob, new reviewed Git blob).
 CHANGED = {
     "labmate_scope_ui.h": (None, "ed7379c877c541228f0395710091680b7276d800"),
-    "labmate_scope_display.c": ("1d7012b2a3176aa4035db4ac2a6dbb3faa715fb4", "d9cee05a54f778754473d63944df380452a410ba"),
+    "labmate_scope_display.c": ("1d7012b2a3176aa4035db4ac2a6dbb3faa715fb4", "2b57ba967f06052a8df79700c81434c5d5cd86a3"),
     "labmate_scope_display.h": ("f0540b69d2c85a1aecdeb80f942d3d2f3be6db80", "a1c735699d6f814fda411c7e65939cd554456238"),
     "labmate_scope_pair_view.c": ("1395ff12e833830f3527a2eca8f1d2b259b8f915", "9f321a172a1504b254afba8cee029e93a7ac5f7a"),
     "labmate_scope_reference_view.c": ("41734b19cf5ed15129aa5fdf670a725e70bb24c7", "e99740cec7dd2413149a9019eb624fb85ef2f6ee"),
@@ -37,7 +37,7 @@ CHANGED = {
     "labmate_ui_primitives.h": ("ac6b6b91dc32b512b11683810dd0c7d14a07d25d", "b61ca6e4fd8de5a7048b49588dac3bde166cc8cd"),
 }
 TESTS = {
-    "test_labmate_scope_display.c": "8ab78cf8b8bbd41cd777f3ed30885d01d2a8cc48",
+    "test_labmate_scope_display.c": "ccb87a5754c3bc37593f45969945135bd3e6cb2d",
     "test_labmate_scope_pair_view.c": "b8bed84fcb5fef095b762f1a2af8474137851031",
     "test_scope_reference_view.c": "026a8114e924ec5c30422e7f2181a6a8957d3a79",
     "test_labmate_scope_focus.c": "7530cfee04c230eca3a705a346e8bd6d219b00c3",
