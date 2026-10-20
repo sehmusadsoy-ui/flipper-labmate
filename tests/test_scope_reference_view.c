@@ -84,9 +84,11 @@ static void test_real_metrics_and_invalid_no_fake_pass(void) {
     assert(contains(&canvas, "1000.00Hz"));
     assert(contains(&canvas, "50.0%"));
     assert(contains(&canvas, "1kHz 50%"));
-    assert(contains(&canvas, "^ REF"));
-    assert(contains(&canvas, "v PAGE"));
-    assert(contains(&canvas, "BACK"));
+    assert(contains(&canvas, "REFERENCE"));
+    assert(contains(&canvas, "4/4"));
+    assert(contains(&canvas, "(^)Ref"));
+    assert(contains(&canvas, "(v)Pg"));
+    assert(contains(&canvas, "(B)Exit"));
 
     /* Same metrics but changed 100 Hz preset: previous 1 kHz PASS cannot
      * be reused as a plausible new PASS. */
@@ -132,7 +134,7 @@ static void test_real_metrics_and_invalid_no_fake_pass(void) {
     assert(labmate_scope_reference_view_draw(
         &canvas, LabMateScopeReference1kHz50, result, NULL));
     assert(!contains(&canvas, "PASS"));
-    assert(contains(&canvas, "NOT READY"));
+    assert(contains(&canvas, "WAIT"));
     assert(contains(&canvas, "--"));
 
     result = labmate_scope_tolerance_evaluate(
