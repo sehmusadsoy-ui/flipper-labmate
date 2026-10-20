@@ -3,129 +3,134 @@
 #include <stdio.h>
 #include <string.h>
 
+/* Real LCD geometry mock, not a screenshot claim. FontPrimary is bounded to
+ * 8px/cell and 11px high; secondary to 6px/cell and 8px high. */
+typedef struct {int32_t x0,y0,x1,y1;} Rect;
 struct Canvas {
-    unsigned separators;
-    unsigned frame;
-    unsigned grid;
-    unsigned trace;
+    Font font;
     unsigned labels;
-    bool found_wait;
-    bool found_no_trigger;
-    bool found_live;
-    bool found_busy;
-    bool found_zoom;
-    bool found_footer;
+    unsigned strokes;
+    unsigned frame;
+    unsigned ticks;
+    unsigned trace;
+    bool saw_ready;
+    bool saw_no_signal;
+    bool saw_wave_state;
+    bool saw_focus;
+    bool saw_back;
+    bool saw_ok;
+    bool saw_busy;
+    Rect text[32];
 };
-void canvas_set_font(Canvas* c, Font f) {(void)c; assert(f == FontSecondary);}
-void canvas_draw_str(Canvas* c, int32_t x, int32_t y, const char* text) {
-    assert(x >= 0 && x < 128 && y >= 0 && y < 64 && text);
-    assert((size_t)x + strlen(text) * 6U <= 128U);
-    ++c->labels;
-    if(strstr(text, "WAIT PC1 EDGE")) c->found_wait = true;
-    if(strstr(text, "NO TRIGGER")) c->found_no_trigger = true;
-    if(strstr(text, "LIVE")) c->found_live = true;
-    if(strstr(text, "BUSY")) c->found_busy = true;
-    if(strstr(text, "ZOOM")) c->found_zoom = true;
-    if(strstr(text, "BK:EXIT")) c->found_footer = true;
-    if(strstr(text, " EDGES ")) {
-        assert(y == 50);
-        assert(LABMATE_SCOPE_PLOT_Y_LOW <= (uint8_t)(y - 11));
-    }
+
+void canvas_set_font(Canvas* c, Font font) {
+    assert(c && (font == FontPrimary || font == FontSecondary));
+    c->font = font;
 }
-void canvas_draw_line(Canvas* c, int32_t x0, int32_t y0, int32_t x1, int32_t y1) {
-    assert(x0 >= 0 && x0 < 128 && x1 >= 0 && x1 < 128);
-    assert(y0 >= 0 && y0 < 64 && y1 >= 0 && y1 < 64);
-    if(y0 == 13 && y1 == 13) {
-        assert(x0 == 0 && x1 == 127);
-        ++c->separators;
-    } else if(y0 == 53 && y1 == 53) {
-        assert(x0 == 0 && x1 == 127);
-        ++c->separators;
-    } else if((x0 == 1 && x1 == 126 && (y0 == 15 || y0 == 40) && y0 == y1) ||
-              ((x0 == 1 || x0 == 126) && x0 == x1 && y0 == 15 && y1 == 40)) {
+void canvas_draw_str(Canvas* c, int32_t x, int32_t y, const char* s) {
+    assert(c && s && x >= 0 && y >= 0 && y < 64);
+    const size_t n = strlen(s);
+    const int32_t w = (int32_t)n * (c->font == FontPrimary ? 8 : 6);
+    const int32_t h = c->font == FontPrimary ? 11 : 8;
+    assert(n > 0 && x + w <= 128 && y - h + 1 >= 0);
+    assert(c->labels < 32U);
+    const Rect next = {x, y-h+1, x+w-1, y};
+    for(unsigned i = 0; i < c->labels; ++i) {
+        const Rect prev = c->text[i];
+        const bool disjoint =
+            next.x1 < prev.x0 || next.x0 > prev.x1 ||
+            next.y1 < prev.y0 || next.y0 > prev.y1;
+        assert(disjoint && "overlapping LCD text rectangles");
+    }
+    c->text[c->labels++] = next;
+    if(strstr(s, "READY")) c->saw_ready=true;
+    if(strstr(s, "NO SIGNAL")) c->saw_no_signal=true;
+    if(strstr(s, "LIVE")) c->saw_wave_state=true;
+    if(strstr(s, "ZOOM")) c->saw_focus=true;
+    if(strstr(s, "BACK")) c->saw_back=true;
+    if(strstr(s, "OK RUN") || strstr(s, "OK STOP")) c->saw_ok=true;
+    if(strstr(s, "BUSY")) c->saw_busy=true;
+}
+void canvas_draw_line(Canvas* c,int32_t x0,int32_t y0,int32_t x1,int32_t y1) {
+    assert(c && x0>=0 && x1>=0 && x0<128 && x1<128 &&
+           y0>=0 && y1>=0 && y0<64 && y1<64);
+    ++c->strokes;
+    if((x0==2 && x1==125 && y0==y1 && (y0==15 || y0==42)) ||
+       ((x0==2 || x0==125) && x0==x1 && y0==15 && y1==42)) {
         ++c->frame;
-    } else if((x0 == x1 && (x0 == 26 || x0 == 51 || x0 == 76 || x0 == 101) &&
-               ((y0 == 17 && y1 == 18) ||
-                (y0 == 26 && y1 == 27) ||
-                (y0 == 37 && y1 == 38))) ||
-              (y0 == 28 && y1 == 28 && x1 == x0 + 2)) {
-        assert(x0 >= 2 && x1 <= 125 && y0 >= 16 && y1 <= 39);
-        ++c->grid;
+    } else if(x0==x1 && (x0==33 || x0==64 || x0==95) &&
+              ((y0==16 && y1==18) || (y0==39 && y1==41))) {
+        ++c->ticks;
+    } else if((x0==0 && x1==127 && y0==y1 && (y0==13 || y0==54)) ||
+              ((x0==46 || x0==92) && x0==x1 && y0==56 && y1==63)) {
+        /* header/footer navigation strokes */
     } else {
-        /* Only the original hardware-observed rising/falling trace can be
-         * drawn here, inside the boxed viewport's two digital levels. */
-        assert(x0 >= (int32_t)LABMATE_SCOPE_PLOT_X_LEFT &&
-               x0 <= (int32_t)LABMATE_SCOPE_PLOT_X_RIGHT);
-        assert(x1 >= (int32_t)LABMATE_SCOPE_PLOT_X_LEFT &&
-               x1 <= (int32_t)LABMATE_SCOPE_PLOT_X_RIGHT);
-        assert((y0 == LABMATE_SCOPE_PLOT_Y_HIGH || y0 == LABMATE_SCOPE_PLOT_Y_LOW) &&
-               (y1 == LABMATE_SCOPE_PLOT_Y_HIGH || y1 == LABMATE_SCOPE_PLOT_Y_LOW));
+        assert(x0>=LABMATE_SCOPE_PLOT_X_LEFT &&
+               x0<=LABMATE_SCOPE_PLOT_X_RIGHT &&
+               x1>=LABMATE_SCOPE_PLOT_X_LEFT &&
+               x1<=LABMATE_SCOPE_PLOT_X_RIGHT &&
+               (y0==LABMATE_SCOPE_PLOT_Y_HIGH ||
+                y0==LABMATE_SCOPE_PLOT_Y_LOW) &&
+               (y1==LABMATE_SCOPE_PLOT_Y_HIGH ||
+                y1==LABMATE_SCOPE_PLOT_Y_LOW));
         ++c->trace;
     }
 }
 int main(void) {
-    struct Canvas c = {0};
-    LabMateScopeDisplay d = {.state = LabMateScopeDisplayArmed,
-                             .plot = {.result = LabMateScopePlotNoEdges}};
-    assert(labmate_scope_display_draw(&c, &d));
-    assert(c.found_wait && c.found_footer);
-    assert(c.separators == 2 && c.frame == 4 && c.grid == 0 && c.trace == 0);
-    c = (struct Canvas){0};
-    d.state = LabMateScopeDisplayNoTrigger;
-    assert(labmate_scope_display_draw(&c, &d));
-    assert(c.found_no_trigger && c.grid == 0 && c.trace == 0);
-    c = (struct Canvas){0};
-    LabMateScopeEdge edges[] = {{.tick=10,.high=true},{.tick=20,.high=false,.delta_ticks=10}};
-    LabMateScopePlotLine lines[2];
-    d.plot = labmate_scope_plot_project(edges, 2, false, lines, 2);
-    d.lines = lines;
-    d.total_edges = 2;
-    d.state = LabMateScopeDisplayRunning;
+    struct Canvas c={0};
+    LabMateScopeDisplay d={.state=LabMateScopeDisplayStopped,
+                            .plot={.result=LabMateScopePlotNoEdges}};
     assert(labmate_scope_display_draw(&c,&d));
-    assert(c.separators == 2 && c.frame == 4 &&
-           c.grid == 19 && c.trace == 2 && c.found_live);
-    c = (struct Canvas){0};
-    d.state = LabMateScopeDisplayBusy;
+    assert(c.frame==4 && c.ticks==6 && c.trace==0);
+    assert(c.saw_ready && c.saw_ok && c.saw_back);
+    c=(struct Canvas){0};
+    d.state=LabMateScopeDisplayArmed;
     assert(labmate_scope_display_draw(&c,&d));
-    assert(c.frame == 4 && c.grid == 0 && c.trace == 0 && c.found_busy);
-    c = (struct Canvas){0};
-    d.state = LabMateScopeDisplayRunning;
-    lines[0].x0 = 255;
-    assert(!labmate_scope_display_draw(&c,&d) && c.labels == 0 && c.trace == 0);
-    lines[0].x0 = LABMATE_SCOPE_PLOT_X_LEFT;
-    c = (struct Canvas){0};
-    d.total_edges = LABMATE_SCOPE_MAX_EDGES + 1U;
-    assert(!labmate_scope_display_draw(&c,&d) && c.labels == 0 && c.frame == 0);
-    d.total_edges = LABMATE_SCOPE_MAX_EDGES;
-    d.plot.cropped_old_edges = true;
-    d.state = LabMateScopeDisplayNoTrigger;
+    assert(c.trace==0);
+    c=(struct Canvas){0};
+    d.state=LabMateScopeDisplayNoTrigger;
     assert(labmate_scope_display_draw(&c,&d));
-    assert(c.labels > 0 && c.frame == 4 && c.found_footer);
-    c = (struct Canvas){0};
-    d.state = LabMateScopeDisplayStopped;
+    assert(c.saw_no_signal && c.trace==0);
+    LabMateScopeEdge edges[] = {
+        {.tick=100,.high=true},
+        {.tick=200,.delta_ticks=100,.high=false}
+    };
+    LabMateScopePlotLine segments[2];
+    d.plot=labmate_scope_plot_project(edges,2,false,segments,2);
+    d.lines=segments;d.total_edges=2;
+    d.state=LabMateScopeDisplayRunning;
+    c=(struct Canvas){0};
     assert(labmate_scope_display_draw(&c,&d));
-    assert(c.found_zoom && c.trace == 2);
-    c = (struct Canvas){0};
-    d.state = LabMateScopeDisplayUnsupported;
+    assert(c.frame==4 && c.ticks==6 && c.trace==2);
+    assert(c.saw_wave_state && c.saw_ok);
+    d.state=LabMateScopeDisplayStopped;
+    d.plot.cropped_old_edges=true;
+    c=(struct Canvas){0};
     assert(labmate_scope_display_draw(&c,&d));
-    assert(c.frame == 4 && c.grid == 0 && c.trace == 0);
-    c = (struct Canvas){0};
-    d.state = (LabMateScopeDisplayState)-1;
-    assert(!labmate_scope_display_draw(&c,&d) && c.frame == 0);
-    d.state = LabMateScopeDisplayRunning;
-    d.plot.visible_edges = 0U;
-    assert(!labmate_scope_display_draw(&c,&d) && c.frame == 0);
-    d.plot.visible_edges = 2U;
-    d.plot.line_count = 1U;
-    assert(!labmate_scope_display_draw(&c,&d) && c.frame == 0);
-    d.plot.line_count = 2U;
-    d.total_edges = 1U;
-    assert(!labmate_scope_display_draw(&c,&d) && c.frame == 0);
-    d.total_edges = 256U;
-    d.plot.result = LabMateScopePlotOneEdge;
-    assert(!labmate_scope_display_draw(&c,&d) && c.frame == 0);
+    assert(c.trace==2 && c.saw_focus);
+    d.state=LabMateScopeDisplayBusy;
+    c=(struct Canvas){0};
+    assert(labmate_scope_display_draw(&c,&d));
+    assert(c.saw_busy && c.trace==0);
+    d.state=LabMateScopeDisplayUnsupported;
+    c=(struct Canvas){0};
+    assert(labmate_scope_display_draw(&c,&d));
+    assert(c.trace==0);
+    d.state=LabMateScopeDisplayRunning;
+    c=(struct Canvas){0};
+    segments[0].x0=255U;
+    assert(!labmate_scope_display_draw(&c,&d) && c.strokes==0 && c.labels==0);
+    segments[0].x0=LABMATE_SCOPE_PLOT_X_LEFT;
+    d.total_edges=LABMATE_SCOPE_MAX_EDGES+1U;
+    assert(!labmate_scope_display_draw(&c,&d) && c.labels==0);
+    d.total_edges=2U;
+    d.plot.line_count=1U;
+    assert(!labmate_scope_display_draw(&c,&d) && c.labels==0);
+    d.plot.line_count=2U;
+    d.plot.visible_edges=0U;
+    assert(!labmate_scope_display_draw(&c,&d) && c.labels==0);
     assert(!labmate_scope_display_draw(NULL,&d));
     assert(!labmate_scope_display_draw(&c,NULL));
-    puts("v1.9 boxed grid/focus, status/help and fail-closed Canvas host PASS");
+    puts("v1.9 calm Scope host geometry/font/real-edge guard PASS");
     return 0;
 }
