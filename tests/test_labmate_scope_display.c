@@ -20,6 +20,8 @@ struct Canvas {
     bool saw_back;
     bool saw_ok;
     bool saw_busy;
+    bool saw_active;
+    bool saw_page_hint;
     Rect text[32];
 };
 
@@ -50,6 +52,8 @@ void canvas_draw_str(Canvas* c, int32_t x, int32_t y, const char* s) {
     if(strstr(s, "BACK")) c->saw_back=true;
     if(strstr(s, "OK RUN") || strstr(s, "OK STOP")) c->saw_ok=true;
     if(strstr(s, "BUSY")) c->saw_busy=true;
+    if(strstr(s, "ACTIVE")) c->saw_active=true;
+    if(strstr(s, "v PAGE")) c->saw_page_hint=true;
 }
 void canvas_draw_line(Canvas* c,int32_t x0,int32_t y0,int32_t x1,int32_t y1) {
     assert(c && x0>=0 && x1>=0 && x0<128 && x1<128 &&
@@ -84,7 +88,7 @@ int main(void) {
                             .plot={.result=LabMateScopePlotNoEdges}};
     assert(labmate_scope_display_draw(&c,&d));
     assert(c.frame==4 && c.ticks==6 && c.trace==0);
-    assert(c.saw_ready && c.saw_ok && c.saw_back);
+    assert(c.saw_ready && c.saw_ok && c.saw_back && c.saw_page_hint);
     c=(struct Canvas){0};
     d.state=LabMateScopeDisplayArmed;
     assert(labmate_scope_display_draw(&c,&d));
@@ -104,7 +108,8 @@ int main(void) {
     c=(struct Canvas){0};
     assert(labmate_scope_display_draw(&c,&d));
     assert(c.frame==4 && c.ticks==13 && c.trace==2);
-    assert(c.saw_wave_state && c.saw_ok);
+    assert(c.saw_wave_state && c.saw_ok && c.saw_active);
+    assert(!c.saw_page_hint);
     d.state=LabMateScopeDisplayStopped;
     d.plot.cropped_old_edges=true;
     c=(struct Canvas){0};
