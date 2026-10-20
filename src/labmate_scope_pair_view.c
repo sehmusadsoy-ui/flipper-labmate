@@ -169,10 +169,14 @@ bool labmate_scope_pair_view_draw(Canvas* c, const LabMateScopePair* p,
         }
         footer(c, "^ NEXT");
     } else if(!p->has_a) {
-        label(c, FontPrimary, 15, 30, "SAVE A FIRST");
-        label(c, FontSecondary, 7, 42, "Run Scope, then stop");
-        label(c, FontSecondary, 22, 51,
-              last_valid ? "LEFT: save A now" : "LEFT: save A");
+        /* Empty slots communicate the A/B concept without a wall of help. */
+        canvas_draw_line(c, 63, 17, 63, 42);
+        label(c, FontPrimary, 24, 28, "A");
+        label(c, FontPrimary, 87, 28, "B");
+        label(c, FontSecondary, 24, 40, "--");
+        label(c, FontSecondary, 87, 40, "--");
+        label(c, FontSecondary, 11, 51,
+              last_valid ? "LEFT: save A now" : "Run, stop, save A");
         footer(c, last_valid ? "< SAVE" : "OK RUN");
     } else {
         measured_row(c, 22, 'A', p->a.truncated, a_freq, a_duty);
