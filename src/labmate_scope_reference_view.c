@@ -7,7 +7,7 @@
 static const char* verdict_text(LabMateScopeVerdict v) {
     switch(v) {
     case LabMateScopeVerdictPass: return "PASS";
-    case LabMateScopeVerdictOutOfTolerance: return "OUT OF RANGE";
+    case LabMateScopeVerdictOutOfTolerance: return "FAIL";
     case LabMateScopeVerdictNoSignal: return "NO SIGNAL";
     case LabMateScopeVerdictBusy: return "BUSY";
     case LabMateScopeVerdictInvalid:
