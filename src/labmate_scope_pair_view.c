@@ -140,7 +140,7 @@ bool labmate_scope_pair_view_draw(Canvas* c, const LabMateScopePair* p,
        strlen(d_freq) > 11U || strlen(d_duty) > 9U)
         return false;
     for(uint8_t i = 0U; i < 4U; ++i)
-        if(strlen(times[i]) > 17U) return false;
+        if(strlen(times[i]) > 9U) return false; /* right-hand column */
 
     const bool partial = (p->has_a && p->a.truncated) ||
                          (p->has_b && p->b.truncated);
