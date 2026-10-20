@@ -1023,7 +1023,7 @@ void draw_logger(Canvas* canvas, LabMateApp* app) {
 
     if(app->logger_busy) {
         canvas_draw_line(canvas, 0, 52, 127, 52);
-        canvas_draw_str(canvas, 7, 62, "SD BUSY - PLEASE WAIT");
+        canvas_draw_str(canvas, 7, 62, "SD BUSY - WAIT");
     } else if(app->logger_recording) {
         ui_footer_pair(canvas, "OK", "STOP", "BACK", "SAVE");
     } else {
