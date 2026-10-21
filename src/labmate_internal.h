@@ -160,6 +160,10 @@ typedef struct {
     uint32_t counter_start_tick; /* tick at beginning of current RUN segment */
     uint64_t counter_elapsed_ticks; /* completed RUN segments; STOP time excluded */
     uint32_t counter_elapsed_seconds;
+    /* Bound each TIM2 RUN to one actual release-backed dashboard sample. */
+    uint32_t counter_run_generation;
+    uint32_t counter_run_tick_hz;
+    uint64_t counter_run_start_total;
 
     /* Button Analyzer: ISR raw edges + app-thread debounced snapshot.
      * PC1 EXTI1 with internal pull-up, LOW = pressed contact.

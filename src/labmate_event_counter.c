@@ -2,6 +2,7 @@
 
 #include "labmate_capture_core.h"
 #include "labmate_counter_math.h"
+#include "labmate_dashboard_store.h"
 #include "labmate_frequency_tim2.h"
 #include "labmate_resource_policy.h"
 #include <furi.h>
@@ -27,6 +28,13 @@ void labmate_event_counter_start(LabMateApp* app) {
     app->capture_pin_index = app->gpio_index;
     app->capture_owner = LabMateCaptureCounter;
     labmate_frequency_tim2_enable();
+    if(app->counter_run_generation != UINT32_MAX)
+        ++app->counter_run_generation;
+    else app->counter_run_generation = 0U; /* no ambiguous reused generation */
+    app->counter_run_tick_hz = furi_kernel_get_tick_frequency();
+    app->counter_run_start_total = app->counter_total;
+    labmate_dashboard_store_clear_source(
+        &app->doctor_store, LabMateSnapshotCounter);
 }
 
 void labmate_event_counter_poll(LabMateApp* app) {
@@ -88,6 +96,41 @@ void labmate_event_counter_stop(LabMateApp* app) {
         app->capture_owner =
             labmate_capture_owner_after_stop(app->capture_owner, LabMateCaptureCounter);
         app->capture_pin_index = GPIO_COUNT;
+
+        /* Real hardware stopped and both native lease/owner released.
+         * A 64-bit cumulative software count is not a single RUN: emit
+         * only the delta since this native START; never infer zero-signal.
+         */
+        const uint32_t end_tick = furi_get_tick();
+        const uint32_t hz = furi_kernel_get_tick_frequency();
+        if(hz && hz == app->counter_run_tick_hz &&
+           end_tick > app->counter_start_tick &&
+           app->counter_run_generation != 0U &&
+           app->counter_total >= app->counter_run_start_total) {
+            const uint64_t delta = app->counter_total - app->counter_run_start_total;
+            const uint64_t start_ms =
+                ((uint64_t)app->counter_start_tick * 1000U) / hz;
+            const uint64_t end_ms = ((uint64_t)end_tick * 1000U) / hz;
+            if(start_ms && end_ms <= UINT32_MAX && end_ms > start_ms) {
+                LabMateSnapshotV1 s = {0};
+                s.schema_version = LABMATE_SNAPSHOT_VERSION;
+                s.source = LabMateSnapshotCounter;
+                s.pin_index = 4U; /* verified PB3 TIM2 input */
+                s.capture_generation = app->counter_run_generation;
+                s.observation_start_ms = (uint32_t)start_ms;
+                s.observation_end_ms = (uint32_t)end_ms;
+                s.timebase_hz = hz;
+                s.ownership_released = true;
+                if(delta == 0U) s.quality = LabMateSnapshotInsufficient;
+                else if(delta > UINT32_MAX) s.quality = LabMateSnapshotOverflow;
+                else {
+                    s.quality = LabMateSnapshotValid;
+                    s.valid_sample_count = (uint32_t)delta;
+                    s.observed_edge_count = (uint32_t)delta;
+                }
+                (void)labmate_dashboard_store_ingest(&app->doctor_store, &s);
+            }
+        }
     }
 }
 
