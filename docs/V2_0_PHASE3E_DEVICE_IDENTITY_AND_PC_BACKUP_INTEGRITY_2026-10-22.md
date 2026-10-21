@@ -193,3 +193,16 @@ The owner separately replied **"pnaylıyorum"** to a direct request for permissi
 Permitted scope: launch exact sidecar `/ext/apps/Tools/labmate-v20-phase3d-trial.fap` via a path-explicit loader; inspect root menu, MEASURE→Signal Doctor, source/reference controls and initial SET REF FIRST / NO SEALED DATA behavior; navigate BACK and exit. No GPIO/PWM/Logger/Profiles operation, capture/IRQ hardware manipulation, firmware install/flash, new SD file transfer, rename/delete or implicit consent for later metrology tests. Shared `appid=labmate` and data-root remains a known caveat; avoid all data-writing screens.
 
 **Device launch and visible UI results are STILL PENDING**. The current owner approval is recorded as permission only, NOT PASS evidence. If launch fails, shows an unexpected version/menu, hangs, resets or creates a concerning state, STOP without retries.
+
+
+## Phase3E T01 initial user observation — duplicate v1.9DEV label (unresolved identity)
+
+After explicit authorization for an initial UI-only launch, the owner entered:
+
+```text
+loader open /ext/apps/Tools/labmate-v20-phase3d-trial.fap
+```
+
+Owner reported: the app opened, the Tools menu now shows two LabMate entries, and both display `v1.9DEV`. This does **not** establish that the new binary failed to launch: the development source intentionally leaves both `src/labmate_internal.h` `LABMATE_VERSION_TEXT "v1.9DEV"` and `application.fam` `fap_version="1.9"`, and the menu app name/ID is identical. As an acceptance discriminator, the actual Phase3D binary includes `Signal Doctor` in MEASURE and About's `16 tool guides`, whereas the previously installed app shows 15 tool guides. No T01/T02/T03 GUI PASS was supplied yet.
+
+**Next authorized UI-only observation**: with the path-launched app open, inspect MEASURE for Signal Doctor and About for 16 guides; then BACK/EXIT. Do not issue more upload/rename/delete, metrology, firmware update or data writes. If both discriminators are missing, capture original CLI loader response and screenshot, classify T01 as FAIL, and pause troubleshooting without assuming either app path was run.
