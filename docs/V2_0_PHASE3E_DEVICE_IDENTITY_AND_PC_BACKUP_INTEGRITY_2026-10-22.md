@@ -141,3 +141,19 @@ In this conversation, following PC trial-copy SHA-256 PASS and read-only device 
 
 **Do not claim actual upload or device test PASS until the owner provides the results.** After the GUI file transfer, independently verify new target `storage stat` is 115104 bytes and its on-device MD5 matches the candidate PC copy. Check old `labmate.fap` stays 101468 bytes and MD5 `066f017c695bb5a17158a7b26c8f4838`. Device upload/verification currently **PENDING**.
 
+
+## Owner-prepared Phase3D PC candidate: last pre-upload MD5 and SHA256 PASS
+
+Owner ran `stat`, `md5sum`, `sha256sum` in WSL on the PC-only copy before carrying out the approved single new-file upload:
+
+```text
+SIZE: PASS
+PC MD5:
+7333aea05d157e915ee5a9c4de0a2296  .../labmate-v20-phase3d-trial.fap
+PC SHA256:
+53afa54b70b77d53b5728ab915b10b278a25c3a21f6caf93eb261aa35a68b737  .../labmate-v20-phase3d-trial.fap
+```
+
+**Pinned candidate on-PC:** 115104 bytes, MD5 `7333aea05d157e915ee5a9c4de0a2296`, SHA256 `53afa54b70b77d53b5728ab915b10b278a25c3a21f6caf93eb261aa35a68b737`. This is a local file verification ONLY, not a claim that the device now contains it.
+
+**After separately approved qFlipper one-file upload:** independent Flipper CLI `storage stat` and `storage md5` must show the candidate path `/ext/apps/Tools/labmate-v20-phase3d-trial.fap` as size 115104 and MD5 `7333aea05d157e915ee5a9c4de0a2296`. The old `/ext/apps/Tools/labmate.fap` must remain size 101468 and MD5 `066f017c695bb5a17158a7b26c8f4838`. Abort on any mismatch; no retries, overwrites, deletes, renames, firmware flash or app launch. Device transfer and post-transfer readback are **PENDING** until owner provides their results.
