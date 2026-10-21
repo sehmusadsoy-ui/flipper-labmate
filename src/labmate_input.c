@@ -61,6 +61,21 @@ void labmate_input_dispatch(LabMateApp* app, FuriStatus status,
     case LabMateScreenI2c:
         labmate_input_i2c(app, event, work);
         break;
+    case LabMateScreenDashboard:
+        /* No ISR, storage or native resource acquisition in read-only dashboard. */
+        if(event.key == InputKeyBack) app->screen = LabMateScreenMenu;
+        else if(event.key == InputKeyOk)
+            app->dashboard_details = !app->dashboard_details;
+        else if(event.key == InputKeyUp)
+            app->dashboard_source = (uint8_t)(
+                (app->dashboard_source + LabMateSnapshotSourceCount - 1U) %
+                LabMateSnapshotSourceCount);
+        else if(event.key == InputKeyDown)
+            app->dashboard_source = (uint8_t)(
+                (app->dashboard_source + 1U) % LabMateSnapshotSourceCount);
+        else if(event.key == InputKeyLeft || event.key == InputKeyRight)
+            app->dashboard_source = app->dashboard_source < 3U ? 3U : 0U;
+        break;
     case LabMateScreenDoctor:
         /* UI mutex is already held; no ISR, HAL, SD or capture operations. */
         if(event.key == InputKeyBack) app->screen = LabMateScreenMenu;
