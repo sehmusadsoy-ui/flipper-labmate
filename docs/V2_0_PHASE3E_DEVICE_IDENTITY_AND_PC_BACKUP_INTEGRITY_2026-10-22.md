@@ -221,3 +221,21 @@ Owner confirmed on the physical Flipper after the path-specific trial launch:
 **Outstanding v2.0 commitments:** change manifest and About version coherently to `v2.0DEV` in a future separately built artifact (current candidate SHA must remain pinned); complete consistent polished UI across tools, not merely add the Doctor screen; run geometry and on-device screenshot review. **Visual design acceptance remains PENDING/NOT MET.** No current device file changes authorized beyond the already completed one-file sidecar upload. No firmware flash.
 
 **Next authorized observation:** open the already running Signal Doctor page, inspect initial `SET REF FIRST`, reference controls and second page without using measuring/generator/logger/profile hardware/data operations. Close with BACK. If unexpected display or glitch, capture screen and STOP.
+
+
+## Phase3E T02 — physical 128x64 Doctor screen screenshots: operational navigation, visual FAIL
+
+Owner uploaded **two Flipper LCD screenshots** from the path-launched Phase3D 115104-byte sidecar FAP. Observations:
+- `DOCTOR` header, `1/2` badge, `SRC FREQ`, `REF 0Hz x1` and `F TOL 5.0%` visible.
+- First screenshot highlights `SRC`, second highlights `REF` after right navigation. **Field selection works** in this limited observation.
+- Bottom advisory `SET REF FIRST` is visibly crossed by the horizontal footer rule. This is a **confirmed UI geometry FAIL**: older production `src/labmate_doctor_screen.c` had status text baseline **y=52**, and shared `src/labmate_ui_layout.h` uses `LABMATE_UI_FOOTER_RULE_Y=52`.
+- No `100Hz` reference or `NO SEALED DATA` result appears in these two screenshots, so **T03 is PENDING**.
+- On-device `2/2` page, BACK/exit and all capture metrology are also still pending from these specific screenshots.
+
+**Source corrective action** in commit `e11192a18e5b47713a37c0281fc821a6780afd23` on **development branch only**:
+- New `src/labmate_doctor_layout.h` centralizes safe 128x64 row baselines **22,31,40**, status baseline **50**, and checks relation to the unchanged y=52 shared footer divider.
+- `src/labmate_doctor_screen.c` uses the constants for both pages and status; no evaluator, HAL, IRQ, SD, capture or input logic changed.
+- Added `tests/test_v20_doctor_layout.c` layout/status regression, run by `scripts/test-v20-phase3b-doctor-panel-host.sh` under GCC and Clang in the next full host gate.
+- Corrected the **NEXT candidate** source label to `v2.0DEV` and manifest `fap_version="2.0"`, updating E11 source preflight, native verifier and compile-only CI version assertions accordingly.
+
+**Strict acceptance boundary:** This commit changes the GitHub source, NOT the already installed/trusted Phase3D FAP (115104 bytes; SHA-256 `53afa54b70b77d53b5728ab915b10b278a25c3a21f6caf93eb261aa35a68b737`). No new E11 FAP/host runtime results yet for the corrected source. Do not falsely carry forward the old PASS/hash or claim the physical UI is fixed. Any new FAP upload or app launch requires a fresh scoped procedure/consent. Global v2.0 UI redesign remains outstanding; this targeted change only repairs the demonstrated footer collision and version identity.
