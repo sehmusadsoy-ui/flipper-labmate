@@ -8,6 +8,8 @@ trap 'rm -rf -- "$tmp"' EXIT HUP INT TERM
 low="$root/src/labmate_frequency_capture.c"
 pulse="$root/src/labmate_pulse_capture.c"
 session="$root/src/labmate_capture_session.c"
+button="$root/src/labmate_button_capture.c"
+counter="$root/src/labmate_event_counter.c"
 test -f "$root/src/labmate_capture_release_gate.h"
 grep -Fq 'bool labmate_frequency_low_lease_pending(void)' "$low"
 grep -Fq 'bool labmate_pulse_lease_pending(void)' "$pulse"
@@ -16,6 +18,8 @@ grep -Fq '.frequency_low_lease_pending = labmate_frequency_low_lease_pending()' 
 grep -Fq '.frequency_high_lease_pending = labmate_frequency_tim2_lease_pending()' "$session"
 grep -Fq '.pulse_lease_pending = labmate_pulse_lease_pending()' "$session"
 grep -Fq '.release_fault = app->capture_release_fault' "$session"
+grep -Fq '.button_lease_pending = labmate_button_lease_pending()' "$session"
+grep -Fq 'bool labmate_button_lease_pending(void)' "$button"
 # Verify ownership remains until the firmware release outcome is known.
 awk '/^void labmate_frequency_low_stop[(]/ {on=1} /^bool labmate_frequency_low_lease_pending[(]/ {on=0} on {print}' "$low" > "$tmp/low.inc"
 awk '/^void labmate_pulse_capture_stop[(]/ {on=1} /^bool labmate_pulse_lease_pending[(]/ {on=0} on {print}' "$pulse" > "$tmp/pulse.inc"
@@ -29,11 +33,14 @@ for path in "$tmp/low.inc" "$tmp/pulse.inc"; do
   ' "$path"
 done
 grep -Fq 'if(!lease_pending && app->capture_owner == LabMateCaptureFrequencyHigh)' "$tmp/high.inc"
+grep -Fq 'if(!lease_pending && healthy && !app->capture_release_fault &&' "$tmp/counter_stop.inc"
 # Exact function bodies, not a reimplementation of GPIO/TIM2 teardown:
 awk '/^void labmate_frequency_high_stop[(]/ {on=1} on {print; if($0=="}") exit}' "$low" > "$tmp/high_stop.inc"
 awk '/^void labmate_frequency_low_stop[(]/ {on=1} on {print; if($0=="}") exit}' "$low" > "$tmp/low_stop.inc"
 awk '/^void labmate_pulse_capture_stop[(]/ {on=1} on {print; if($0=="}") exit}' "$pulse" > "$tmp/pulse_stop.inc"
-for part in "$tmp/high_stop.inc" "$tmp/low_stop.inc" "$tmp/pulse_stop.inc"; do
+awk '/^void labmate_event_counter_stop[(]/ {on=1} on {print; if($0=="}") exit}' "$counter" > "$tmp/counter_stop.inc"
+awk '/^void labmate_button_capture_stop[(]/ {on=1} on {print; if($0=="}") exit}' "$button" > "$tmp/button_stop.inc"
+for part in "$tmp/high_stop.inc" "$tmp/low_stop.inc" "$tmp/pulse_stop.inc" "$tmp/counter_stop.inc" "$tmp/button_stop.inc"; do
   test -s "$part"
 done
 awk '
@@ -51,5 +58,9 @@ for cc in gcc clang; do
     -fsanitize=address,undefined -fno-omit-frame-pointer \
     -I"$tmp" "$root/tests/test_v20_phase2k_native_stop.c" -o "$tmp/native-$cc"
   "$tmp/native-$cc"
+  "$cc" -std=c11 -O1 -g -Wall -Wextra -Werror -pedantic \
+    -fsanitize=address,undefined -fno-omit-frame-pointer \
+    -I"$tmp" "$root/tests/test_v20_phase2k_button_counter.c" -o "$tmp/button-counter-$cc"
+  "$tmp/button-counter-$cc"
 done
 printf '%s\n' 'Phase2K source-linked STOP native-lease gate PASS (host only)'
