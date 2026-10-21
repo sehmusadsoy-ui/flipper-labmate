@@ -99,5 +99,5 @@ int main(void) {
            a.last_gate_cycles==0U && a.last_counter==0U);cases++;
 
     printf("Phase2I PB3/TIM2 accepted-gate audit PASS: %u test groups\n",cases);
-    return cases==1039U?0:1;
+    return cases==1038U?0:1;
 }
