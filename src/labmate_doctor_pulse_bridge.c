@@ -40,6 +40,21 @@ void labmate_doctor_pulse_started(LabMateApp* app) {
            app->capture_pin_index, ms, clock, true)) return;
     app->doctor_pulse_start_tick = now;
     app->doctor_pulse_tick_hz = hz;
+    app->doctor_pulse_seen_pairs = 0U;
+    app->doctor_pulse_last_pair_poll_tick = 0U;
+}
+
+/* App-thread only: monitor freshly increased paired IRQ publication IDs
+ * copied coherently by measurement_update(). No redraw-time inference.
+ */
+void labmate_doctor_pulse_observe_poll(LabMateApp* app) {
+    if(!app || app->screen != LabMateScreenPulse || app->hold ||
+       !app->pulse_irq_active || app->capture_owner != LabMateCapturePulse ||
+       app->doctor_pulse_session.state != LabMateEvidenceCapturing) return;
+    const LabMatePulsePairObservation* pair = &app->pulse_pair_last_observation;
+    if(pair->exhausted || pair->pairs <= app->doctor_pulse_seen_pairs) return;
+    app->doctor_pulse_seen_pairs = pair->pairs;
+    app->doctor_pulse_last_pair_poll_tick = furi_get_tick();
 }
 
 void labmate_doctor_pulse_prepare_stop(LabMateApp* app) {
@@ -55,6 +70,8 @@ void labmate_doctor_pulse_prepare_stop(LabMateApp* app) {
     c.irq_active = app->pulse_irq_active;
     c.native_owner_confirmed = app->capture_owner == LabMateCapturePulse;
     FURI_CRITICAL_EXIT();
+    c.observed_pair_count = app->doctor_pulse_seen_pairs;
+    c.last_pair_poll_tick = app->doctor_pulse_last_pair_poll_tick;
     c.start_tick = app->doctor_pulse_start_tick;
     c.start_tick_hz = app->doctor_pulse_tick_hz;
     c.start_clock_hz = app->doctor_pulse_session.evidence.timebase_hz;

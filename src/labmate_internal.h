@@ -311,6 +311,11 @@ typedef struct {
     LabMateEvidenceSession doctor_pulse_session;
     uint32_t doctor_pulse_start_tick;
     uint32_t doctor_pulse_tick_hz;
+    /* Last genuine fresh native paired publication observed by app polling.
+     * Increment is from IRQ audit, timestamp is NOT inferred from redraw.
+     */
+    uint32_t doctor_pulse_seen_pairs;
+    uint32_t doctor_pulse_last_pair_poll_tick;
 
     LabMateUart uart; /* USART external GPIO 13/14, no TIM1/TIM2 ownership */
     LabMateCommOwner comm_owner; /* local exclusive I2C/1Wire sessions */

@@ -10,6 +10,8 @@ typedef struct {
     uint32_t start_tick;
     uint32_t stop_tick;
     uint32_t last_edge_tick;
+    uint32_t last_pair_poll_tick; /* app observed NEW paired IRQ publication */
+    uint32_t observed_pair_count;
     uint32_t start_tick_hz;
     uint32_t stop_tick_hz;
     uint32_t start_clock_hz;

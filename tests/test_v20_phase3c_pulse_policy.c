@@ -6,6 +6,7 @@ static LabMateDoctorPulseCandidate good(void) {
     return (LabMateDoctorPulseCandidate){
         .pair={.pairs=3,.edges=20,.high_cycles=32000,.low_cycles=32000},
         .start_tick=100,.stop_tick=200,.last_edge_tick=199,
+        .observed_pair_count=3,.last_pair_poll_tick=197,
         .start_tick_hz=1000,.stop_tick_hz=1000,
         .start_clock_hz=64000000,.stop_clock_hz=64000000,
         .native_owner_confirmed=true,.irq_active=true,.timebase_enabled=true
@@ -25,7 +26,12 @@ int main(void) {
     c=good();c.stop_tick=c.start_tick;assert(!labmate_doctor_pulse_policy_accept(&c));n++;
     c=good();c.last_edge_tick=201;assert(!labmate_doctor_pulse_policy_accept(&c));n++;
     c=good();c.last_edge_tick=99;assert(!labmate_doctor_pulse_policy_accept(&c));n++;
+    c=good();c.observed_pair_count=2;assert(!labmate_doctor_pulse_policy_accept(&c));n++;
+    c=good();c.last_pair_poll_tick=99;assert(!labmate_doctor_pulse_policy_accept(&c));n++;
+    c=good();c.last_pair_poll_tick=201;assert(!labmate_doctor_pulse_policy_accept(&c));n++;
     c=good();c.stop_tick=1000;assert(!labmate_doctor_pulse_policy_accept(&c));n++;
+    c=good();c.stop_tick=800;c.last_edge_tick=799;
+    assert(!labmate_doctor_pulse_policy_accept(&c));n++;
     c=good();c.stop_tick=350000;assert(!labmate_doctor_pulse_policy_accept(&c));n++;
     c=good();c.pair.exhausted=true;assert(!labmate_doctor_pulse_policy_accept(&c));n++;
     c=good();c.pair.pairs=0;assert(!labmate_doctor_pulse_policy_accept(&c));n++;
@@ -37,5 +43,5 @@ int main(void) {
     assert(!labmate_doctor_pulse_policy_accept(&c));n++;
     c=good();assert(!labmate_doctor_pulse_policy_accept(NULL));n++;
     printf("PHASE3C PULSE STOP POLICY PASS: %u acceptance/rejection gates\n",n);
-    return n == 20U ? 0 : 1;
+    return n == 24U ? 0 : 1;
 }
