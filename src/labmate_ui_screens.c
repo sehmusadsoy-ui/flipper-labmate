@@ -141,7 +141,7 @@ static const LabMateHelpPage labmate_help[LabMateToolCount] = {
         "Open or delete one", "UD FILE LR MODE OK",
     },
     [LabMateToolAbout] = {
-        "ABOUT / GUIDE", "17 pages, 15 tools",
+        "ABOUT / GUIDE", "18 pages, 16 tools",
         "3.3V GPIO only", "<> PAGE  BK EXIT",
     },
     [LabMateToolProfiles] = {
