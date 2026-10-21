@@ -204,16 +204,15 @@ void draw_about(Canvas* canvas, LabMateApp* app) {
         canvas_draw_str(canvas, 3, 23, "Source / releases:");
         canvas_draw_str(canvas, 3, 33, "github.com/");
         canvas_draw_str(canvas, 3, 43, "sehmusadsoy-ui/");
-        canvas_draw_str(canvas, 3, 51, "flipper-labmate");
+        canvas_draw_str(canvas, 3, 50, "flipper-labmate");
     } else {
         const LabMateHelpPage* help = &labmate_help[page - 2U];
         canvas_draw_str(canvas, 3, 23, help->purpose);
         canvas_draw_str(canvas, 3, 33, help->input);
         canvas_draw_str(canvas, 3, 43, help->method);
-        canvas_draw_str(canvas, 3, 51, help->control);
+        canvas_draw_str(canvas, 3, 50, help->control);
     }
-    canvas_draw_line(canvas, 0, 53, 127, 53);
-    canvas_draw_str(canvas, 3, 62, "<> PAGE   BK MENU");
+    ui_footer_pair(canvas,"<>","PAGE","BACK","MENU");
 }
 
 void draw_history(Canvas* canvas, LabMateApp* app) {
@@ -351,11 +350,12 @@ void draw_menu(Canvas* canvas, LabMateApp* app) {
     /* The root lists categories; each child group lists its original tools.
      * No hardware state changes when navigating between menu levels.
      */
-    canvas_set_font(canvas, FontPrimary);
-    canvas_draw_str(canvas, 2, 10,
-                    inside ? labmate_nav_group_title(app->menu_group) : "LABMATE");
+    /* The Ultimate launcher uses the same chrome as every instrument;
+     * the 8-character title ends at x=66, ahead of the version badge.
+     */
+    ui_draw_header(canvas,
+        inside ? labmate_nav_group_title(app->menu_group) : "ULTIMATE");
     ui_badge(canvas, 70, 1, 56, LABMATE_VERSION_TEXT, false);
-    canvas_draw_line(canvas, 0, 13, 127, 13);
 
     /* In three-item groups, always keep every row visible (no blank slot). */
     const uint8_t first = labmate_nav_first_visible(selected, count, 3U);
@@ -379,14 +379,8 @@ void draw_menu(Canvas* canvas, LabMateApp* app) {
         if(index == selected) canvas_set_color(canvas, ColorBlack);
     }
 
-    canvas_draw_line(canvas, 0, 52, 127, 52);
-    if(inside) {
-        ui_key(canvas, 2, "BK", "ROOT");
-        ui_key(canvas, 70, "OK", "OPEN");
-    } else {
-        ui_key(canvas, 2, "^v", "MOVE");
-        ui_key(canvas, 70, "OK", "OPEN");
-    }
+    if(inside) ui_footer_pair(canvas,"BK","ROOT","OK","OPEN");
+    else ui_footer_pair(canvas,"^v","MOVE","OK","OPEN");
 }
 
 void draw_gpio(Canvas* canvas, LabMateApp* app) {
