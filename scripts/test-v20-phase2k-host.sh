@@ -61,7 +61,9 @@ for cc in gcc clang; do
   "$tmp/native-$cc"
   "$cc" -std=c11 -O1 -g -Wall -Wextra -Werror -pedantic \
     -fsanitize=address,undefined -fno-omit-frame-pointer \
-    -I"$tmp" "$root/tests/test_v20_phase2k_button_counter.c" -o "$tmp/button-counter-$cc"
+    -I"$root/src" -I"$tmp" "$root/tests/test_v20_phase2k_button_counter.c" \
+    "$root/src/labmate_dashboard_store.c" "$root/src/labmate_snapshot.c" \
+    -o "$tmp/button-counter-$cc"
   "$tmp/button-counter-$cc"
   "$cc" -std=c11 -O1 -g -Wall -Wextra -Werror -pedantic \
     -fsanitize=address,undefined -fno-omit-frame-pointer \
