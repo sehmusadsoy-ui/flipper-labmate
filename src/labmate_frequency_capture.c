@@ -55,6 +55,9 @@ static void frequency_gpio_callback(void* context) {
             app->frequency_irq_accumulated_periods++;
 
             if(app->frequency_irq_accumulated_periods >= 32U) {
+                /* Note any overwritten one-slot result before replacing it. */
+                labmate_low_mailbox_publish(
+                    &app->frequency_low_mailbox_audit, app->frequency_irq_new_period);
                 app->frequency_irq_period_cycles =
                     (app->frequency_irq_cycle_accumulator +
                      16U) /
@@ -69,6 +72,9 @@ static void frequency_gpio_callback(void* context) {
             app->frequency_irq_cycle_accumulator = 0;
             app->frequency_irq_accumulated_periods = 0;
 
+            /* This path also produces one completed ISR period publication. */
+            labmate_low_mailbox_publish(
+                &app->frequency_low_mailbox_audit, app->frequency_irq_new_period);
             app->frequency_irq_period_cycles =
                 period_cycles;
 
@@ -214,6 +220,8 @@ void labmate_frequency_low_start(LabMateApp* app) {
     app->frequency_irq_last_tick = 0U;
     app->frequency_irq_edges = 0U;
     app->frequency_irq_new_period = false;
+    /* Callback is disabled and lease acquired: a genuine new capture epoch. */
+    labmate_low_mailbox_reset(&app->frequency_low_mailbox_audit);
     app->capture_pin_index = app->gpio_index;
     app->capture_owner = LabMateCaptureFrequencyLow;
     app->frequency_irq_active = true;
