@@ -178,7 +178,7 @@ static const LabMateHelpPage labmate_help[LabMateToolCount] = {
     },
     [LabMateToolDoctor] = {
         "SIGNAL DOCTOR", "SEALED CAPTURE ONLY",
-        "Ref by user, no guesses", "<>FIELD ^vEDIT OKSTEP",
+        "Ref by user, no guesses", "OK INFO or REF STEP",
     },
     [LabMateToolDashboard] = {
         "DASHBOARD", "FREQ/PULSE/SCOPE",

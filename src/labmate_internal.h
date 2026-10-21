@@ -314,6 +314,7 @@ typedef struct {
     LabMateScopeReferencePreset scope_reference_preset;
     /* Doctor: app-thread reference/UI state, no live HAL or IRQ access. */
     LabMateDoctorPanel doctor_panel;
+    bool doctor_show_advice;
     LabMateDashboardStore doctor_store;
     LabMateSignalStats signal_stats;
     uint8_t dashboard_source;

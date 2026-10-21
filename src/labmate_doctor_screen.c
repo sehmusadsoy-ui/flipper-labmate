@@ -1,6 +1,7 @@
 #include "labmate_doctor_screen.h"
 #include "labmate_ui_primitives.h"
 #include "labmate_doctor_layout.h"
+#include "labmate_doctor_advice.h"
 #include <stdio.h>
 
 static void panel_row(Canvas* c, uint8_t y, bool selected,
@@ -17,6 +18,20 @@ void labmate_doctor_screen_draw(Canvas* c, const LabMateApp* app) {
     const uint8_t page = p->field < 3U ? 0U : 1U;
     char text[22];
     ui_draw_header(c, "DOCTOR");
+    if(app->doctor_show_advice) {
+        ui_badge(c, 95, 1, 31, "3/3", false);
+        const LabMateDoctorPanelAssessment result =
+            labmate_doctor_panel_assess(p, &app->doctor_store);
+        const LabMateDoctorAdvice advice = labmate_doctor_advice(&result);
+        canvas_set_font(c, FontSecondary);
+        canvas_draw_str(c, LABMATE_DOCTOR_TEXT_X, LABMATE_DOCTOR_ROW1_Y, advice.finding);
+        canvas_draw_str(c, LABMATE_DOCTOR_TEXT_X, LABMATE_DOCTOR_ROW2_Y, advice.evidence);
+        canvas_draw_str(c, LABMATE_DOCTOR_TEXT_X, LABMATE_DOCTOR_ROW3_Y, advice.next_check);
+        canvas_draw_str(c, LABMATE_DOCTOR_TEXT_X, LABMATE_DOCTOR_STATUS_Y,
+                        "ADVISORY ONLY");
+        ui_footer_pair(c, "OK", "EDIT", "BACK", "MENU");
+        return;
+    }
     ui_badge(c, 95, 1, 31, page ? "2/2" : "1/2", false);
     if(page == 0U) {
         panel_row(c, LABMATE_DOCTOR_ROW1_Y, p->field == LabMateDoctorFieldSource, "SRC",

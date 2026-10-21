@@ -77,9 +77,12 @@ void labmate_input_dispatch(LabMateApp* app, FuriStatus status,
             app->dashboard_source = app->dashboard_source < 3U ? 3U : 0U;
         break;
     case LabMateScreenDoctor:
-        /* UI mutex is already held; no ISR, HAL, SD or capture operations. */
+        /* All advisory/config work remains app-thread UI only. */
         if(event.key == InputKeyBack) app->screen = LabMateScreenMenu;
-        else if(event.key == InputKeyLeft)
+        else if(app->doctor_show_advice) {
+            if(event.key == InputKeyOk || event.key == InputKeyLeft ||
+               event.key == InputKeyRight) app->doctor_show_advice = false;
+        } else if(event.key == InputKeyLeft)
             labmate_doctor_panel_move(&app->doctor_panel, -1);
         else if(event.key == InputKeyRight)
             labmate_doctor_panel_move(&app->doctor_panel, 1);
@@ -87,8 +90,11 @@ void labmate_input_dispatch(LabMateApp* app, FuriStatus status,
             labmate_doctor_panel_edit(&app->doctor_panel, 1);
         else if(event.key == InputKeyDown)
             labmate_doctor_panel_edit(&app->doctor_panel, -1);
-        else if(event.key == InputKeyOk)
-            labmate_doctor_panel_step(&app->doctor_panel);
+        else if(event.key == InputKeyOk) {
+            if(app->doctor_panel.field == LabMateDoctorFieldFrequency)
+                labmate_doctor_panel_step(&app->doctor_panel);
+            else app->doctor_show_advice = true;
+        }
         break;
     case LabMateScreenScope:
         labmate_scope_bridge_input(app, event);
