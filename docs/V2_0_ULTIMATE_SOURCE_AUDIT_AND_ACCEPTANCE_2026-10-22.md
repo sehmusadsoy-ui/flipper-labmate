@@ -97,3 +97,16 @@ else assert(c.boxes == 0U);
 ```
 
 Current corrected host fixture Git blob: `e0291f953d0856e822ddd4f6600413aa2411435d`, previous fixture blob `812f06669035211ef0f3e2c8052fa558e15951a5`. UI producer, E11 capture HAL, Flipper device and installed FAP **unchanged**. **Retest status PENDING**; no proof that this source passed GCC/Clang or native SDK review. Keep release NO-GO.
+
+
+## Phase2K owner-host regression: Counter STOP fixture missing Dashboard evidence (2026-10-22)
+
+The owner supplied a complete pasted terminal log (after successfully applying the UI05D Pulse STATS fix). The updated GCC/Clang `UI-05D` passed: `frequency=192 pwm=384 pulse=2688` on both compilers; UI01–UI06, snapshot and Phase2B–2J host suites passed. The **22nd Phase2L suite Phase2K failed to compile** the verbatim extracted `labmate_event_counter_stop` in `tests/test_v20_phase2k_button_counter.c`: its historical fake `LabMateApp` lacked `counter_run_tick_hz`, `counter_run_generation`, `counter_total`, `counter_run_start_total`, and `doctor_store`, and it did not include the real `LabMateSnapshotV1` contract or dashboard ingest API.
+
+**Source-side corrective commits:**
+- `d02b40165276847656b4661200d31de714b35989`: extend only the host Button/Counter STOP fixture to model the production 64-bit counters and run metadata. Link real `labmate_dashboard_store.h`. Add four explicit successful-lease/43-event, zero-edge, failed-lease and changed-clock validation cases while retaining the six historical release scenarios.
+- `d1dff55819a349f9b1d3df38c5b4e5eaf55a340d`: compile this fixture against actual `src/labmate_dashboard_store.c` and `src/labmate_snapshot.c`, not an inert dashboard mock.
+
+**Pinned host test-only Git blobs:** `tests/test_v20_phase2k_button_counter.c` old `c4b81c3c15be11e1d567ed670fa0190710f4f5a0` → new `b5276c9a96b05dc02d5cf80b715501cd7561be60`; `scripts/test-v20-phase2k-host.sh` old `a84517cde5325ffce3320f1cbfee332fd485646e` → new `9aa0d55532777c560a9710d7574a92cb3ae06fe4`. The local patcher checks both old/new blob hashes before updating WSL source tests and never mutates production code or device.
+
+**Latest observed owner result:** Phase2L stopped at Phase2K; **new Phase2K gate NOT YET RUN**, complete host integration still FAIL/BLOCKED; **no new E11 FAP compile was executed**. Device test and v2.0 Stable remain NO-GO.
