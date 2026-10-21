@@ -7,6 +7,7 @@ on:
     paths:
       - "src/labmate_navigation.[ch]"
       - "src/labmate_ui_screens.c"
+      - "src/labmate_ui_primitives.[ch]"
       - "src/labmate_scope_ui.h"
       - "src/labmate_i2c_ui.c"
       - "src/labmate_onewire_ui.c"
@@ -17,6 +18,7 @@ on:
       - "tests/test_v20_*.c"
       - "tests/test_v20_*.h"
       - "tests/test_navigation.c.inc"
+      - "tests/test_labmate_ui_keylabels.c"
       - "tests/test_labmate_scope_navigation.c"
       - "tests/host_stubs/**"
       - "scripts/test-v20-ui*-host.sh"
@@ -27,6 +29,7 @@ on:
     paths:
       - "src/labmate_navigation.[ch]"
       - "src/labmate_ui_screens.c"
+      - "src/labmate_ui_primitives.[ch]"
       - "src/labmate_scope_ui.h"
       - "src/labmate_i2c_ui.c"
       - "src/labmate_onewire_ui.c"
@@ -37,6 +40,7 @@ on:
       - "tests/test_v20_*.c"
       - "tests/test_v20_*.h"
       - "tests/test_navigation.c.inc"
+      - "tests/test_labmate_ui_keylabels.c"
       - "tests/test_labmate_scope_navigation.c"
       - "tests/host_stubs/**"
       - "scripts/test-v20-ui*-host.sh"
@@ -47,7 +51,7 @@ permissions:
 
 jobs:
   ui-host-only:
-    name: UI-01..05E source-linked host verification (GCC and Clang)
+    name: UI-01..06 source-linked host verification (GCC and Clang)
     if: github.event_name == 'push' || github.head_ref == 'dev/v2.0-signal-doctor'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -106,3 +110,7 @@ jobs:
       - name: UI-05E GPIO Monitor source-linked renderer geometry
         shell: bash
         run: sh scripts/test-v20-ui05e-host.sh
+
+      - name: UI-06 real shared triple-footer contract and Frequency Pulse regression
+        shell: bash
+        run: sh scripts/test-v20-ui06-host.sh
