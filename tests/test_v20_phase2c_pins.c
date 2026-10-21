@@ -38,6 +38,22 @@ int main(void) {
         assert(!labmate_snapshot_bridge_from_capture(&e,&s));
         assert(s.frequency_millihz==42);
     }
-    puts("UI-Phase2C strict E11 Pulse pin allowlist PASS (4 allowed, 4 refused)");
+    for(unsigned pin=0;pin<8;pin++) {
+        LabMateCaptureEvidenceV1 e=pulse((uint8_t)pin);
+        e.source=LabMateSnapshotFrequency;
+        e.measured_frequency_millihz=100000U;
+        LabMateSnapshotV1 s={0};
+        const bool allowed=(pin==1U || pin==4U);
+        assert(labmate_snapshot_capture_pin_supported(e.source,e.pin_index)==allowed);
+        assert(labmate_snapshot_bridge_from_capture(&e,&s)==allowed);
+        if(allowed)assert(s.quality==LabMateSnapshotValid);
+    }
+    for(unsigned pin=0;pin<8;pin++) {
+        assert(labmate_snapshot_capture_pin_supported(LabMateSnapshotPulse,(uint8_t)pin)==
+               (pin==0U || pin==1U || pin==3U || pin==5U));
+    }
+    assert(!labmate_snapshot_capture_pin_supported(LabMateSnapshotScope,1U));
+    assert(!labmate_snapshot_capture_pin_supported(255U,1U));
+    puts("UI-Phase2C strict E11 capture pin matrix PASS (8 Pulse, 8 Frequency, 2 unsupported sources)");
     return 0;
 }
