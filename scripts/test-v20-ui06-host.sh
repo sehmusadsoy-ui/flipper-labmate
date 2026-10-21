@@ -13,6 +13,10 @@ for cc in gcc clang; do
     "$root/tests/test_labmate_ui_keylabels.c" \
     "$root/src/labmate_ui_primitives.c" -o "$tmp/ui06-$cc"
   "$tmp/ui06-$cc"
+  "$cc" -std=c11 -O1 -g -Wall -Wextra -Werror -pedantic \
+    -fsanitize=address,undefined -fno-omit-frame-pointer \
+    -I"$root/src" "$root/tests/test_v20_ui06_layout.c" -o "$tmp/layout-$cc"
+  "$tmp/layout-$cc"
 done
 # Run the migrated Frequency/Pulse screen bodies with the exact real footer.
 sh "$root/scripts/test-v20-ui05d-host.sh"
