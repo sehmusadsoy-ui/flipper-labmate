@@ -23,6 +23,7 @@
 #include "labmate_scope_pair.h"
 #include "labmate_scope_tolerance.h"
 #include "labmate_low_mailbox_audit.h"
+#include "labmate_high_gate_audit.h"
 
 #define LABMATE_VERSION_TEXT "v1.9DEV"
 /* Shared menu/pin counts: UI and input handling must agree. */
@@ -130,6 +131,8 @@ typedef struct {
 
     /* High-frequency hardware counter on PB3 / TIM2_CH2 */
     bool frequency_hw_active;
+    /* Source-specific successful TIM2 counter/time gates, not 100-ms polls. */
+    LabMateHighGateAudit frequency_high_gate_audit;
     /* True only after an input edge has been observed in this gate. */
     bool frequency_hw_gate_started;
     /* First sample of the adaptive frequency-estimation gate. */
