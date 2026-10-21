@@ -128,3 +128,16 @@ Storage error: file/dir not exist
 **Interpretation:** The proposed exact sidecar pathname was absent at the time of this one read-only probe. This does not prove that the name will remain free at a future upload; check again immediately beforehand. No install, no file stage, no flash and no on-device rename have occurred.
 
 **Device write authorization:** STILL PENDING. Require owner's explicit authorization for exactly one FAP upload as a *new* `/ext/apps/Tools/labmate-v20-phase3d-trial.fap`, preserving `/ext/apps/Tools/labmate.fap` and its previously matched 101468-byte backup. No implicit permission for launching, cleanup, rollback, firmware updates or profile/CSV writes. Both FAPs still use the same application ID `labmate` and storage namespace, so test launch is NOT isolated from the existing app data, and must be a separately reviewed decision.
+
+## Owner authorization — one new sidecar FAP upload ONLY
+
+In this conversation, following PC trial-copy SHA-256 PASS and read-only device `storage stat` confirming the destination was absent, owner explicitly replied **"Onaylıyorum."** to the narrowly scoped question authorizing upload of the new 115104-byte Phase3D candidate as a *separate device file*, not to replace current v1.9DEV.
+
+**Authorized ONE operation:**
+- PC source: `V20-Phase3E-PC-ONLY-53afa54b/labmate-v20-phase3d-trial.fap` (SHA-256 `53afa54b70b77d53b5728ab915b10b278a25c3a21f6caf93eb261aa35a68b737`)
+- Remote NEW target: `/ext/apps/Tools/labmate-v20-phase3d-trial.fap`, only if still absent immediately prior to transfer.
+
+**Not authorized:** rewriting `/ext/apps/Tools/labmate.fap`, rename, delete, firmware flash/update/reboot, executing the trial app, modifying existing `/ext/apps_data/labmate`, altering backups, reinstall/retry after an ambiguous transfer, or assuming two same-appid LabMate apps are isolated.
+
+**Do not claim actual upload or device test PASS until the owner provides the results.** After the GUI file transfer, independently verify new target `storage stat` is 115104 bytes and its on-device MD5 matches the candidate PC copy. Check old `labmate.fap` stays 101468 bytes and MD5 `066f017c695bb5a17158a7b26c8f4838`. Device upload/verification currently **PENDING**.
+
