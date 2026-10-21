@@ -23,6 +23,7 @@ typedef enum {
     LabMateToolI2c, /* appended; root menu displays it before OneWire */
     LabMateToolScope, /* v1.9 append; historical profile/menu IDs preserved */
     LabMateToolDoctor, /* v2.0 append; earlier IDs never renumbered */
+    LabMateToolDashboard, /* read-only unified measurement panel */
     LabMateToolCount,
     LabMateToolInvalid = 255
 } LabMateTool;

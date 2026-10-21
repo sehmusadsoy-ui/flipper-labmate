@@ -8,13 +8,13 @@
 
 int main(void) {
     _Static_assert(LabMateToolScope == 14, "historical tool IDs must not shift");
-    _Static_assert(LabMateToolCount == 16, "v2.0 appended tool count");
+    _Static_assert(LabMateToolCount == 17, "v2.0 appended tool count");
     _Static_assert(LabMateGroupInfo == LabMateGroupCount - 1, "INFO must remain last");
-    const uint8_t expected_sizes[] = {7U, 2U, 3U, 3U, 1U};
+    const uint8_t expected_sizes[] = {7U, 2U, 4U, 3U, 1U};
     const uint8_t expected_tools[][LABMATE_NAV_MAX_CHILDREN] = {
         {LabMateToolGpio, LabMateToolFrequency, LabMateToolPulse, LabMateToolCounter, LabMateToolButton, LabMateToolScope, LabMateToolDoctor},
         {LabMateToolGenerator, LabMateToolAlerts, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
-        {LabMateToolLogger, LabMateToolHistory, LabMateToolProfiles, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
+        {LabMateToolLogger, LabMateToolHistory, LabMateToolProfiles, LabMateToolDashboard, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
         {LabMateToolUart, LabMateToolI2c, LabMateToolOneWire, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
         {LabMateToolAbout, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
     };
@@ -96,6 +96,6 @@ int main(void) {
             assert(start <= selected && selected < (uint8_t)(start + 3U));
         }
     }
-    puts("LabMate v2.0 baseline navigation: all 16 tools reachable once; INFO last PASS");
+    puts("LabMate v2.0 baseline navigation: all 17 tools reachable once; INFO last PASS");
     return 0;
 }

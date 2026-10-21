@@ -24,7 +24,7 @@ _Static_assert(LabMateToolDoctor == 15, "Doctor must be appended after Scope");
 _Static_assert(LabMateGroupInfo == 4, "INFO must remain last");
 
 int main(void) {
-    const uint8_t sizes[] = {7, 2, 3, 3, 1};
+    const uint8_t sizes[] = {7, 2, 4, 3, 1};
     bool seen[LabMateToolCount] = {false};
     for(uint8_t group=0; group<LabMateGroupCount; ++group) {
         assert(labmate_nav_group_size(group) == sizes[group]);
