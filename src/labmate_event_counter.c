@@ -76,12 +76,15 @@ void labmate_event_counter_stop(LabMateApp* app) {
         }
     }
     labmate_frequency_tim2_shutdown();
-    if(labmate_frequency_tim2_lease_pending()) {
+    const bool lease_pending = labmate_frequency_tim2_lease_pending();
+    if(lease_pending) {
         app->capture_release_fault = true;
         app->capture_blocked = true;
     }
     app->counter_active = false;
-    if(app->capture_owner == LabMateCaptureCounter) {
+    /* Preserve PB3 owner until genuine lease return (and healthy stop). */
+    if(!lease_pending && healthy && !app->capture_release_fault &&
+       app->capture_owner == LabMateCaptureCounter) {
         app->capture_owner =
             labmate_capture_owner_after_stop(app->capture_owner, LabMateCaptureCounter);
         app->capture_pin_index = GPIO_COUNT;
