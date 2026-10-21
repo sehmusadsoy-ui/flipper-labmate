@@ -88,3 +88,29 @@ Thus the **current installed `labmate.fap` matches the downloaded PC file by MD5
 
 **NEXT:** prepare PC-only copy of exact Phase3D 115104-byte, SHA-256 `53afa54b70b77d53b5728ab915b10b278a25c3a21f6caf93eb261aa35a68b737` candidate under a new filename, preserving this v1.9 copy. New FAP-only *side-by-side test* upload must have separate explicit approval, verify destination collision/readback and should NEVER overwrite `/ext/apps/Tools/labmate.fap`; test runtime and verify old app remains accessible. Release v2.0 Stable remains NO-GO.
 
+
+## 2026-10-22 — Phase3D Windows PC-only trial copy prepared (owner report)
+
+Owner confirmed a Linux `bash` command copied only the exact reviewed Phase3D E11 FAP to the Windows PC backups root under a NEW local subdirectory, read it back with `cmp`, and checked both old and new SHA-256 identities:
+
+```text
+V20 PC TRIAL COPY: PASS
+V19 ROLLBACK SOURCE: PRESERVED
+V20 FAP HASH: PASS
+DEVICE WRITES: ZERO
+NO FLASH / NO INSTALL
+```
+
+Candidate on PC: `C:\\Users\\sehmu\\Documents\\LabMate-FAP-PC-Backups\\V20-Phase3E-PC-ONLY-53afa54b\\labmate-v20-phase3d-trial.fap`.
+
+Exact reviewed candidate: **115104 bytes**; SHA-256 `53afa54b70b77d53b5728ab915b10b278a25c3a21f6caf93eb261aa35a68b737`.
+
+Live v1.9 backup stays in the separate protected `V20-Phase3E-current-v19-before-v20\\labmate.fap` folder; 101468 bytes; SHA-256 `d8bb04cf6de6ebaa466e7487e619d9f68af21dac49df2aa51e91dfae1f9f55c2`; the owner already confirmed the active-device MD5 matches this local file.
+
+### Device stage safety nuance
+
+The new FAP's repository `application.fam` still declares `appid="labmate"`, `name="LabMate"`, `fap_version="1.9"`. Merely giving the binary a different **filename** does NOT create a new unique app identity or isolate `/ext/apps_data/labmate`. App menu ambiguity and shared app data are possible when two LabMate FAPs coexist. The separate filename protects the currently installed app *bytes from path overwrite* but is not a fully independent/sandboxed test installation. A separate appid/data-root would require explicitly reviewed code/build changes and a NEW FAP hash, never silently reuse this exact Phase3D binary.
+
+Before any attempted side-by-side device stage: obtain scoped explicit owner consent, check the exact destination filename does not exist by read-only `storage stat`, verify the qFlipper upload destination and existing `/ext/apps/Tools/labmate.fap` hash, and ensure the test plan does NOT claim shared SD data is isolated. qFlipper may overwrite files with identical names without warning (per vendor docs). Re-read candidate digest and live old app digest after transfer; do not auto-rename/delete/restore on an ambiguous result.
+
+Current stage: **PC copy PASS; device trial upload not authorized or performed**.
