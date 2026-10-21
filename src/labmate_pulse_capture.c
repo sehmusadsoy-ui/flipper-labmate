@@ -1,5 +1,6 @@
 #include "labmate_pulse_capture.h"
 #include "labmate_capture_core.h"
+#include "labmate_doctor_pulse_bridge.h"
 #include "labmate_capture_exti.h"
 #include "labmate_resource_policy.h"
 #include <furi_hal.h>
@@ -260,6 +261,8 @@ void labmate_pulse_capture_start(LabMateApp* app) {
     app->capture_owner = LabMateCapturePulse;
     app->pulse_irq_active = true;
     furi_hal_gpio_enable_int_callback(pin);
+    /* Started only AFTER native callback installation and ownership. */
+    labmate_doctor_pulse_started(app);
 #else
     app->capture_blocked = true;
 #endif

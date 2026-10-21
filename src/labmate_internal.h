@@ -26,6 +26,7 @@
 #include "labmate_high_gate_audit.h"
 #include "labmate_pulse_pair_audit.h"
 #include "labmate_doctor_panel.h"
+#include "labmate_evidence_session.h"
 
 #define LABMATE_VERSION_TEXT "v1.9DEV"
 /* Shared menu/pin counts: UI and input handling must agree. */
@@ -306,6 +307,10 @@ typedef struct {
     /* Doctor: app-thread reference/UI state, no live HAL or IRQ access. */
     LabMateDoctorPanel doctor_panel;
     LabMateDashboardStore doctor_store;
+    /* Phase3C: app-thread Pulse IRQ evidence lineage, not a live UI sample. */
+    LabMateEvidenceSession doctor_pulse_session;
+    uint32_t doctor_pulse_start_tick;
+    uint32_t doctor_pulse_tick_hz;
 
     LabMateUart uart; /* USART external GPIO 13/14, no TIM1/TIM2 ownership */
     LabMateCommOwner comm_owner; /* local exclusive I2C/1Wire sessions */

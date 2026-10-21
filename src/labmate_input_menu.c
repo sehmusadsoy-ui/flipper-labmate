@@ -54,6 +54,8 @@ void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                         break;
 
                     case LabMateToolFrequency:
+                        /* New capture intent invalidates earlier Doctor evidence. */
+                        labmate_dashboard_store_init(&app->doctor_store);
                         app->screen =
                             LabMateScreenFrequency;
                         app->hold = false;
@@ -71,6 +73,7 @@ void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                         break;
 
                     case LabMateToolPulse:
+                        labmate_dashboard_store_init(&app->doctor_store);
                         app->screen =
                             LabMateScreenPulse;
                         app->hold = false;
