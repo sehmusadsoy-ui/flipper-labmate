@@ -67,6 +67,29 @@ void ui_footer_pair(Canvas* canvas, const char* left_key,
     ui_footer_action(canvas, 66, right_key, right_action);
 }
 
+/* 3-column action footer with preflight: do not partially paint on
+ * malformed labels. ASCII-only matches the current 6px host glyph model.
+ * Positions leave at least one pixel of space between all three captions. */
+static bool ui_footer_triple_label_valid(const char* label, size_t limit) {
+    if(!label) return false;
+    size_t length = 0U;
+    for(const unsigned char* p = (const unsigned char*)label; *p; ++p) {
+        if(*p < 32U || *p > 126U || ++length > limit) return false;
+    }
+    return length > 0U;
+}
+
+void ui_footer_triple(Canvas* canvas, const char* left, const char* center, const char* right) {
+    if(!canvas || !ui_footer_triple_label_valid(left, 7U) ||
+       !ui_footer_triple_label_valid(center, 7U) ||
+       !ui_footer_triple_label_valid(right, 5U)) return;
+    canvas_draw_line(canvas, 0, 52, 127, 52);
+    canvas_set_font(canvas, FontSecondary);
+    canvas_draw_str(canvas, 2, 61, left);
+    canvas_draw_str(canvas, 45, 61, center);
+    canvas_draw_str(canvas, 96, 61, right);
+}
+
 /* Small, distinct 12x12 instrument pictograms.
  * No bitmaps/fonts; all menu icons fit inside the 16px icon gutter.
  */
