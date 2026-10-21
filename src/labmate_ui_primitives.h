@@ -31,6 +31,13 @@ void ui_footer_pair(
     const char* right_key,
     const char* right_action);
 
+/* Three independent action hints for MEASURE's Frequency/Pulse main views.
+ * Fixed 128x64 cells: x=2 (max 7 ASCII glyphs), x=45 (max 7),
+ * x=96 (max 5); baseline 61, divider y=52. Reject malformed labels
+ * without partially drawing. Does not change physical key semantics. */
+void ui_footer_triple(
+    Canvas* canvas, const char* left, const char* center, const char* right);
+
 /* Tool-specific monochrome pictograms. */
 void ui_draw_menu_icon(
     Canvas* canvas,
