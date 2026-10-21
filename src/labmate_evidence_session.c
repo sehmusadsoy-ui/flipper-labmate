@@ -33,8 +33,12 @@ bool labmate_evidence_session_record(
     uint32_t period, uint16_t duty) {
     if(!s || s->state != LabMateEvidenceCapturing || s->sample_fault) return false;
     LabMateCaptureEvidenceV1* e = &s->evidence;
+    /* Every newly reported completed sample must have fresh observed edges.
+     * An unchanged edge count is a replay, not another capture result.
+     * Counter rollover requires a new trustworthy acquisition epoch.
+     */
     if(sample_count == 0U || sample_count <= e->completed_sample_count ||
-       edge_count < e->observed_edge_count ||
+       edge_count < 2U || edge_count <= e->observed_edge_count ||
        dropped_edge_count < e->dropped_edge_count || duty > 1000U) {
         s->sample_fault = true;
         return false;
