@@ -431,9 +431,8 @@ void draw_gpio(Canvas* canvas, LabMateApp* app) {
      */
     canvas_draw_str(canvas, 70, 49, app->generator_running ? "PA7 BUSY" : "POLL");
 
-    canvas_draw_line(canvas, 0, 52, 127, 52);
-    ui_key(canvas, 2, "<>", "PIN");
-    ui_key(canvas, 70, "OK", app->hold ? "LIVE" : "HOLD");
+    /* Use the shared two-column footer to keep tool key labels aligned. */
+    ui_footer_pair(canvas, "<>", "PIN", "OK", app->hold ? "LIVE" : "HOLD");
 }
 
 /* Compact MIN/MAX display in two fixed-width cells.
