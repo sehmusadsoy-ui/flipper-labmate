@@ -129,11 +129,15 @@ static void pulse_gpio_callback(void* context) {
             /* One new paired publication requires one fresh completed update
              * of BOTH phases. These are averaging windows, not necessarily
              * widths from the same individual waveform cycle. */
-            (void)labmate_pulse_pair_note(
-                &app->pulse_pair_audit, new_high, new_low,
-                app->pulse_irq_high_valid, app->pulse_irq_low_valid,
-                app->pulse_irq_high_cycles, app->pulse_irq_low_cycles,
-                app->pulse_irq_edges + 1U);
+            /* 20k IRQ/s is possible: skip publication audit work
+             * unless this transition truly completed a phase window. */
+            if(new_high || new_low) {
+                (void)labmate_pulse_pair_note(
+                    &app->pulse_pair_audit, new_high, new_low,
+                    app->pulse_irq_high_valid, app->pulse_irq_low_valid,
+                    app->pulse_irq_high_cycles, app->pulse_irq_low_cycles,
+                    app->pulse_irq_edges + 1U);
+            }
         }
     }
 
