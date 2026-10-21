@@ -28,6 +28,11 @@ typedef struct {
     bool overflow;
 } LabMateCaptureEvidenceV1;
 
+/* Strict E11 input policy. GPIO Monitor polling supports more pins than
+ * interrupt-backed Pulse capture; never confuse these two pin sets.
+ */
+bool labmate_snapshot_capture_pin_supported(uint8_t source, uint8_t pin_index);
+
 /* Returns false for invalid input pointers/IDs/generation/timestamp order;
  * does not touch output on failure. For valid metadata writes an explicit
  * VALID / INSUFFICIENT / BUSY / CLOCK ERR / OVERFLOW / INVALID snapshot.
