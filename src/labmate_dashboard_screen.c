@@ -13,7 +13,8 @@ static void hz_text(uint32_t mhz, char* out, size_t cap) {
         (unsigned long)(tenhz / 10U), (unsigned long)(tenhz % 10U));
 }
 static void line(Canvas* c, uint8_t y, bool selected, const char* text) {
-    char buffer[22];
+    /* x=3 and 6px glyphs: at most 20 visible chars fit 128px. */
+    char buffer[21];
     (void)snprintf(buffer,sizeof(buffer),"%c%s",selected ? '>' : ' ',text);
     canvas_set_font(c, FontSecondary);
     canvas_draw_str(c, 3, y, buffer);
@@ -39,9 +40,12 @@ void labmate_dashboard_screen_draw(Canvas* c, const LabMateApp* a) {
             (void)snprintf(buf,sizeof(buf),"PIN %u %s",
                 (unsigned)s->pin_index,quality);
             line(c,31,false,buf);
-            (void)snprintf(buf,sizeof(buf),"GEN %lu SAMP %lu",
-                (unsigned long)s->capture_generation,
-                (unsigned long)s->valid_sample_count);
+            if(labmate_snapshot_v1_can_display_measurement(s))
+                (void)snprintf(buf,sizeof(buf),"GEN %lu SAMP %lu",
+                    (unsigned long)s->capture_generation,
+                    (unsigned long)s->valid_sample_count);
+            else
+                (void)snprintf(buf,sizeof(buf),"NO VALID SAMPLES");
             line(c,40,false,buf);
             /* No claim of calibrated wall time. The event interval is
              * from the SAME verified capture session.
