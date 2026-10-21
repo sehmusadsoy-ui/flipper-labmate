@@ -28,3 +28,22 @@ Before approving any v2.0 app trial, use qFlipper File Manager > SD Card > apps 
 **Phase3D source FAP** is independently owner-hash checked at 115104 bytes and SHA-256 `53afa54b70b77d53b5728ab915b10b278a25c3a21f6caf93eb261aa35a68b737`; this is the new development candidate and MUST NOT overwrite active LabMate or get flashed.
 
 **Stage decision:** Historical backup integrity PASS; on-screen firmware/app version observed; current active app byte identity + dedicated PC backup **PENDING**; installation, rollback rehearsal, runtime proof, v2.0 Stable **NO-GO**. No device writes authorized by this document.
+
+## 2026-10-22 — Current active v1.9DEV FAP downloaded to PC
+
+Owner used qFlipper to download `/ext/apps/Tools/labmate.fap` into a distinct PC backup folder and reported the following WSL local read-only screening:
+
+```text
+=== LABMATE V19 BACKUP CHECK ===
+ACTIVE V19 PC COPY: PRESENT
+FAP BYTES: 101468
+FAP SHA256: d8bb04cf6de6ebaa466e7487e619d9f68af21dac49df2aa51e91dfae1f9f55c2
+DEVICE WRITES: ZERO
+BACKUP LOCAL CHECK: PASS
+```
+
+PC-backed path: `C:\\Users\\sehmu\\Documents\\LabMate-FAP-PC-Backups\\V20-Phase3E-current-v19-before-v20\\labmate.fap`. Its hash has been observed on the owner's PC, **not yet independently confirmed against the current live device**. It is not the earlier 97,540-byte v1.9 candidate nor the 81,528-byte historical v1.8 backup. Do NOT assume equivalence.
+
+Next strictly read-only gate: compute the local PC file MD5, then compare it to `storage md5 "/ext/apps/Tools/labmate.fap"` in the native device CLI, ideally add `storage stat` for 101468-byte size. These commands do not install or replace FAPs. Never paste PowerShell syntax into WSL bash, and quit qFlipper before acquiring COM7 through the web serial CLI. If local versus live MD5 differ, STOP; do not upload, rename, delete, flash, or substitute old backups.
+
+**Status:** active v1.9DEV PC-copy presence, size, SHA256 **PASS**; full current live device backup byte parity **PENDING**. Device trial and v2.0 Stable NO-GO.
