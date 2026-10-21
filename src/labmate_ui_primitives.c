@@ -63,9 +63,16 @@ void ui_footer_pair(Canvas* canvas, const char* left_key,
     if(!ui_format_key(left, sizeof(left), left_key, left_action, 10U) ||
        !ui_format_key(right, sizeof(right), right_key, right_action, 10U))
         return; /* Never paint a half-footer on malformed arguments. */
+    /* One inverted action band across all paired-footer tools. Keep
+     * one blank pixel after the body; avoid unreadable black-on-black.
+     */
     canvas_draw_line(canvas, 0, LABMATE_UI_FOOTER_RULE_Y, LABMATE_UI_WIDTH - 1, LABMATE_UI_FOOTER_RULE_Y);
+    canvas_draw_box(canvas, 0, LABMATE_UI_FOOTER_RULE_Y + 1,
+                    LABMATE_UI_WIDTH, LABMATE_UI_HEIGHT - LABMATE_UI_FOOTER_RULE_Y - 1);
+    canvas_set_color(canvas, ColorWhite);
     ui_footer_action(canvas, LABMATE_UI_FOOTER_PAIR_LEFT_X, left_key, left_action);
     ui_footer_action(canvas, LABMATE_UI_FOOTER_PAIR_RIGHT_X, right_key, right_action);
+    canvas_set_color(canvas, ColorBlack);
 }
 
 /* 3-column action footer with preflight: do not partially paint on
@@ -85,10 +92,14 @@ void ui_footer_triple(Canvas* canvas, const char* left, const char* center, cons
        !ui_footer_triple_label_valid(center, LABMATE_UI_FOOTER_TRIPLE_CENTER_MAX_CHARS) ||
        !ui_footer_triple_label_valid(right, LABMATE_UI_FOOTER_TRIPLE_RIGHT_MAX_CHARS)) return;
     canvas_draw_line(canvas, 0, LABMATE_UI_FOOTER_RULE_Y, LABMATE_UI_WIDTH - 1, LABMATE_UI_FOOTER_RULE_Y);
+    canvas_draw_box(canvas, 0, LABMATE_UI_FOOTER_RULE_Y + 1,
+                    LABMATE_UI_WIDTH, LABMATE_UI_HEIGHT - LABMATE_UI_FOOTER_RULE_Y - 1);
+    canvas_set_color(canvas, ColorWhite);
     canvas_set_font(canvas, FontSecondary);
     canvas_draw_str(canvas, LABMATE_UI_FOOTER_TRIPLE_LEFT_X, LABMATE_UI_FOOTER_BASELINE_Y, left);
     canvas_draw_str(canvas, LABMATE_UI_FOOTER_TRIPLE_CENTER_X, LABMATE_UI_FOOTER_BASELINE_Y, center);
     canvas_draw_str(canvas, LABMATE_UI_FOOTER_TRIPLE_RIGHT_X, LABMATE_UI_FOOTER_BASELINE_Y, right);
+    canvas_set_color(canvas, ColorBlack);
 }
 
 /* Small, distinct 12x12 instrument pictograms.
@@ -233,6 +244,10 @@ void ui_draw_header(
     Canvas* canvas,
     const char* title) {
 
+    /* Shared 1px left instrument marker fits the existing x=2 title
+     * clearance without shifting any measurement field or badge.
+     */
+    canvas_draw_box(canvas, 0, 1, 1, 10);
     canvas_set_font(canvas, FontPrimary);
     canvas_draw_str(canvas, LABMATE_UI_HEADER_TITLE_X, LABMATE_UI_HEADER_BASELINE_Y, title);
 
