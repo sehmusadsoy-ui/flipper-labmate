@@ -44,4 +44,12 @@ sh "$root/scripts/test-v20-phase3d-frequency-host.sh" || {
     echo 'V20 OFFLINE FAIL: Phase 3D Frequency policy' >&2
     exit 1
 }
-echo 'V20 OFFLINE HOST PASS: Phase 2L + Phase 3A + Phase 3B + Phase 3C + Phase 3D-A policy (NOT SDK/FAP OR DEVICE)'
+test -s "$root/scripts/test-v20-phase3d-frequency-wiring-host.sh" || {
+    echo 'V20 OFFLINE NO-GO: Phase3D Frequency wiring audit missing' >&2
+    exit 2
+}
+sh "$root/scripts/test-v20-phase3d-frequency-wiring-host.sh" || {
+    echo 'V20 OFFLINE FAIL: Phase3D Frequency native wiring audit' >&2
+    exit 1
+}
+echo 'V20 OFFLINE HOST PASS: Phase 2L + Phase 3A + Phase 3B + Phase 3C + Phase 3D Frequency (NOT SDK/FAP OR DEVICE)'

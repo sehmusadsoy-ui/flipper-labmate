@@ -29,7 +29,8 @@ void labmate_doctor_frequency_started(LabMateApp* a) {
     labmate_dashboard_store_init(&a->doctor_store);
     const bool low = a->frequency_irq_active &&
         a->capture_owner == LabMateCaptureFrequencyLow &&
-        a->capture_pin_index == 1U && !labmate_frequency_low_lease_pending() == false;
+        a->capture_pin_index == 1U &&
+        labmate_frequency_low_lease_pending();
     const bool high = a->frequency_hw_active &&
         a->capture_owner == LabMateCaptureFrequencyHigh &&
         a->capture_pin_index == 4U && labmate_frequency_tim2_capture_valid();

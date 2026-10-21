@@ -90,7 +90,8 @@ void labmate_input_gpio(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                 } else if(event.key == InputKeyLeft) {
                     if(app->screen == LabMateScreenPulse)
                         labmate_doctor_pulse_abandon(app);
-                    if(app->screen == LabMateScreenFrequency)
+                    if(app->screen == LabMateScreenFrequency &&
+                       app->gpio_index != 1U)
                         labmate_doctor_frequency_abandon(app);
                     labmate_gpio_change(app, -1);
 
@@ -98,7 +99,8 @@ void labmate_input_gpio(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                     event.key == InputKeyRight) {
                     if(app->screen == LabMateScreenPulse)
                         labmate_doctor_pulse_abandon(app);
-                    if(app->screen == LabMateScreenFrequency)
+                    if(app->screen == LabMateScreenFrequency &&
+                       app->gpio_index != 4U)
                         labmate_doctor_frequency_abandon(app);
                     labmate_gpio_change(app, 1);
 

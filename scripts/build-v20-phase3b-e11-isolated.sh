@@ -11,6 +11,10 @@ test -d "$BASE/.git" || { echo "NO-GO: existing E11 SDK Git metadata missing"; e
 test -r "$APP/src/labmate_doctor_screen.c" || { echo "NO-GO: Phase3B UI missing"; exit 2; }
 test -r "$APP/src/labmate_doctor_panel.c" || { echo "NO-GO: Phase3B model missing"; exit 2; }
 test -r "$APP/src/labmate_doctor.c" || { echo "NO-GO: Signal Doctor core missing"; exit 2; }
+test -r "$APP/src/labmate_doctor_frequency_bridge.c" || {
+    echo "NO-GO: Phase3D Frequency adapter missing"
+    exit 2
+}
 test -r "$APP/labmate_10px.png" || { echo "NO-GO: app icon missing"; exit 2; }
 test "$(git -C "$BASE" rev-parse HEAD)" = "$PIN" || {
     echo "NO-GO: wrong Momentum base"; exit 2;
@@ -58,4 +62,4 @@ FAP="$SDK/build/f7-firmware-C/.extapps/labmate.fap"
 test -s "$FAP"
 python3 "$APP/scripts/verify_v19_e11_sdk_fap.py" "$SDK" "$FAP"
 sha256sum "$FAP"
-echo "PHASE3B E11 FAP BUILD AND REVIEW PASS | HOST ONLY | NO FLASH"
+echo "V20 CURRENT E11 FAP BUILD AND REVIEW PASS | BUILD ONLY | NO FLASH"
