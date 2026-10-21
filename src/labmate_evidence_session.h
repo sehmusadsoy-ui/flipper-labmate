@@ -30,9 +30,14 @@ bool labmate_evidence_session_begin(
     uint32_t start_ms, uint32_t timebase_hz, bool ownership_confirmed);
 
 /* App-thread submission of a completed coherent, verified measurement.
- * Counts must increase between reports; rejected/out-of-order reports poison
- * the session so a previous valid sample cannot be replayed at STOP.
- * No interpolation or derivation of real IRQ sample counts occurs here.
+ * The cumulative completed-sample count AND observed-edge count must both
+ * strictly increase on each report. The first complete sample requires at
+ * least two observed edges. No edge-counter rollover is accepted in one
+ * session; reset to a new independently owned capture epoch instead.
+ * Rejected/out-of-order reports poison the session so the previous reading
+ * cannot be replayed as VALID at STOP. Raw IRQ counts and sample counts
+ * MUST be captured coherently by the real producer; this helper does not
+ * infer them or provide the IRQ synchronization required to collect them.
  */
 bool labmate_evidence_session_record(
     LabMateEvidenceSession* session, uint32_t completed_sample_count,
