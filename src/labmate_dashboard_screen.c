@@ -1,5 +1,6 @@
 #include "labmate_dashboard_screen.h"
 #include "labmate_ui_primitives.h"
+#include "labmate_scope_period_stats.h"
 #include <stdio.h>
 #include <stdint.h>
 
@@ -91,9 +92,13 @@ void labmate_dashboard_screen_draw(Canvas* c, const LabMateApp* a) {
             (void)snprintf(buf,sizeof(buf),"MAX %lu ticks",
                 (unsigned long)a->scope_last_metrics.max_period_ticks);
             line(c,40,false,buf);
-            (void)snprintf(buf,sizeof(buf),"%u REAL CYCLES",
-                (unsigned)snapshot.valid_sample_count);
-            line(c,50,false,buf);
+            LabMateScopePeriodStats spread;
+            if(labmate_scope_period_stats(&a->scope_last_metrics,&spread)) {
+                (void)snprintf(buf,sizeof(buf),"SPREAD %lu.%lu%%",
+                    (unsigned long)(spread.spread_permille / 10U),
+                    (unsigned long)(spread.spread_permille % 10U));
+                line(c,50,false,buf);
+            } else line(c,50,false,"SPREAD N/A");
         } else if(labmate_dashboard_store_read_measurement(
                       &a->doctor_store,selected,&snapshot) &&
                   (selected==LabMateSnapshotCounter ||

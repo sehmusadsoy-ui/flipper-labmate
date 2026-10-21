@@ -84,6 +84,10 @@ def main():
         "labmate_snapshot_v1_can_display_measurement",
         "LABMATE_SIGNAL_STATS_MAX_SESSIONS"
     ])
+    contains("src/labmate_scope_period_stats.c", [
+        "LabMateScopeMetricsReady", "m->completed_cycles < 2U",
+        "m->truncated", "spread_permille"
+    ])
     for path in ["src/labmate_doctor_frequency_bridge.c",
                  "src/labmate_doctor_pulse_bridge.c"]:
         contains(path, ["labmate_evidence_session_finish",
@@ -115,6 +119,7 @@ def main():
     for name in ["scripts/test-v20-dashboard-host.sh",
                  "scripts/test-v20-signal-stats-host.sh",
                  "scripts/test-v20-doctor-advice-host.sh",
+                 "scripts/test-v20-scope-period-stats-host.sh",
                  "scripts/test-v20-phase3b-doctor-panel-host.sh"]:
         require((ROOT / name).is_file(), f"mandatory test runner missing {name}")
     return True
