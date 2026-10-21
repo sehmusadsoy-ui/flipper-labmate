@@ -65,3 +65,12 @@ An owner-run terminal transcript and actual SHA-256 must be reviewed before any 
 - Live repo source readback confirmed 17 tool enum entries with historical IDs unchanged and Dashboard ID 16. **This is source-only, not compiler or physical PASS**.
 
 **Release decision:** CURRENT SOURCE = expanded feature candidate with mandatory unclosed correctness/coverage gates; `v2.0 Stable` = **NO-GO**. The roadmap is not retroactively shrunk to claim completion. Only exact built and physically reviewed bytes can move to RC/Stable.
+
+
+## Owner-run host compile regression — UI-05D (2026-10-22)
+
+After the owner locally applied the exact About guide count case-insensitive fix, the v2.0 source audit progressed into the 22-suite Phase2L host suite and then failed at `ui05d`. The owner-provided GCC diagnostics point to the extracted `ui_footer_triple` production body in `/tmp/.../triple_footer.inc` referencing `canvas_draw_box`, `canvas_set_color`, `ColorWhite`, `ColorBlack`, which were absent from `tests/test_v20_ui05d_measurement.c`'s simulated Canvas environment. The failure is in host fixture compilation, not an observed native E11 error.
+
+Production `src/labmate_ui_primitives.c` must retain its inverse footer; the surgical response was to add actual bounds-checking Canvas mocks for box/color to the host fixture, assert final drawing color reset, and distinguish the Generator's separately mocked two-key footer from Frequency/Pulse's extracted real three-key footer. GitHub commits `475c50ebec5e2582005193ac04a31390426294fc` and `e36bc769031b838cf43c78d0ee46dae60f07c7be`. The corrected test fixture Git blob SHA is `812f06669035211ef0f3e2c8052fa558e15951a5`, replacing older blob `05812806aae43c49cc5c12cd2816e74d509c40d6`.
+
+**Verification status: PENDING.** No successful owner-run UI05D, full host matrix or native E11 build output received yet for this correction. Existing 115104-byte Phase3D FAP and v1.9DEV protected backup remain unchanged. Do not claim v2.0 Ultimate FAP PASS or authorize firmware flash.
