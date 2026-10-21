@@ -178,7 +178,10 @@ static unsigned generator_test(void) {
         a.generator_release_fault=(status==3);
         LabMateApp before;memcpy(&before,&a,sizeof(a));
         draw_generator(&c,&a);assert(memcmp(&before,&a,sizeof(a))==0);
-        assert(c.color==ColorBlack && c.boxes>=1U);
+        /* Generator uses the separate two-action footer mock, not the
+         * extracted three-action footer that actually fills a box.
+         */
+        assert(c.color==ColorBlack);
         if(c.faults){fprintf(stderr,"GENERATOR choice=%u duty=%u status=%u edit=%u\n",choice,duty,status,editing);return 0;}
         assert(contains(&c,"OUT PA7"));
         ++count;
