@@ -16,6 +16,7 @@ typedef struct {
     bool frequency_low_lease_pending;
     bool frequency_high_lease_pending;
     bool pulse_lease_pending;
+    bool button_lease_pending;
     bool release_fault;
 } LabMateCaptureReleaseEvidence;
 
@@ -29,5 +30,6 @@ static inline bool labmate_capture_release_proven(
            !e->frequency_low_active && !e->frequency_high_active &&
            !e->pulse_active && !e->counter_active && !e->button_active &&
            !e->frequency_low_lease_pending && !e->frequency_high_lease_pending &&
-           !e->pulse_lease_pending && !e->release_fault;
+           !e->pulse_lease_pending && !e->button_lease_pending &&
+           !e->release_fault;
 }
