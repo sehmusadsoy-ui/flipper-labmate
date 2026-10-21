@@ -94,14 +94,16 @@ void labmate_frequency_high_stop(LabMateApp* app) {
     }
 
     labmate_frequency_tim2_shutdown();
-    if(labmate_frequency_tim2_lease_pending()) {
+    const bool lease_pending = labmate_frequency_tim2_lease_pending();
+    if(lease_pending) {
         app->capture_release_fault = true;
         app->capture_blocked = true;
     }
 
     app->frequency_hw_active = false;
     app->frequency_hw_gate_started = false;
-    if(app->capture_owner == LabMateCaptureFrequencyHigh) {
+    /* A failed return must not advertise an unowned PB3/TIM2 lease. */
+    if(!lease_pending && app->capture_owner == LabMateCaptureFrequencyHigh) {
         app->capture_owner = labmate_capture_owner_after_stop(
             app->capture_owner, LabMateCaptureFrequencyHigh);
         app->capture_pin_index = GPIO_COUNT;
@@ -159,14 +161,15 @@ void labmate_frequency_low_stop(LabMateApp* app) {
     furi_hal_gpio_init_simple(pin, GpioModeAnalog);
 
     app->frequency_irq_active = false;
-    if(app->capture_owner == LabMateCaptureFrequencyLow) {
-        app->capture_owner = labmate_capture_owner_after_stop(
-            app->capture_owner, LabMateCaptureFrequencyLow);
-        app->capture_pin_index = GPIO_COUNT;
-    }
     if(furi_hal_resource_lease_release(
            labmate_frequency_pc1_lease, FURI_HAL_LEASE_IRQ_PC1)) {
         labmate_frequency_pc1_lease = 0U;
+        /* Only the firmware's positive release result clears ownership. */
+        if(app->capture_owner == LabMateCaptureFrequencyLow) {
+            app->capture_owner = labmate_capture_owner_after_stop(
+                app->capture_owner, LabMateCaptureFrequencyLow);
+            app->capture_pin_index = GPIO_COUNT;
+        }
     } else {
         /* Never reuse a released pin with an unresolved firmware handle. */
         app->capture_release_fault = true;
@@ -175,6 +178,15 @@ void labmate_frequency_low_stop(LabMateApp* app) {
 #else
     /* A mismatched stock SDK can never have started this DEV capture. */
     app->capture_blocked = true;
+#endif
+}
+
+bool labmate_frequency_low_lease_pending(void) {
+#if defined(FURI_HAL_RESOURCE_LEASE_API_V1) && defined(FURI_HAL_GPIO_HAS_TRY_ADD_INT_CALLBACK)
+    return labmate_frequency_pc1_lease != 0U;
+#else
+    /* Unsupported SDK could not have safely claimed this lease. */
+    return false;
 #endif
 }
 
