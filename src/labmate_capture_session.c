@@ -79,6 +79,7 @@ void labmate_capture_stop_all(LabMateApp* app) {
         .frequency_low_lease_pending = labmate_frequency_low_lease_pending(),
         .frequency_high_lease_pending = labmate_frequency_tim2_lease_pending(),
         .pulse_lease_pending = labmate_pulse_lease_pending(),
+        .button_lease_pending = labmate_button_lease_pending(),
         .release_fault = app->capture_release_fault,
     };
     if(labmate_capture_release_proven(&release)) {
