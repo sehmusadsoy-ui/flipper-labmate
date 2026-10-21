@@ -466,6 +466,7 @@ void measurement_update(LabMateApp* app) {
        (app->screen == LabMateScreenLogger && app->logger_source == LoggerPulse)) {
         uint32_t hi, lo, last_tick, count;
         bool hi_valid, lo_valid;
+        LabMatePulsePairObservation pair_observation;
 
         FURI_CRITICAL_ENTER();
         hi = app->pulse_irq_high_cycles;
@@ -474,7 +475,12 @@ void measurement_update(LabMateApp* app) {
         lo_valid = app->pulse_irq_low_valid;
         last_tick = app->pulse_irq_last_tick;
         count = app->pulse_irq_edges;
+        /* Copy both finished phase widths AND their publication identity
+         * in the same IRQ critical snapshot, never independent UI reads. */
+        (void)labmate_pulse_pair_copy_locked(
+            &app->pulse_pair_audit, &pair_observation);
         FURI_CRITICAL_EXIT();
+        app->pulse_pair_last_observation = pair_observation;
 
         /* A disconnected or stopped source must not display stale data.
          * Restart synchronization after a long quiet interval.
@@ -490,6 +496,7 @@ void measurement_update(LabMateApp* app) {
             app->pulse_irq_high_samples = 0;
             app->pulse_irq_low_samples = 0;
             app->pulse_irq_wide_window = false;
+            labmate_pulse_pair_discard_partial(&app->pulse_pair_audit);
             app->pulse_irq_last_tick = now;
             FURI_CRITICAL_EXIT();
             hi_valid = false;
