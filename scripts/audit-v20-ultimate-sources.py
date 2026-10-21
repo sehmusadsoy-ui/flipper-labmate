@@ -40,7 +40,7 @@ def main():
             "displayed version differs from manifest")
     require('"v1.9DEV"' not in internal and "v1.9DEV" not in ui,
             "legacy version still rendered")
-    ids = re.findall(r"^\s*(LabMateTool\w+)(?:\s*=.*)?[,]\s*(?://.*)?$",
+    ids = re.findall(r"^\s*(LabMateTool\w+)(?:\s*=\s*[^,\n]+)?[,]\s*(?:/\*.*\*/|//.*)?$",
                      nav_h[nav_h.index("typedef enum {"):nav_h.index("} LabMateTool;")],
                      re.MULTILINE)
     expected = ["Gpio","Frequency","Pulse","Generator","Logger","History",
