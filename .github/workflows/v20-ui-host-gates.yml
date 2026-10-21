@@ -14,6 +14,7 @@ on:
       - "src/labmate_snapshot_bridge.[ch]"
       - "src/labmate_evidence_session.[ch]"
       - "src/labmate_publication_gate.[ch]"
+      - "src/labmate_measurements.c"
       - "src/labmate_dashboard_store.[ch]"
       - "src/labmate_scope_ui.h"
       - "src/labmate_i2c_ui.c"
@@ -34,6 +35,7 @@ on:
       - "scripts/test-v20-phase2c-host.sh"
       - "scripts/test-v20-phase2d-host.sh"
       - "scripts/test-v20-phase2e-host.sh"
+      - "scripts/test-v20-phase2f-host.sh"
       - ".github/workflows/v20-ui-host-gates.yml"
   pull_request:
     branches:
@@ -48,6 +50,7 @@ on:
       - "src/labmate_snapshot_bridge.[ch]"
       - "src/labmate_evidence_session.[ch]"
       - "src/labmate_publication_gate.[ch]"
+      - "src/labmate_measurements.c"
       - "src/labmate_dashboard_store.[ch]"
       - "src/labmate_scope_ui.h"
       - "src/labmate_i2c_ui.c"
@@ -68,6 +71,7 @@ on:
       - "scripts/test-v20-phase2c-host.sh"
       - "scripts/test-v20-phase2d-host.sh"
       - "scripts/test-v20-phase2e-host.sh"
+      - "scripts/test-v20-phase2f-host.sh"
       - ".github/workflows/v20-ui-host-gates.yml"
 
 permissions:
@@ -168,3 +172,6 @@ jobs:
       - name: Phase 2E LOW TIM2 Pulse genuine publication admission
         shell: bash
         run: sh scripts/test-v20-phase2e-host.sh
+      - name: Phase 2F atomic PC1 IRQ period mailbox (source-linked)
+        shell: bash
+        run: sh scripts/test-v20-phase2f-host.sh
