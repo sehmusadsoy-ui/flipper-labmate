@@ -29,6 +29,13 @@ for path in "$tmp/low.inc" "$tmp/pulse.inc"; do
   ' "$path"
 done
 grep -Fq 'if(!lease_pending && app->capture_owner == LabMateCaptureFrequencyHigh)' "$tmp/high.inc"
+# Exact function bodies, not a reimplementation of GPIO/TIM2 teardown:
+awk '/^void labmate_frequency_high_stop[(]/ {on=1} on {print; if($0=="}") exit}' "$low" > "$tmp/high_stop.inc"
+awk '/^void labmate_frequency_low_stop[(]/ {on=1} on {print; if($0=="}") exit}' "$low" > "$tmp/low_stop.inc"
+awk '/^void labmate_pulse_capture_stop[(]/ {on=1} on {print; if($0=="}") exit}' "$pulse" > "$tmp/pulse_stop.inc"
+for part in "$tmp/high_stop.inc" "$tmp/low_stop.inc" "$tmp/pulse_stop.inc"; do
+  test -s "$part"
+done
 awk '
   /if\(labmate_capture_release_proven\(&release\)\)/ {gate=NR}
   /app->capture_owner = LabMateCaptureNone;/ {free=NR}
@@ -40,5 +47,9 @@ for cc in gcc clang; do
     -fsanitize=address,undefined -fno-omit-frame-pointer \
     -I"$root/src" "$root/tests/test_v20_phase2k_release.c" -o "$tmp/release-$cc"
   "$tmp/release-$cc"
+  "$cc" -std=c11 -O1 -g -Wall -Wextra -Werror -pedantic \
+    -fsanitize=address,undefined -fno-omit-frame-pointer \
+    -I"$tmp" "$root/tests/test_v20_phase2k_native_stop.c" -o "$tmp/native-$cc"
+  "$tmp/native-$cc"
 done
 printf '%s\n' 'Phase2K source-linked STOP native-lease gate PASS (host only)'
