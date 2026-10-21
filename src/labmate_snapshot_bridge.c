@@ -2,6 +2,18 @@
 #include <string.h>
 #include <stdint.h>
 
+/* Match the actual EXTI-safe Pulse pin list in labmate_capture_session.c:
+ * PC0=0, PC1=1, PB2=3, PA4=5. Do not accept UI-only polling pins.
+ */
+bool labmate_snapshot_capture_pin_supported(uint8_t source, uint8_t pin_index) {
+    if(source == LabMateSnapshotFrequency)
+        return pin_index == 1U || pin_index == 4U;
+    if(source == LabMateSnapshotPulse)
+        return pin_index == 0U || pin_index == 1U ||
+               pin_index == 3U || pin_index == 5U;
+    return false;
+}
+
 static bool pulse_consistent(const LabMateCaptureEvidenceV1* e) {
     if(e->period_ticks == 0U || e->duty_permille > 1000U) return false;
     const uint64_t sum=(uint64_t)e->high_ticks+(uint64_t)e->low_ticks;
@@ -17,8 +29,7 @@ bool labmate_snapshot_bridge_from_capture(
     if(!e || !output || e->source>LabMateSnapshotPulse ||
        e->pin_index>=LABMATE_SNAPSHOT_PIN_COUNT || e->capture_generation==0U ||
        e->observation_end_ms<e->observation_start_ms ||
-       (e->source == LabMateSnapshotFrequency &&
-        e->pin_index != 1U && e->pin_index != 4U)) return false;
+       !labmate_snapshot_capture_pin_supported(e->source, e->pin_index)) return false;
 
     LabMateSnapshotV1 s;
     memset(&s,0,sizeof(s));
