@@ -222,6 +222,7 @@ void labmate_frequency_low_start(LabMateApp* app) {
     app->frequency_irq_new_period = false;
     /* Callback is disabled and lease acquired: a genuine new capture epoch. */
     labmate_low_mailbox_reset(&app->frequency_low_mailbox_audit);
+    app->frequency_low_last_observation = (LabMateLowMailboxObservation){0};
     app->capture_pin_index = app->gpio_index;
     app->capture_owner = LabMateCaptureFrequencyLow;
     app->frequency_irq_active = true;
