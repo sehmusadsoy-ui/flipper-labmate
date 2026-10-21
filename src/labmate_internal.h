@@ -300,6 +300,7 @@ typedef struct {
     uint32_t scope_capture_generation;
     uint32_t scope_last_generation;
     uint32_t scope_capture_hz;
+    uint32_t scope_capture_start_ms; /* app-thread observed true START */
     bool scope_last_valid;
     bool scope_clock_fault;
     bool scope_show_compare;

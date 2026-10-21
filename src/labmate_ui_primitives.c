@@ -223,6 +223,7 @@ void ui_draw_menu_icon(Canvas* canvas, uint8_t item, uint8_t x, uint8_t y) {
     case LabMateToolI2c: ui_icon_uart(canvas, x, y); break;
     case LabMateToolScope: ui_icon_pulse(canvas, x, y); break;
     case LabMateToolDoctor: ui_icon_alerts(canvas, x, y); break;
+    case LabMateToolDashboard: ui_icon_counter(canvas, x, y); break;
     default: break;
     }
 }
