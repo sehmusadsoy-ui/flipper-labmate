@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
+#include "labmate_ui_layout.h"
 
 typedef enum { FontSecondary=0, FontPrimary=1 } Font;
 typedef enum { AlignRight=0, AlignBottom=0 } Align;
