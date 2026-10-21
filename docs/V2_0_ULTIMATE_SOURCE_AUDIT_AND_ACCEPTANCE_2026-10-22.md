@@ -110,3 +110,12 @@ The owner supplied a complete pasted terminal log (after successfully applying t
 **Pinned host test-only Git blobs:** `tests/test_v20_phase2k_button_counter.c` old `c4b81c3c15be11e1d567ed670fa0190710f4f5a0` → new `b5276c9a96b05dc02d5cf80b715501cd7561be60`; `scripts/test-v20-phase2k-host.sh` old `a84517cde5325ffce3320f1cbfee332fd485646e` → new `9aa0d55532777c560a9710d7574a92cb3ae06fe4`. The local patcher checks both old/new blob hashes before updating WSL source tests and never mutates production code or device.
 
 **Latest observed owner result:** Phase2L stopped at Phase2K; **new Phase2K gate NOT YET RUN**, complete host integration still FAIL/BLOCKED; **no new E11 FAP compile was executed**. Device test and v2.0 Stable remain NO-GO.
+
+
+## Owner-run Phase3B Doctor layout cross-enum compile warning (2026-10-22)
+
+The latest owner-provided local build transcript verifies **22/22 Phase2L host suites PASS (GCC + Clang)**, **Phase3A 38 evidence scenarios and eight invalid-input gates PASS**, and Phase3B reference editing policy PASS. The Phase3B 128x64 layout fixture then stops compiling due to `-Werror=enum-compare` for the comparison between `LABMATE_DOCTOR_STATUS_Y` and `LABMATE_UI_FOOTER_RULE_Y`. The constants are numerically 50 and 52 but declared in **different anonymous enum types**.
+
+Fix: `tests/test_v20_doctor_layout.c` updated in commit `acd3245d36f57d7991cd547135f03a02c6f8d962`, keeping the geometry `_Static_assert` and applying `(int)` to each side. Git source blob old `0973a8641299a8290cb78ed7406b5d3c3a232d5b`, new `1cd344ae1a4b055f20765260cbc72452d4d80c66`. A standalone equivalent cross-enum geometry compilation was locally verified under GCC and Clang with `-Wall -Wextra -Werror -pedantic -fsanitize=address,undefined`, but the **full repository Phase3B test has NOT been rerun** with this fix, and therefore no wider PASS is claimed.
+
+No production app code, firmware, microSD data or installed FAP was changed by this fix. Remaining Phase3C/3D/Ultimate suite, E11 APPCHK/ABI/FAP and device physical acceptance stay unverified for current source. Preserve current owner-installed 115104-byte Phase3D sidecar and independently matched 101468-byte v1.9DEV rollback copy. NO Stable or firmware flash.
