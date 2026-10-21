@@ -52,4 +52,14 @@ sh "$root/scripts/test-v20-phase3d-frequency-wiring-host.sh" || {
     echo 'V20 OFFLINE FAIL: Phase3D Frequency native wiring audit' >&2
     exit 1
 }
-echo 'V20 OFFLINE HOST PASS: Phase 2L + Phase 3A + Phase 3B + Phase 3C + Phase 3D Frequency (NOT SDK/FAP OR DEVICE)'
+for phase in signal-stats doctor-advice dashboard; do
+    test -s "$root/scripts/test-v20-$phase-host.sh" || {
+        echo "V20 OFFLINE NO-GO: missing v2.0 Ultimate $phase suite" >&2
+        exit 2
+    }
+    sh "$root/scripts/test-v20-$phase-host.sh" || {
+        echo "V20 OFFLINE FAIL: v2.0 Ultimate $phase" >&2
+        exit 1
+    }
+done
+echo 'V20 OFFLINE HOST PASS: Phase 2L + Phase 3A/3B/3C/3D + Dashboard + Stats + Doctor Advice (NOT SDK/FAP OR DEVICE)'

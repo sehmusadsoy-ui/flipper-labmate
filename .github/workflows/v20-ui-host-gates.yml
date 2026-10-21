@@ -31,6 +31,9 @@ on:
       - "src/labmate_low_mailbox_audit.h"
       - "src/labmate_low_mailbox_evidence.h"
       - "src/labmate_dashboard_store.[ch]"
+      - "src/labmate_dashboard_screen.[ch]"
+      - "src/labmate_signal_stats.[ch]"
+      - "src/labmate_doctor_advice.[ch]"
       - "src/labmate_doctor.[ch]"
       - "src/labmate_doctor_panel.[ch]"
       - "src/labmate_doctor_screen.[ch]"
@@ -79,6 +82,9 @@ on:
       - "scripts/test-v20-phase3d-frequency-wiring-host.sh"
       - "scripts/build-v20-phase3b-e11-isolated.sh"
       - "scripts/test-v20-offline-full-host.sh"
+      - "scripts/test-v20-dashboard-host.sh"
+      - "scripts/test-v20-signal-stats-host.sh"
+      - "scripts/test-v20-doctor-advice-host.sh"
       - ".github/workflows/v20-ui-host-gates.yml"
   pull_request:
     branches:
@@ -110,6 +116,9 @@ on:
       - "src/labmate_low_mailbox_audit.h"
       - "src/labmate_low_mailbox_evidence.h"
       - "src/labmate_dashboard_store.[ch]"
+      - "src/labmate_dashboard_screen.[ch]"
+      - "src/labmate_signal_stats.[ch]"
+      - "src/labmate_doctor_advice.[ch]"
       - "src/labmate_doctor.[ch]"
       - "src/labmate_doctor_panel.[ch]"
       - "src/labmate_doctor_screen.[ch]"
@@ -158,6 +167,9 @@ on:
       - "scripts/test-v20-phase3d-frequency-wiring-host.sh"
       - "scripts/build-v20-phase3b-e11-isolated.sh"
       - "scripts/test-v20-offline-full-host.sh"
+      - "scripts/test-v20-dashboard-host.sh"
+      - "scripts/test-v20-signal-stats-host.sh"
+      - "scripts/test-v20-doctor-advice-host.sh"
       - ".github/workflows/v20-ui-host-gates.yml"
 
 # Future CI policy only; GitHub Actions currently has no confirmed runs.
@@ -297,3 +309,15 @@ jobs:
       - name: Phase 3D-B Frequency native START/STOP wiring audit (host only)
         shell: bash
         run: sh scripts/test-v20-phase3d-frequency-wiring-host.sh
+
+      - name: v2.0 Ultimate sealed dashboard projection and source safety
+        shell: bash
+        run: sh scripts/test-v20-dashboard-host.sh
+
+      - name: v2.0 Ultimate bounded advanced session statistics
+        shell: bash
+        run: sh scripts/test-v20-signal-stats-host.sh
+
+      - name: v2.0 Ultimate Signal Doctor explanation and safe next checks
+        shell: bash
+        run: sh scripts/test-v20-doctor-advice-host.sh
