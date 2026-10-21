@@ -10,6 +10,24 @@
  * with existing capture modules and must never be changed from this file.
  * Identical logic was extracted from the device-tested v1.7 RC1 core. */
 
+/* Consume the LOW/PC1 ISR's period and acknowledge its publication flag
+ * in one IRQ-critical snapshot. Otherwise an IRQ arriving after the period
+ * read but before clearing the flag could have its update silently erased.
+ * Does NOT certify lossless ISR delivery or a completed capture epoch.
+ */
+static bool labmate_frequency_low_take_period(LabMateApp* app, uint32_t* period_cycles) {
+    if(!app || !period_cycles) return false;
+    bool pending;
+    FURI_CRITICAL_ENTER();
+    pending = app->frequency_irq_new_period;
+    if(pending) {
+        *period_cycles = app->frequency_irq_period_cycles;
+        app->frequency_irq_new_period = false;
+    }
+    FURI_CRITICAL_EXIT();
+    return pending;
+}
+
 void measurement_reset(LabMateApp* app) {
     uint32_t now = furi_get_tick();
 
@@ -315,19 +333,8 @@ void measurement_update(LabMateApp* app) {
             return;
         }
 
-        if(app->frequency_irq_new_period) {
-
-            uint32_t period_cycles;
-
-            /*
-             * Copy the volatile ISR value first, then
-             * acknowledge it.
-             */
-            period_cycles =
-                app->frequency_irq_period_cycles;
-
-            app->frequency_irq_new_period = false;
-
+        uint32_t period_cycles = 0U;
+        if(labmate_frequency_low_take_period(app, &period_cycles)) {
             if(period_cycles > 0 &&
                SystemCoreClock > 0) {
 
