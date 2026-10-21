@@ -31,8 +31,8 @@ required = {"furi_hal_resource_lease_try_acquire",
             "furi_hal_gpio_try_add_int_callback"}
 assert required <= exports, "NO-GO: E11 SDK exports missing"
 assert '#define FURI_HAL_RESOURCE_LEASE_API_V1 1' in (base / "targets/f7/furi_hal/furi_hal_resources.h").read_text(), "NO-GO: patched E11 resource HAL missing"
-assert 'fap_version="1.9"' in (app / "application.fam").read_text(), "NO-GO: expected provisional manifest changed"
-assert '#define LABMATE_VERSION_TEXT "v1.9DEV"' in (app / "src/labmate_internal.h").read_text(), "NO-GO: unexpected development version"
+assert 'fap_version="2.0"' in (app / "application.fam").read_text(), "NO-GO: expected v2.0DEV manifest changed"
+assert '#define LABMATE_VERSION_TEXT "v2.0DEV"' in (app / "src/labmate_internal.h").read_text(), "NO-GO: unexpected development version"
 print("PHASE3B PINNED E11 SOURCE PREFLIGHT: PASS")
 PY
 

@@ -29,7 +29,7 @@
 #include "labmate_evidence_session.h"
 #include "labmate_doctor_frequency_policy.h"
 
-#define LABMATE_VERSION_TEXT "v1.9DEV"
+#define LABMATE_VERSION_TEXT "v2.0DEV"
 /* Shared menu/pin counts: UI and input handling must agree. */
 #define MENU_COUNT LabMateToolCount
 #define GPIO_COUNT LABMATE_MONITOR_PIN_COUNT

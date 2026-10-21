@@ -210,10 +210,10 @@ jobs:
           cp labmate/src/*.c labmate/src/*.h momentum-src/applications_user/labmate/src/
           test -f momentum-src/applications_user/labmate/src/labmate_scope_bridge.c
           test -f momentum-src/applications_user/labmate/src/labmate_scope_native.c
-          grep -Fqx '#define LABMATE_VERSION_TEXT "v1.9DEV"' momentum-src/applications_user/labmate/src/labmate_internal.h
-          grep -Fqx '    fap_version="1.9",' momentum-src/applications_user/labmate/application.fam
+          grep -Fqx '#define LABMATE_VERSION_TEXT "v2.0DEV"' momentum-src/applications_user/labmate/src/labmate_internal.h
+          grep -Fqx '    fap_version="2.0",' momentum-src/applications_user/labmate/application.fam
           test "$(git -C labmate rev-parse HEAD)" = "$GITHUB_SHA"
-          echo "V2.0 WORKING SOURCE STAGED; provisional v1.9DEV manifest is BUILD-ONLY, no device access."
+          echo "V2.0 WORKING SOURCE STAGED; v2.0DEV manifest is BUILD-ONLY, no device access."
 
       - name: Compile development FAP using exact patched E11 SDK (NO FLASH)
         shell: bash
