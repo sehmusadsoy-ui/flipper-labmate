@@ -128,6 +128,11 @@ void labmate_frequency_high_start(LabMateApp* app) {
         return;
     }
 
+    /* Native TIM2 configure succeeded and the counter is still stopped:
+     * a new, independently owned measurement epoch begins here.
+     * Never reset an existing audit when a resource request is denied.
+     */
+    labmate_high_gate_audit_reset(&app->frequency_high_gate_audit);
     app->frequency_hw_last_count = 0;
     app->frequency_hw_last_poll_count = 0;
     app->frequency_hw_last_cycle = DWT->CYCCNT;
