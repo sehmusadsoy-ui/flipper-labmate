@@ -57,7 +57,7 @@ def main():
     # The actual 128x64 About artwork uses uppercase "17 TOOL GUIDES".
     # Count is derived from the stable enum, not a case-sensitive copy of UI text.
     displayed_guides = [int(n) for n in re.findall(
-        r'"(\\d+)\\s+tool guides"', ui, flags=re.IGNORECASE
+        r'"(\d+)\s+tool guides"', ui, flags=re.IGNORECASE
     )]
     require(displayed_guides and all(n == len(expected) - 1 for n in displayed_guides),
             "About guide count out of sync with tool enum")
