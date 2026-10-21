@@ -183,11 +183,16 @@ bool labmate_logger_storage_start(LabMateApp* app) {
 
     app->logger_start_tick = furi_get_tick();
     app->logger_last_tick = app->logger_start_tick;
+    /* This function runs outside the UI mutex for SD I/O. Enter the
+     * mutex only to update the dashboard state seen by the renderer.
+     */
+    furi_mutex_acquire(app->mutex, FuriWaitForever);
     if(app->logger_session_generation != UINT32_MAX)
         ++app->logger_session_generation;
     else app->logger_session_generation = 0U; /* never reuse wrapped generation */
     labmate_dashboard_store_clear_source(
         &app->doctor_store, LabMateSnapshotLogger);
+    furi_mutex_release(app->mutex);
     app->logger_recording = true;
     return true;
 }
