@@ -31,6 +31,11 @@ on:
       - "src/labmate_low_mailbox_audit.h"
       - "src/labmate_low_mailbox_evidence.h"
       - "src/labmate_dashboard_store.[ch]"
+      - "src/labmate_doctor.[ch]"
+      - "src/labmate_doctor_panel.[ch]"
+      - "src/labmate_doctor_screen.[ch]"
+      - "src/labmate_input.c"
+      - "src/labmate_input_menu.c"
       - "src/labmate_scope_ui.h"
       - "src/labmate_i2c_ui.c"
       - "src/labmate_onewire_ui.c"
@@ -56,6 +61,9 @@ on:
       - "scripts/test-v20-phase2i-host.sh"
       - "scripts/test-v20-phase2j-host.sh"
       - "scripts/test-v20-phase2k-host.sh"
+      - "scripts/test-v20-phase3a-doctor-host.sh"
+      - "scripts/test-v20-phase3b-doctor-panel-host.sh"
+      - "scripts/test-v20-offline-full-host.sh"
       - ".github/workflows/v20-ui-host-gates.yml"
   pull_request:
     branches:
@@ -87,6 +95,11 @@ on:
       - "src/labmate_low_mailbox_audit.h"
       - "src/labmate_low_mailbox_evidence.h"
       - "src/labmate_dashboard_store.[ch]"
+      - "src/labmate_doctor.[ch]"
+      - "src/labmate_doctor_panel.[ch]"
+      - "src/labmate_doctor_screen.[ch]"
+      - "src/labmate_input.c"
+      - "src/labmate_input_menu.c"
       - "src/labmate_scope_ui.h"
       - "src/labmate_i2c_ui.c"
       - "src/labmate_onewire_ui.c"
@@ -112,8 +125,12 @@ on:
       - "scripts/test-v20-phase2i-host.sh"
       - "scripts/test-v20-phase2j-host.sh"
       - "scripts/test-v20-phase2k-host.sh"
+      - "scripts/test-v20-phase3a-doctor-host.sh"
+      - "scripts/test-v20-phase3b-doctor-panel-host.sh"
+      - "scripts/test-v20-offline-full-host.sh"
       - ".github/workflows/v20-ui-host-gates.yml"
 
+# Future CI policy only; GitHub Actions currently has no confirmed runs.
 permissions:
   contents: read
 
@@ -230,3 +247,11 @@ jobs:
       - name: Phase 2K native lease release truth table and STOP ownership ordering
         shell: bash
         run: sh scripts/test-v20-phase2k-host.sh
+
+      - name: Phase 3A sealed Signal Doctor evaluator (host only)
+        shell: bash
+        run: sh scripts/test-v20-phase3a-doctor-host.sh
+
+      - name: Phase 3B Doctor reference and fail-closed panel policy (host only)
+        shell: bash
+        run: sh scripts/test-v20-phase3b-doctor-panel-host.sh
