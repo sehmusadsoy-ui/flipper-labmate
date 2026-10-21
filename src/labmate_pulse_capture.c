@@ -38,6 +38,8 @@ static void pulse_gpio_callback(void* context) {
     if(app->pulse_irq_seen) {
         const uint32_t delta = cycle - app->pulse_irq_last_cycle;
         if(delta > 0U) {
+            bool new_high=false;
+            bool new_low=false;
             /* At ordinary frequencies preserve the 16-sample response.
              * For very short pulses, collect 128 HIGH and 128 LOW widths
              * and publish them TOGETHER. Independent publications could
@@ -55,6 +57,8 @@ static void pulse_gpio_callback(void* context) {
                 app->pulse_irq_high_samples = 0U;
                 app->pulse_irq_low_samples = 0U;
                 app->pulse_irq_wide_window = wide_window;
+                /* Never combine phase estimates from different smoothing modes. */
+                labmate_pulse_pair_discard_partial(&app->pulse_pair_audit);
             }
 
             if(fast_half_period > 0U && delta <= fast_half_period) {
@@ -65,6 +69,7 @@ static void pulse_gpio_callback(void* context) {
                         app->pulse_irq_high_cycles =
                             (app->pulse_irq_high_sum + 8U) >> 4;
                         app->pulse_irq_high_valid = true;
+                        new_high=true;
                         app->pulse_irq_high_sum = 0U;
                         app->pulse_irq_high_samples = 0U;
                     }
@@ -75,6 +80,7 @@ static void pulse_gpio_callback(void* context) {
                         app->pulse_irq_low_cycles =
                             (app->pulse_irq_low_sum + 8U) >> 4;
                         app->pulse_irq_low_valid = true;
+                        new_low=true;
                         app->pulse_irq_low_sum = 0U;
                         app->pulse_irq_low_samples = 0U;
                     }
@@ -93,6 +99,8 @@ static void pulse_gpio_callback(void* context) {
                         app->pulse_irq_low_samples;
                     app->pulse_irq_high_valid = true;
                     app->pulse_irq_low_valid = true;
+                    new_high=true;
+                    new_low=true;
                     app->pulse_irq_high_sum = 0U;
                     app->pulse_irq_low_sum = 0U;
                     app->pulse_irq_high_samples = 0U;
@@ -109,13 +117,23 @@ static void pulse_gpio_callback(void* context) {
                     app->pulse_irq_high_samples = 0U;
                     app->pulse_irq_high_cycles = delta;
                     app->pulse_irq_high_valid = true;
+                    new_high=true;
                 } else {
                     app->pulse_irq_low_sum = 0U;
                     app->pulse_irq_low_samples = 0U;
                     app->pulse_irq_low_cycles = delta;
                     app->pulse_irq_low_valid = true;
+                    new_low=true;
                 }
             }
+            /* One new paired publication requires one fresh completed update
+             * of BOTH phases. These are averaging windows, not necessarily
+             * widths from the same individual waveform cycle. */
+            (void)labmate_pulse_pair_note(
+                &app->pulse_pair_audit, new_high, new_low,
+                app->pulse_irq_high_valid, app->pulse_irq_low_valid,
+                app->pulse_irq_high_cycles, app->pulse_irq_low_cycles,
+                app->pulse_irq_edges + 1U);
         }
     }
 
@@ -215,6 +233,9 @@ void labmate_pulse_capture_start(LabMateApp* app) {
     app->pulse_irq_high_samples = 0U;
     app->pulse_irq_low_samples = 0U;
     app->pulse_irq_wide_window = false;
+    /* The native callback is disabled after owning its E11 lease. */
+    labmate_pulse_pair_reset(&app->pulse_pair_audit);
+    app->pulse_pair_last_observation = (LabMatePulsePairObservation){0};
 
     furi_hal_gpio_init(
         pin, GpioModeInterruptRiseFall, GpioPullNo, GpioSpeedVeryHigh);
