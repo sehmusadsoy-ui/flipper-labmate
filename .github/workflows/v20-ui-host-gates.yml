@@ -20,6 +20,11 @@ on:
       - "src/labmate_high_gate_audit.h"
       - "src/labmate_pulse_pair_audit.h"
       - "src/labmate_pulse_capture.c"
+      - "src/labmate_capture_session.c"
+      - "src/labmate_capture_release_gate.h"
+      - "src/labmate_frequency_tim2.c"
+      - "src/labmate_frequency_capture.h"
+      - "src/labmate_pulse_capture.h"
       - "src/labmate_internal.h"
       - "src/labmate_low_mailbox_audit.h"
       - "src/labmate_low_mailbox_evidence.h"
@@ -48,6 +53,7 @@ on:
       - "scripts/test-v20-phase2h-host.sh"
       - "scripts/test-v20-phase2i-host.sh"
       - "scripts/test-v20-phase2j-host.sh"
+      - "scripts/test-v20-phase2k-host.sh"
       - ".github/workflows/v20-ui-host-gates.yml"
   pull_request:
     branches:
@@ -68,6 +74,11 @@ on:
       - "src/labmate_high_gate_audit.h"
       - "src/labmate_pulse_pair_audit.h"
       - "src/labmate_pulse_capture.c"
+      - "src/labmate_capture_session.c"
+      - "src/labmate_capture_release_gate.h"
+      - "src/labmate_frequency_tim2.c"
+      - "src/labmate_frequency_capture.h"
+      - "src/labmate_pulse_capture.h"
       - "src/labmate_internal.h"
       - "src/labmate_low_mailbox_audit.h"
       - "src/labmate_low_mailbox_evidence.h"
@@ -96,6 +107,7 @@ on:
       - "scripts/test-v20-phase2h-host.sh"
       - "scripts/test-v20-phase2i-host.sh"
       - "scripts/test-v20-phase2j-host.sh"
+      - "scripts/test-v20-phase2k-host.sh"
       - ".github/workflows/v20-ui-host-gates.yml"
 
 permissions:
@@ -211,3 +223,6 @@ jobs:
       - name: Phase 2J native Pulse fresh HIGH/LOW windows
         shell: bash
         run: sh scripts/test-v20-phase2j-host.sh
+      - name: Phase 2K native lease release truth table and STOP ownership ordering
+        shell: bash
+        run: sh scripts/test-v20-phase2k-host.sh
