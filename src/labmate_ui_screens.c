@@ -196,10 +196,10 @@ void draw_about(Canvas* canvas, LabMateApp* app) {
     ui_badge(canvas, 91, 1, 35, index, false);
     canvas_set_font(canvas, FontSecondary);
     if(page == 0U) {
-        canvas_draw_str(canvas, 3, 23, "LabMate " LABMATE_VERSION_TEXT);
-        canvas_draw_str(canvas, 3, 33, "SauronLAB / Sehmus");
-        canvas_draw_str(canvas, 3, 43, "17 tool guides");
-        canvas_draw_str(canvas, 3, 51, "3.3V GPIO ONLY");
+        canvas_draw_str(canvas, 3, 23, "LabMate Ultimate");
+        canvas_draw_str(canvas, 3, 33, LABMATE_VERSION_TEXT " / E11");
+        canvas_draw_str(canvas, 3, 42, "17 TOOL GUIDES");
+        canvas_draw_str(canvas, 3, 50, "3.3V GPIO ONLY");
     } else if(page == 1U) {
         canvas_draw_str(canvas, 3, 23, "Source / releases:");
         canvas_draw_str(canvas, 3, 33, "github.com/");

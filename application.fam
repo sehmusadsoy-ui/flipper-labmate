@@ -1,6 +1,6 @@
 App(
     appid="labmate",
-    name="LabMate",
+    name="LabMate Ultimate",
     apptype=FlipperAppType.EXTERNAL,
     entry_point="labmate_app",
     # Exclude host-only native tests: Momentum's default "*.c*" would
@@ -13,5 +13,5 @@ App(
     fap_author="SauronLAB / Sehmus",
     fap_icon="labmate_10px.png",
     fap_version="2.0",
-    fap_description="Portable GPIO and digital signal diagnostic tool for Flipper Zero.",
+    fap_description="LabMate Ultimate v2.0DEV: 3.3V digital diagnostics and measurement dashboard.",
 )
