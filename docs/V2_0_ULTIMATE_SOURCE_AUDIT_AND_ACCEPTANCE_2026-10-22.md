@@ -56,4 +56,12 @@ Output if and only if all compilation gates succeed:
 
 An owner-run terminal transcript and actual SHA-256 must be reviewed before any further on-device FAP upload/launch, with **fresh scoped consent**. No automatic sidecar overwrite, restore, SD write, firmware flash, release, tag or Stable promotion.
 
+### Follow-up source hardening, still NOT compiled
+
+- Captured Logger's **real armed pin and source** at successful CSV-open epoch, replacing mutable preferred-pin selection in the evidence record; guards against source change before display.
+- New `src/labmate_scope_period_stats.[ch]` computes bounded mean/min/max and descriptive normalized period **spread** from at least two actually completed, nontruncated Scope cycles; it is explicitly **not** a calibrated jitter or automatic instability fault. Added GCC/Clang ASan/UBSan host runner `scripts/test-v20-scope-period-stats-host.sh` and GUI display `SPREAD ...%` or `SPREAD N/A`.
+- New mandatory source-contract audit `scripts/audit-v20-ultimate-sources.py` checks canonical 17-tool IDs/order, version/launcher, Dashboard/Doctor dispatch and native-sealed source hooks before full host+SDK review.
+- Doctor page indicators corrected to `1/3`, `2/3`, `3/3` and three-column real input hints so advisory page is discoverable without changing actual capture behavior.
+- Live repo source readback confirmed 17 tool enum entries with historical IDs unchanged and Dashboard ID 16. **This is source-only, not compiler or physical PASS**.
+
 **Release decision:** CURRENT SOURCE = expanded feature candidate with mandatory unclosed correctness/coverage gates; `v2.0 Stable` = **NO-GO**. The roadmap is not retroactively shrunk to claim completion. Only exact built and physically reviewed bytes can move to RC/Stable.
