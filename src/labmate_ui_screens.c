@@ -552,12 +552,8 @@ void draw_frequency(Canvas* canvas, LabMateApp* app) {
     /* Right-align the value to leave a readable gap after MAX without clipping. */
     canvas_draw_str_aligned(canvas, 127, 49, AlignRight, AlignBottom, max_value);
 
-    /* Keep the three action hints separate at 128x64 resolution. */
-    canvas_draw_line(canvas, 0, 52, 127, 52);
-    canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 2, 61, "<> MODE");
-    canvas_draw_str(canvas, 49, 61, app->hold ? "OK LIVE" : "OK HOLD");
-    canvas_draw_str(canvas, 102, 61, "^RST");
+    /* Three identical action slots across measurement main screens. */
+    ui_footer_triple(canvas, "<> MODE", app->hold ? "OK LIVE" : "OK HOLD", "^RST");
 }
 
 /* Threshold configuration is read-only from the Canvas callback.
@@ -930,12 +926,8 @@ void draw_pulse(Canvas* canvas, LabMateApp* app) {
     pulse_ui_metric(canvas, 3, 41, 50, "PERIOD", period);
     pulse_ui_metric(canvas, 68, 41, 50, "DUTY", duty);
 
-    /* Navigation: short captions fit the actual 128px viewport. */
-    canvas_draw_line(canvas, 0, 52, 127, 52);
-    canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 3, 61, "<>PIN");
-    canvas_draw_str(canvas, 45, 61, app->hold ? "OK LIVE" : "OK HOLD");
-    canvas_draw_str(canvas, 96, 61, "^STAT");
+    /* Main view only. The dense STATS view retains its own y=62 captions. */
+    ui_footer_triple(canvas, "<>PIN", app->hold ? "OK LIVE" : "OK HOLD", "^STAT");
 }
 
 /* Read-only Data Logger dashboard; all SD work stays in app loop. */
