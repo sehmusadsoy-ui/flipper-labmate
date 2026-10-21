@@ -180,3 +180,16 @@ File, size: 101468b
 **Authorization consumed:** The user approved only this one-file trial upload; this operation is now completed. No evidence of launch, app runtime, measurement tests, firmware flash, SD data migration or rollback. Both applications still use `appid="labmate"` and the same application data namespace, so trial launch is NOT an independent sandbox, even though FAP file byte paths are separate.
 
 **Next decision:** Obtain a distinct informed approval for the first bounded **launch / UI-only smoke test**, preferably after checking current live `/ext/apps_data/labmate` coverage against saved data. No measurement generator, logger, profiles write, hardware pin rewiring, app install or firmware change under the upload consent. Do not assert v2.0 stable.
+
+
+## 2026-10-22 — Separate owner consent for first trial UI-only launch
+
+After owner-provided CLI `stat` and `md5` screenshots confirmed:
+- New `/ext/apps/Tools/labmate-v20-phase3d-trial.fap`: **115104 bytes**, MD5 `7333aea05d157e915ee5a9c4de0a2296`.
+- Existing `/ext/apps/Tools/labmate.fap`: **101468 bytes**, MD5 `066f017c695bb5a17158a7b26c8f4838`.
+
+The owner separately replied **"pnaylıyorum"** to a direct request for permission to **launch only the new trial FAP for first-launch / UI-only smoke tests T01–T03**. Typographic spelling does not change the clear affirmative response.
+
+Permitted scope: launch exact sidecar `/ext/apps/Tools/labmate-v20-phase3d-trial.fap` via a path-explicit loader; inspect root menu, MEASURE→Signal Doctor, source/reference controls and initial SET REF FIRST / NO SEALED DATA behavior; navigate BACK and exit. No GPIO/PWM/Logger/Profiles operation, capture/IRQ hardware manipulation, firmware install/flash, new SD file transfer, rename/delete or implicit consent for later metrology tests. Shared `appid=labmate` and data-root remains a known caveat; avoid all data-writing screens.
+
+**Device launch and visible UI results are STILL PENDING**. The current owner approval is recorded as permission only, NOT PASS evidence. If launch fails, shows an unexpected version/menu, hangs, resets or creates a concerning state, STOP without retries.
