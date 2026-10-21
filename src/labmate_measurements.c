@@ -1,6 +1,7 @@
 #include "labmate_measurements.h"
 #include "labmate_frequency_tim2.h"
 #include "labmate_frequency_gate.h"
+#include "labmate_doctor_frequency_bridge.h"
 #include "labmate_monitor_gpio.h"
 #include "labmate_pulse_math.h"
 #include <furi_hal.h>
@@ -18,16 +19,24 @@
 static bool labmate_frequency_low_take_period(LabMateApp* app, uint32_t* period_cycles) {
     if(!app || !period_cycles) return false;
     LabMateLowMailboxObservation observation;
+    uint32_t observed_edges = 0U;
+    uint32_t last_edge_tick = 0U;
     FURI_CRITICAL_ENTER();
     const bool copied = labmate_low_mailbox_consume_locked(
         &app->frequency_low_mailbox_audit,
         &app->frequency_irq_new_period, &app->frequency_irq_period_cycles,
         &observation);
+    observed_edges = app->frequency_irq_edges;
+    last_edge_tick = app->frequency_irq_last_tick;
     FURI_CRITICAL_EXIT();
     if(!copied) return false;
     /* This is app-thread provenance, not a verified capture or lease. */
     app->frequency_low_last_observation = observation;
-    if(observation.has_period) *period_cycles = observation.period_cycles;
+    if(observation.has_period) {
+        *period_cycles = observation.period_cycles;
+        labmate_doctor_frequency_note_low(
+            app, &observation, observed_edges, last_edge_tick);
+    }
     return observation.has_period;
 }
 
@@ -332,6 +341,7 @@ void measurement_update(LabMateApp* app) {
                                     app->frequency_millihz = sample_millihz;
                                     app->frequency_valid = true;
                                     frequency_stats_record(app);
+                                    labmate_doctor_frequency_note_high(app);
                                 } else {
                                     /* A saturated/ambiguous audit must not
                                      * expose a fresh VALID display reading. */

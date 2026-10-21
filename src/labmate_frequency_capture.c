@@ -3,6 +3,7 @@
 #include "labmate_capture_exti.h"
 #include "labmate_frequency_tim2.h"
 #include "labmate_resource_policy.h"
+#include "labmate_doctor_frequency_bridge.h"
 #include <furi_hal.h>
 #include <furi_hal_resources.h>
 #include <stm32wbxx_ll_exti.h>
@@ -145,6 +146,7 @@ void labmate_frequency_high_start(LabMateApp* app) {
     app->capture_owner = LabMateCaptureFrequencyHigh;
 
     labmate_frequency_tim2_enable();
+    labmate_doctor_frequency_started(app);
 }
 void labmate_frequency_low_stop(LabMateApp* app) {
     if(!app->frequency_irq_active) return;
@@ -244,6 +246,7 @@ void labmate_frequency_low_start(LabMateApp* app) {
     app->capture_owner = LabMateCaptureFrequencyLow;
     app->frequency_irq_active = true;
     furi_hal_gpio_enable_int_callback(pin);
+    labmate_doctor_frequency_started(app);
 #else
     app->capture_blocked = true; /* fail closed: no mismatched HAL fallback */
 #endif

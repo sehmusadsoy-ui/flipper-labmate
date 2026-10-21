@@ -27,6 +27,7 @@
 #include "labmate_pulse_pair_audit.h"
 #include "labmate_doctor_panel.h"
 #include "labmate_evidence_session.h"
+#include "labmate_doctor_frequency_policy.h"
 
 #define LABMATE_VERSION_TEXT "v1.9DEV"
 /* Shared menu/pin counts: UI and input handling must agree. */
@@ -316,6 +317,11 @@ typedef struct {
      */
     uint32_t doctor_pulse_seen_pairs;
     uint32_t doctor_pulse_last_pair_poll_tick;
+    /* Independent Frequency LOW/PC1 or HIGH/PB3 capture epoch. */
+    LabMateEvidenceSession doctor_frequency_session;
+    LabMateDoctorFrequencyCandidate doctor_frequency_last;
+    uint32_t doctor_frequency_seen_count;
+    bool doctor_frequency_poisoned;
 
     LabMateUart uart; /* USART external GPIO 13/14, no TIM1/TIM2 ownership */
     LabMateCommOwner comm_owner; /* local exclusive I2C/1Wire sessions */

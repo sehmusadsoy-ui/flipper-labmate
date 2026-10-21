@@ -24,6 +24,7 @@
 
 #include "labmate_input_tools.h"
 #include "labmate_doctor_pulse_bridge.h"
+#include "labmate_doctor_frequency_bridge.h"
 void labmate_input_button(LabMateApp* app, InputEvent event, LabMateDeferredWork* work) {
     UNUSED(work);
 
@@ -89,12 +90,16 @@ void labmate_input_gpio(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                 } else if(event.key == InputKeyLeft) {
                     if(app->screen == LabMateScreenPulse)
                         labmate_doctor_pulse_abandon(app);
+                    if(app->screen == LabMateScreenFrequency)
+                        labmate_doctor_frequency_abandon(app);
                     labmate_gpio_change(app, -1);
 
                 } else if(
                     event.key == InputKeyRight) {
                     if(app->screen == LabMateScreenPulse)
                         labmate_doctor_pulse_abandon(app);
+                    if(app->screen == LabMateScreenFrequency)
+                        labmate_doctor_frequency_abandon(app);
                     labmate_gpio_change(app, 1);
 
                 } else if(
@@ -116,6 +121,12 @@ void labmate_input_gpio(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                             app->hold = true;
                         }
                     } else {
+                        /* Frequency HOLD retains the native IRQ/TIM2 lease.
+                         * It is NOT a STOP and can never certify a Doctor
+                         * reading, including on subsequent HOLD resume.
+                         */
+                        if(app->screen == LabMateScreenFrequency)
+                            labmate_doctor_frequency_abandon(app);
                         app->hold = !app->hold;
                         if(!app->hold) {
                             /* HOLD resume cannot treat an unowned GPIO
@@ -148,9 +159,13 @@ void labmate_input_gpio(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                     /* Release active capture before returning to Menu. */
                     if(app->screen == LabMateScreenPulse)
                         labmate_doctor_pulse_prepare_stop(app);
+                    if(app->screen == LabMateScreenFrequency)
+                        labmate_doctor_frequency_prepare_stop(app);
                     labmate_capture_stop_all(app);
                     if(app->screen == LabMateScreenPulse)
                         labmate_doctor_pulse_finish_stop(app);
+                    if(app->screen == LabMateScreenFrequency)
+                        labmate_doctor_frequency_finish_stop(app);
                     labmate_monitor_gpio_release(app, app->gpio_index);
 
                     app->hold = false;
