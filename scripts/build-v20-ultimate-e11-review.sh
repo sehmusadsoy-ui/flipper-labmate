@@ -19,6 +19,7 @@ test -f "$APP/tests/test_v20_signal_stats.c"
 grep -Fqx '#define LABMATE_VERSION_TEXT "v2.0DEV"' "$APP/src/labmate_internal.h"
 grep -Fq 'fap_version="2.0"' "$APP/application.fam"
 grep -Fq 'name="LabMate Ultimate"' "$APP/application.fam"
+python3 "$APP/scripts/audit-v20-ultimate-sources.py"
 echo "V20 ULTIMATE REQUIRED FEATURES / VERSION: SOURCE PRESENT"
 
 # This old-named script is an established fail-closed implementation:
