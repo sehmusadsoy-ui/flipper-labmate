@@ -10,6 +10,7 @@ on:
       - "src/labmate_ui_primitives.[ch]"
       - "src/labmate_ui_layout.h"
       - "src/labmate_ui_status.h"
+      - "src/labmate_snapshot.[ch]"
       - "src/labmate_scope_ui.h"
       - "src/labmate_i2c_ui.c"
       - "src/labmate_onewire_ui.c"
@@ -24,6 +25,7 @@ on:
       - "tests/test_labmate_scope_navigation.c"
       - "tests/host_stubs/**"
       - "scripts/test-v20-ui*-host.sh"
+      - "scripts/test-v20-snapshot-host.sh"
       - ".github/workflows/v20-ui-host-gates.yml"
   pull_request:
     branches:
@@ -34,6 +36,7 @@ on:
       - "src/labmate_ui_primitives.[ch]"
       - "src/labmate_ui_layout.h"
       - "src/labmate_ui_status.h"
+      - "src/labmate_snapshot.[ch]"
       - "src/labmate_scope_ui.h"
       - "src/labmate_i2c_ui.c"
       - "src/labmate_onewire_ui.c"
@@ -48,6 +51,7 @@ on:
       - "tests/test_labmate_scope_navigation.c"
       - "tests/host_stubs/**"
       - "scripts/test-v20-ui*-host.sh"
+      - "scripts/test-v20-snapshot-host.sh"
       - ".github/workflows/v20-ui-host-gates.yml"
 
 permissions:
@@ -122,3 +126,17 @@ jobs:
       - name: UI-06C pure status contract and GPIO screen regression
         shell: bash
         run: sh scripts/test-v20-ui06c-host.sh
+  
+  snapshot-host-only:
+    name: Phase 2 pure snapshot evidence gate (GCC and Clang)
+    if: github.event_name == 'push' || github.head_ref == 'dev/v2.0-signal-doctor'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact reviewed commit, no credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Snapshot C11/ASan/UBSan, no hardware
+        shell: bash
+        run: sh scripts/test-v20-snapshot-host.sh
