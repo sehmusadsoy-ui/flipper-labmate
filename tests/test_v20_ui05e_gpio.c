@@ -74,6 +74,11 @@ void ui_key(Canvas* c,uint8_t x,const char* key,const char* action){
     assert(n>0&&n<=10);
     canvas_set_font(c,FontSecondary);canvas_draw_str(c,x,61,s);
 }
+void ui_footer_pair(Canvas* c,const char* left_key,const char* left_action,const char* right_key,const char* right_action){
+    canvas_draw_line(c,0,52,127,52);
+    ui_key(c,2,left_key,left_action);
+    ui_key(c,66,right_key,right_action);
+}
 static const char* const labmate_gpio_names[]={"PC0","PC1","PC3","PB2","PB3","PA4","PA6","PA7"};
 typedef struct {
     uint8_t gpio_index;
@@ -83,6 +88,10 @@ typedef struct {
 #include "draw_gpio.inc"
 static bool contains(const Canvas* c,const char* s) {
     for(unsigned i=0;i<c->count;i++)if(!strcmp(c->strings[i],s))return true;
+    return false;
+}
+static bool at(const Canvas* c,const char* value,int x){
+    for(unsigned i=0;i<c->count;i++)if(!strcmp(c->strings[i],value) && c->text[i].x0==x)return true;
     return false;
 }
 static void format_expected(char out[32],uint32_t edges){
@@ -113,6 +122,8 @@ int main(void) {
         assert(contains(&c,a.monitor_release_fault?"ERR":a.monitor_blocked?"BUSY":a.hold?"HOLD":"LIVE"));
         assert(contains(&c,a.hold?"(OK) LIVE":"(OK) HOLD"));
         assert(contains(&c,"(<>) PIN"));
+        assert(at(&c,"(<>) PIN",2));
+        assert(at(&c,a.hold?"(OK) LIVE":"(OK) HOLD",66));
         assert(c.color==ColorBlack);
         assert(c.boxes>=((level!=0)?1U:0U));
         if(c.errors){fprintf(stderr,"UI05E ERROR pin=%u edgeidx=%u level=%u status=%u pwm=%u faults=%u\n",pin,index,level,status,pwm,c.errors);return 1;}
