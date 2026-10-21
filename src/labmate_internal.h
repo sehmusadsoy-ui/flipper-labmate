@@ -24,6 +24,7 @@
 #include "labmate_scope_tolerance.h"
 #include "labmate_low_mailbox_audit.h"
 #include "labmate_high_gate_audit.h"
+#include "labmate_pulse_pair_audit.h"
 
 #define LABMATE_VERSION_TEXT "v1.9DEV"
 /* Shared menu/pin counts: UI and input handling must agree. */
@@ -170,6 +171,10 @@ typedef struct {
 
     /* Pulse analyzer: edge timestamps captured in GPIO IRQ. */
     bool pulse_irq_active;
+    /* ISR-proven paired phase-update epochs; no Dashboard publication yet. */
+    LabMatePulsePairAudit pulse_pair_audit;
+    /* Copied together while the IRQ is masked; not a live capture lease. */
+    LabMatePulsePairObservation pulse_pair_last_observation;
     volatile bool pulse_irq_level;
     volatile bool pulse_irq_seen;
     volatile bool pulse_irq_high_valid;
