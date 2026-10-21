@@ -17,15 +17,18 @@
  */
 static bool labmate_frequency_low_take_period(LabMateApp* app, uint32_t* period_cycles) {
     if(!app || !period_cycles) return false;
-    bool pending;
+    LabMateLowMailboxObservation observation;
     FURI_CRITICAL_ENTER();
-    pending = app->frequency_irq_new_period;
-    if(pending) {
-        *period_cycles = app->frequency_irq_period_cycles;
-        app->frequency_irq_new_period = false;
-    }
+    const bool copied = labmate_low_mailbox_consume_locked(
+        &app->frequency_low_mailbox_audit,
+        &app->frequency_irq_new_period, &app->frequency_irq_period_cycles,
+        &observation);
     FURI_CRITICAL_EXIT();
-    return pending;
+    if(!copied) return false;
+    /* This is app-thread provenance, not a verified capture or lease. */
+    app->frequency_low_last_observation = observation;
+    if(observation.has_period) *period_cycles = observation.period_cycles;
+    return observation.has_period;
 }
 
 void measurement_reset(LabMateApp* app) {
