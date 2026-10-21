@@ -157,3 +157,26 @@ PC SHA256:
 **Pinned candidate on-PC:** 115104 bytes, MD5 `7333aea05d157e915ee5a9c4de0a2296`, SHA256 `53afa54b70b77d53b5728ab915b10b278a25c3a21f6caf93eb261aa35a68b737`. This is a local file verification ONLY, not a claim that the device now contains it.
 
 **After separately approved qFlipper one-file upload:** independent Flipper CLI `storage stat` and `storage md5` must show the candidate path `/ext/apps/Tools/labmate-v20-phase3d-trial.fap` as size 115104 and MD5 `7333aea05d157e915ee5a9c4de0a2296`. The old `/ext/apps/Tools/labmate.fap` must remain size 101468 and MD5 `066f017c695bb5a17158a7b26c8f4838`. Abort on any mismatch; no retries, overwrites, deletes, renames, firmware flash or app launch. Device transfer and post-transfer readback are **PENDING** until owner provides their results.
+
+
+## Phase 3E — Approved one-file microSD upload and post-upload independent CLI checks PASS
+
+Owner uploaded the Phase3D trial via qFlipper under the exact NEW pathname. Subsequent Flipper Lab CLI screenshot shows:
+
+```text
+>: storage stat "/ext/apps/Tools/labmate-v20-phase3d-trial.fap"
+File, size: 115104b
+>: storage md5 "/ext/apps/Tools/labmate-v20-phase3d-trial.fap"
+7333aea05d157e915ee5a9c4de0a2296
+
+>: storage stat "/ext/apps/Tools/labmate.fap"
+File, size: 101468b
+>: storage md5 "/ext/apps/Tools/labmate.fap"
+066f017c695bb5a17158a7b26c8f4838
+```
+
+**Trial transfer / device MD5 parity: PASS**, matching the owner’s PC-only 115104-byte candidate MD5 and SHA-256 `53afa54b70b77d53b5728ab915b10b278a25c3a21f6caf93eb261aa35a68b737`. **Existing active v1.9DEV FAP preserved:** 101468-byte MD5 unchanged and previously cross-checked against PC rollback copy SHA-256 `d8bb04cf6de6ebaa466e7487e619d9f68af21dac49df2aa51e91dfae1f9f55c2`.
+
+**Authorization consumed:** The user approved only this one-file trial upload; this operation is now completed. No evidence of launch, app runtime, measurement tests, firmware flash, SD data migration or rollback. Both applications still use `appid="labmate"` and the same application data namespace, so trial launch is NOT an independent sandbox, even though FAP file byte paths are separate.
+
+**Next decision:** Obtain a distinct informed approval for the first bounded **launch / UI-only smoke test**, preferably after checking current live `/ext/apps_data/labmate` coverage against saved data. No measurement generator, logger, profiles write, hardware pin rewiring, app install or firmware change under the upload consent. Do not assert v2.0 stable.
