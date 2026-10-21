@@ -21,12 +21,12 @@ void labmate_doctor_pulse_abandon(LabMateApp* app) {
      */
     if(app->doctor_pulse_session.state == LabMateEvidenceCapturing)
         app->doctor_pulse_session.state = LabMateEvidenceIdle;
-    labmate_dashboard_store_init(&app->doctor_store);
+    labmate_dashboard_store_clear_source(&app->doctor_store, LabMateSnapshotPulse);
 }
 
 void labmate_doctor_pulse_started(LabMateApp* app) {
     if(!app || app->screen != LabMateScreenPulse) return;
-    labmate_dashboard_store_init(&app->doctor_store);
+    labmate_dashboard_store_clear_source(&app->doctor_store, LabMateSnapshotPulse);
     if(!app->pulse_irq_active || app->capture_owner != LabMateCapturePulse ||
        app->capture_release_fault || app->capture_blocked) return;
     const uint32_t hz = furi_kernel_get_tick_frequency();
@@ -113,5 +113,6 @@ void labmate_doctor_pulse_finish_stop(LabMateApp* app) {
     LabMateSnapshotV1 snapshot;
     if(labmate_evidence_session_finish(
            &app->doctor_pulse_session, end_ms, released, &snapshot))
-        (void)labmate_dashboard_store_ingest(&app->doctor_store, &snapshot);
+        if(labmate_dashboard_store_ingest(&app->doctor_store, &snapshot))
+            (void)labmate_signal_stats_record(&app->signal_stats, &snapshot);
 }

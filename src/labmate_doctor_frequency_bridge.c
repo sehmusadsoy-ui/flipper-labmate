@@ -21,12 +21,12 @@ void labmate_doctor_frequency_abandon(LabMateApp* a) {
     if(a->doctor_frequency_session.state == LabMateEvidenceCapturing)
         a->doctor_frequency_session.state = LabMateEvidenceIdle;
     a->doctor_frequency_last = (LabMateDoctorFrequencyCandidate){0};
-    labmate_dashboard_store_init(&a->doctor_store);
+    labmate_dashboard_store_clear_source(&a->doctor_store, LabMateSnapshotFrequency);
 }
 
 void labmate_doctor_frequency_started(LabMateApp* a) {
     if(!a || a->screen != LabMateScreenFrequency) return;
-    labmate_dashboard_store_init(&a->doctor_store);
+    labmate_dashboard_store_clear_source(&a->doctor_store, LabMateSnapshotFrequency);
     const bool low = a->frequency_irq_active &&
         a->capture_owner == LabMateCaptureFrequencyLow &&
         a->capture_pin_index == 1U &&
@@ -245,5 +245,6 @@ void labmate_doctor_frequency_finish_stop(LabMateApp* a) {
     if(labmate_evidence_session_finish(
            &a->doctor_frequency_session, frequency_ms(furi_get_tick(), hz),
            released, &result))
-        (void)labmate_dashboard_store_ingest(&a->doctor_store, &result);
+        if(labmate_dashboard_store_ingest(&a->doctor_store, &result))
+            (void)labmate_signal_stats_record(&a->signal_stats, &result);
 }

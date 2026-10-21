@@ -14,6 +14,8 @@ typedef struct {
 } LabMateDashboardStore;
 
 void labmate_dashboard_store_init(LabMateDashboardStore* store);
+/* Clear only the restarted source's stale evidence. */
+void labmate_dashboard_store_clear_source(LabMateDashboardStore* store, uint8_t source);
 
 /* Observations are monotonically versioned per source. Out-of-order or
  * malformed events never overwrite a newer snapshot. A new BUSY/INVALID/etc

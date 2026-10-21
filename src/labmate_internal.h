@@ -28,6 +28,7 @@
 #include "labmate_doctor_panel.h"
 #include "labmate_evidence_session.h"
 #include "labmate_doctor_frequency_policy.h"
+#include "labmate_signal_stats.h"
 
 #define LABMATE_VERSION_TEXT "v2.0DEV"
 /* Shared menu/pin counts: UI and input handling must agree. */
@@ -61,6 +62,7 @@ typedef enum {
     LabMateScreenI2c, /* real I2C only on a firmware with bounded HAL API */
     LabMateScreenScope, /* v1.9 append only; historical screen values preserved */
     LabMateScreenDoctor, /* v2.0 append only; never change prior screen IDs */
+    LabMateScreenDashboard, /* appended, no legacy screen renumbering */
 } LabMateScreen;
 
 typedef enum {
@@ -308,6 +310,9 @@ typedef struct {
     /* Doctor: app-thread reference/UI state, no live HAL or IRQ access. */
     LabMateDoctorPanel doctor_panel;
     LabMateDashboardStore doctor_store;
+    LabMateSignalStats signal_stats;
+    uint8_t dashboard_source;
+    bool dashboard_details;
     /* Phase3C: app-thread Pulse IRQ evidence lineage, not a live UI sample. */
     LabMateEvidenceSession doctor_pulse_session;
     uint32_t doctor_pulse_start_tick;

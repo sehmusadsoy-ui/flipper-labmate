@@ -5,6 +5,11 @@ void labmate_dashboard_store_init(LabMateDashboardStore* store) {
     if(store) memset(store, 0, sizeof(*store));
 }
 
+void labmate_dashboard_store_clear_source(LabMateDashboardStore* store, uint8_t source) {
+    if(store && source < LabMateSnapshotSourceCount)
+        memset(&store->slots[source], 0, sizeof(store->slots[source]));
+}
+
 bool labmate_dashboard_store_ingest(
     LabMateDashboardStore* store, const LabMateSnapshotV1* observation) {
     if(!store || !labmate_snapshot_v1_well_formed(observation)) return false;
