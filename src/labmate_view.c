@@ -8,6 +8,7 @@
 #include "labmate_scope_pair_view.h"
 #include "labmate_scope_reference_view.h"
 #include "labmate_scope_exit_guard.h"
+#include "labmate_doctor_screen.h"
 
 /* ---------- DRAWING (stateful screens) ---------- */
 
@@ -82,6 +83,9 @@ void labmate_view_render_callback(
         break;
     case LabMateScreenAlerts:
         draw_alerts(canvas, app);
+        break;
+    case LabMateScreenDoctor:
+        labmate_doctor_screen_draw(canvas, app);
         break;
     case LabMateScreenScope:
         if(app->scope_show_reference) {

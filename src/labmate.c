@@ -54,6 +54,8 @@ int32_t labmate_app(void* p) {
     app->profile_active_copy = LABMATE_PROFILE_COPY_NONE;
     app->profile_io = LabMateProfileIoEmpty;
     labmate_profile_store_init(&app->profiles);
+    labmate_doctor_panel_init(&app->doctor_panel);
+    labmate_dashboard_store_init(&app->doctor_store);
     app->generator_freq_index = 0; /* 1 Hz */
     app->generator_duty_percent = LABMATE_PWM_DEFAULT_DUTY;
     app->generator_custom_hz = 1234U; /* independently editable 1 Hz steps */

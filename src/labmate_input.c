@@ -61,6 +61,20 @@ void labmate_input_dispatch(LabMateApp* app, FuriStatus status,
     case LabMateScreenI2c:
         labmate_input_i2c(app, event, work);
         break;
+    case LabMateScreenDoctor:
+        /* UI mutex is already held; no ISR, HAL, SD or capture operations. */
+        if(event.key == InputKeyBack) app->screen = LabMateScreenMenu;
+        else if(event.key == InputKeyLeft)
+            labmate_doctor_panel_move(&app->doctor_panel, -1);
+        else if(event.key == InputKeyRight)
+            labmate_doctor_panel_move(&app->doctor_panel, 1);
+        else if(event.key == InputKeyUp)
+            labmate_doctor_panel_edit(&app->doctor_panel, 1);
+        else if(event.key == InputKeyDown)
+            labmate_doctor_panel_edit(&app->doctor_panel, -1);
+        else if(event.key == InputKeyOk)
+            labmate_doctor_panel_step(&app->doctor_panel);
+        break;
     case LabMateScreenScope:
         labmate_scope_bridge_input(app, event);
         break;

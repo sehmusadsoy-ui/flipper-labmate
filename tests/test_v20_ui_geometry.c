@@ -103,9 +103,9 @@ static void test_scope_chrome(void) {
 }
 
 static void test_menu_text_and_navigation(void) {
-    const uint8_t sizes[] = {6U, 2U, 3U, 3U, 1U};
+    const uint8_t sizes[] = {7U, 2U, 3U, 3U, 1U};
     bool seen[LabMateToolCount] = {false};
-    assert(LabMateToolCount == 15 && LabMateGroupCount == 5);
+    assert(LabMateToolCount == 16 && LabMateGroupCount == 5);
     assert(LabMateGroupComm + 1 == LabMateGroupInfo);
     assert(strcmp(labmate_nav_group_title(LabMateGroupInfo), "INFO") == 0);
     assert(labmate_nav_tool_at(LabMateGroupInfo, 0) == LabMateToolAbout);

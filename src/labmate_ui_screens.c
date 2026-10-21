@@ -176,6 +176,10 @@ static const LabMateHelpPage labmate_help[LabMateToolCount] = {
         "LOGIC SCOPE", "PC1 3.3V DIGITAL",
         "Measured edges only", "OK RUN/STOP BK EXIT",
     },
+    [LabMateToolDoctor] = {
+        "SIGNAL DOCTOR", "SEALED CAPTURE ONLY",
+        "Ref by user, no guesses", "<>FIELD ^vEDIT OKSTEP",
+    },
 };
 
 void draw_about(Canvas* canvas, LabMateApp* app) {
@@ -190,7 +194,7 @@ void draw_about(Canvas* canvas, LabMateApp* app) {
     if(page == 0U) {
         canvas_draw_str(canvas, 3, 23, "LabMate " LABMATE_VERSION_TEXT);
         canvas_draw_str(canvas, 3, 33, "SauronLAB / Sehmus");
-        canvas_draw_str(canvas, 3, 43, "15 tool guides");
+        canvas_draw_str(canvas, 3, 43, "16 tool guides");
         canvas_draw_str(canvas, 3, 51, "3.3V GPIO ONLY");
     } else if(page == 1U) {
         canvas_draw_str(canvas, 3, 23, "Source / releases:");

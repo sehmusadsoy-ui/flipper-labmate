@@ -133,6 +133,11 @@ void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                         labmate_uart_reenter(&app->uart);
                         break;
 
+                    case LabMateToolDoctor:
+                        /* No GPIO, IRQ, capture start, timer or storage access. */
+                        app->screen = LabMateScreenDoctor;
+                        break;
+
                     case LabMateToolScope:
                         app->screen = LabMateScreenScope;
                         labmate_scope_bridge_enter(app);

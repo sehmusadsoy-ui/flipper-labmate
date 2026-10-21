@@ -25,6 +25,7 @@
 #include "labmate_low_mailbox_audit.h"
 #include "labmate_high_gate_audit.h"
 #include "labmate_pulse_pair_audit.h"
+#include "labmate_doctor_panel.h"
 
 #define LABMATE_VERSION_TEXT "v1.9DEV"
 /* Shared menu/pin counts: UI and input handling must agree. */
@@ -57,6 +58,7 @@ typedef enum {
     LabMateScreenOneWire, /* append only; previous screen IDs preserved */
     LabMateScreenI2c, /* real I2C only on a firmware with bounded HAL API */
     LabMateScreenScope, /* v1.9 append only; historical screen values preserved */
+    LabMateScreenDoctor, /* v2.0 append only; never change prior screen IDs */
 } LabMateScreen;
 
 typedef enum {
@@ -301,6 +303,9 @@ typedef struct {
     uint8_t scope_compare_page; /* 0 summary, 1 A timing, 2 B timing */
     bool scope_show_reference; /* read-only named reference result page */
     LabMateScopeReferencePreset scope_reference_preset;
+    /* Doctor: app-thread reference/UI state, no live HAL or IRQ access. */
+    LabMateDoctorPanel doctor_panel;
+    LabMateDashboardStore doctor_store;
 
     LabMateUart uart; /* USART external GPIO 13/14, no TIM1/TIM2 ownership */
     LabMateCommOwner comm_owner; /* local exclusive I2C/1Wire sessions */

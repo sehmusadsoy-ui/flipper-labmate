@@ -8,15 +8,15 @@
 
 int main(void) {
     _Static_assert(LabMateToolScope == 14, "historical tool IDs must not shift");
-    _Static_assert(LabMateToolCount == 15, "v1.9 tool set changed");
+    _Static_assert(LabMateToolCount == 16, "v2.0 appended tool count");
     _Static_assert(LabMateGroupInfo == LabMateGroupCount - 1, "INFO must remain last");
-    const uint8_t expected_sizes[] = {6U, 2U, 3U, 3U, 1U};
+    const uint8_t expected_sizes[] = {7U, 2U, 3U, 3U, 1U};
     const uint8_t expected_tools[][LABMATE_NAV_MAX_CHILDREN] = {
-        {LabMateToolGpio, LabMateToolFrequency, LabMateToolPulse, LabMateToolCounter, LabMateToolButton, LabMateToolScope},
-        {LabMateToolGenerator, LabMateToolAlerts, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
-        {LabMateToolLogger, LabMateToolHistory, LabMateToolProfiles, LabMateToolInvalid, LabMateToolInvalid},
-        {LabMateToolUart, LabMateToolI2c, LabMateToolOneWire, LabMateToolInvalid, LabMateToolInvalid},
-        {LabMateToolAbout, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
+        {LabMateToolGpio, LabMateToolFrequency, LabMateToolPulse, LabMateToolCounter, LabMateToolButton, LabMateToolScope, LabMateToolDoctor},
+        {LabMateToolGenerator, LabMateToolAlerts, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
+        {LabMateToolLogger, LabMateToolHistory, LabMateToolProfiles, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
+        {LabMateToolUart, LabMateToolI2c, LabMateToolOneWire, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
+        {LabMateToolAbout, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
     };
     /* User-mandated ROOT order: COMM above INFO; About absolutely last.
      * Tool IDs stay stable for Profiles; only root group positions change. */
@@ -66,7 +66,8 @@ int main(void) {
     assert(labmate_nav_tool_at(0U, 3U) == LabMateToolCounter);
     assert(labmate_nav_tool_at(0U, 4U) == LabMateToolButton);
     assert(labmate_nav_tool_at(0U, 5U) == LabMateToolScope);
-    assert(labmate_nav_tool_at(0U, 6U) == LabMateToolInvalid);
+    assert(labmate_nav_tool_at(0U, 6U) == LabMateToolDoctor);
+    assert(labmate_nav_tool_at(0U, 7U) == LabMateToolInvalid);
     assert(labmate_nav_tool_at(1U, 1U) == LabMateToolAlerts);
     assert(labmate_nav_tool_at(LabMateGroupComm, 0U) == LabMateToolUart);
     assert(strcmp(labmate_nav_tool_title(LabMateToolGenerator), "PWM Studio") == 0);
@@ -95,6 +96,6 @@ int main(void) {
             assert(start <= selected && selected < (uint8_t)(start + 3U));
         }
     }
-    puts("LabMate v2.0 baseline navigation: all 15 tools reachable once; INFO last PASS");
+    puts("LabMate v2.0 baseline navigation: all 16 tools reachable once; INFO last PASS");
     return 0;
 }

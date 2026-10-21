@@ -20,4 +20,12 @@ sh "$root/scripts/test-v20-phase3a-doctor-host.sh" || {
     echo 'V20 OFFLINE FAIL: Phase 3A Signal Doctor' >&2
     exit 1
 }
-echo 'V20 OFFLINE HOST PASS: Phase 2L + Phase 3A (NOT E11 SDK/FAP OR PHYSICAL DEVICE)'
+test -s "$root/scripts/test-v20-phase3b-doctor-panel-host.sh" || {
+    echo 'V20 OFFLINE NO-GO: Phase 3B missing' >&2
+    exit 2
+}
+sh "$root/scripts/test-v20-phase3b-doctor-panel-host.sh" || {
+    echo 'V20 OFFLINE FAIL: Phase 3B Doctor panel' >&2
+    exit 1
+}
+echo 'V20 OFFLINE HOST PASS: Phase 2L + Phase 3A + Phase 3B (NOT SDK/FAP OR DEVICE)'
