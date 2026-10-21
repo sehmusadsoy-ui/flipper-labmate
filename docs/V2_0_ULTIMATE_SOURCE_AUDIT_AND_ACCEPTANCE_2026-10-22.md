@@ -74,3 +74,26 @@ After the owner locally applied the exact About guide count case-insensitive fix
 Production `src/labmate_ui_primitives.c` must retain its inverse footer; the surgical response was to add actual bounds-checking Canvas mocks for box/color to the host fixture, assert final drawing color reset, and distinguish the Generator's separately mocked two-key footer from Frequency/Pulse's extracted real three-key footer. GitHub commits `475c50ebec5e2582005193ac04a31390426294fc` and `e36bc769031b838cf43c78d0ee46dae60f07c7be`. The corrected test fixture Git blob SHA is `812f06669035211ef0f3e2c8052fa558e15951a5`, replacing older blob `05812806aae43c49cc5c12cd2816e74d509c40d6`.
 
 **Verification status: PENDING.** No successful owner-run UI05D, full host matrix or native E11 build output received yet for this correction. Existing 115104-byte Phase3D FAP and v1.9DEV protected backup remain unchanged. Do not claim v2.0 Ultimate FAP PASS or authorize firmware flash.
+
+
+## Follow-up UI-05D Pulse STATS branch assertion (owner-run, 2026-10-22)
+
+Owner reran the locally hash-patched UI-05D suite. GCC advanced past previous missing Canvas API compile errors and hit:
+
+```text
+ui05d-gcc: .../tests/test_v20_ui05d_measurement.c:213:
+pulse_test: Assertion `c.color==ColorBlack && c.boxes>=1U' failed.
+Aborted
+```
+
+This is an overly broad **host test assertion**. Exact production `draw_pulse` source returns early to its special `draw_pulse_stats` view and renders individual caption labels at y=62, without invoking `ui_footer_triple` or drawing the footer background box. Main Pulse view does call the shared inverse triple footer and does draw the background box. The assertion previously incorrectly required both views to draw it.
+
+Fix in development source commit `6658d23f3f4f380a634c0b64ec2d965fac618cb6`, **only** `tests/test_v20_ui05d_measurement.c`:
+
+```c
+assert(c.color==ColorBlack);
+if(view == 0U) assert(c.boxes >= 1U);
+else assert(c.boxes == 0U);
+```
+
+Current corrected host fixture Git blob: `e0291f953d0856e822ddd4f6600413aa2411435d`, previous fixture blob `812f06669035211ef0f3e2c8052fa558e15951a5`. UI producer, E11 capture HAL, Flipper device and installed FAP **unchanged**. **Retest status PENDING**; no proof that this source passed GCC/Clang or native SDK review. Keep release NO-GO.
