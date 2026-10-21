@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
+#include "labmate_ui_status.h"
 
 typedef enum { FontSecondary=0, FontPrimary=1 } Font;
 typedef enum { ColorBlack=0, ColorWhite=1 } Color;
