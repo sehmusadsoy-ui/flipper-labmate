@@ -264,6 +264,8 @@ typedef struct {
     uint32_t logger_last_tick;
     uint32_t logger_rows;
     uint32_t logger_session_generation; /* only successful CSV opens */
+    uint8_t logger_session_pin; /* copied from genuinely armed native source */
+    LabMateLoggerSource logger_session_source;
     char logger_path[96];
     Storage* logger_storage;
     File* logger_file;

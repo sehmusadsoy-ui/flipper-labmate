@@ -18,6 +18,8 @@
  */
 void labmate_logger_dashboard_finalize(LabMateApp* app) {
     if(!app || !app->logger_session_generation || !app->logger_rows ||
+       app->logger_source != app->logger_session_source ||
+       app->logger_session_pin >= GPIO_COUNT ||
        app->logger_recording || app->logger_busy || app->logger_error ||
        app->logger_file || app->logger_storage ||
        app->capture_owner != LabMateCaptureNone || app->capture_blocked ||
@@ -35,9 +37,7 @@ void labmate_logger_dashboard_finalize(LabMateApp* app) {
     LabMateSnapshotV1 s = {0};
     s.schema_version = LABMATE_SNAPSHOT_VERSION;
     s.source = LabMateSnapshotLogger;
-    s.pin_index = app->logger_source == LoggerFrequencyHigh ? 4U :
-                  app->logger_source == LoggerPulse ? app->preferred_pulse_pin :
-                                                       1U;
+    s.pin_index = app->logger_session_pin; /* actual source pin at CSV open */
     s.quality = LabMateSnapshotValid;
     s.capture_generation = app->logger_session_generation;
     s.ownership_released = true;
@@ -187,6 +187,11 @@ bool labmate_logger_storage_start(LabMateApp* app) {
      * mutex only to update the dashboard state seen by the renderer.
      */
     furi_mutex_acquire(app->mutex, FuriWaitForever);
+    /* Pin and source are taken from the validated active capture, NOT from
+     * later UI selection or a mutable profile preference.
+     */
+    app->logger_session_pin = app->capture_pin_index;
+    app->logger_session_source = app->logger_source;
     if(app->logger_session_generation != UINT32_MAX)
         ++app->logger_session_generation;
     else app->logger_session_generation = 0U; /* never reuse wrapped generation */
