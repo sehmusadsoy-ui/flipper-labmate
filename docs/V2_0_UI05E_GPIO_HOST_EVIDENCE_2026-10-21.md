@@ -63,3 +63,31 @@ The v2.0 branch's `.github/workflows/v20-ui-host-gates.yml` now invokes UI-05E a
 - **LabMate Ultimate v2.0 Stable: NO-GO.**
 
 Stable v1.8/v1.9 release tags, FAP, firmware, microSD data, Profiles and existing CSV logs were not changed.
+
+
+## UI-06A first shared-footer integration (GPIO only)
+
+After establishing the UI-05E baseline PASS, a **new layout contract test** required both GPIO footer key labels to use the existing app-wide two-column footer coordinates **x=2 / x=66**. The old GPIO renderer used a manually placed right label at x=70. The old production body with this new contract was run locally and **failed** with the expected regression assertion:
+
+```text
+OLD_SOURCE_WITH_NEW_FOOTER_CONTRACT_EXIT=134
+Assertion 'at(&c,a.hold?"(OK) LIVE":"(OK) HOLD",66)' failed.
+```
+
+The sole production modification in `draw_gpio` replaces three manual Canvas/footer calls with the already existing `ui_footer_pair(canvas, "<>", "PIN", "OK", app->hold ? "LIVE" : "HOLD")`. The shared `ui_footer_pair` is implemented in `src/labmate_ui_primitives.c`; neither the implementation of this primitive nor the semantics of the existing keys were changed. This migrates **only one screen** and shifts the right action by four pixels to align with other LabMate tool footers. It does not acquire or release GPIO.
+
+The GPIO test fixture now mirrors the shared footer's x=2/x=66 geometry and explicitly asserts positions for both key labels. Exact GitHub-updated sources and local tests match:
+
+- Full `src/labmate_ui_screens.c` Git blob: `8a99d932821908495a8fc2e5098d91cc6fd7ba40`.
+- New `draw_gpio` fragment: **2,364 characters / CRC32 `33e8def2`** (checked independently against the connected GitHub source).
+- Updated host fixture blob: `165c60407fc68552467b3fc6fad40492e622f21c`.
+- Runner blob remains: `cffd34024350043a0bd77082ac13ac540291039a`.
+
+Actual local GREEN after the one-screen source refactor:
+
+```text
+UI-05E GPIO host PASS: 2400 source/level/status/PWM combinations
+UI-05E GPIO host PASS: 2400 source/level/status/PWM combinations
+```
+
+Both compiler runs exited **0**, with ASan/UBSan. All displayed status/source, edge-count formatting, PA7 reservation, contrast and passive state checks still passed. This is the **first limited production migration toward consistent shared professional UI chrome**, **not** a completed UI design-system rollout. Full E11 SDK, on-device font raster/visual inspection, GUI event navigation and GitHub Actions results remain **PENDING**; Stable remains **NO-GO**.
