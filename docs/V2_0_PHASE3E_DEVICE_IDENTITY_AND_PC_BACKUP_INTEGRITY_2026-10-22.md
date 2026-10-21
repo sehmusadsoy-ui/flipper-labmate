@@ -63,8 +63,28 @@ File, size: 101468b
 **Device app FAP size:** 101468 bytes — matches PC-downloaded copy size (reported in preceding gate).  
 **Device app MD5:** `066f017c695bb5a17158a7b26c8f4838`.  
 **PC copy SHA-256:** `d8bb04cf6de6ebaa466e7487e619d9f68af21dac49df2aa51e91dfae1f9f55c2` (owner-reported local hash).  
-**PC copy MD5:** **PENDING** until computed locally and compared to the device value. Matching sizes alone is not proof of identical content. No device write occurred as part of `storage stat` / `storage md5`.
+**PC copy MD5:** **MATCHED after later local hash verification**, as detailed below. Matching sizes alone is not proof of identical content. No device write occurred as part of `storage stat` / `storage md5`.
 
 **Important firmware detail:** The screenshot's CLI says **built on 16-10-2026**, with short source `d3f89dfe-dirty`. The earlier on-device firmware info page was reported as **6-10-2026**; the CLI build timestamp is the observed value for this capture and differs from the earlier display. The `-dirty` suffix means the build reports local changes; short source identity does NOT attest exact installed binary ABI. Treat as separate evidence, not a firmware-flash recommendation.
 
 **Gate:** PC MD5 parity PENDING; FAP-only installation NOT performed/authorized by these checks. Preserve the active FAP and all old backups. No automatic rename/upload.
+
+## 2026-10-22 — LIVE v1.9DEV PC rollback copy parity PASS
+
+The owner ran a local bash script that checked the downloaded PC copy of the active FAP against the Flipper CLI `storage md5` response and against the original PC SHA-256 value:
+
+```text
+V19 DEVICE-PC MD5 MATCH: PASS
+V19 PC SHA256: PASS
+V19 ROLLBACK COPY INTEGRITY: PASS
+DEVICE WRITES: ZERO
+```
+
+**Live / PC MD5 match:** `066f017c695bb5a17158a7b26c8f4838`.  
+**PC SHA-256:** `d8bb04cf6de6ebaa466e7487e619d9f68af21dac49df2aa51e91dfae1f9f55c2`.  
+**Size:** 101468 bytes.
+
+Thus the **current installed `labmate.fap` matches the downloaded PC file by MD5**, and the PC file also matches the independently recorded SHA-256. This is a verified read-only rollback *source* copy (not an exercised rollback procedure). Historical v1.8 FAP and twelve LabMate SD data file backups also passed earlier PC integrity verification. No device writes, flash, firmware changes or rollback occurred in this gate.
+
+**NEXT:** prepare PC-only copy of exact Phase3D 115104-byte, SHA-256 `53afa54b70b77d53b5728ab915b10b278a25c3a21f6caf93eb261aa35a68b737` candidate under a new filename, preserving this v1.9 copy. New FAP-only *side-by-side test* upload must have separate explicit approval, verify destination collision/readback and should NEVER overwrite `/ext/apps/Tools/labmate.fap`; test runtime and verify old app remains accessible. Release v2.0 Stable remains NO-GO.
+
