@@ -33,7 +33,6 @@ for path in "$tmp/low.inc" "$tmp/pulse.inc"; do
   ' "$path"
 done
 grep -Fq 'if(!lease_pending && app->capture_owner == LabMateCaptureFrequencyHigh)' "$tmp/high.inc"
-grep -Fq 'if(!lease_pending && healthy && !app->capture_release_fault &&' "$tmp/counter_stop.inc"
 # Exact function bodies, not a reimplementation of GPIO/TIM2 teardown:
 awk '/^void labmate_frequency_high_stop[(]/ {on=1} on {print; if($0=="}") exit}' "$low" > "$tmp/high_stop.inc"
 awk '/^void labmate_frequency_low_stop[(]/ {on=1} on {print; if($0=="}") exit}' "$low" > "$tmp/low_stop.inc"
@@ -44,6 +43,7 @@ awk '/^void labmate_capture_stop_all[(]/ {on=1} on {print; if($0=="}") exit}' "$
 for part in "$tmp/high_stop.inc" "$tmp/low_stop.inc" "$tmp/pulse_stop.inc" "$tmp/counter_stop.inc" "$tmp/button_stop.inc" "$tmp/stop_all.inc"; do
   test -s "$part"
 done
+grep -Fq 'if(!lease_pending && healthy && !app->capture_release_fault &&' "$tmp/counter_stop.inc"
 awk '
   /if\(labmate_capture_release_proven\(&release\)\)/ {gate=NR}
   /app->capture_owner = LabMateCaptureNone;/ {free=NR}
