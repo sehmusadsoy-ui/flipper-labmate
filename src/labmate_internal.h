@@ -22,6 +22,7 @@
 #include "labmate_scope_display.h"
 #include "labmate_scope_pair.h"
 #include "labmate_scope_tolerance.h"
+#include "labmate_low_mailbox_audit.h"
 
 #define LABMATE_VERSION_TEXT "v1.9DEV"
 /* Shared menu/pin counts: UI and input handling must agree. */
@@ -116,6 +117,11 @@ typedef struct {
     volatile uint32_t frequency_irq_last_tick;
     volatile uint32_t frequency_irq_edges;
     volatile bool frequency_irq_new_period;
+    /* Phase 2G: ISR-published periods and overwritten one-slot messages.
+     * For host provenance audits only; not yet wired to Dashboard VALID.
+     * Read together with period+pending under a real IRQ critical section.
+     */
+    LabMateLowMailboxAudit frequency_low_mailbox_audit;
     volatile uint32_t frequency_irq_cycle_accumulator;
     volatile uint8_t frequency_irq_accumulated_periods;
     bool frequency_irq_active;
