@@ -31,6 +31,7 @@ on:
       - "scripts/test-v20-snapshot-host.sh"
       - "scripts/test-v20-phase2b-host.sh"
       - "scripts/test-v20-phase2c-host.sh"
+      - "scripts/test-v20-phase2d-host.sh"
       - ".github/workflows/v20-ui-host-gates.yml"
   pull_request:
     branches:
@@ -62,6 +63,7 @@ on:
       - "scripts/test-v20-snapshot-host.sh"
       - "scripts/test-v20-phase2b-host.sh"
       - "scripts/test-v20-phase2c-host.sh"
+      - "scripts/test-v20-phase2d-host.sh"
       - ".github/workflows/v20-ui-host-gates.yml"
 
 permissions:
@@ -156,3 +158,6 @@ jobs:
       - name: Phase 2C capture evidence lifecycle and strict Pulse pins
         shell: bash
         run: sh scripts/test-v20-phase2c-host.sh
+      - name: Phase 2D fresh-edge anti-replay provenance
+        shell: bash
+        run: sh scripts/test-v20-phase2d-host.sh
