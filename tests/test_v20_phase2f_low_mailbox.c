@@ -3,10 +3,13 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include "labmate_low_mailbox_audit.h"
 
 typedef struct {
     volatile bool frequency_irq_new_period;
     volatile uint32_t frequency_irq_period_cycles;
+    LabMateLowMailboxAudit frequency_low_mailbox_audit;
+    LabMateLowMailboxObservation frequency_low_last_observation;
 } LabMateApp;
 static LabMateApp* active;
 static bool locked, deferred;
@@ -16,6 +19,8 @@ static uint32_t inject_value;
 static unsigned enters, exits, published;
 static void irq_publish_now(uint32_t value) {
     assert(active && !locked);
+    labmate_low_mailbox_publish(&active->frequency_low_mailbox_audit,
+                                 active->frequency_irq_new_period);
     active->frequency_irq_period_cycles = value;
     active->frequency_irq_new_period = true;
     ++published;
@@ -67,13 +72,24 @@ int main(void) {
     // IRQ published at critical exit remains pending for next update, not lost.
     irq_publish(300); inject_after_exit=true;inject_value=400;
     assert(labmate_frequency_low_take_period(&app,&result));
-    assert(result==300 && app.frequency_irq_new_period && app.frequency_irq_period_cycles==400);scenarios++;
+    assert(result==300 && app.frequency_irq_new_period && app.frequency_irq_period_cycles==400);
+    assert(app.frequency_low_last_observation.period_cycles==300U);
+    assert(app.frequency_low_last_observation.publications==3U);
+    assert(app.frequency_low_last_observation.overwrites==0U);scenarios++;
     assert(labmate_frequency_low_take_period(&app,&result));
-    assert(result==400 && !app.frequency_irq_new_period);scenarios++;
+    assert(result==400 && !app.frequency_irq_new_period);
+    assert(app.frequency_low_last_observation.period_cycles==400U);
+    assert(app.frequency_low_last_observation.overwrites==0U);scenarios++;
+    // Two actual ISR publications while the single mailbox is unread.
+    irq_publish(410);irq_publish(420);
+    assert(labmate_frequency_low_take_period(&app,&result));
+    assert(result==420U && app.frequency_low_last_observation.has_period);
+    assert(app.frequency_low_last_observation.publications==6U);
+    assert(app.frequency_low_last_observation.overwrites==1U);scenarios++;
     // Empty mailbox, IRQ on exit: subsequent poll must pick it up.
     inject_after_exit=true;inject_value=500;
     assert(!labmate_frequency_low_take_period(&app,&result));
-    assert(result==400 && app.frequency_irq_new_period);scenarios++;
+    assert(result==420 && app.frequency_irq_new_period);scenarios++;
     assert(labmate_frequency_low_take_period(&app,&result));
     assert(result==500 && !app.frequency_irq_new_period);scenarios++;
     // Valid pending zero period: caller filters it as before; ack is atomic.
@@ -91,9 +107,11 @@ int main(void) {
             assert(result==i+9000 && !app.frequency_irq_new_period);
         } else assert(!app.frequency_irq_new_period);
         assert(enters==exits && !locked);
+        assert(app.frequency_low_last_observation.publications <=
+               app.frequency_low_mailbox_audit.publications);
         scenarios++;
     }
     assert(!deferred && enters==exits && enters>0 && published>4000);
     printf("Phase2F LOW atomic IRQ mailbox PASS: %u deterministic states\n",scenarios);
-    return scenarios==4106?0:1;
+    return scenarios==4107?0:1;
 }
