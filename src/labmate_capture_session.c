@@ -17,6 +17,7 @@
 #include "labmate_logger_storage.h"
 #include "labmate_scope_bridge.h"
 #include "labmate_scope_exit_guard.h"
+#include "labmate_capture_release_gate.h"
 
 /* Pulse Analyzer uses GPIO edge interrupts, not polling.
  * STM32 EXTI lines are shared across GPIO ports, and the firmware already
@@ -65,17 +66,25 @@ void labmate_capture_stop_all(LabMateApp* app) {
     labmate_pulse_capture_stop(app);
     labmate_event_counter_stop(app);
     labmate_button_capture_stop(app);
-    /* A failed/stale stop must not advertise a free capture owner. */
-    if(!app->counter_active && !app->button_active &&
-       labmate_scope_native_stop_confirmed(
-           &app->scope_native, app->capture_owner) &&
-       labmate_capture_all_stopped(
-           app->frequency_irq_active, app->frequency_hw_active,
-           app->pulse_irq_active)) {
+    /* A disabled callback is not proof that firmware has released its
+     * lease. Keep any unresolved native token/owner fail-closed. */
+    const LabMateCaptureReleaseEvidence release = {
+        .scope_stop_confirmed =
+            labmate_scope_native_stop_confirmed(&app->scope_native, app->capture_owner),
+        .frequency_low_active = app->frequency_irq_active,
+        .frequency_high_active = app->frequency_hw_active,
+        .pulse_active = app->pulse_irq_active,
+        .counter_active = app->counter_active,
+        .button_active = app->button_active,
+        .frequency_low_lease_pending = labmate_frequency_low_lease_pending(),
+        .frequency_high_lease_pending = labmate_frequency_tim2_lease_pending(),
+        .pulse_lease_pending = labmate_pulse_lease_pending(),
+        .release_fault = app->capture_release_fault,
+    };
+    if(labmate_capture_release_proven(&release)) {
         app->capture_owner = LabMateCaptureNone;
         app->capture_pin_index = GPIO_COUNT;
-        /* Never erase an unresolved lease failure during generic STOP. */
-        app->capture_blocked = app->capture_release_fault;
+        app->capture_blocked = false;
     } else {
         app->capture_blocked = true;
     }
