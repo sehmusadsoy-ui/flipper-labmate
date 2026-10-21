@@ -310,23 +310,33 @@ void measurement_update(LabMateApp* app) {
                         app->frequency_hw_last_cycle = current_cycle;
                     } else {
                         uint32_t sample_millihz = 0U;
+                        /* Keep the counted gate's ORIGINAL edge/time
+                         * interval before the normal re-arm mutations. */
+                        const uint32_t gate_edges =
+                            current_count - app->frequency_hw_last_count;
+                        const uint32_t gate_cycles =
+                            (uint32_t)(current_cycle - app->frequency_hw_last_cycle);
                         const LabMateHighGateResult gate =
                             labmate_high_gate_evaluate(
-                                current_count - app->frequency_hw_last_count,
-                                (uint32_t)(current_cycle -
-                                           app->frequency_hw_last_cycle),
-                                SystemCoreClock, &sample_millihz);
+                                gate_edges, gate_cycles, SystemCoreClock, &sample_millihz);
                         if(gate != LabMateHighGateWait) {
-                            /* This is a counted rising-edge boundary.
-                             * Re-arm immediately; high input rates still
-                             * publish as often as the ~100 ms poll allows.
-                             */
+                            /* Preserve native re-arming for Publish/NoSample;
+                             * plain 100-ms polls and WAIT never count. */
                             app->frequency_hw_last_count = current_count;
                             app->frequency_hw_last_cycle = current_cycle;
                             if(gate == LabMateHighGatePublish) {
-                                app->frequency_millihz = sample_millihz;
-                                app->frequency_valid = true;
-                                frequency_stats_record(app);
+                                if(labmate_high_gate_audit_record(
+                                       &app->frequency_high_gate_audit, gate,
+                                       current_count, gate_edges, gate_cycles,
+                                       sample_millihz)) {
+                                    app->frequency_millihz = sample_millihz;
+                                    app->frequency_valid = true;
+                                    frequency_stats_record(app);
+                                } else {
+                                    /* A saturated/ambiguous audit must not
+                                     * expose a fresh VALID display reading. */
+                                    app->frequency_valid = false;
+                                }
                             }
                         }
                     }
