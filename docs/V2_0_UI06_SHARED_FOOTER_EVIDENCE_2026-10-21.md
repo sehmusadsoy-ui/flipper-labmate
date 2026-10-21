@@ -50,3 +50,28 @@ sh scripts/test-v20-ui06-host.sh
 This runs the actual full shared-primitives test and then the migrated Frequency/Pulse/PWM renderer state regression. Once a zero-exit run is available, retain the exact source SHA/log and, separately, obtain an E11 SDK app build and human review on physical 128×64 Flipper. Neither a host snippet PASS nor a CI workflow definition certifies firmware or hardware behavior.
 
 **UI-06 status: limited footer host PASS / integrated gate PENDING / v2.0 Stable NO-GO.**
+
+
+## UI-06B centralized grid metrics (2026-10-21)
+
+The shared 128×64 design contract is now a **pure C, zero-HAL header**, `src/labmate_ui_layout.h`: width/height; title baseline and rule; pair and triple footer positions/character caps. The firmware-side `src/labmate_ui_primitives.c` consumes those constants in `ui_draw_header`, `ui_footer_pair`, `ui_key` (baseline), and `ui_footer_triple`. This changes **only named layout constants**, not key meanings, external interfaces, screen IDs, resource owners, timing, CSV or Profiles data.
+
+The host's conservative six-pixel ASCII character advance is intentionally **defined in the test only**, not presented as a physical display font guarantee in production layout metrics.
+
+**Verified Git blobs (read back from GitHub):**
+
+- `src/labmate_ui_layout.h`: `c1f2e3d42a88b204be14d582263be90973f01eee`.
+- `tests/test_v20_ui06_layout.c`: `1082555bdcf19b029a94da9452afadd523758463`.
+- Updated `src/labmate_ui_primitives.c`: `f472a2597d2bc5208ac582df44f4afe5bcbcd3af`.
+
+An independent isolated Linux host run compiled `tests/test_v20_ui06_layout.c` **byte-for-byte**, with the exact GitHub version of the new header, using `gcc` 14.2 and `clang` 17 under strict C11, `-Wall -Wextra -Werror -pedantic -fsanitize=address,undefined`. Each compilation/runtime exited **0** with:
+
+```text
+UI-06 static layout 128x64 pair/triple contract PASS
+```
+
+The test asserts that header/title/content/footer stay in range and that maximum valid key hints cannot overlap across two or three cells under the host text-width model. The actual newly updated `ui_footer_triple_label_valid` and `ui_footer_triple` production function bodies were independently extracted and matched to GitHub at **301 chars / CRC32 `bb5eb12d`** and **833 chars / CRC32 `2a32abe1`**. GCC and Clang both executed a bounded Canvas test of those byte-identical functions: **five allowed combinations, eight reject cases, and NULL Canvas**, each exit status 0. This is a direct function-fragment host test, **not** an entire repository full-module build.
+
+`tests/test_v20_ui05d_measurement.c` and `scripts/test-v20-ui05d-host.sh` were updated to include the real `labmate_ui_layout.h` and production extracted shared footer bodies. `scripts/test-v20-ui06-host.sh` now runs the compile-time metrics test as well as the earlier shared-primitives and Frequency/Pulse regression steps; CI workflow path triggers include `src/labmate_ui_layout.h`.
+
+**Pending exactly as before:** execution of the updated full UI-06 runner against a complete checked-out repository; independent GitHub Actions green job; E11 SDK FAP compilation; actual device LCD and input behavior. Neither the header's source hash nor the isolated fragment tests proves those independent gates.
