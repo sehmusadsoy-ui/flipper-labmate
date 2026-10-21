@@ -47,3 +47,24 @@ PC-backed path: `C:\\Users\\sehmu\\Documents\\LabMate-FAP-PC-Backups\\V20-Phase3
 Next strictly read-only gate: compute the local PC file MD5, then compare it to `storage md5 "/ext/apps/Tools/labmate.fap"` in the native device CLI, ideally add `storage stat` for 101468-byte size. These commands do not install or replace FAPs. Never paste PowerShell syntax into WSL bash, and quit qFlipper before acquiring COM7 through the web serial CLI. If local versus live MD5 differ, STOP; do not upload, rename, delete, flash, or substitute old backups.
 
 **Status:** active v1.9DEV PC-copy presence, size, SHA256 **PASS**; full current live device backup byte parity **PENDING**. Device trial and v2.0 Stable NO-GO.
+
+## 2026-10-22 — Current live v1.9 app read-only CLI stat / MD5
+
+Owner provided a Flipper Lab CLI screenshot after connecting to device. Command outputs, transcribed exactly from displayed CLI:
+
+```text
+Firmware version: HEAD mntm-dev (d3f89dfe-dirty built on 16-10-2026)
+>: storage stat "/ext/apps/Tools/labmate.fap"
+File, size: 101468b
+>: storage md5 "/ext/apps/Tools/labmate.fap"
+066f017c695bb5a17158a7b26c8f4838
+```
+
+**Device app FAP size:** 101468 bytes — matches PC-downloaded copy size (reported in preceding gate).  
+**Device app MD5:** `066f017c695bb5a17158a7b26c8f4838`.  
+**PC copy SHA-256:** `d8bb04cf6de6ebaa466e7487e619d9f68af21dac49df2aa51e91dfae1f9f55c2` (owner-reported local hash).  
+**PC copy MD5:** **PENDING** until computed locally and compared to the device value. Matching sizes alone is not proof of identical content. No device write occurred as part of `storage stat` / `storage md5`.
+
+**Important firmware detail:** The screenshot's CLI says **built on 16-10-2026**, with short source `d3f89dfe-dirty`. The earlier on-device firmware info page was reported as **6-10-2026**; the CLI build timestamp is the observed value for this capture and differs from the earlier display. The `-dirty` suffix means the build reports local changes; short source identity does NOT attest exact installed binary ABI. Treat as separate evidence, not a firmware-flash recommendation.
+
+**Gate:** PC MD5 parity PENDING; FAP-only installation NOT performed/authorized by these checks. Preserve the active FAP and all old backups. No automatic rename/upload.
