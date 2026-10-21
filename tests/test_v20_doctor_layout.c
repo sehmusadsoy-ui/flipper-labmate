@@ -21,7 +21,10 @@ _Static_assert(TOP(LABMATE_DOCTOR_ROW3_Y) > LABMATE_DOCTOR_ROW2_Y,
                "row 3 must not touch row 2");
 _Static_assert(TOP(LABMATE_DOCTOR_STATUS_Y) > LABMATE_DOCTOR_ROW3_Y,
                "status must not touch fields");
-_Static_assert(LABMATE_DOCTOR_STATUS_Y < LABMATE_UI_FOOTER_RULE_Y,
+/* These come from TWO distinct anonymous enums. Cast for a strict
+ * -Werror=enum-compare build while retaining compile-time geometry proof.
+ */
+_Static_assert((int)LABMATE_DOCTOR_STATUS_Y < (int)LABMATE_UI_FOOTER_RULE_Y,
                "status cannot collide with footer rule");
 _Static_assert(LABMATE_UI_FOOTER_RULE_Y < LABMATE_UI_FOOTER_BASELINE_Y,
                "footer must be below rule");
