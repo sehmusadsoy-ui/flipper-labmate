@@ -44,6 +44,40 @@ void labmate_dashboard_screen_draw(Canvas* c, const LabMateApp* a) {
             line(c,40,false,buf);
             (void)snprintf(buf,sizeof(buf),"%u SEALED SESSIONS",(unsigned)count);
             line(c,50,false,buf);
+        } else if(selected==LabMateSnapshotScope &&
+           labmate_dashboard_store_read_measurement(
+               &a->doctor_store,selected,&snapshot) &&
+           a->scope_last_valid &&
+           a->scope_last_generation == snapshot.capture_generation &&
+           a->scope_last_metrics.status == LabMateScopeMetricsReady &&
+           !a->scope_last_metrics.truncated) {
+            hz_text(snapshot.frequency_millihz,hz,sizeof(hz));
+            (void)snprintf(buf,sizeof(buf),"FREQ %s",hz);
+            line(c,22,false,buf);
+            (void)snprintf(buf,sizeof(buf),"MIN %lu ticks",
+                (unsigned long)a->scope_last_metrics.min_period_ticks);
+            line(c,31,false,buf);
+            (void)snprintf(buf,sizeof(buf),"MAX %lu ticks",
+                (unsigned long)a->scope_last_metrics.max_period_ticks);
+            line(c,40,false,buf);
+            (void)snprintf(buf,sizeof(buf),"%u REAL CYCLES",
+                (unsigned)snapshot.valid_sample_count);
+            line(c,50,false,buf);
+        } else if(labmate_dashboard_store_read_measurement(
+                      &a->doctor_store,selected,&snapshot) &&
+                  (selected==LabMateSnapshotCounter ||
+                   selected==LabMateSnapshotLogger)) {
+            (void)snprintf(buf,sizeof(buf),"%lu %s",
+                (unsigned long)snapshot.valid_sample_count,
+                selected==LabMateSnapshotLogger ? "CSV ROWS" : "TIM2 EDGES");
+            line(c,22,false,buf);
+            (void)snprintf(buf,sizeof(buf),"PIN %u", (unsigned)snapshot.pin_index);
+            line(c,31,false,buf);
+            const uint32_t elapsed_ms =
+                snapshot.observation_end_ms - snapshot.observation_start_ms;
+            (void)snprintf(buf,sizeof(buf),"WINDOW %lums",(unsigned long)elapsed_ms);
+            line(c,40,false,buf);
+            line(c,50,false,"HISTORICAL ONLY");
         } else {
             line(c,22,false,labels[selected]);
             line(c,34,false,"NO VERIFIED STATS");
