@@ -31,6 +31,6 @@ test -s "$tmp/triple_footer.inc"
 for cc in gcc clang; do
   "$cc" -std=c11 -O1 -g -Wall -Wextra -Werror -pedantic \
     -fsanitize=address,undefined -fno-omit-frame-pointer \
-    -I"$tmp" "$root/tests/test_v20_ui05d_measurement.c" -o "$tmp/ui05d-$cc"
+    -I"$root/src" -I"$tmp" "$root/tests/test_v20_ui05d_measurement.c" -o "$tmp/ui05d-$cc"
   "$tmp/ui05d-$cc"
 done
