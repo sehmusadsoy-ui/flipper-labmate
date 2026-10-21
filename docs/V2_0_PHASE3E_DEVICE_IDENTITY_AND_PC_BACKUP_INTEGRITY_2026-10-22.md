@@ -206,3 +206,18 @@ loader open /ext/apps/Tools/labmate-v20-phase3d-trial.fap
 Owner reported: the app opened, the Tools menu now shows two LabMate entries, and both display `v1.9DEV`. This does **not** establish that the new binary failed to launch: the development source intentionally leaves both `src/labmate_internal.h` `LABMATE_VERSION_TEXT "v1.9DEV"` and `application.fam` `fap_version="1.9"`, and the menu app name/ID is identical. As an acceptance discriminator, the actual Phase3D binary includes `Signal Doctor` in MEASURE and About's `16 tool guides`, whereas the previously installed app shows 15 tool guides. No T01/T02/T03 GUI PASS was supplied yet.
 
 **Next authorized UI-only observation**: with the path-launched app open, inspect MEASURE for Signal Doctor and About for 16 guides; then BACK/EXIT. Do not issue more upload/rename/delete, metrology, firmware update or data writes. If both discriminators are missing, capture original CLI loader response and screenshot, classify T01 as FAIL, and pause troubleshooting without assuming either app path was run.
+
+
+## Phase3E T01 — real-device development FAP launch confirmed; global UI polish outstanding
+
+Owner confirmed on the physical Flipper after the path-specific trial launch:
+- `About` displays **16 tool guides**.
+- `MEASURE` includes **Signal Doctor**.
+- The label still says **`v1.9DEV`**.
+- The overall presentation is visually the **old LabMate UI**, not the promised application-wide v2.0 professional design.
+
+**Assessment:** T01 app identity / menu presence **PASS** for the Phase3D candidate. This uniquely distinguishes it from the formerly installed 15-guide v1.9 build. This does not imply successful Pulse/Frequency diagnosis, T02/T03 controls, device resource stress, or stable acceptance.
+
+**Outstanding v2.0 commitments:** change manifest and About version coherently to `v2.0DEV` in a future separately built artifact (current candidate SHA must remain pinned); complete consistent polished UI across tools, not merely add the Doctor screen; run geometry and on-device screenshot review. **Visual design acceptance remains PENDING/NOT MET.** No current device file changes authorized beyond the already completed one-file sidecar upload. No firmware flash.
+
+**Next authorized observation:** open the already running Signal Doctor page, inspect initial `SET REF FIRST`, reference controls and second page without using measuring/generator/logger/profile hardware/data operations. Close with BACK. If unexpected display or glitch, capture screen and STOP.
