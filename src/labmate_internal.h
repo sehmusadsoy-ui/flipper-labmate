@@ -320,6 +320,7 @@ typedef struct {
     LabMateSignalStats signal_stats;
     uint8_t dashboard_source;
     bool dashboard_details;
+    bool dashboard_evidence;
     /* Phase3C: app-thread Pulse IRQ evidence lineage, not a live UI sample. */
     LabMateEvidenceSession doctor_pulse_session;
     uint32_t doctor_pulse_start_tick;

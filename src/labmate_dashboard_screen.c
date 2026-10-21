@@ -24,8 +24,35 @@ void labmate_dashboard_screen_draw(Canvas* c, const LabMateApp* a) {
          a->dashboard_source : 0U;
     const uint8_t page=selected < 3U ? 0U : 1U;
     char buf[22], hz[16];
-    ui_draw_header(c,a->dashboard_details ? "STATS" : "DASHBOARD");
+    ui_draw_header(c,!a->dashboard_details ? "DASHBOARD" :
+                          a->dashboard_evidence ? "EVIDENCE" : "STATS");
     ui_badge(c,95,1,31,page ? "2/2" : "1/2",false);
+    if(a->dashboard_details && a->dashboard_evidence) {
+        const LabMateDashboardSlot* slot = &a->doctor_store.slots[selected];
+        line(c,22,false,labels[selected]);
+        if(!slot->has_snapshot) {
+            line(c,33,false,"NO SOURCE DATA");
+            line(c,50,false,"NOT MEASURED");
+        } else {
+            const LabMateSnapshotV1* s = &slot->latest;
+            const char* quality = labmate_snapshot_v1_quality_text(s->quality);
+            (void)snprintf(buf,sizeof(buf),"PIN %u %s",
+                (unsigned)s->pin_index,quality);
+            line(c,31,false,buf);
+            (void)snprintf(buf,sizeof(buf),"GEN %lu SAMP %lu",
+                (unsigned long)s->capture_generation,
+                (unsigned long)s->valid_sample_count);
+            line(c,40,false,buf);
+            /* No claim of calibrated wall time. The event interval is
+             * from the SAME verified capture session.
+             */
+            const uint32_t duration=s->observation_end_ms-s->observation_start_ms;
+            (void)snprintf(buf,sizeof(buf),"WINDOW %lums",(unsigned long)duration);
+            line(c,50,false,buf);
+        }
+        ui_footer_pair(c,"<>","PAGE","OK","LIST");
+        return;
+    }
     if(a->dashboard_details) {
         LabMateSnapshotV1 snapshot;
         uint32_t mean,min,max; uint8_t count;

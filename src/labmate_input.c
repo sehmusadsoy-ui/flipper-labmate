@@ -64,8 +64,17 @@ void labmate_input_dispatch(LabMateApp* app, FuriStatus status,
     case LabMateScreenDashboard:
         /* No ISR, storage or native resource acquisition in read-only dashboard. */
         if(event.key == InputKeyBack) app->screen = LabMateScreenMenu;
-        else if(event.key == InputKeyOk)
-            app->dashboard_details = !app->dashboard_details;
+        else if(event.key == InputKeyOk) {
+            if(!app->dashboard_details) {
+                app->dashboard_details = true;
+                app->dashboard_evidence = false;
+            } else if(!app->dashboard_evidence) {
+                app->dashboard_evidence = true;
+            } else {
+                app->dashboard_details = false;
+                app->dashboard_evidence = false;
+            }
+        }
         else if(event.key == InputKeyUp)
             app->dashboard_source = (uint8_t)(
                 (app->dashboard_source + LabMateSnapshotSourceCount - 1U) %
