@@ -122,6 +122,8 @@ typedef struct {
      * Read together with period+pending under a real IRQ critical section.
      */
     LabMateLowMailboxAudit frequency_low_mailbox_audit;
+    /* App-thread copy of one coherent IRQ period + audit observation. */
+    LabMateLowMailboxObservation frequency_low_last_observation;
     volatile uint32_t frequency_irq_cycle_accumulator;
     volatile uint8_t frequency_irq_accumulated_periods;
     bool frequency_irq_active;
