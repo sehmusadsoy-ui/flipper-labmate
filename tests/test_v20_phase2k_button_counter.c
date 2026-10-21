@@ -3,6 +3,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+/* Link the REAL pure-C snapshot/store implementations below. A mocked
+ * publication API would make the new Counter STOP safety gate meaningless.
+ */
+#include "labmate_dashboard_store.h"
 #define FURI_HAL_RESOURCE_LEASE_API_V1 1
 #define FURI_HAL_GPIO_HAS_TRY_ADD_INT_CALLBACK 1
 #define GPIO_COUNT 8U
@@ -17,7 +21,10 @@ typedef struct {
     bool counter_active,button_active,capture_release_fault,capture_blocked;
     LabMateCaptureOwner capture_owner;
     uint8_t capture_pin_index;
-    uint32_t counter_elapsed_ticks,counter_start_tick,counter_elapsed_seconds;
+    uint64_t counter_elapsed_ticks, counter_total, counter_run_start_total;
+    uint32_t counter_start_tick, counter_elapsed_seconds;
+    uint32_t counter_run_generation, counter_run_tick_hz;
+    LabMateDashboardStore doctor_store;
 } LabMateApp;
 static uint32_t labmate_button_lease_handle;
 static bool release_ok,tim2_pending,tim2_healthy;
@@ -31,10 +38,10 @@ static bool furi_hal_resource_lease_release(uint32_t handle,uint32_t mask){asser
 static bool labmate_frequency_tim2_capture_valid(void){return tim2_healthy;}
 static void labmate_frequency_tim2_disable(void){disable_tim2++;}
 static void labmate_event_counter_poll(LabMateApp* a){assert(a);}
-static uint32_t labmate_counter_add_ticks(uint32_t a,uint32_t b){return a+b;}
+static uint64_t labmate_counter_add_ticks(uint64_t a,uint32_t b){return a+b;}
 static uint32_t furi_get_tick(void){return 200U;}
 static uint32_t furi_kernel_get_tick_frequency(void){return 100U;}
-static uint32_t labmate_counter_elapsed_seconds(uint32_t ticks,uint32_t hz){return ticks/hz;}
+static uint32_t labmate_counter_elapsed_seconds(uint64_t ticks,uint32_t hz){return (uint32_t)(ticks/hz);}
 static void labmate_frequency_tim2_shutdown(void){if(release_ok)tim2_pending=false;}
 static bool labmate_frequency_tim2_lease_pending(void){return tim2_pending;}
 #include "counter_stop.inc"
@@ -65,6 +72,74 @@ int main(void){
     labmate_button_capture_stop(&a);
     assert(a.button_active && a.capture_owner==LabMateCaptureButton && a.capture_blocked);
     assert(!disable_irq && !releases);n++;
-    printf("Phase2K extracted Button/Counter STOP PASS: %u release scenarios\n",n);
-    return n==6?0:1;
+    /* Positive: exact production Counter STOP must publish 43 real edges
+     * ONLY after a fully healthy TIM2 stop and returned native lease.
+     * Final TIM2 poll stub is a no-op, so the total is pre-observed.
+     */
+    reset();
+    a=(LabMateApp){
+        .counter_active=true,.capture_owner=LabMateCaptureCounter,
+        .capture_pin_index=4,.counter_start_tick=100,
+        .counter_run_generation=1,.counter_run_tick_hz=100,
+        .counter_total=61,.counter_run_start_total=18,
+    };
+    tim2_pending=true;
+    labmate_event_counter_stop(&a);
+    LabMateSnapshotV1 snap={0};
+    assert(!tim2_pending && !a.counter_active &&
+           a.capture_owner==LabMateCaptureNone);
+    assert(labmate_dashboard_store_read_measurement(
+        &a.doctor_store,LabMateSnapshotCounter,&snap));
+    assert(snap.capture_generation==1 && snap.source==LabMateSnapshotCounter &&
+           snap.pin_index==4 && snap.valid_sample_count==43 &&
+           snap.observed_edge_count==43 && snap.ownership_released);
+    n++;
+
+    /* Zero edges are not valid numerical evidence; no fake "NO SIGNAL". */
+    reset();
+    a=(LabMateApp){
+        .counter_active=true,.capture_owner=LabMateCaptureCounter,
+        .capture_pin_index=4,.counter_start_tick=100,
+        .counter_run_generation=2,.counter_run_tick_hz=100,
+        .counter_total=18,.counter_run_start_total=18,
+    };
+    tim2_pending=true;
+    labmate_event_counter_stop(&a);
+    assert(a.doctor_store.slots[LabMateSnapshotCounter].has_snapshot);
+    assert(labmate_dashboard_store_quality(
+        &a.doctor_store,LabMateSnapshotCounter)==LabMateSnapshotInsufficient);
+    assert(!labmate_dashboard_store_read_measurement(
+        &a.doctor_store,LabMateSnapshotCounter,&snap));
+    n++;
+
+    /* An unreturned lease MUST NEVER make numerical evidence. */
+    reset();
+    a=(LabMateApp){
+        .counter_active=true,.capture_owner=LabMateCaptureCounter,
+        .capture_pin_index=4,.counter_start_tick=100,
+        .counter_run_generation=3,.counter_run_tick_hz=100,
+        .counter_total=61,.counter_run_start_total=18,
+    };
+    tim2_pending=true;release_ok=false;
+    labmate_event_counter_stop(&a);
+    assert(a.capture_release_fault && a.capture_owner==LabMateCaptureCounter);
+    assert(!a.doctor_store.slots[LabMateSnapshotCounter].has_snapshot);
+    n++;
+
+    /* A changed timebase invalidates the interval: fail closed. */
+    reset();
+    a=(LabMateApp){
+        .counter_active=true,.capture_owner=LabMateCaptureCounter,
+        .capture_pin_index=4,.counter_start_tick=100,
+        .counter_run_generation=4,.counter_run_tick_hz=101,
+        .counter_total=61,.counter_run_start_total=18,
+    };
+    tim2_pending=true;
+    labmate_event_counter_stop(&a);
+    assert(a.capture_owner==LabMateCaptureNone);
+    assert(!a.doctor_store.slots[LabMateSnapshotCounter].has_snapshot);
+    n++;
+
+    printf("Phase2K extracted Button/Counter STOP PASS: %u release and sealed-evidence scenarios\n",n);
+    return n==10?0:1;
 }
