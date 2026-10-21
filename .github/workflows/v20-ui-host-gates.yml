@@ -34,6 +34,10 @@ on:
       - "src/labmate_doctor.[ch]"
       - "src/labmate_doctor_panel.[ch]"
       - "src/labmate_doctor_screen.[ch]"
+      - "src/labmate_doctor_pulse_policy.[ch]"
+      - "src/labmate_doctor_pulse_bridge.[ch]"
+      - "src/labmate_input_measure.c"
+      - "src/labmate_pulse_capture.c"
       - "src/labmate_input.c"
       - "src/labmate_input_menu.c"
       - "src/labmate_scope_ui.h"
@@ -63,6 +67,7 @@ on:
       - "scripts/test-v20-phase2k-host.sh"
       - "scripts/test-v20-phase3a-doctor-host.sh"
       - "scripts/test-v20-phase3b-doctor-panel-host.sh"
+      - "scripts/test-v20-phase3c-pulse-host.sh"
       - "scripts/test-v20-offline-full-host.sh"
       - ".github/workflows/v20-ui-host-gates.yml"
   pull_request:
@@ -98,6 +103,10 @@ on:
       - "src/labmate_doctor.[ch]"
       - "src/labmate_doctor_panel.[ch]"
       - "src/labmate_doctor_screen.[ch]"
+      - "src/labmate_doctor_pulse_policy.[ch]"
+      - "src/labmate_doctor_pulse_bridge.[ch]"
+      - "src/labmate_input_measure.c"
+      - "src/labmate_pulse_capture.c"
       - "src/labmate_input.c"
       - "src/labmate_input_menu.c"
       - "src/labmate_scope_ui.h"
@@ -127,6 +136,7 @@ on:
       - "scripts/test-v20-phase2k-host.sh"
       - "scripts/test-v20-phase3a-doctor-host.sh"
       - "scripts/test-v20-phase3b-doctor-panel-host.sh"
+      - "scripts/test-v20-phase3c-pulse-host.sh"
       - "scripts/test-v20-offline-full-host.sh"
       - ".github/workflows/v20-ui-host-gates.yml"
 
@@ -255,3 +265,7 @@ jobs:
       - name: Phase 3B Doctor reference and fail-closed panel policy (host only)
         shell: bash
         run: sh scripts/test-v20-phase3b-doctor-panel-host.sh
+
+      - name: Phase 3C Pulse native publication STOP gate (host policy only)
+        shell: bash
+        run: sh scripts/test-v20-phase3c-pulse-host.sh

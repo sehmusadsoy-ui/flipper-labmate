@@ -6,6 +6,9 @@ root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 tmp=$(mktemp -d "${TMPDIR:-/tmp}/labmate-phase3c.XXXXXXXX")
 trap 'rm -rf -- "$tmp"' EXIT HUP INT TERM
 grep -Fq 'labmate_doctor_pulse_started(app);' "$root/src/labmate_pulse_capture.c"
+grep -Fq 'labmate_doctor_pulse_observe_poll(app);' "$root/src/labmate.c"
+grep -Fq 'c.observed_pair_count = app->doctor_pulse_seen_pairs;' "$root/src/labmate_doctor_pulse_bridge.c"
+grep -Fq 'labmate_doctor_pulse_policy_accept(&c)' "$root/src/labmate_doctor_pulse_bridge.c"
 grep -Fq 'labmate_doctor_pulse_prepare_stop(app);' "$root/src/labmate_input_measure.c"
 grep -Fq 'labmate_doctor_pulse_finish_stop(app);' "$root/src/labmate_input_measure.c"
 grep -Fq 'labmate_doctor_pulse_abandon(app);' "$root/src/labmate_input_measure.c"
