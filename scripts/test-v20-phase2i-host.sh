@@ -21,6 +21,18 @@ awk '/^void labmate_frequency_high_start[(]/ {on=1} /^void labmate_frequency_low
 grep -Fq 'if(!labmate_frequency_tim2_configure())' "$tmp/start.inc"
 grep -Fq 'labmate_high_gate_audit_reset(&app->frequency_high_gate_audit);' "$tmp/start.inc"
 grep -Fq 'labmate_frequency_tim2_enable();' "$tmp/start.inc"
+awk '
+  /if\(!labmate_frequency_tim2_configure\(\)\)/ {acquire=NR}
+  /labmate_high_gate_audit_reset\(&app->frequency_high_gate_audit\);/ {reset=NR}
+  /labmate_frequency_tim2_enable\(\);/ {enable=NR}
+  END {if(!(acquire>0 && acquire<reset && reset<enable)) exit 1}
+' "$tmp/start.inc"
+awk '
+  /if\(gate == LabMateHighGatePublish\)/ {publish=NR}
+  /labmate_high_gate_audit_record\(/ {audit=NR}
+  /app->frequency_millihz = sample_millihz;/ {if(!value)value=NR}
+  END {if(!(publish>0 && publish<audit && audit<value)) exit 1}
+' "$source"
 for cc in gcc clang; do
   command -v "$cc" >/dev/null 2>&1 || { echo "Missing compiler $cc" >&2; exit 2; }
   "$cc" -std=c11 -O1 -g -Wall -Wextra -Werror -pedantic \
