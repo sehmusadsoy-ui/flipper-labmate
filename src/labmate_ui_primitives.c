@@ -1,4 +1,5 @@
 #include "labmate_ui_primitives.h"
+#include "labmate_ui_layout.h"
 #include "labmate_navigation.h"
 #include <string.h>
 #include <stdio.h>
@@ -46,7 +47,7 @@ void ui_key(Canvas* canvas, uint8_t x, const char* key, const char* action) {
     if(!canvas || !ui_format_key(label, sizeof(label), key, action, 10U))
         return;
     canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, x, 61, label);
+    canvas_draw_str(canvas, x, LABMATE_UI_FOOTER_BASELINE_Y, label);
 }
 
 static void ui_footer_action(Canvas* canvas, uint8_t x,
@@ -62,9 +63,9 @@ void ui_footer_pair(Canvas* canvas, const char* left_key,
     if(!ui_format_key(left, sizeof(left), left_key, left_action, 10U) ||
        !ui_format_key(right, sizeof(right), right_key, right_action, 10U))
         return; /* Never paint a half-footer on malformed arguments. */
-    canvas_draw_line(canvas, 0, 52, 127, 52);
-    ui_footer_action(canvas, 2, left_key, left_action);
-    ui_footer_action(canvas, 66, right_key, right_action);
+    canvas_draw_line(canvas, 0, LABMATE_UI_FOOTER_RULE_Y, LABMATE_UI_WIDTH - 1, LABMATE_UI_FOOTER_RULE_Y);
+    ui_footer_action(canvas, LABMATE_UI_FOOTER_PAIR_LEFT_X, left_key, left_action);
+    ui_footer_action(canvas, LABMATE_UI_FOOTER_PAIR_RIGHT_X, right_key, right_action);
 }
 
 /* 3-column action footer with preflight: do not partially paint on
@@ -80,14 +81,14 @@ static bool ui_footer_triple_label_valid(const char* label, size_t limit) {
 }
 
 void ui_footer_triple(Canvas* canvas, const char* left, const char* center, const char* right) {
-    if(!canvas || !ui_footer_triple_label_valid(left, 7U) ||
-       !ui_footer_triple_label_valid(center, 7U) ||
-       !ui_footer_triple_label_valid(right, 5U)) return;
-    canvas_draw_line(canvas, 0, 52, 127, 52);
+    if(!canvas || !ui_footer_triple_label_valid(left, LABMATE_UI_FOOTER_TRIPLE_LEFT_MAX_CHARS) ||
+       !ui_footer_triple_label_valid(center, LABMATE_UI_FOOTER_TRIPLE_CENTER_MAX_CHARS) ||
+       !ui_footer_triple_label_valid(right, LABMATE_UI_FOOTER_TRIPLE_RIGHT_MAX_CHARS)) return;
+    canvas_draw_line(canvas, 0, LABMATE_UI_FOOTER_RULE_Y, LABMATE_UI_WIDTH - 1, LABMATE_UI_FOOTER_RULE_Y);
     canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 2, 61, left);
-    canvas_draw_str(canvas, 45, 61, center);
-    canvas_draw_str(canvas, 96, 61, right);
+    canvas_draw_str(canvas, LABMATE_UI_FOOTER_TRIPLE_LEFT_X, LABMATE_UI_FOOTER_BASELINE_Y, left);
+    canvas_draw_str(canvas, LABMATE_UI_FOOTER_TRIPLE_CENTER_X, LABMATE_UI_FOOTER_BASELINE_Y, center);
+    canvas_draw_str(canvas, LABMATE_UI_FOOTER_TRIPLE_RIGHT_X, LABMATE_UI_FOOTER_BASELINE_Y, right);
 }
 
 /* Small, distinct 12x12 instrument pictograms.
@@ -231,8 +232,8 @@ void ui_draw_header(
     const char* title) {
 
     canvas_set_font(canvas, FontPrimary);
-    canvas_draw_str(canvas, 2, 10, title);
+    canvas_draw_str(canvas, LABMATE_UI_HEADER_TITLE_X, LABMATE_UI_HEADER_BASELINE_Y, title);
 
-    canvas_draw_line(canvas, 0, 13, 127, 13);
+    canvas_draw_line(canvas, 0, LABMATE_UI_HEADER_RULE_Y, LABMATE_UI_WIDTH - 1, LABMATE_UI_HEADER_RULE_Y);
 }
 
