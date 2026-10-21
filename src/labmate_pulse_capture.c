@@ -173,15 +173,16 @@ void labmate_pulse_capture_stop(LabMateApp* app) {
     labmate_capture_exti_clear((uint32_t)pin->pin, true);
     furi_hal_gpio_init_simple(pin, GpioModeAnalog);
     app->pulse_irq_active = false;
-    if(app->capture_owner == LabMateCapturePulse) {
-        app->capture_owner = labmate_capture_owner_after_stop(
-            app->capture_owner, LabMateCapturePulse);
-        app->capture_pin_index = GPIO_COUNT;
-    }
     if(furi_hal_resource_lease_release(
            labmate_pulse_lease_handle, labmate_pulse_lease_mask)) {
         labmate_pulse_lease_handle = 0U;
         labmate_pulse_lease_mask = 0U;
+        /* Neither HOLD nor callback-detach alone certifies lease release. */
+        if(app->capture_owner == LabMateCapturePulse) {
+            app->capture_owner = labmate_capture_owner_after_stop(
+                app->capture_owner, LabMateCapturePulse);
+            app->capture_pin_index = GPIO_COUNT;
+        }
     } else {
         /* Lost release: retain the handle and reject any later restart. */
         app->capture_release_fault = true;
@@ -189,6 +190,14 @@ void labmate_pulse_capture_stop(LabMateApp* app) {
     }
 #else
     app->capture_blocked = true;
+#endif
+}
+
+bool labmate_pulse_lease_pending(void) {
+#if defined(FURI_HAL_RESOURCE_LEASE_API_V1) && defined(FURI_HAL_GPIO_HAS_TRY_ADD_INT_CALLBACK)
+    return labmate_pulse_lease_handle != 0U || labmate_pulse_lease_mask != 0U;
+#else
+    return false;
 #endif
 }
 
