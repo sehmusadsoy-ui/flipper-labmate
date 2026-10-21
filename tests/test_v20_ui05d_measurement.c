@@ -12,6 +12,10 @@
 
 typedef enum { FontSecondary=0, FontPrimary=1 } Font;
 typedef enum { AlignRight=0, AlignBottom=0 } Align;
+/* The extracted production three-action footer now fills its action band
+ * with an inverse color. Model the real Canvas API, not a no-op workaround.
+ */
+typedef enum { ColorBlack=0, ColorWhite=1 } Color;
 typedef struct { int32_t x0,y0,x1,y1; } Rect;
 typedef struct Canvas Canvas;
 struct Canvas {
@@ -19,6 +23,8 @@ struct Canvas {
     Rect labels[40];
     char values[40][48];
     unsigned count, faults;
+    Color color;
+    unsigned boxes;
     int badge_x, badge_y, badge_w;
 };
 static bool intersection(Rect a, Rect b) {
@@ -55,6 +61,16 @@ void canvas_draw_str_aligned(Canvas* c,int32_t x,int32_t y,Align horizontal,Alig
 void canvas_draw_line(Canvas* c,int32_t x0,int32_t y0,int32_t x1,int32_t y1) {
     assert(c);
     if(x0<0||x0>=128||x1<0||x1>=128||y0<0||y0>=64||y1<0||y1>=64)++c->faults;
+}
+void canvas_draw_box(Canvas* c,int32_t x,int32_t y,int32_t w,int32_t h) {
+    assert(c);
+    if(x<0||y<0||w<=0||h<=0||x+w>128||y+h>64)++c->faults;
+    ++c->boxes;
+}
+void canvas_set_color(Canvas* c,Color color) {
+    assert(c);
+    assert(color==ColorBlack||color==ColorWhite);
+    c->color=color;
 }
 void ui_badge(Canvas* c,uint8_t x,uint8_t y,uint8_t w,const char* value,bool fill) {
     (void)fill;
@@ -140,6 +156,7 @@ static unsigned frequency_test(void) {
         a.capture_blocked=(status==2);a.hold=(status==1);
         LabMateApp before;memcpy(&before,&a,sizeof(a));
         draw_frequency(&c,&a);assert(memcmp(&before,&a,sizeof(a))==0);
+        assert(c.color==ColorBlack && c.boxes>=1U);
         if(c.faults){fprintf(stderr,"FREQUENCY k=%u source=%u status=%u stats=%u\n",k,source,status,stats);return 0;}
         assert(contains(&c,source?"HIGH PB3":"LOW PC1"));
         ++count;
@@ -161,6 +178,7 @@ static unsigned generator_test(void) {
         a.generator_release_fault=(status==3);
         LabMateApp before;memcpy(&before,&a,sizeof(a));
         draw_generator(&c,&a);assert(memcmp(&before,&a,sizeof(a))==0);
+        assert(c.color==ColorBlack && c.boxes>=1U);
         if(c.faults){fprintf(stderr,"GENERATOR choice=%u duty=%u status=%u edit=%u\n",choice,duty,status,editing);return 0;}
         assert(contains(&c,"OUT PA7"));
         ++count;
@@ -189,6 +207,7 @@ static unsigned pulse_test(void) {
         a.capture_blocked=(status==2);a.hold=(status==1);
         LabMateApp before;memcpy(&before,&a,sizeof(a));
         draw_pulse(&c,&a);assert(memcmp(&before,&a,sizeof(a))==0);
+        assert(c.color==ColorBlack && c.boxes>=1U);
         if(c.faults){fprintf(stderr,"PULSE pin=%u view=%u valid=%u cycles=%u duty=%u status=%u\n",pin,view,valid,ix,d,status);return 0;}
         if(view && valid && d==2)assert(contains(&c,"100.0%"));
         ++count;
