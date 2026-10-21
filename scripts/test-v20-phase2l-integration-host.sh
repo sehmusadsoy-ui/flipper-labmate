@@ -42,7 +42,7 @@ do
     runner="$root/scripts/test-v20-$suite-host.sh"
     test -s "$runner" || { echo "PHASE2L NO-GO: absent $runner" >&2; exit 2; }
     printf '\nPHASE2L RUN: %s\n' "$suite"
-    sh "$runner" || { echo "PHASE2L FAIL: %s" "$suite" >&2; exit 1; }
+    sh "$runner" || { printf 'PHASE2L FAIL: %s\n' "$suite" >&2; exit 1; }
     count=$((count+1))
 done
 test "$count" -eq 22
