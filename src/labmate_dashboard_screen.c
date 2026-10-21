@@ -63,7 +63,8 @@ void labmate_dashboard_screen_draw(Canvas* c, const LabMateApp* a) {
                 hz_text(snap.frequency_millihz,hz,sizeof(hz));
                 state=hz;
             } else if(i==LabMateSnapshotCounter || i==LabMateSnapshotLogger) {
-                (void)snprintf(hz,sizeof(hz),"%lu EVENTS",
+                (void)snprintf(hz,sizeof(hz),
+                              i==LabMateSnapshotLogger ? "%lu ROWS" : "%lu EVENTS",
                               (unsigned long)snap.valid_sample_count);
                 state=hz;
             } else state="VALID";

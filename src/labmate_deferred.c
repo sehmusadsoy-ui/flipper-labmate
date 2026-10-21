@@ -49,6 +49,8 @@ void labmate_deferred_execute(LabMateApp* app, LabMateDeferredWork* work,
             else labmate_logger_storage_start(app);
             furi_mutex_acquire(app->mutex, FuriWaitForever);
             app->logger_busy = false;
+            if(work->logger_stop_requested)
+                labmate_logger_dashboard_finalize(app);
             furi_mutex_release(app->mutex);
         }
 

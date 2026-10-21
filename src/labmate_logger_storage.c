@@ -1,5 +1,9 @@
 #include "labmate_logger_storage.h"
 #include "labmate_logger_codec.h"
+#include "labmate_dashboard_store.h"
+#include "labmate_frequency_tim2.h"
+#include "labmate_frequency_capture.h"
+#include "labmate_pulse_capture.h"
 #include "labmate_storage_paths.h"
 
 #include <stdio.h>
@@ -7,6 +11,42 @@
 
 /* Backward compatible microSD directory and file names. */
 #define LOGGER_DIR LABMATE_LOGGER_DIR
+
+/* App-thread with UI mutex held by caller. Marks persisted row count,
+ * never claims any individual CSV row was a valid electrical measurement.
+ * NO microSD write, filesystem scan, or new hardware acquisition here.
+ */
+void labmate_logger_dashboard_finalize(LabMateApp* app) {
+    if(!app || !app->logger_session_generation || !app->logger_rows ||
+       app->logger_recording || app->logger_busy || app->logger_error ||
+       app->logger_file || app->logger_storage ||
+       app->capture_owner != LabMateCaptureNone || app->capture_blocked ||
+       app->capture_release_fault || app->pulse_irq_active ||
+       app->frequency_irq_active || app->frequency_hw_active ||
+       labmate_frequency_low_lease_pending() ||
+       labmate_frequency_tim2_lease_pending() ||
+       labmate_pulse_lease_pending()) return;
+    const uint32_t hz = furi_kernel_get_tick_frequency();
+    const uint32_t now = furi_get_tick();
+    if(!hz || !app->logger_start_tick || now <= app->logger_start_tick) return;
+    const uint64_t begin_ms = (uint64_t)app->logger_start_tick * 1000U / hz;
+    const uint64_t end_ms = (uint64_t)now * 1000U / hz;
+    if(!begin_ms || end_ms > UINT32_MAX || end_ms <= begin_ms) return;
+    LabMateSnapshotV1 s = {0};
+    s.schema_version = LABMATE_SNAPSHOT_VERSION;
+    s.source = LabMateSnapshotLogger;
+    s.pin_index = app->logger_source == LoggerFrequencyHigh ? 4U :
+                  app->logger_source == LoggerPulse ? app->preferred_pulse_pin :
+                                                       1U;
+    s.quality = LabMateSnapshotValid;
+    s.capture_generation = app->logger_session_generation;
+    s.ownership_released = true;
+    s.observation_start_ms = (uint32_t)begin_ms;
+    s.observation_end_ms = (uint32_t)end_ms;
+    s.timebase_hz = hz;
+    s.valid_sample_count = app->logger_rows; /* successfully written CSV rows, NOT valid GPIO samples */
+    (void)labmate_dashboard_store_ingest(&app->doctor_store, &s);
+}
 
 void labmate_logger_storage_stop(LabMateApp* app) {
     app->logger_recording = false;
@@ -143,6 +183,11 @@ bool labmate_logger_storage_start(LabMateApp* app) {
 
     app->logger_start_tick = furi_get_tick();
     app->logger_last_tick = app->logger_start_tick;
+    if(app->logger_session_generation != UINT32_MAX)
+        ++app->logger_session_generation;
+    else app->logger_session_generation = 0U; /* never reuse wrapped generation */
+    labmate_dashboard_store_clear_source(
+        &app->doctor_store, LabMateSnapshotLogger);
     app->logger_recording = true;
     return true;
 }

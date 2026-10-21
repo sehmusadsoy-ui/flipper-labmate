@@ -263,6 +263,7 @@ typedef struct {
     uint32_t logger_start_tick;
     uint32_t logger_last_tick;
     uint32_t logger_rows;
+    uint32_t logger_session_generation; /* only successful CSV opens */
     char logger_path[96];
     Storage* logger_storage;
     File* logger_file;
