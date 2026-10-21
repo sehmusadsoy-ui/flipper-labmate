@@ -40,7 +40,8 @@ awk '/^void labmate_frequency_low_stop[(]/ {on=1} on {print; if($0=="}") exit}' 
 awk '/^void labmate_pulse_capture_stop[(]/ {on=1} on {print; if($0=="}") exit}' "$pulse" > "$tmp/pulse_stop.inc"
 awk '/^void labmate_event_counter_stop[(]/ {on=1} on {print; if($0=="}") exit}' "$counter" > "$tmp/counter_stop.inc"
 awk '/^void labmate_button_capture_stop[(]/ {on=1} on {print; if($0=="}") exit}' "$button" > "$tmp/button_stop.inc"
-for part in "$tmp/high_stop.inc" "$tmp/low_stop.inc" "$tmp/pulse_stop.inc" "$tmp/counter_stop.inc" "$tmp/button_stop.inc"; do
+awk '/^void labmate_capture_stop_all[(]/ {on=1} on {print; if($0=="}") exit}' "$session" > "$tmp/stop_all.inc"
+for part in "$tmp/high_stop.inc" "$tmp/low_stop.inc" "$tmp/pulse_stop.inc" "$tmp/counter_stop.inc" "$tmp/button_stop.inc" "$tmp/stop_all.inc"; do
   test -s "$part"
 done
 awk '
@@ -62,5 +63,9 @@ for cc in gcc clang; do
     -fsanitize=address,undefined -fno-omit-frame-pointer \
     -I"$tmp" "$root/tests/test_v20_phase2k_button_counter.c" -o "$tmp/button-counter-$cc"
   "$tmp/button-counter-$cc"
+  "$cc" -std=c11 -O1 -g -Wall -Wextra -Werror -pedantic \
+    -fsanitize=address,undefined -fno-omit-frame-pointer \
+    -I"$root/src" -I"$tmp" "$root/tests/test_v20_phase2k_stop_all.c" -o "$tmp/stop-all-$cc"
+  "$tmp/stop-all-$cc"
 done
 printf '%s\n' 'Phase2K source-linked STOP native-lease gate PASS (host only)'
