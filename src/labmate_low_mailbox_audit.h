@@ -53,3 +53,35 @@ static inline bool labmate_low_mailbox_detected_loss(
     const LabMateLowMailboxAudit* audit) {
     return !audit || audit->overwrites != 0U || audit->exhausted;
 }
+
+/* Complete PC1 mailbox observation. The caller MUST already mask this IRQ.
+ * This is a single-slot software observation, not an ISR-to-UI FIFO.
+ */
+typedef struct {
+    bool has_period;
+    uint32_t period_cycles;
+    uint32_t publications;
+    uint32_t overwrites;
+    bool exhausted;
+} LabMateLowMailboxObservation;
+
+/* Called only while FURI_CRITICAL_ENTER protects both ISR flag and counters.
+ * Returns false without mutating any pointer on invalid input. On no pending
+ * result the period is zero, but current counters still report coalescing.
+ */
+static inline bool labmate_low_mailbox_consume_locked(
+    const LabMateLowMailboxAudit* audit, volatile bool* pending,
+    volatile uint32_t* period_cycles, LabMateLowMailboxObservation* output) {
+    if(!audit || !pending || !period_cycles || !output) return false;
+    LabMateLowMailboxObservation current = {0};
+    current.publications = audit->publications;
+    current.overwrites = audit->overwrites;
+    current.exhausted = audit->exhausted;
+    current.has_period = *pending;
+    if(current.has_period) {
+        current.period_cycles = *period_cycles;
+        *pending = false;
+    }
+    *output = current;
+    return true;
+}
