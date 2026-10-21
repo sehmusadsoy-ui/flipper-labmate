@@ -11,4 +11,10 @@ for cc in gcc clang; do
     -I"$root/src" "$root/src/labmate_snapshot.c" \
     "$root/tests/test_v20_snapshot.c" -o "$tmp/test-$cc"
   "$tmp/test-$cc"
+  "$cc" -std=c11 -O1 -g -Wall -Wextra -Werror -pedantic \
+    -fsanitize=address,undefined -fno-omit-frame-pointer \
+    -I"$root/src" "$root/src/labmate_snapshot.c" \
+    "$root/src/labmate_dashboard_store.c" \
+    "$root/tests/test_v20_dashboard_store.c" -o "$tmp/dashboard-$cc"
+  "$tmp/dashboard-$cc"
 done
