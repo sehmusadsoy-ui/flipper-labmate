@@ -32,7 +32,7 @@ void labmate_doctor_screen_draw(Canvas* c, const LabMateApp* app) {
         ui_footer_pair(c, "OK", "EDIT", "BACK", "MENU");
         return;
     }
-    ui_badge(c, 95, 1, 31, page ? "2/2" : "1/2", false);
+    ui_badge(c, 95, 1, 31, page ? "2/3" : "1/3", false);
     if(page == 0U) {
         panel_row(c, LABMATE_DOCTOR_ROW1_Y, p->field == LabMateDoctorFieldSource, "SRC",
                   p->source == LabMateSnapshotPulse ? "PULSE" : "FREQ");
@@ -65,5 +65,9 @@ void labmate_doctor_screen_draw(Canvas* c, const LabMateApp* app) {
      */
     canvas_draw_str(c, LABMATE_DOCTOR_TEXT_X, LABMATE_DOCTOR_STATUS_Y,
                     labmate_doctor_panel_status_text(&a));
-    ui_footer_pair(c, "<>", "FIELD", "^v", "EDIT");
+    /* Three real keys are used on this screen. The shared triple footer
+     * keeps all actions visible, avoiding an undiscoverable advice page.
+     */
+    ui_footer_triple(c, "<>FIELD", "^vEDIT",
+                     p->field == LabMateDoctorFieldFrequency ? "OKx" : "OKINF");
 }
