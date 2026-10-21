@@ -54,7 +54,13 @@ def main():
                           '{LabMateToolLogger, LabMateToolHistory, LabMateToolProfiles, LabMateToolDashboard',
                           '"Signal Doctor"', '"Dashboard"']:
         require(expected_line in nav_c, f"navigation contract: {expected_line}")
-    require('"17 tool guides"' in ui, "About guide count out of sync with tool enum")
+    # The actual 128x64 About artwork uses uppercase "17 TOOL GUIDES".
+    # Count is derived from the stable enum, not a case-sensitive copy of UI text.
+    displayed_guides = [int(n) for n in re.findall(
+        r'"(\\d+)\\s+tool guides"', ui, flags=re.IGNORECASE
+    )]
+    require(displayed_guides and all(n == len(expected) - 1 for n in displayed_guides),
+            "About guide count out of sync with tool enum")
     for expected_text in ['LabMateScreenDashboard', 'LabMateScreenDoctor']:
         require(expected_text in internal, f"screen enum missing {expected_text}")
         require(f"case {expected_text}:" in input_code, f"input dispatch missing {expected_text}")
