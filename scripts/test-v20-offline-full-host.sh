@@ -36,4 +36,12 @@ sh "$root/scripts/test-v20-phase3c-pulse-host.sh" || {
     echo 'V20 OFFLINE FAIL: Phase 3C Pulse STOP policy' >&2
     exit 1
 }
-echo 'V20 OFFLINE HOST PASS: Phase 2L + Phase 3A + Phase 3B + Phase 3C Pulse (NOT SDK/FAP OR DEVICE)'
+test -s "$root/scripts/test-v20-phase3d-frequency-host.sh" || {
+    echo 'V20 OFFLINE NO-GO: Phase 3D Frequency policy missing' >&2
+    exit 2
+}
+sh "$root/scripts/test-v20-phase3d-frequency-host.sh" || {
+    echo 'V20 OFFLINE FAIL: Phase 3D Frequency policy' >&2
+    exit 1
+}
+echo 'V20 OFFLINE HOST PASS: Phase 2L + Phase 3A + Phase 3B + Phase 3C + Phase 3D-A policy (NOT SDK/FAP OR DEVICE)'
