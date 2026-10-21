@@ -114,3 +114,17 @@ The new FAP's repository `application.fam` still declares `appid="labmate"`, `na
 Before any attempted side-by-side device stage: obtain scoped explicit owner consent, check the exact destination filename does not exist by read-only `storage stat`, verify the qFlipper upload destination and existing `/ext/apps/Tools/labmate.fap` hash, and ensure the test plan does NOT claim shared SD data is isolated. qFlipper may overwrite files with identical names without warning (per vendor docs). Re-read candidate digest and live old app digest after transfer; do not auto-rename/delete/restore on an ambiguous result.
 
 Current stage: **PC copy PASS; device trial upload not authorized or performed**.
+
+
+## Phase 3E trial sidecar destination — real device READ-ONLY stat result
+
+Owner provided a screenshot of the current Flipper Lab CLI on the E11-patched firmware (`HEAD mntm-dev d3f89dfe-dirty built on 16-10-2026`). Its read-only output is:
+
+```text
+>: storage stat "/ext/apps/Tools/labmate-v20-phase3d-trial.fap"
+Storage error: file/dir not exist
+```
+
+**Interpretation:** The proposed exact sidecar pathname was absent at the time of this one read-only probe. This does not prove that the name will remain free at a future upload; check again immediately beforehand. No install, no file stage, no flash and no on-device rename have occurred.
+
+**Device write authorization:** STILL PENDING. Require owner's explicit authorization for exactly one FAP upload as a *new* `/ext/apps/Tools/labmate-v20-phase3d-trial.fap`, preserving `/ext/apps/Tools/labmate.fap` and its previously matched 101468-byte backup. No implicit permission for launching, cleanup, rollback, firmware updates or profile/CSV writes. Both FAPs still use the same application ID `labmate` and storage namespace, so test launch is NOT isolated from the existing app data, and must be a separately reviewed decision.
