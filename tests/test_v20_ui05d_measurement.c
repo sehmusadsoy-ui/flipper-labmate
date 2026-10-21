@@ -73,6 +73,10 @@ void ui_footer_pair(Canvas* c,const char* lk,const char* la,const char* rk,const
     assert(n>0&&n<=10);canvas_draw_str(c,66,61,label);
 }
 
+/* Exact source functions extracted from the production shared UI primitives. */
+#include "triple_validator.inc"
+#include "triple_footer.inc"
+
 typedef enum { LabMateAlertFrequency=0, LabMateAlertPulseDuty=1 } LabMateAlertSource;
 typedef struct {LabMateAlertSource source;bool armed,latched;} LabMateThreshold;
 #define LABMATE_PWM_CUSTOM_INDEX 15U
