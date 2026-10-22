@@ -1,0 +1,86 @@
+#!/usr/bin/env python3
+"""Static cross-screen 128x64 visual contract audit. SOURCE ONLY.
+No Flipper/SDK access, no rendering/pixel-perfect or hardware PASS claim.
+"""
+from pathlib import Path
+import re
+
+ROOT=Path(__file__).resolve().parent.parent
+def src(path):
+    return (ROOT/path).read_text(encoding="utf-8")
+def body(text,name,return_type="void"):
+    m=re.search(r"^"+return_type+r"\s+"+re.escape(name)+r"\s*\(",text,re.M)
+    if not m: raise AssertionError("renderer missing: "+name)
+    end=re.search(r"^}\s*$",text[m.end():],re.M)
+    if not end: raise AssertionError("renderer lacks close: "+name)
+    return text[m.start():m.end()+end.end()]
+def check(condition,message):
+    if not condition: raise AssertionError(message)
+
+def main():
+    canvas=src("src/labmate_ui_screens.c")
+    files={
+        "src/labmate_ui_screens.c":(
+            "draw_menu","draw_gpio","draw_frequency","draw_pulse",
+            "draw_generator","draw_logger","draw_counter","draw_button",
+            "draw_alerts","draw_history","draw_history_detail",
+            "draw_profiles","draw_about"),
+        "src/labmate_uart_ui.c":("draw_uart",),
+        "src/labmate_i2c_ui.c":("draw_i2c",),
+        "src/labmate_onewire_ui.c":("draw_onewire",),
+    }
+    count=0
+    for path,names in files.items():
+        text=src(path)
+        for name in names:
+            b=body(text,name)
+            count+=1
+            check("ui_draw_header(" in b,name+": shared header missing")
+            if name=="draw_history_detail":
+                # Legacy one-off footer is documented for a later exact
+                # visual migration; never pretend this is fully harmonized.
+                check('"BACK: LIST"' in b and '"READ ONLY"' in b,
+                      name+": guarded read-only footer changed")
+            else:
+                check("ui_footer_pair(" in b or "ui_footer_triple(" in b,
+                      name+": physical-key footer missing")
+            for forbidden in ("furi_hal_gpio_", "storage_file_write(",
+                              "furi_hal_resource_lease_try_acquire("):
+                check(forbidden not in b,name+": renderer acquired native resources")
+    check(body(canvas,"draw_menu").count("labmate_menu_tile_x")>=1,
+          "Ultimate root grid bypassed")
+    check("canvas_draw_str(canvas,117U,y,\">\")" in body(canvas,"draw_menu"),
+          "submenu disclosure position changed")
+    check("draw_pulse_stats(canvas, app);" in body(canvas,"draw_pulse"),
+          "Pulse STATS display lost")
+    for title,name in (("FREQ","draw_frequency"),("PWM","draw_generator"),
+                       ("PULSE","draw_pulse")):
+        check(f'ui_draw_header(canvas, "{title}")' in body(canvas,name),
+              name+": shared heading regression")
+    for path,signature in (
+        ("src/labmate_dashboard_screen.c","labmate_dashboard_screen_draw"),
+        ("src/labmate_doctor_screen.c","labmate_doctor_screen_draw"),
+    ):
+        t=src(path)
+        for component in ("ui_draw_header(", "ui_footer_pair("):
+            if signature=="labmate_doctor_screen_draw" and component=="ui_footer_pair(":
+                continue
+            check(component in t,path+" missing "+component)
+        if signature=="labmate_doctor_screen_draw":
+            check("ui_footer_triple(" in t,path+" missing controls")
+    scope=src("src/labmate_scope_display.c")
+    check("labmate_scope_ui_header(" in scope and
+          "labmate_scope_ui_footer(" in scope,
+          "Scope's dedicated plot geometry requires independent title/footer")
+    nav=src("src/labmate_navigation.c")
+    check('"MEASURE", "OUTPUT", "RECORDS", "COMM", "INFO"' in nav,
+          "historical five-group order changed")
+    check("LabMateToolDashboard" in nav and "LabMateToolDoctor" in nav,
+          "Ultimate tools missing")
+    print(f"V20 APP-WIDE UI SOURCE CONTRACT PASS: {count} legacy renderers + "
+          "Doctor, Dashboard and dedicated Scope chrome; "
+          "history-detail/Pulse-stats special footers deliberately exempt. "
+          "PIXEL TEST AND DEVICE STILL PENDING")
+
+if __name__=="__main__":
+    main()

@@ -157,6 +157,7 @@ def main():
                  "scripts/test-v20-level-witness-host.sh",
                  "scripts/test-v20-ultimate-root-grid-host.sh",
                  "scripts/test-v20-ultimate-menu-renderer-host.sh",
+                 "scripts/test-v20-ultimate-ui-contract.py",
                  "scripts/test-v20-phase3b-doctor-panel-host.sh"]:
         require((ROOT / name).is_file(), f"mandatory test runner missing {name}")
     return True

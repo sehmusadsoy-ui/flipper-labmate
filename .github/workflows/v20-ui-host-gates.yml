@@ -88,6 +88,7 @@ on:
       - "scripts/build-v20-phase3b-e11-isolated.sh"
       - "scripts/test-v20-offline-full-host.sh"
       - "scripts/test-v20-ultimate-*-host.sh"
+      - "scripts/test-v20-ultimate-ui-contract.py"
       - "scripts/test-v20-scope-diagnostics-host.sh"
       - "scripts/test-v20-level-witness-host.sh"
       - "scripts/test-v20-dashboard-host.sh"
@@ -181,6 +182,7 @@ on:
       - "scripts/build-v20-phase3b-e11-isolated.sh"
       - "scripts/test-v20-offline-full-host.sh"
       - "scripts/test-v20-ultimate-*-host.sh"
+      - "scripts/test-v20-ultimate-ui-contract.py"
       - "scripts/test-v20-scope-diagnostics-host.sh"
       - "scripts/test-v20-level-witness-host.sh"
       - "scripts/test-v20-dashboard-host.sh"
@@ -345,6 +347,10 @@ jobs:
       - name: Ultimate all-selection real-menu renderer geometry
         shell: bash
         run: sh scripts/test-v20-ultimate-menu-renderer-host.sh
+
+      - name: App-wide source anatomy and footer consistency audit
+        shell: bash
+        run: python3 scripts/test-v20-ultimate-ui-contract.py
 
       - name: New sealed Scope timing evidence and suspected-gap safeguards
         shell: bash
