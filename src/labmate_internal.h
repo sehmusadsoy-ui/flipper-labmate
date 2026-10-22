@@ -30,6 +30,7 @@
 #include "labmate_doctor_frequency_policy.h"
 #include "labmate_signal_stats.h"
 #include "labmate_scope_diagnostics.h"
+#include "labmate_level_witness.h"
 
 #define LABMATE_VERSION_TEXT "v2.0DEV"
 /* Shared menu/pin counts: UI and input handling must agree. */
@@ -107,6 +108,7 @@ typedef struct {
 
     bool gpio_state;
     bool gpio_previous_state;
+    LabMateLevelWitness gpio_level_witness;
     uint32_t edges;
 
     /* Frequency meter */

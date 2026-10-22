@@ -531,7 +531,12 @@ void measurement_update(LabMateApp* app) {
      */
     if(app->screen != LabMateScreenGpio) return;
     bool current = false;
-    if(!labmate_monitor_gpio_read(app, app->gpio_index, &current)) return;
+    if(!labmate_monitor_gpio_read(app, app->gpio_index, &current)) {
+        labmate_level_invalidate(&app->gpio_level_witness);
+        return;
+    }
+    (void)labmate_level_observe(
+        &app->gpio_level_witness,app->gpio_index,current,now,tick_frequency);
     if(current != app->gpio_previous_state) {
         app->edges++;
         app->gpio_previous_state = current;
