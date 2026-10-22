@@ -396,11 +396,10 @@ void draw_menu(Canvas* canvas, LabMateApp* app) {
         ui_draw_menu_icon(canvas,tool,4U,(uint8_t)(y-9U));
         canvas_set_font(canvas,FontSecondary);
         canvas_draw_str(canvas,20U,y,labmate_nav_tool_title(tool));
-        char position[9];
-        (void)snprintf(position,sizeof(position),"%u/%u",
-                       (unsigned)(i+1U),(unsigned)count);
-        const uint8_t x=(uint8_t)(126U-(uint8_t)(strlen(position)*6U));
-        canvas_draw_str(canvas,x,y,position);
+        /* Right-edge disclosure mark has its own 6px cell. It must not
+         * overlap 16-char legacy names such as "Threshold Alerts".
+         */
+        canvas_draw_str(canvas,117U,y,">");
         if(i==selected) canvas_set_color(canvas,ColorBlack);
     }
     ui_footer_pair(canvas, "BACK", "GROUP", "OK", "OPEN");
