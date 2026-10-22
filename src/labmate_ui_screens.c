@@ -523,9 +523,8 @@ void draw_frequency(Canvas* canvas, LabMateApp* app) {
     char max_value[20];
     const bool high_mode = app->gpio_index == 4U;
 
-    /* Compact status bar, matching the Pulse Analyzer layout. */
-    canvas_set_font(canvas, FontPrimary);
-    canvas_draw_str(canvas, 2, 10, "FREQ");
+    /* Shared v2.0 instrument chrome; electrical measurements unchanged. */
+    ui_draw_header(canvas, "FREQ");
     ui_badge(canvas, 34, 1, 55, high_mode ? "HIGH PB3" : "LOW PC1", false);
     ui_badge(canvas, 91, 1, 35,
              app->threshold.armed && app->threshold.latched &&
@@ -533,7 +532,7 @@ void draw_frequency(Canvas* canvas, LabMateApp* app) {
                  "ALRT" : app->capture_blocked ? "ERR" :
                  (app->hold ? "HOLD" : "LIVE"),
              !app->hold);
-    canvas_draw_line(canvas, 0, 13, 127, 13);
+    /* Divider owned by shared ui_draw_header(). */
 
     if(app->frequency_valid) {
         uint32_t hz = app->frequency_millihz / 1000U;
@@ -762,15 +761,14 @@ void draw_generator(Canvas* canvas, LabMateApp* app) {
     char step[24];
     const uint32_t freq = labmate_generator_frequency(app);
 
-    canvas_set_font(canvas, FontPrimary);
-    canvas_draw_str(canvas, 2, 10, "PWM");
+    ui_draw_header(canvas, "PWM");
     ui_badge(canvas, 34, 1, 55, "OUT PA7", false);
     ui_badge(canvas, 91, 1, 35,
              app->generator_release_fault ? "ERR" :
                  app->generator_blocked ? "BUSY" :
                      app->generator_running ? "RUN" : "STOP",
              app->generator_running && !app->generator_blocked);
-    canvas_draw_line(canvas, 0, 13, 127, 13);
+    /* Divider owned by shared ui_draw_header(). */
 
     if(freq >= 1000U && (freq % 1000U) == 0U) {
         snprintf(value, sizeof(value), "%lu kHz", (unsigned long)(freq / 1000U));
@@ -908,9 +906,8 @@ void draw_pulse(Canvas* canvas, LabMateApp* app) {
     char period[24] = "---";
     char duty[24] = "---";
 
-    /* Compact instrument header with input and capture state. */
-    canvas_set_font(canvas, FontPrimary);
-    canvas_draw_str(canvas, 2, 10, "PULSE");
+    /* Common instrument title/status chrome, including dense STATS mode. */
+    ui_draw_header(canvas, "PULSE");
     ui_badge(canvas, 56, 1, 33, labmate_gpio_names[app->gpio_index], false);
     ui_badge(canvas, 91, 1, 35,
              app->threshold.armed && app->threshold.latched &&
@@ -918,7 +915,7 @@ void draw_pulse(Canvas* canvas, LabMateApp* app) {
                  "ALRT" : app->capture_blocked ? "ERR" :
                  (app->hold ? "HOLD" : "LIVE"),
              !app->hold);
-    canvas_draw_line(canvas, 0, 13, 127, 13);
+    /* Divider owned by shared ui_draw_header(). */
 
     if(app->pulse_stats_view) {
         draw_pulse_stats(canvas, app);

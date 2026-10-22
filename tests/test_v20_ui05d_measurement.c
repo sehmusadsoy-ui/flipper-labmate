@@ -72,6 +72,15 @@ void canvas_set_color(Canvas* c,Color color) {
     assert(color==ColorBlack||color==ColorWhite);
     c->color=color;
 }
+/* Exact shared header semantics: left rail, primary title and rule.
+ * This is the real primitive geometry, not a dummy accept-all stub.
+ */
+void ui_draw_header(Canvas* c,const char* title) {
+    canvas_draw_box(c,0,1,1,10);
+    canvas_set_font(c,FontPrimary);
+    canvas_draw_str(c,2,10,title);
+    canvas_draw_line(c,0,13,127,13);
+}
 void ui_badge(Canvas* c,uint8_t x,uint8_t y,uint8_t w,const char* value,bool fill) {
     (void)fill;
     if((unsigned)x+w>128U||(unsigned)y+11U>64U) ++c->faults;
@@ -178,6 +187,7 @@ static unsigned generator_test(void) {
         a.generator_release_fault=(status==3);
         LabMateApp before;memcpy(&before,&a,sizeof(a));
         draw_generator(&c,&a);assert(memcmp(&before,&a,sizeof(a))==0);
+        assert(c.boxes >= 1U); /* Shared header rail. */
         /* Generator uses the separate two-action footer mock, not the
          * extracted three-action footer that actually fills a box.
          */
@@ -215,8 +225,8 @@ static unsigned pulse_test(void) {
          * Assert the actual UI contract for EACH branch, not all views.
          */
         assert(c.color==ColorBlack);
-        if(view == 0U) assert(c.boxes >= 1U);
-        else assert(c.boxes == 0U);
+        if(view == 0U) assert(c.boxes >= 2U);
+        else assert(c.boxes == 1U); /* Shared title rail, no STATS footer box. */
         if(c.faults){fprintf(stderr,"PULSE pin=%u view=%u valid=%u cycles=%u duty=%u status=%u\n",pin,view,valid,ix,d,status);return 0;}
         if(view && valid && d==2)assert(contains(&c,"100.0%"));
         ++count;
