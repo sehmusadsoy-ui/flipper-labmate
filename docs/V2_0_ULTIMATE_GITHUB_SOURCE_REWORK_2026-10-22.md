@@ -39,6 +39,14 @@ Refer to `docs/V2_0_TECHNICAL_ROADMAP_2026-10-21.md` and `ROADMAP.md`. All four 
 - **Verified here:** read-only GitHub current-source audit found all **16 legacy C renderers** using shared header + shared footer and no forbidden native resource call in their renderer bodies; Pulse four 8px rows and live/hold footer branching matched source assertions. Separately, a **self-contained C11 source-matching copy** of `ui_format_key` and `ui_footer_info` passed GCC and Clang with strict warnings + sanitizers for valid and rejected labels. That selective compilation is **not a substitute** for running the real GitHub checkout's UI-04/UI-05D/Phase2L suite, nor the E11 APPCHK or physical UI.
 - **Pending:** run actual source-linked GCC/Clang full suite including new history/pulse test branches, build freshly pinned E11 FAP and confirm on-device all-screen pixel appearance. Both initial and later acceptance candidates retain their own hashes; never substitute the previous 123584-byte FAP as evidence of this new source.
 
+## 2026-10-22: Native Pulse restart / UI correctness hardening
+
+- Source audit found a concrete misleading-state bug: on a held Pulse screen, `labmate_pulse_capture_start(app)` can reject an E11 EXTI/lease request, yet the app-thread handler unconditionally set `app->hold = false`. The panel could therefore transition toward LIVE without a confirmed active Pulse IRQ or native owner, and the next OK would be interpreted as STOP rather than a retry.
+- Commit `198cd29edd47291e5bec349ccbf65a75e1b8e1fc` changes the Pulse resume path to retain HOLD unless the IRQ is active, owner equals `LabMateCapturePulse`, capture is not blocked, and there is no unresolved native release fault. No extra GPIO reads, lease acquisitions or IRQ callbacks were added.
+- Added pure `labmate_pulse_ui_state.[ch]`, an exhaustive 16-case independent policy test and a source-linked app-thread audit. Mandatory to both `test-v20-offline-full-host.sh` and UI GitHub workflow. The actual production function is checked by the source runner.
+- A locally copied **matching pure-C test and implementation** compiled and executed with GCC 14.2 and Clang 17, `-std=c11 -O1 -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined`: **16/16 PASS on both compilers**. This validates the tiny helper behavior, **not** a successful full GitHub checkout integration or E11 ARM/FAP build.
+- No install, EEPROM/SD write, firmware flash, Stable or main branch mutation. The previous 123584-byte FAP remains an older, different hash and does not contain this change.
+
 ## Subsequent mandatory release gates
 
 1. Check out the **current exact GitHub development commit** afresh into an isolated directory; never build the user-supplied ZIP or overwrite the previously backed-up WSL candidate.
