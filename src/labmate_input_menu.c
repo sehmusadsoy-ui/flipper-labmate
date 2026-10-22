@@ -20,6 +20,7 @@
 #include "labmate_deferred.h"
 #include "labmate_navigation.h"
 #include "labmate_menu_grid.h"
+#include "labmate_pulse_ui_state.h"
 #include "labmate_history.h"
 #include "labmate_view.h"
 
@@ -94,6 +95,15 @@ void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                         pulse_stats_reset(app);
                         measurement_reset(app);
                         labmate_pulse_capture_start(app);
+                        /* Entering a tool is not proof that E11 granted
+                         * its IRQ and pin lease. An unsuccessful start must
+                         * not be represented as a live instrument.
+                         */
+                        app->hold = !labmate_pulse_ui_live(
+                            app->pulse_irq_active,
+                            app->capture_owner == LabMateCapturePulse,
+                            app->capture_blocked,
+                            app->capture_release_fault);
                         break;
 
                     case LabMateToolButton:

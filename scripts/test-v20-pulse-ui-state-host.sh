@@ -19,7 +19,15 @@ assert 'app->capture_owner == LabMateCapturePulse' in resume
 assert 'app->capture_blocked' in resume
 assert 'app->capture_release_fault' in resume
 assert 'app->hold = false;' not in resume
-print('V20 PULSE RESUME SOURCE LINK PASS')
+menu=Path(sys.argv[1]).with_name('labmate_input_menu.c').read_text()
+entry=menu[menu.index('case LabMateToolPulse:'):]
+entry=entry[:entry.index('case LabMateToolButton:')]
+assert 'labmate_pulse_capture_start(app);' in entry
+assert 'app->hold = !labmate_pulse_ui_live(' in entry
+assert 'app->capture_owner == LabMateCapturePulse' in entry
+assert 'app->capture_blocked' in entry
+assert 'app->capture_release_fault' in entry
+print('V20 PULSE ENTRY + RESUME SOURCE LINK PASS')
 PY
 for cc in gcc clang; do
     "$cc" -std=c11 -O1 -g -Wall -Wextra -Werror -pedantic \
