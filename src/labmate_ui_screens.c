@@ -1,5 +1,6 @@
 #include "labmate_ui_screens.h"
 #include "labmate_ui_primitives.h"
+#include "labmate_menu_grid.h"
 #include "labmate_ui_status.h"
 #include "labmate_counter_math.h"
 #include "labmate_generator.h"
@@ -342,45 +343,67 @@ const char* const labmate_gpio_names[GPIO_COUNT] = {
 };
 
 void draw_menu(Canvas* canvas, LabMateApp* app) {
+    if(!canvas || !app) return;
     const bool inside = app->menu_in_group;
     const uint8_t count = inside ? labmate_nav_group_size(app->menu_group) :
-                                  (uint8_t)LabMateGroupCount;
+                                   (uint8_t)LabMateGroupCount;
     const uint8_t selected = app->selected < count ? app->selected : 0U;
 
-    /* The root lists categories; each child group lists its original tools.
-     * No hardware state changes when navigating between menu levels.
-     */
-    /* The Ultimate launcher uses the same chrome as every instrument;
-     * the 8-character title ends at x=66, ahead of the version badge.
-     */
     ui_draw_header(canvas,
         inside ? labmate_nav_group_title(app->menu_group) : "ULTIMATE");
+    /* Header label uses a fixed 56 px badge; v2.0DEV fits 8 glyphs. */
     ui_badge(canvas, 70, 1, 56, LABMATE_VERSION_TEXT, false);
 
-    /* In three-item groups, always keep every row visible (no blank slot). */
-    const uint8_t first = labmate_nav_first_visible(selected, count, 3U);
-    for(uint8_t row = 0U; row < 3U && (uint8_t)(first + row) < count; ++row) {
-        const uint8_t index = (uint8_t)(first + row);
-        const uint8_t y = (uint8_t)(25U + row * 12U);
-        const uint8_t tool = inside ?
-            labmate_nav_tool_at(app->menu_group, index) :
-            labmate_nav_group_icon(index);
-        const char* title = inside ?
-            labmate_nav_tool_title(tool) : labmate_nav_group_title(index);
-
-        if(index == selected) {
-            canvas_draw_box(canvas, 1, y - 10, 126, 12);
-            canvas_set_color(canvas, ColorWhite);
+    if(!inside) {
+        /* Five genuinely navigable 62x12 cards, two columns. All categories
+         * are visible without scrolling; INFO remains physically last.
+         * Compact icons never touch the footer at y=52.
+         */
+        for(uint8_t i=0U; i<LabMateGroupCount; ++i) {
+            const uint8_t x=labmate_menu_tile_x(i);
+            const uint8_t y=labmate_menu_tile_y(i);
+            const bool focus=i==selected;
+            if(focus) {
+                canvas_draw_box(canvas, x, y, LabMateMenuTileWidth,
+                                LabMateMenuTileHeight);
+                canvas_set_color(canvas, ColorWhite);
+            } else {
+                canvas_draw_frame(canvas, x, y, LabMateMenuTileWidth,
+                                  LabMateMenuTileHeight);
+            }
+            ui_draw_menu_icon(canvas, labmate_nav_group_icon(i),
+                              (uint8_t)(x+1U), y);
+            canvas_set_font(canvas, FontSecondary);
+            canvas_draw_str(canvas, x+17U, y+9U, labmate_nav_group_title(i));
+            if(focus) canvas_set_color(canvas, ColorBlack);
         }
-        ui_draw_menu_icon(canvas, tool, 4, y - 9);
-        canvas_set_font(canvas, FontSecondary);
-        canvas_draw_str(canvas, 20, y, title);
-        canvas_draw_str(canvas, 117, y, ">");
-        if(index == selected) canvas_set_color(canvas, ColorBlack);
+        ui_footer_pair(canvas, "<>", "COLUMN", "^v", "ROW");
+        return;
     }
 
-    if(inside) ui_footer_pair(canvas,"BK","ROOT","OK","OPEN");
-    else ui_footer_pair(canvas,"^v","MOVE","OK","OPEN");
+    /* Professional tool list: stable ID, icon, name and 1-based position.
+     * Three 12px rows and a visible scroll position, no clipped text.
+     */
+    const uint8_t first = labmate_nav_first_visible(selected, count, 3U);
+    for(uint8_t row=0U; row<3U && (uint8_t)(first+row)<count; ++row) {
+        const uint8_t i=(uint8_t)(first+row);
+        const uint8_t y=(uint8_t)(25U+row*12U);
+        const uint8_t tool=labmate_nav_tool_at(app->menu_group,i);
+        if(i==selected) {
+            canvas_draw_box(canvas,1,y-10U,126,12);
+            canvas_set_color(canvas,ColorWhite);
+        }
+        ui_draw_menu_icon(canvas,tool,4U,(uint8_t)(y-9U));
+        canvas_set_font(canvas,FontSecondary);
+        canvas_draw_str(canvas,20U,y,labmate_nav_tool_title(tool));
+        char position[9];
+        (void)snprintf(position,sizeof(position),"%u/%u",
+                       (unsigned)(i+1U),(unsigned)count);
+        const uint8_t x=(uint8_t)(126U-(uint8_t)(strlen(position)*6U));
+        canvas_draw_str(canvas,x,y,position);
+        if(i==selected) canvas_set_color(canvas,ColorBlack);
+    }
+    ui_footer_pair(canvas, "BACK", "GROUP", "OK", "OPEN");
 }
 
 void draw_gpio(Canvas* canvas, LabMateApp* app) {

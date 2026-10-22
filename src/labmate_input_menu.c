@@ -19,6 +19,7 @@
 #include "labmate_input.h"
 #include "labmate_deferred.h"
 #include "labmate_navigation.h"
+#include "labmate_menu_grid.h"
 #include "labmate_history.h"
 #include "labmate_view.h"
 
@@ -33,7 +34,15 @@ void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                 const uint8_t count = app->menu_in_group ?
                     labmate_nav_group_size(app->menu_group) :
                     (uint8_t)LabMateGroupCount;
-                if(event.key == InputKeyUp) {
+                if(!app->menu_in_group &&
+                   (event.key == InputKeyUp || event.key == InputKeyDown ||
+                    event.key == InputKeyLeft || event.key == InputKeyRight)) {
+                    const int8_t dx = event.key == InputKeyLeft ? -1 :
+                                      event.key == InputKeyRight ? 1 : 0;
+                    const int8_t dy = event.key == InputKeyUp ? -1 :
+                                      event.key == InputKeyDown ? 1 : 0;
+                    app->selected=labmate_menu_root_move(app->selected,dx,dy);
+                } else if(event.key == InputKeyUp) {
                     app->selected = labmate_nav_wrap(app->selected, count, -1);
                 } else if(event.key == InputKeyDown) {
                     app->selected = labmate_nav_wrap(app->selected, count, 1);
