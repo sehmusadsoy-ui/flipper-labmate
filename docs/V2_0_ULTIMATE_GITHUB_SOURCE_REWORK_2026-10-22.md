@@ -47,6 +47,14 @@ Refer to `docs/V2_0_TECHNICAL_ROADMAP_2026-10-21.md` and `ROADMAP.md`. All four 
 - A locally copied **matching pure-C test and implementation** compiled and executed with GCC 14.2 and Clang 17, `-std=c11 -O1 -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined`: **16/16 PASS on both compilers**. This validates the tiny helper behavior, **not** a successful full GitHub checkout integration or E11 ARM/FAP build.
 - No install, EEPROM/SD write, firmware flash, Stable or main branch mutation. The previous 123584-byte FAP remains an older, different hash and does not contain this change.
 
+## 2026-10-22 — Updated 128×64 launcher and honest first-launch instrument state
+
+- Root now keeps the fixed `ULTIMATE` title and `v2.0DEV` badge above five two-column cards. The previous footer only mentioned column and row movement, concealing how to enter a group. Root uses the real existing inverse `ui_footer_triple`: `<>COL`, `^vROW`, `OK GO`. No virtual buttons or touch-screen affordances are implied.
+- Submenus retain all original tool IDs, category order and actions. The upper-right badge now shows the selected **1-based tool index / actual group size** (e.g., `3/7` under MEASURE), while the version identity remains on the root. The source-extracted exact `draw_menu` host fixture was updated to check all five root selections, the three physical-control hints and each submenu's counter geometry. Its full GCC/Clang run against the current checkout is **not yet observed**.
+- Additional E11 UI safety: both initial menu entry into Pulse and subsequent resume from HOLD now derive the displayed LIVE/held state from an active Pulse IRQ, matching native Pulse capture owner, no blocked capture and no outstanding release fault. Merely calling START is not evidence that the E11 GPIO/EXTI lease was granted. Both paths are included in the source-linked host gate; no native pin or firmware policy was relaxed.
+- A **schematic visual preview** drawn from the current C canvas geometry (root, MEASURE submenu, empty Dashboard, Doctor setup) was generated for discussion. It is *not* a Flipper display photograph, native firmware framebuffer, or pixel-exact Flipper font raster. The user has not yet accepted the UI appearance.
+- **Release still NO-GO:** current revision lacks a full verified host matrix, E11 native FAP and physical device visual review. Existing `123584`-byte FAP is historical and must not be presented as an output of this newer source.
+
 ## Subsequent mandatory release gates
 
 1. Check out the **current exact GitHub development commit** afresh into an isolated directory; never build the user-supplied ZIP or overwrite the previously backed-up WSL candidate.
