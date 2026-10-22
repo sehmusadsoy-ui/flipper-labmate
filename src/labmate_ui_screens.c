@@ -353,10 +353,11 @@ void draw_menu(Canvas* canvas, LabMateApp* app) {
     ui_draw_header(canvas,
         inside ? labmate_nav_group_title(app->menu_group) : "ULTIMATE");
     if(!inside) {
-        /* Product identity is on the root only. Submenus use the valuable
-         * top-right space to show actual focus position in the tool list.
+        /* Root identity is deliberately plain secondary text: a large
+         * framed version badge crowded the 128px header on real hardware.
          */
-        ui_badge(canvas, 70, 1, 56, LABMATE_VERSION_TEXT, false);
+        canvas_set_font(canvas, FontSecondary);
+        canvas_draw_str(canvas, 79, 9, LABMATE_VERSION_TEXT);
     } else {
         char position[9];
         (void)snprintf(position, sizeof(position), "%u/%u",
@@ -365,9 +366,10 @@ void draw_menu(Canvas* canvas, LabMateApp* app) {
     }
 
     if(!inside) {
-        /* Five genuinely navigable 62x12 cards, two columns. All categories
-         * are visible without scrolling; INFO remains physically last.
-         * Compact icons never touch the footer at y=52.
+        /* Five separated, text-first 60x10 cards in two columns.
+         * Real-device QA showed 12px borders touching and 13px icons
+         * colliding visually with seven-character category names.
+         * No icons here: high contrast and whitespace take precedence.
          */
         for(uint8_t i=0U; i<LabMateGroupCount; ++i) {
             const uint8_t x=labmate_menu_tile_x(i);
@@ -381,10 +383,8 @@ void draw_menu(Canvas* canvas, LabMateApp* app) {
                 canvas_draw_frame(canvas, x, y, LabMateMenuTileWidth,
                                   LabMateMenuTileHeight);
             }
-            ui_draw_menu_icon(canvas, labmate_nav_group_icon(i),
-                              (uint8_t)(x+1U), y);
             canvas_set_font(canvas, FontSecondary);
-            canvas_draw_str(canvas, x+17U, y+9U, labmate_nav_group_title(i));
+            canvas_draw_str(canvas, x+5U, y+8U, labmate_nav_group_title(i));
             if(focus) canvas_set_color(canvas, ColorBlack);
         }
         /* Three discoverable physical controls: the old paired footer

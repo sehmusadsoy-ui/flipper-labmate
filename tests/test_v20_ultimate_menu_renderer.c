@@ -106,6 +106,16 @@ int main(void) {
         LabMateApp a={.menu_in_group=false,.selected=g};
         draw_menu(&c,&a);
         assert(c.color==ColorBlack && c.text_count==10U);
+        /* Root labels no longer overlap 13px nested icon frames.
+         * Exact production source must not draw any root icon.
+         */
+        for(unsigned j=0;j<c.text_count;j++) {
+            if(j>=2U && j<=6U) {
+                assert(c.text[j].x==7 || c.text[j].x==71);
+                assert(c.text[j].y==24 || c.text[j].y==36 ||
+                       c.text[j].y==48);
+            }
+        }
         bool saw_lr=false,saw_ud=false,saw_ok=false;
         for(unsigned j=0;j<c.text_count;j++){
             if(c.text[j].y!=61) continue;

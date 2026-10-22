@@ -1,23 +1,24 @@
 #pragma once
-/* v2.0 monochrome navigation: five tiles, fixed 128x64 geometry.
+/* v2.0 monochrome navigation: five separated, text-first tiles, 128x64.
  * UI-only model. No Flipper HAL/heap, no tool-ID or Profile renumbering.
  * Row-major root: MEASURE OUTPUT / RECORDS COMM / INFO.
  */
 #include <stdint.h>
 #include "labmate_navigation.h"
 enum {
-    LabMateMenuTileWidth = 62,
-    LabMateMenuTileHeight = 12,
-    LabMateMenuTileY = 15,
-    LabMateMenuTileGapY = 0,
+    LabMateMenuTileWidth = 60,
+    LabMateMenuTileHeight = 10,
+    LabMateMenuTileY = 16,
+    LabMateMenuTileGapY = 2,
     LabMateMenuTileRows = 3,
     LabMateMenuTileColumns = 2,
 };
 static inline uint8_t labmate_menu_tile_x(uint8_t index) {
-    return (uint8_t)(1U + (index % 2U) * 64U);
+    return (uint8_t)(2U + (index % 2U) * 64U);
 }
 static inline uint8_t labmate_menu_tile_y(uint8_t index) {
-    return (uint8_t)(LabMateMenuTileY + (index / 2U) * LabMateMenuTileHeight);
+    return (uint8_t)(LabMateMenuTileY +
+        (index / 2U) * (LabMateMenuTileHeight + LabMateMenuTileGapY));
 }
 /* Physical arrow semantics: L/R travel between columns; U/D travel
  * vertically and wrap inside their own column. INFO is the lone last tile.

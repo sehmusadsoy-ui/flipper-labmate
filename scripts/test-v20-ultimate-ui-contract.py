@@ -47,6 +47,12 @@ def main():
                 check(forbidden not in b,name+": renderer acquired native resources")
     check(body(canvas,"draw_menu").count("labmate_menu_tile_x")>=1,
           "Ultimate root grid bypassed")
+    root=body(canvas,"draw_menu")
+    # Root block must present category labels without nested 13px icon frames.
+    check('canvas_draw_str(canvas, x+5U, y+8U, labmate_nav_group_title(i))' in root,
+          "root text-first card layout missing")
+    check('canvas_draw_str(canvas, 79, 9, LABMATE_VERSION_TEXT)' in root,
+          "root lightweight version label missing")
     check('ui_footer_triple(canvas, "<>COL", "^vROW", "OK GO")' in
           body(canvas,"draw_menu"),
           "Root navigation must show LEFT/RIGHT, UP/DOWN and OK")
