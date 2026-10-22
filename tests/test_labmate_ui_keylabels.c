@@ -7,12 +7,13 @@
 /* Compile real shared Canvas primitives under strict host GCC warnings. */
 struct Canvas {
     Font font;
-    unsigned labels, lines;
+    unsigned labels, lines, boxes;
+    Color color;
     char text[4][32];
     int32_t x[4],y[4];
 };
 void canvas_set_font(Canvas* c, Font f) { assert(c); c->font=f; }
-void canvas_set_color(Canvas* c, Color x) { (void)x; assert(c); }
+void canvas_set_color(Canvas* c, Color x) { assert(c); c->color=x; }
 void canvas_draw_str(Canvas* c,int32_t x,int32_t y,const char* s) {
     assert(c && s && x>=0 && y>=0 && y<64);
     assert((size_t)x + strlen(s) * 6U <= 128U);
@@ -26,7 +27,7 @@ void canvas_draw_line(Canvas* c,int32_t a,int32_t b,int32_t d,int32_t e) {
     ++c->lines;
 }
 void canvas_draw_box(Canvas* c,int32_t x,int32_t y,int32_t w,int32_t h) {
-    (void)x; (void)y; (void)w; (void)h; assert(c);
+    (void)x; (void)y; (void)w; (void)h; assert(c); ++c->boxes;
 }
 void canvas_draw_frame(Canvas* c,int32_t x,int32_t y,int32_t w,int32_t h) {
     (void)x; (void)y; (void)w; (void)h; assert(c);
@@ -61,6 +62,22 @@ static void triple_reject(const char* left, const char* middle, const char* righ
     ui_footer_triple(&c,left,middle,right);
     assert(c.lines==0U && c.labels==0U);
 }
+static void info_footer_accept(void) {
+    struct Canvas c={0};
+    ui_footer_info(&c,"BACK","LIST","READ ONLY");
+    assert(c.lines==1U && c.boxes==1U && c.labels==2U);
+    assert(c.color==ColorBlack && c.font==FontSecondary);
+    assert(c.x[0]==2 && c.x[1]==66);
+    assert(c.y[0]==61 && c.y[1]==61);
+    assert(!strcmp(c.text[0],"(BACK)LIST"));
+    assert(!strcmp(c.text[1],"READ ONLY"));
+}
+static void info_footer_reject(const char* key,const char* action,const char* note) {
+    struct Canvas c={0};
+    ui_footer_info(&c,key,action,note);
+    assert(c.lines==0U && c.boxes==0U && c.labels==0U);
+    assert(c.color==ColorBlack);
+}
 int main(void) {
     check("OK","SAVE","BACK","NO");
     check("LR","SOURCE","OK","ARM");
@@ -93,6 +110,15 @@ int main(void) {
     triple_reject("<> MODE","OK LIVE","123456");
     triple_reject("\xC3\xA9","OK LIVE","^RST");
     ui_footer_triple(NULL,"<> MODE","OK LIVE","^RST");
-    puts("v2.0 shared pair/triple footer geometry & malformed-label guards PASS");
+    info_footer_accept();
+    info_footer_reject(NULL,"LIST","READ ONLY");
+    info_footer_reject("BACK",NULL,"READ ONLY");
+    info_footer_reject("BACK","LIST",NULL);
+    info_footer_reject("BACK","LIST","");
+    info_footer_reject("BACK","LIST","READ ONLY X");
+    info_footer_reject("BACK","LIST","\\xC3\\xA9");
+    info_footer_reject("BACK","MUCH TOO LONG","READ ONLY");
+    ui_footer_info(NULL,"BACK","LIST","READ ONLY");
+    puts("v2.0 shared pair/triple/info footer geometry & malformed-label guards PASS");
     return 0;
 }

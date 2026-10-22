@@ -890,11 +890,14 @@ static void draw_pulse_stats(Canvas* canvas, LabMateApp* app) {
     canvas_draw_str(canvas, 40, 49, duty_min);
     canvas_draw_str(canvas, 85, 49, duty_max);
 
-    /* DOWN resets statistics; UP returns to the main Pulse panel.
-     * OK toggles HOLD/LIVE. All three legends are truthful and share
-     * the same inverted action band as other instruments.
+    /* DOWN resets only while LIVE. Never suggest RESET while HOLD
+     * suppresses it. UP returns to main, OK resumes LIVE; both use
+     * the shared inverted action band.
      */
-    ui_footer_triple(canvas, "vRST", app->hold ? "OK LIVE" : "OK HOLD", "^MAIN");
+    if(app->hold)
+        ui_footer_pair(canvas, "UP", "MAIN", "OK", "LIVE");
+    else
+        ui_footer_triple(canvas, "vRST", "OK HOLD", "^MAIN");
 }
 
 void draw_pulse(Canvas* canvas, LabMateApp* app) {

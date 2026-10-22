@@ -223,11 +223,19 @@ static unsigned pulse_test(void) {
         /* Both main and STATS must use the same inverse triple footer.
          * The STATS last data baseline is y=49, clearing the y=52 rule.
          */
-        assert(c.color==ColorBlack && c.boxes>=2U);
+        assert(c.color==ColorBlack && c.boxes>=1U);
         if(view) {
-            assert(contains(&c,"^MAIN"));
-            assert(contains(&c,"vRST"));
-        }
+            if(a.hold) {
+                assert(c.boxes==1U); /* Pair mock; header rail only. */
+                assert(contains(&c,"(UP) MAIN"));
+                assert(contains(&c,"(OK) LIVE"));
+                assert(!contains(&c,"vRST"));
+            } else {
+                assert(c.boxes>=2U);
+                assert(contains(&c,"^MAIN"));
+                assert(contains(&c,"vRST"));
+            }
+        } else assert(c.boxes>=2U);
         if(c.faults){fprintf(stderr,"PULSE pin=%u view=%u valid=%u cycles=%u duty=%u status=%u\n",pin,view,valid,ix,d,status);return 0;}
         if(view && valid && d==2)assert(contains(&c,"100.0%"));
         ++count;

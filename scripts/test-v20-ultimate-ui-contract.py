@@ -52,8 +52,10 @@ def main():
     check("draw_pulse_stats(canvas, app);" in body(canvas,"draw_pulse"),
           "Pulse STATS display lost")
     check('ui_footer_triple(canvas, "vRST"' in
+          body(canvas,"draw_pulse_stats") and
+          'ui_footer_pair(canvas, "UP", "MAIN", "OK", "LIVE")' in
           body(canvas,"draw_pulse_stats"),
-          "Pulse STATS lacks the common inverse footer")
+          "Pulse STATS live/hold inverse footer contract missing")
     check('canvas_draw_str(canvas, 3, 49, "DUTY")' in
           body(canvas,"draw_pulse_stats"),
           "Pulse STATS must clear the footer rule")
