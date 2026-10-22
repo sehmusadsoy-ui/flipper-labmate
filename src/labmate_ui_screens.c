@@ -127,7 +127,7 @@ static const LabMateHelpPage labmate_help[LabMateToolCount] = {
     },
     [LabMateToolPulse] = {
         "PULSE ANALYZER", "PC1 edges: rise/fall",
-        "HIGH LOW PERIOD DUTY", "^ STATS  OK HOLD",
+        "STATS: MIN / MAX", "UP STATS OK HOLD",
     },
     [LabMateToolGenerator] = {
         "PWM STUDIO", "PA7 TIM1 PWM / 3.3V",
