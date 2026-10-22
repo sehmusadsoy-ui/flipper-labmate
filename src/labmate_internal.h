@@ -29,6 +29,7 @@
 #include "labmate_evidence_session.h"
 #include "labmate_doctor_frequency_policy.h"
 #include "labmate_signal_stats.h"
+#include "labmate_scope_diagnostics.h"
 
 #define LABMATE_VERSION_TEXT "v2.0DEV"
 /* Shared menu/pin counts: UI and input handling must agree. */
@@ -304,6 +305,7 @@ typedef struct {
      * sessions. NO stored raw ISR pointers and NO SD profile/CSV writes. */
     LabMateScopePair scope_pair;
     LabMateScopeMetrics scope_last_metrics;
+    LabMateScopeDiagnostics scope_diagnostics;
     uint32_t scope_capture_generation;
     uint32_t scope_last_generation;
     uint32_t scope_capture_hz;

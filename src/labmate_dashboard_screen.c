@@ -92,13 +92,19 @@ void labmate_dashboard_screen_draw(Canvas* c, const LabMateApp* a) {
             (void)snprintf(buf,sizeof(buf),"MAX %lu ticks",
                 (unsigned long)a->scope_last_metrics.max_period_ticks);
             line(c,40,false,buf);
-            LabMateScopePeriodStats spread;
-            if(labmate_scope_period_stats(&a->scope_last_metrics,&spread)) {
-                (void)snprintf(buf,sizeof(buf),"SPREAD %lu.%lu%%",
-                    (unsigned long)(spread.spread_permille / 10U),
-                    (unsigned long)(spread.spread_permille % 10U));
-                line(c,50,false,buf);
-            } else line(c,50,false,"SPREAD N/A");
+            /* Anomalies are descriptive, never automatic faulty-part
+             * assertions. All values are sealed real-cycle observations.
+             */
+            if(a->scope_diagnostics.valid) {
+                const LabMateScopeDiagnostics* q=&a->scope_diagnostics;
+                if(q->gap_suspected) {
+                    line(c,50,false,"GAP? CHECK SOURCE");
+                } else {
+                    (void)snprintf(buf,sizeof(buf),"MAD %lu ticks",
+                        (unsigned long)q->mean_abs_deviation_ticks);
+                    line(c,50,false,buf);
+                }
+            } else line(c,50,false,"TIMING N/A");
         } else if(labmate_dashboard_store_read_measurement(
                       &a->doctor_store,selected,&snapshot) &&
                   (selected==LabMateSnapshotCounter ||

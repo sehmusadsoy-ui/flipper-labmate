@@ -66,6 +66,7 @@ static void labmate_scope_bridge_latch(LabMateApp* a) {
     a->scope_last_generation = a->scope_capture_generation;
     a->scope_last_valid = false;
     a->scope_last_metrics = (LabMateScopeMetrics){0};
+    a->scope_diagnostics = (LabMateScopeDiagnostics){0};
     const LabMateScopeSnapshot s =
         labmate_scope_native_read(&a->scope_native, NULL, 0U, NULL);
     if(a->scope_clock_fault || a->scope_capture_hz == 0U ||
@@ -78,6 +79,14 @@ static void labmate_scope_bridge_latch(LabMateApp* a) {
     a->scope_last_valid =
         a->scope_last_metrics.status == LabMateScopeMetricsReady &&
         !a->scope_last_metrics.truncated;
+    /* Analyze only actual captured cycles AFTER E11 IRQ/lease release.
+     * Compute once, not during UI redraw or on an owned IRQ buffer.
+     */
+    if(a->scope_last_valid) {
+        (void)labmate_scope_diagnostics_compute(
+            a->scope_native.storage, s.count,
+            a->scope_capture_hz, &a->scope_diagnostics);
+    }
 
     /* Publish only the actual native completed capture after owned IRQ
      * and E11 lease are BOTH confirmed released. Not from screen redraw.
@@ -321,6 +330,7 @@ void labmate_scope_bridge_input(LabMateApp* a, InputEvent event) {
         a->scope_capture_hz = SystemCoreClock;
         a->scope_clock_fault = a->scope_capture_hz == 0U;
         a->scope_last_valid = false;
+        a->scope_diagnostics = (LabMateScopeDiagnostics){0};
         a->scope_show_compare = false;
         a->scope_show_details = false;
         a->scope_compare_page = 0U;
