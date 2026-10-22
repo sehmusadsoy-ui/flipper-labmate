@@ -96,6 +96,7 @@ static unsigned detail_cases(void){
         const LabMateApp before=a;
         draw_history_detail(&c,&a);
         assert(!memcmp(&a,&before,sizeof(a)));
+        assert(c.boxes==1U && c.color==ColorBlack);
         if(c.faults){
             fprintf(stderr,"DETAIL file=%u state=%u mode=%u faults=%u\n",selectedValid,state,mode,c.faults);
             return cases+1;

@@ -20,7 +20,8 @@ struct Canvas {
     Font font;
     Rect texts[32];
     char labels[32][64];
-    unsigned count, faults;
+    unsigned count, faults, boxes;
+    Color color;
     int badge_x, badge_y, badge_w;
 };
 static bool intersects(Rect a,Rect b) {
@@ -48,7 +49,7 @@ static void add_text(Canvas* c,int x,int y,const char* s) {
     c->count++;
 }
 void canvas_set_font(Canvas* c,Font f){assert(c);c->font=f;}
-void canvas_set_color(Canvas* c,Color v){assert(c);(void)v;}
+void canvas_set_color(Canvas* c,Color v){assert(c);c->color=v;}
 void canvas_draw_str(Canvas* c,int32_t x,int32_t y,const char* s){add_text(c,x,y,s);}
 void canvas_draw_str_aligned(Canvas* c,int32_t x,int32_t y,Align a,AlignVertical v,const char* s){
     assert(a==AlignRight && v==AlignBottom);
@@ -59,7 +60,8 @@ void canvas_draw_line(Canvas* c,int32_t x0,int32_t y0,int32_t x1,int32_t y1) {
     if(x0<0||x0>=128||x1<0||x1>=128||y0<0||y0>=64||y1<0||y1>=64)++c->faults;
 }
 void canvas_draw_box(Canvas* c,int32_t x,int32_t y,int32_t w,int32_t h){
-    assert(c);if(x<0||y<0||w<=0||h<=0||x+w>128||y+h>64)++c->faults;
+    assert(c);++c->boxes;
+    if(x<0||y<0||w<=0||h<=0||x+w>128||y+h>64)++c->faults;
 }
 void ui_draw_header(Canvas* c,const char* t){
     canvas_set_font(c,FontPrimary);canvas_draw_str(c,2,10,t);canvas_draw_line(c,0,13,127,13);
