@@ -23,10 +23,35 @@ void labmate_doctor_screen_draw(Canvas* c, const LabMateApp* app) {
         const LabMateDoctorPanelAssessment result =
             labmate_doctor_panel_assess(p, &app->doctor_store);
         const LabMateDoctorAdvice advice = labmate_doctor_advice(&result);
+        const char* finding=advice.finding;
+        const char* evidence=advice.evidence;
+        const char* next_check=advice.next_check;
+        LabMateSnapshotV1 sealed;
+        /* Scope timing hints require the exact same real capture generation
+         * and a separately verified sealed snapshot. No live reads here.
+         */
+        if(p->source == LabMateSnapshotScope &&
+           result.status == LabMateDoctorPanelAssessed &&
+           result.doctor.evidence_accepted &&
+           app->scope_diagnostics.valid &&
+           labmate_dashboard_store_read_measurement(
+               &app->doctor_store,LabMateSnapshotScope,&sealed) &&
+           sealed.capture_generation == app->scope_last_generation) {
+            if(app->scope_diagnostics.gap_suspected) {
+                finding="PERIOD GAP?";
+                evidence="FULL CYCLES ONLY";
+                next_check="CHECK SOURCE";
+            } else if(app->scope_diagnostics.spread_permille >
+                      p->reference.frequency_tolerance_permille) {
+                finding="TIMING VARIES";
+                evidence="SPREAD > SET TOL";
+                next_check="RECHECK SOURCE";
+            }
+        }
         canvas_set_font(c, FontSecondary);
-        canvas_draw_str(c, LABMATE_DOCTOR_TEXT_X, LABMATE_DOCTOR_ROW1_Y, advice.finding);
-        canvas_draw_str(c, LABMATE_DOCTOR_TEXT_X, LABMATE_DOCTOR_ROW2_Y, advice.evidence);
-        canvas_draw_str(c, LABMATE_DOCTOR_TEXT_X, LABMATE_DOCTOR_ROW3_Y, advice.next_check);
+        canvas_draw_str(c, LABMATE_DOCTOR_TEXT_X, LABMATE_DOCTOR_ROW1_Y, finding);
+        canvas_draw_str(c, LABMATE_DOCTOR_TEXT_X, LABMATE_DOCTOR_ROW2_Y, evidence);
+        canvas_draw_str(c, LABMATE_DOCTOR_TEXT_X, LABMATE_DOCTOR_ROW3_Y, next_check);
         canvas_draw_str(c, LABMATE_DOCTOR_TEXT_X, LABMATE_DOCTOR_STATUS_Y,
                         "ADVISORY ONLY");
         ui_footer_pair(c, "OK", "EDIT", "BACK", "MENU");
@@ -35,7 +60,8 @@ void labmate_doctor_screen_draw(Canvas* c, const LabMateApp* app) {
     ui_badge(c, 95, 1, 31, page ? "2/3" : "1/3", false);
     if(page == 0U) {
         panel_row(c, LABMATE_DOCTOR_ROW1_Y, p->field == LabMateDoctorFieldSource, "SRC",
-                  p->source == LabMateSnapshotPulse ? "PULSE" : "FREQ");
+                  p->source == LabMateSnapshotPulse ? "PULSE" :
+                  p->source == LabMateSnapshotScope ? "SCOPE" : "FREQ");
         (void)snprintf(text, sizeof(text), "%luHz x%lu",
                       (unsigned long)(p->reference.frequency_millihz / 1000U),
                       (unsigned long)p->frequency_step_hz);

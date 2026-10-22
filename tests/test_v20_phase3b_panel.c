@@ -40,6 +40,10 @@ int main(void) {
     assert(p.source==LabMateSnapshotPulse);
     labmate_doctor_panel_edit(&p,-1);
     assert(p.source==LabMateSnapshotFrequency);
+    labmate_doctor_panel_edit(&p,-1);
+    assert(p.source==LabMateSnapshotScope);
+    labmate_doctor_panel_edit(&p,+1);
+    assert(p.source==LabMateSnapshotFrequency);
     assert(!strcmp(labmate_doctor_panel_status_text(NULL),"WAIT"));
 
     LabMateSnapshotV1 bad={0};

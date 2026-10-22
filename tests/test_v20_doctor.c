@@ -81,6 +81,14 @@ int main(void) {
     s.quality = LabMateSnapshotInsufficient;
     expect_verdict(s, LabMateDoctorNotReady, false);
     s = make_valid(LabMateSnapshotScope);
+    s.duty_permille = 500U; /* real Scope cycle duty, not inferred pulse widths */
+    expect_verdict(s, LabMateDoctorWithinExpected, true);
+    s.duty_permille = 525U;
+    expect_verdict(s, LabMateDoctorDutyDeviation, true);
+    s.pin_index = 4U; /* Scope only has a verified PC1 capture owner */
+    expect_verdict(s, LabMateDoctorNotReady, false);
+    s = make_valid(LabMateSnapshotScope);
+    s.duty_permille = 500U; s.valid_sample_count = 1U;
     expect_verdict(s, LabMateDoctorNotReady, false);
     s = make_valid(LabMateSnapshotPulse); s.pin_index = 4U;
     expect_verdict(s, LabMateDoctorNotReady, false); /* Pulse cannot use PB3 */

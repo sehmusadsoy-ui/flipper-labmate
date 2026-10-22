@@ -28,8 +28,13 @@ void labmate_doctor_panel_edit(LabMateDoctorPanel* p, int8_t d) {
     if(!p || !d) return;
     switch(p->field) {
     case LabMateDoctorFieldSource:
-        p->source = p->source == LabMateSnapshotFrequency ?
-            LabMateSnapshotPulse : LabMateSnapshotFrequency;
+        /* Source switching stays read-only; the actual engine is never
+         * started by selecting a Doctor data source.
+         */
+        if(d > 0) p->source = p->source == LabMateSnapshotScope ?
+            LabMateSnapshotFrequency : (uint8_t)(p->source + 1U);
+        else p->source = p->source == LabMateSnapshotFrequency ?
+            LabMateSnapshotScope : (uint8_t)(p->source - 1U);
         break;
     case LabMateDoctorFieldFrequency:
         p->reference.frequency_millihz = saturating_edit(
@@ -77,7 +82,7 @@ LabMateDoctorPanelAssessment labmate_doctor_panel_assess(
         a.status = LabMateDoctorPanelSetReference;
         return a;
     }
-    if(p->source > LabMateSnapshotPulse) return a;
+    if(p->source > LabMateSnapshotScope) return a;
     const LabMateDashboardSlot* slot = &store->slots[p->source];
     if(!slot->has_snapshot) {
         a.status = LabMateDoctorPanelNoData;

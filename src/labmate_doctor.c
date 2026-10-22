@@ -35,7 +35,13 @@ bool labmate_doctor_evaluate(
     const bool pulse_pin = snapshot->source == LabMateSnapshotPulse &&
         (snapshot->pin_index == 0U || snapshot->pin_index == 1U ||
          snapshot->pin_index == 3U || snapshot->pin_index == 5U);
-    if(!freq_pin && !pulse_pin) {
+    /* Scope supplies only complete, released, nontruncated PC1 cycles.
+     * Neither missing triggers nor still-owned IRQ buffers are accepted.
+     */
+    const bool scope_pin = snapshot->source == LabMateSnapshotScope &&
+        snapshot->pin_index == 1U && snapshot->valid_sample_count >= 2U &&
+        snapshot->observed_edge_count >= 5U;
+    if(!freq_pin && !pulse_pin && !scope_pin) {
         *result = evaluated;
         return true;
     }
@@ -69,7 +75,9 @@ bool labmate_doctor_evaluate(
         snapshot->frequency_millihz, reference->frequency_millihz);
     const bool freq_deviation = delta * 1000U >
         (uint64_t)reference->frequency_millihz * reference->frequency_tolerance_permille;
-    const bool duty_deviation = snapshot->source == LabMateSnapshotPulse &&
+    const bool duty_deviation =
+        (snapshot->source == LabMateSnapshotPulse ||
+         snapshot->source == LabMateSnapshotScope) &&
         doctor_abs_delta_u32(snapshot->duty_permille,
                              reference->expected_duty_permille) >
             reference->duty_tolerance_permille;
