@@ -98,6 +98,12 @@ def main():
         "labmate_scope_metrics_from_edges", "mean_abs_deviation_ticks",
         "gap_suspected"
     ])
+    contains("src/labmate_pulse_ui_state.c", [
+        "native_irq_active", "native_pulse_owner", "release_fault"
+    ])
+    contains("src/labmate_input_measure.c", [
+        "app->hold = !labmate_pulse_ui_live("
+    ])
     contains("src/labmate_level_witness.c", [
         "LABMATE_LEVEL_MAX_GAP_MS", "labmate_level_finish",
         "LabMateLevelSampledHigh", "LabMateLevelSampledLow"
@@ -155,6 +161,7 @@ def main():
                  "scripts/test-v20-scope-period-stats-host.sh",
                  "scripts/test-v20-scope-diagnostics-host.sh",
                  "scripts/test-v20-level-witness-host.sh",
+                 "scripts/test-v20-pulse-ui-state-host.sh",
                  "scripts/test-v20-ultimate-root-grid-host.sh",
                  "scripts/test-v20-ultimate-menu-renderer-host.sh",
                  "scripts/test-v20-ultimate-ui-contract.py",

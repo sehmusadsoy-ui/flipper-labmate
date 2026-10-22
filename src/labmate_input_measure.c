@@ -25,6 +25,7 @@
 #include "labmate_input_tools.h"
 #include "labmate_doctor_pulse_bridge.h"
 #include "labmate_doctor_frequency_bridge.h"
+#include "labmate_pulse_ui_state.h"
 void labmate_input_button(LabMateApp* app, InputEvent event, LabMateDeferredWork* work) {
     UNUSED(work);
 
@@ -114,7 +115,15 @@ void labmate_input_gpio(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                             pulse_stats_window_reset(app);
                             measurement_reset(app);
                             labmate_pulse_capture_start(app);
-                            app->hold = false;
+                            /* TRY-ADD / E11 lease denial must never leave
+                             * the UI advertising LIVE after failed START.
+                             * HOLD stays retryable when ownership was denied.
+                             */
+                            app->hold = !labmate_pulse_ui_live(
+                                app->pulse_irq_active,
+                                app->capture_owner == LabMateCapturePulse,
+                                app->capture_blocked,
+                                app->capture_release_fault);
                         } else {
                             /* Freeze displayed values and stop IRQ load. */
                             labmate_doctor_pulse_prepare_stop(app);
