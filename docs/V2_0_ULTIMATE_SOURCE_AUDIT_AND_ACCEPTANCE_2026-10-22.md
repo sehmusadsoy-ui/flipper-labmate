@@ -119,3 +119,10 @@ The latest owner-provided local build transcript verifies **22/22 Phase2L host s
 Fix: `tests/test_v20_doctor_layout.c` updated in commit `acd3245d36f57d7991cd547135f03a02c6f8d962`, keeping the geometry `_Static_assert` and applying `(int)` to each side. Git source blob old `0973a8641299a8290cb78ed7406b5d3c3a232d5b`, new `1cd344ae1a4b055f20765260cbc72452d4d80c66`. A standalone equivalent cross-enum geometry compilation was locally verified under GCC and Clang with `-Wall -Wextra -Werror -pedantic -fsanitize=address,undefined`, but the **full repository Phase3B test has NOT been rerun** with this fix, and therefore no wider PASS is claimed.
 
 No production app code, firmware, microSD data or installed FAP was changed by this fix. Remaining Phase3C/3D/Ultimate suite, E11 APPCHK/ABI/FAP and device physical acceptance stay unverified for current source. Preserve current owner-installed 115104-byte Phase3D sidecar and independently matched 101468-byte v1.9DEV rollback copy. NO Stable or firmware flash.
+
+
+## Latest verified build supersedes the earlier NO-FAP-build status
+
+**2026-10-22 owner transcript:** `V20 ULTIMATE E11 HOST+FAP REVIEW: PASS | NO DEVICE WRITES`; **123584-byte** `LabMate-Ultimate-v2.0DEV-E11-REVIEW.fap`, SHA-256 `e9a8098a49df586716423cd66d37dfd6215fedf9006cb913bcef6676d807d1b1`, MD5 `2c84ba22e91a87fcd430fd9ca3a6582c`. All six source Git blob IDs in the owner's provenance transcript were cross-read against live GitHub and matched. E11 SDK API 87.1, FAP APPCHK and end-to-end command PASS. This is **later evidence**: historical statements above saying "no E11 build" now describe earlier stage only.
+
+The full standalone evidence page is [V2_0_ULTIMATE_E11_HOST_FAP_REVIEW_PASS_2026-10-22.md](V2_0_ULTIMATE_E11_HOST_FAP_REVIEW_PASS_2026-10-22.md). This is **host/native build ready**; v2.0 device functional/visual acceptance and Stable release **still NO-GO**. No new device writes, no firmware flash, and no assumption that every roadmap promise is now physically tested.
