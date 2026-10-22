@@ -18,6 +18,21 @@ extract 'static void pulse_ui_format_value(' pulse_format.inc
 extract 'static void pulse_ui_metric(' pulse_metric.inc
 extract 'static void draw_pulse_stats(' pulse_stats.inc
 extract 'void draw_pulse(' draw_pulse.inc
+# Source-link ALL shared footer paths used by Frequency/Pulse/PWM.
+# The pair footer must be the production implementation; a mock would
+# conceal background inversion errors in Pulse STATS HOLD mode.
+for spec in \
+    'static bool ui_format_key(:pair_validator.inc' \
+    'void ui_key(:pair_key.inc' \
+    'static void ui_footer_action(:pair_action.inc' \
+    'void ui_footer_pair(:pair_footer.inc'
+do
+  signature=${spec%%:*}
+  target=${spec#*:}
+  awk -v sig="$signature" 'index($0,sig)==1 {copy=1} copy {print; if($0=="}") exit}' \
+    "$root/src/labmate_ui_primitives.c" > "$tmp/$target"
+  test -s "$tmp/$target"
+done
 # Source-link the newly shared footer: these are the actual UI primitive
 # function bodies; do not replace them with a lookalike host implementation.
 awk -v sig='static bool ui_footer_triple_label_valid(' \

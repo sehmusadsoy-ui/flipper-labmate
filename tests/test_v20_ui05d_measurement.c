@@ -87,17 +87,14 @@ void ui_badge(Canvas* c,uint8_t x,uint8_t y,uint8_t w,const char* value,bool fil
     c->badge_x=x;c->badge_y=y;c->badge_w=w;
     canvas_set_font(c,FontSecondary); canvas_draw_str(c,x+4,y+8,value);
 }
-void ui_footer_pair(Canvas* c,const char* lk,const char* la,const char* rk,const char* ra) {
-    char label[32];
-    int n=snprintf(label,sizeof(label),"(%s) %s",lk,la);
-    if(n>10)n=snprintf(label,sizeof(label),"(%s)%s",lk,la);
-    assert(n>0&&n<=10);
-    canvas_draw_line(c,0,52,127,52);
-    canvas_set_font(c,FontSecondary);canvas_draw_str(c,2,61,label);
-    n=snprintf(label,sizeof(label),"(%s) %s",rk,ra);
-    if(n>10)n=snprintf(label,sizeof(label),"(%s)%s",rk,ra);
-    assert(n>0&&n<=10);canvas_draw_str(c,66,61,label);
-}
+/* Source-linked real shared pair action band, including key formatting
+ * and inverse Canvas operations. No longer accept a mock that never
+ * paints the physical footer.
+ */
+#include "pair_validator.inc"
+#include "pair_key.inc"
+#include "pair_action.inc"
+#include "pair_footer.inc"
 
 /* Exact source functions extracted from the production shared UI primitives. */
 #include "triple_validator.inc"
@@ -187,10 +184,8 @@ static unsigned generator_test(void) {
         a.generator_release_fault=(status==3);
         LabMateApp before;memcpy(&before,&a,sizeof(a));
         draw_generator(&c,&a);assert(memcmp(&before,&a,sizeof(a))==0);
-        assert(c.boxes >= 1U); /* Shared header rail. */
-        /* Generator uses the separate two-action footer mock, not the
-         * extracted three-action footer that actually fills a box.
-         */
+        assert(c.boxes >= 2U); /* Shared title rail plus production pair band. */
+        /* Generator also uses the exact production inverted pair footer. */
         assert(c.color==ColorBlack);
         if(c.faults){fprintf(stderr,"GENERATOR choice=%u duty=%u status=%u edit=%u\n",choice,duty,status,editing);return 0;}
         assert(contains(&c,"OUT PA7"));
@@ -223,10 +218,10 @@ static unsigned pulse_test(void) {
         /* Both main and STATS must use the same inverse triple footer.
          * The STATS last data baseline is y=49, clearing the y=52 rule.
          */
-        assert(c.color==ColorBlack && c.boxes>=1U);
+        assert(c.color==ColorBlack && c.boxes>=2U);
         if(view) {
             if(a.hold) {
-                assert(c.boxes==1U); /* Pair mock; header rail only. */
+                assert(c.boxes>=2U); /* Production pair footer is also inverse. */
                 assert(contains(&c,"(UP) MAIN"));
                 assert(contains(&c,"(OK) LIVE"));
                 assert(!contains(&c,"vRST"));
