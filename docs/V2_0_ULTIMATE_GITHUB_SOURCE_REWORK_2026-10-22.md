@@ -40,3 +40,10 @@ Refer to `docs/V2_0_TECHNICAL_ROADMAP_2026-10-21.md` and `ROADMAP.md`. All four 
 5. Do not promote a `v2.0 Stable` tag, release, main merge or firmware update without these gates and explicit owner decision.
 
 **Current conclusion: v2.0 development source has substantive work, but premium-everywhere visual acceptance and full E11 native/device verification remain unclosed. Stable = NO-GO.**
+
+## Full-screen consistency audit update
+
+- `src/labmate_ui_screens.c`: Frequency, Pulse and PWM Studio are now migrated to the same `ui_draw_header` used by GPIO, Logger, Profiles, History, Button, Counter, Alerts and About. Three independent hand-drawn title/separator duplicates were removed; pin badges, native measurements and button semantics remain intact. The source-extracted `tests/test_v20_ui05d_measurement.c` harness now models the shared title rail and recognizes Pulse STATS's special footer arrangement.
+- `scripts/test-v20-ultimate-ui-contract.py` is a source-level invariant for **16 existing renderer functions**, plus new Doctor/Dashboard and dedicated Scope chrome, requiring shared heading and control-footer except explicitly documented special cases. Wired to the full offline gate, CI workflow and v2.0 source audit.
+- Two **remaining deliberately nonuniform exception screens** remain: Pulse STATS uses a bespoke y=62 action line, and History Detail uses bespoke BACK:LIST / READ ONLY footer. Neither exception is concealed as completed premium uniformity. Rendering on the physical LCD and 128×64 raster for worst cases is still pending.
+- There is **still no successful complete host/E11 SDK/APPCHK run for these new source commits**. The previous v2.0 FAP hash MUST NOT be reused for new code. Current status is development source, not a release candidate.
