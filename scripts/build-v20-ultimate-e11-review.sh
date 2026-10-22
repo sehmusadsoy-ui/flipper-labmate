@@ -19,6 +19,24 @@ test -f "$APP/tests/test_v20_signal_stats.c"
 grep -Fqx '#define LABMATE_VERSION_TEXT "v2.0DEV"' "$APP/src/labmate_internal.h"
 grep -Fq 'fap_version="2.0"' "$APP/application.fam"
 grep -Fq 'name="LabMate Ultimate"' "$APP/application.fam"
+# If this is a GitHub checkout, reject dirty tracked sources and retain
+# exact Git commit/tree identity. A GitHub-generated archive without .git
+# remains accepted but is explicitly marked as less strongly attested.
+SOURCE_COMMIT="EXPORTED_ARCHIVE_NO_GIT_COMMIT"
+SOURCE_TREE="EXPORTED_ARCHIVE_NO_GIT_TREE"
+if git -C "$APP" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    ACTUAL_ROOT="$(git -C "$APP" rev-parse --show-toplevel)"
+    test "$ACTUAL_ROOT" = "$APP" || {
+        echo "NO-GO: source directory is nested inside an unrelated Git checkout" >&2
+        exit 2
+    }
+    test -z "$(git -C "$APP" status --porcelain --untracked-files=no)" || {
+        echo "NO-GO: tracked source changes are not committed; use a clean GitHub checkout" >&2
+        exit 2
+    }
+    SOURCE_COMMIT="$(git -C "$APP" rev-parse HEAD)"
+    SOURCE_TREE="$(git -C "$APP" rev-parse HEAD^{tree})"
+fi
 python3 "$APP/scripts/audit-v20-ultimate-sources.py"
 echo "V20 ULTIMATE REQUIRED FEATURES / VERSION: SOURCE PRESENT"
 
@@ -38,6 +56,8 @@ cmp "$SOURCE_FAP" "$REVIEW_FAP"
 {
     echo "LabMate Ultimate v2.0DEV — HOST / E11 SDK BUILD REVIEW"
     echo "Source path: $APP"
+    echo "Source Git commit: $SOURCE_COMMIT"
+    echo "Source Git tree: $SOURCE_TREE"
     echo "E11 workspace: $WORK"
     echo "FAP size: $(stat -c %s "$REVIEW_FAP")"
     echo "FAP SHA256: $(sha256sum "$REVIEW_FAP" | awk '{print $1}')"
