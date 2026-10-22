@@ -108,7 +108,8 @@ static const uint32_t custom_steps[]={1,10,100,1000};
 static const char* const labmate_gpio_names[]={"PC0","PC1","PC3","PB2","PB3","PA4","PA6","PA7"};
 typedef struct {
     uint8_t gpio_index, generator_freq_index, generator_duty_percent, generator_custom_step_index;
-    bool hold, capture_blocked, frequency_valid,frequency_stats_valid;
+    bool hold, capture_blocked, capture_release_fault;
+    bool frequency_valid,frequency_stats_valid;
     uint32_t frequency_millihz,frequency_min_millihz,frequency_max_millihz,edges;
     LabMateThreshold threshold;
     bool generator_editing,generator_running,generator_blocked,generator_release_fault;

@@ -540,10 +540,10 @@ void draw_frequency(Canvas* canvas, LabMateApp* app) {
     ui_draw_header(canvas, "FREQ");
     ui_badge(canvas, 34, 1, 55, high_mode ? "HIGH PB3" : "LOW PC1", false);
     ui_badge(canvas, 91, 1, 35,
+             app->capture_blocked || app->capture_release_fault ? "ERR" :
              app->threshold.armed && app->threshold.latched &&
                      app->threshold.source == LabMateAlertFrequency ?
-                 "ALRT" : app->capture_blocked ? "ERR" :
-                 (app->hold ? "HOLD" : "LIVE"),
+                 "ALRT" : (app->hold ? "HOLD" : "LIVE"),
              !app->hold);
     /* Divider owned by shared ui_draw_header(). */
 
@@ -922,10 +922,10 @@ void draw_pulse(Canvas* canvas, LabMateApp* app) {
     ui_draw_header(canvas, "PULSE");
     ui_badge(canvas, 56, 1, 33, labmate_gpio_names[app->gpio_index], false);
     ui_badge(canvas, 91, 1, 35,
+             app->capture_blocked || app->capture_release_fault ? "ERR" :
              app->threshold.armed && app->threshold.latched &&
                      app->threshold.source == LabMateAlertPulseDuty ?
-                 "ALRT" : app->capture_blocked ? "ERR" :
-                 (app->hold ? "HOLD" : "LIVE"),
+                 "ALRT" : (app->hold ? "HOLD" : "LIVE"),
              !app->hold);
     /* Divider owned by shared ui_draw_header(). */
 
