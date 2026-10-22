@@ -28,7 +28,7 @@ int main(void) {
     assert(labmate_scope_diagnostics_compute(e,9,64000000U,&a));
     assert(a.gap_suspected && a.min_ticks==1000 && a.max_ticks==2000);
     assert(a.mean_ticks==1250 && a.mean_abs_deviation_ticks==375);
-    e[4].high=true;
+    e[4].high=false; /* Contradicts the previous FALLING edge. */
     assert(!labmate_scope_diagnostics_compute(e,9,64000000U,&a));
     assert(!a.valid);
     edges_from_periods(e,uniform,4);
