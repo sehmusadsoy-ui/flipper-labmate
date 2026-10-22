@@ -149,7 +149,7 @@ static unsigned frequency_test(void) {
     const uint32_t frequencies[]={0,1,9999,10000,999999,1000000,9999999,10000000,99999999,100000000,1000000000U,UINT32_MAX};
     unsigned count=0;
     for(unsigned k=0;k<12;k++)for(unsigned source=0;source<2;source++)
-    for(unsigned status=0;status<4;status++)for(unsigned stats=0;stats<2;stats++){
+    for(unsigned status=0;status<6;status++)for(unsigned stats=0;stats<2;stats++){
         LabMateApp a={0}; Canvas c={0};
         a.gpio_index=source?4U:1U;
         a.frequency_valid=(k!=0);
@@ -159,13 +159,19 @@ static unsigned frequency_test(void) {
         a.frequency_max_millihz=frequencies[k];
         a.edges=k==11?UINT32_MAX:(uint32_t)(k*100000U);
         a.threshold.source=LabMateAlertFrequency;
-        a.threshold.armed=(status==3);a.threshold.latched=(status==3);
-        a.capture_blocked=(status==2);a.hold=(status==1);
+        a.threshold.armed=(status==3 || status==5);
+        a.threshold.latched=(status==3 || status==5);
+        a.capture_blocked=(status==2);
+        a.capture_release_fault=(status==4 || status==5);
+        a.hold=(status==1);
         LabMateApp before;memcpy(&before,&a,sizeof(a));
         draw_frequency(&c,&a);assert(memcmp(&before,&a,sizeof(a))==0);
         assert(c.color==ColorBlack && c.boxes>=1U);
         if(c.faults){fprintf(stderr,"FREQUENCY k=%u source=%u status=%u stats=%u\n",k,source,status,stats);return 0;}
         assert(contains(&c,source?"HIGH PB3":"LOW PC1"));
+        if(status==2U || status==4U || status==5U)
+            assert(contains(&c,"ERR")); /* Native owner/release dominates ALRT */
+        else if(status==3U) assert(contains(&c,"ALRT"));
         ++count;
     }
     return count;
@@ -200,7 +206,7 @@ static unsigned pulse_test(void) {
     unsigned count=0;
     for(unsigned pin=0;pin<8;pin++)for(unsigned view=0;view<2;view++)
     for(unsigned valid=0;valid<2;valid++)for(unsigned ix=0;ix<7;ix++)
-    for(unsigned d=0;d<3;d++)for(unsigned status=0;status<4;status++){
+    for(unsigned d=0;d<3;d++)for(unsigned status=0;status<6;status++){
         LabMateApp a={0};Canvas c={0};
         a.gpio_index=(uint8_t)pin;
         a.pulse_stats_view=view!=0;
@@ -212,8 +218,11 @@ static unsigned pulse_test(void) {
         a.pulse_min_period_cycles=a.pulse_max_period_cycles=cycles[ix];
         a.pulse_min_duty_permille=a.pulse_max_duty_permille=a.pulse_duty_permille=duty[d];
         a.threshold.source=LabMateAlertPulseDuty;
-        a.threshold.armed=(status==3);a.threshold.latched=(status==3);
-        a.capture_blocked=(status==2);a.hold=(status==1);
+        a.threshold.armed=(status==3 || status==5);
+        a.threshold.latched=(status==3 || status==5);
+        a.capture_blocked=(status==2);
+        a.capture_release_fault=(status==4 || status==5);
+        a.hold=(status==1);
         LabMateApp before;memcpy(&before,&a,sizeof(a));
         draw_pulse(&c,&a);assert(memcmp(&before,&a,sizeof(a))==0);
         /* Both main and STATS must use the same inverse triple footer.
@@ -234,6 +243,9 @@ static unsigned pulse_test(void) {
         } else assert(c.boxes>=2U);
         if(c.faults){fprintf(stderr,"PULSE pin=%u view=%u valid=%u cycles=%u duty=%u status=%u\n",pin,view,valid,ix,d,status);return 0;}
         if(view && valid && d==2)assert(contains(&c,"100.0%"));
+        if(status==2U || status==4U || status==5U)
+            assert(contains(&c,"ERR")); /* No false positive LIVE badge */
+        else if(status==3U) assert(contains(&c,"ALRT"));
         ++count;
     }
     return count;
@@ -241,5 +253,5 @@ static unsigned pulse_test(void) {
 int main(void){
     const unsigned f=frequency_test(),g=generator_test(),p=pulse_test();
     printf("UI-05D GEOMETRY: frequency=%u pwm=%u pulse=%u\n",f,g,p);
-    return (f==192U && g==384U && p==2688U)?0:1;
+    return (f==288U && g==384U && p==4032U)?0:1;
 }
