@@ -352,8 +352,17 @@ void draw_menu(Canvas* canvas, LabMateApp* app) {
 
     ui_draw_header(canvas,
         inside ? labmate_nav_group_title(app->menu_group) : "ULTIMATE");
-    /* Header label uses a fixed 56 px badge; v2.0DEV fits 8 glyphs. */
-    ui_badge(canvas, 70, 1, 56, LABMATE_VERSION_TEXT, false);
+    if(!inside) {
+        /* Product identity is on the root only. Submenus use the valuable
+         * top-right space to show actual focus position in the tool list.
+         */
+        ui_badge(canvas, 70, 1, 56, LABMATE_VERSION_TEXT, false);
+    } else {
+        char position[9];
+        (void)snprintf(position, sizeof(position), "%u/%u",
+                       (unsigned)(selected + 1U), (unsigned)count);
+        ui_badge(canvas, 95, 1, 31, position, false);
+    }
 
     if(!inside) {
         /* Five genuinely navigable 62x12 cards, two columns. All categories
@@ -378,7 +387,10 @@ void draw_menu(Canvas* canvas, LabMateApp* app) {
             canvas_draw_str(canvas, x+17U, y+9U, labmate_nav_group_title(i));
             if(focus) canvas_set_color(canvas, ColorBlack);
         }
-        ui_footer_pair(canvas, "<>", "COLUMN", "^v", "ROW");
+        /* Three discoverable physical controls: the old paired footer
+         * omitted OK and made entering a category hard to discover.
+         */
+        ui_footer_triple(canvas, "<>COL", "^vROW", "OK GO");
         return;
     }
 

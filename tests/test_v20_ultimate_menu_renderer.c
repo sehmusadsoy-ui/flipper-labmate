@@ -70,6 +70,19 @@ static void ui_draw_menu_icon(Canvas* c,uint8_t tool,uint8_t x,uint8_t y) {
     assert(tool<LabMateToolCount);
     canvas_draw_frame(c,x,y,13,12);
 }
+static void ui_footer_triple(Canvas* c,const char* left,
+                             const char* center,const char* right) {
+    assert(left && center && right);
+    assert(strlen(left)<=7 && strlen(center)<=7 && strlen(right)<=5);
+    canvas_draw_line(c,0,52,127,52);
+    canvas_draw_box(c,0,53,128,11);
+    canvas_set_color(c,ColorWhite);
+    canvas_set_font(c,FontSecondary);
+    canvas_draw_str(c,2,61,left);
+    canvas_draw_str(c,45,61,center);
+    canvas_draw_str(c,96,61,right);
+    canvas_set_color(c,ColorBlack);
+}
 static void ui_footer_pair(Canvas* c,const char* lk,const char* la,
                            const char* rk,const char* ra) {
     char l[24],r[24];
@@ -92,7 +105,15 @@ int main(void) {
         Canvas c={0};
         LabMateApp a={.menu_in_group=false,.selected=g};
         draw_menu(&c,&a);
-        assert(c.color==ColorBlack && c.text_count==9U);
+        assert(c.color==ColorBlack && c.text_count==10U);
+        bool saw_lr=false,saw_ud=false,saw_ok=false;
+        for(unsigned j=0;j<c.text_count;j++){
+            if(c.text[j].y!=61) continue;
+            if(c.text[j].x==2 && c.text[j].w==30) saw_lr=true;
+            if(c.text[j].x==45 && c.text[j].w==30) saw_ud=true;
+            if(c.text[j].x==96 && c.text[j].w==30) saw_ok=true;
+        }
+        assert(saw_lr && saw_ud && saw_ok);
         cases++;
     }
     for(unsigned g=0;g<LabMateGroupCount;g++) {
@@ -101,6 +122,18 @@ int main(void) {
             LabMateApp a={.menu_in_group=true,.menu_group=g,.selected=selected};
             draw_menu(&c,&a);
             assert(c.color==ColorBlack);
+            /* Header now identifies focused tool position, not repeating
+             * the root's version badge on every child screen.
+             */
+            char expected[9];
+            (void)snprintf(expected,sizeof(expected),"%u/%u",
+                           selected+1U,labmate_nav_group_size(g));
+            bool badge_seen=false;
+            for(unsigned j=0;j<c.text_count;j++)
+                if(c.text[j].x==99 && c.text[j].y==9 &&
+                   c.text[j].w==(int)strlen(expected)*6)
+                    badge_seen=true;
+            assert(badge_seen);
             cases++;
         }
     }

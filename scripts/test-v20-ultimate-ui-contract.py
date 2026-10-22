@@ -47,6 +47,12 @@ def main():
                 check(forbidden not in b,name+": renderer acquired native resources")
     check(body(canvas,"draw_menu").count("labmate_menu_tile_x")>=1,
           "Ultimate root grid bypassed")
+    check('ui_footer_triple(canvas, "<>COL", "^vROW", "OK GO")' in
+          body(canvas,"draw_menu"),
+          "Root navigation must show LEFT/RIGHT, UP/DOWN and OK")
+    check('ui_badge(canvas, 95, 1, 31, position, false)' in
+          body(canvas,"draw_menu"),
+          "Submenu must show focused tool index")
     check("canvas_draw_str(canvas,117U,y,\">\")" in body(canvas,"draw_menu"),
           "submenu disclosure position changed")
     check("draw_pulse_stats(canvas, app);" in body(canvas,"draw_pulse"),
