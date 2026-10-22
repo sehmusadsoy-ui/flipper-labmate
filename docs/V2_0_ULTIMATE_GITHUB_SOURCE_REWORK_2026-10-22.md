@@ -31,6 +31,14 @@ Refer to `docs/V2_0_TECHNICAL_ROADMAP_2026-10-21.md` and `ROADMAP.md`. All four 
 - The new GPIO witness only observes samples: pulses between polls can be missed. Scope “gap?” requires independent source/reference corroboration and is only an evidence-based suggestion.
 - Normal Momentum compatibility, independently calibrated bandwidth/timebase, external components/I2C/1-Wire, SD corruption fault injection and hardware fixtures remain separate/unverified tracks.
 
+## 2026-10-22 continuation — remaining two common-UI footer exceptions
+
+- **Pulse STATS:** Replaced bespoke unboxed captions with the shared inverse action band. Four measurement rows now have baselines `22/31/40/49` (above the y=52 footer rule) and left/right numeric columns representing **MIN / MAX**, documented in the Pulse About tool guide. When LIVE, keys are `vRST`, `OK HOLD`, `^MAIN`. When HOLD, DOWN reset is genuinely disabled in the input handler; use the truthful shared paired footer `(UP) MAIN`, `(OK) LIVE` rather than advertising a nonfunctional reset.
+- **History Detail:** Added `ui_footer_info` to the shared primitives so a genuine `(BACK)LIST` key and passive `READ ONLY` indicator use the same inverse footer. Never pretend READ ONLY is a clickable key. The primitive prevalidates ASCII, label lengths and null input before painting.
+- **Real source-linked host gates:** `UI-04` now extracts production History Detail, shared key formatter and informational footer. `UI-05D` now extracts production pair/triple footers and their dependencies, instead of a dummy pair that hid inverse-background faults. The shared footer unit test now checks invalid inputs, actual color restoration and geometry. The app-wide static contract permits none of the former footer exceptions.
+- **Verified here:** read-only GitHub current-source audit found all **16 legacy C renderers** using shared header + shared footer and no forbidden native resource call in their renderer bodies; Pulse four 8px rows and live/hold footer branching matched source assertions. Separately, a **self-contained C11 source-matching copy** of `ui_format_key` and `ui_footer_info` passed GCC and Clang with strict warnings + sanitizers for valid and rejected labels. That selective compilation is **not a substitute** for running the real GitHub checkout's UI-04/UI-05D/Phase2L suite, nor the E11 APPCHK or physical UI.
+- **Pending:** run actual source-linked GCC/Clang full suite including new history/pulse test branches, build freshly pinned E11 FAP and confirm on-device all-screen pixel appearance. Both initial and later acceptance candidates retain their own hashes; never substitute the previous 123584-byte FAP as evidence of this new source.
+
 ## Subsequent mandatory release gates
 
 1. Check out the **current exact GitHub development commit** afresh into an isolated directory; never build the user-supplied ZIP or overwrite the previously backed-up WSL candidate.
