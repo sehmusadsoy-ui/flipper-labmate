@@ -56,7 +56,7 @@ python3 "$root/scripts/test-v20-ultimate-ui-contract.py" || {
     echo "V20 OFFLINE FAIL: app-wide UI source contract" >&2
     exit 1
 }
-for phase in ultimate-root-grid ultimate-menu-renderer pulse-ui-state level-witness signal-stats doctor-advice scope-period-stats scope-diagnostics dashboard; do
+for phase in ultimate-root-grid ultimate-menu-renderer pulse-ui-state frequency-ui-state level-witness signal-stats doctor-advice scope-period-stats scope-diagnostics dashboard; do
     test -s "$root/scripts/test-v20-$phase-host.sh" || {
         echo "V20 OFFLINE NO-GO: missing v2.0 Ultimate $phase suite" >&2
         exit 2

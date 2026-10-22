@@ -21,6 +21,7 @@
 #include "labmate_navigation.h"
 #include "labmate_menu_grid.h"
 #include "labmate_pulse_ui_state.h"
+#include "labmate_frequency_ui_state.h"
 #include "labmate_history.h"
 #include "labmate_view.h"
 
@@ -81,6 +82,12 @@ void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                         } else {
                             labmate_frequency_low_start(app);
                         }
+                        app->hold = !labmate_frequency_ui_live(
+                            app->gpio_index == 4U, app->frequency_hw_active,
+                            app->frequency_irq_active,
+                            app->capture_owner == (app->gpio_index == 4U ?
+                                LabMateCaptureFrequencyHigh : LabMateCaptureFrequencyLow),
+                            app->capture_blocked, app->capture_release_fault);
                         break;
 
                     case LabMateToolPulse:

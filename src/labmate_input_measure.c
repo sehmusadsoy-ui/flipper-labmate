@@ -26,6 +26,7 @@
 #include "labmate_doctor_pulse_bridge.h"
 #include "labmate_doctor_frequency_bridge.h"
 #include "labmate_pulse_ui_state.h"
+#include "labmate_frequency_ui_state.h"
 void labmate_input_button(LabMateApp* app, InputEvent event, LabMateDeferredWork* work) {
     UNUSED(work);
 
@@ -138,7 +139,30 @@ void labmate_input_gpio(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                          */
                         if(app->screen == LabMateScreenFrequency)
                             labmate_doctor_frequency_abandon(app);
-                        app->hold = !app->hold;
+                        /* The Frequency HOLD path normally owns EXTI/TIM2.
+                         * If an earlier START was denied, OK may retry,
+                         * but must never mark the UI LIVE without ownership.
+                         */
+                        if(app->screen == LabMateScreenFrequency && app->hold &&
+                           !labmate_frequency_ui_live(
+                               app->gpio_index == 4U,
+                               app->frequency_hw_active,app->frequency_irq_active,
+                               app->capture_owner == (app->gpio_index == 4U ?
+                                   LabMateCaptureFrequencyHigh : LabMateCaptureFrequencyLow),
+                               app->capture_blocked,app->capture_release_fault)) {
+                            if(app->gpio_index == 4U)
+                                labmate_frequency_high_start(app);
+                            else labmate_frequency_low_start(app);
+                        }
+                        if(app->screen == LabMateScreenFrequency) {
+                            const bool live = labmate_frequency_ui_live(
+                                app->gpio_index == 4U,
+                                app->frequency_hw_active,app->frequency_irq_active,
+                                app->capture_owner == (app->gpio_index == 4U ?
+                                    LabMateCaptureFrequencyHigh : LabMateCaptureFrequencyLow),
+                                app->capture_blocked,app->capture_release_fault);
+                            app->hold = !live || !app->hold;
+                        } else app->hold = !app->hold;
                         if(!app->hold) {
                             /* HOLD resume cannot treat an unowned GPIO
                              * as a valid electrical LOW sample. */

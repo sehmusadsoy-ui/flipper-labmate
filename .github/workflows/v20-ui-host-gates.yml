@@ -13,6 +13,8 @@ on:
       - "src/labmate_scope_diagnostics.[ch]"
       - "src/labmate_level_witness.[ch]"
       - "src/labmate_pulse_ui_state.[ch]"
+      - "src/labmate_frequency_ui_state.[ch]"
+      - "src/labmate_capture_session.c"
       - "src/labmate_input_measure.c"
       - "src/labmate_monitor_gpio.c"
       - "src/labmate_capture_session.c"
@@ -94,6 +96,7 @@ on:
       - "scripts/test-v20-scope-diagnostics-host.sh"
       - "scripts/test-v20-level-witness-host.sh"
       - "scripts/test-v20-pulse-ui-state-host.sh"
+      - "scripts/test-v20-frequency-ui-state-host.sh"
       - "scripts/test-v20-dashboard-host.sh"
       - "scripts/test-v20-signal-stats-host.sh"
       - "scripts/test-v20-doctor-advice-host.sh"
@@ -110,6 +113,8 @@ on:
       - "src/labmate_scope_diagnostics.[ch]"
       - "src/labmate_level_witness.[ch]"
       - "src/labmate_pulse_ui_state.[ch]"
+      - "src/labmate_frequency_ui_state.[ch]"
+      - "src/labmate_capture_session.c"
       - "src/labmate_input_measure.c"
       - "src/labmate_monitor_gpio.c"
       - "src/labmate_capture_session.c"
@@ -191,6 +196,7 @@ on:
       - "scripts/test-v20-scope-diagnostics-host.sh"
       - "scripts/test-v20-level-witness-host.sh"
       - "scripts/test-v20-pulse-ui-state-host.sh"
+      - "scripts/test-v20-frequency-ui-state-host.sh"
       - "scripts/test-v20-dashboard-host.sh"
       - "scripts/test-v20-signal-stats-host.sh"
       - "scripts/test-v20-doctor-advice-host.sh"
@@ -369,3 +375,7 @@ jobs:
       - name: Pulse resume must not claim LIVE after denied native owner
         shell: bash
         run: sh scripts/test-v20-pulse-ui-state-host.sh
+
+      - name: Frequency LOW/HIGH must not claim LIVE without E11 owner
+        shell: bash
+        run: sh scripts/test-v20-frequency-ui-state-host.sh

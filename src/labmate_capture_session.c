@@ -18,6 +18,8 @@
 #include "labmate_scope_bridge.h"
 #include "labmate_scope_exit_guard.h"
 #include "labmate_capture_release_gate.h"
+#include "labmate_pulse_ui_state.h"
+#include "labmate_frequency_ui_state.h"
 
 /* Pulse Analyzer uses GPIO edge interrupts, not polling.
  * STM32 EXTI lines are shared across GPIO ports, and the firmware already
@@ -141,6 +143,12 @@ void labmate_gpio_change(
         } else {
             labmate_frequency_low_start(app);
         }
+        app->hold = !labmate_frequency_ui_live(
+            app->gpio_index == 4U, app->frequency_hw_active,
+            app->frequency_irq_active,
+            app->capture_owner == (app->gpio_index == 4U ?
+                LabMateCaptureFrequencyHigh : LabMateCaptureFrequencyLow),
+            app->capture_blocked, app->capture_release_fault);
 
         return;
     }
@@ -158,6 +166,10 @@ void labmate_gpio_change(
         pulse_stats_reset(app);
         measurement_reset(app);
         labmate_pulse_capture_start(app);
+        app->hold = !labmate_pulse_ui_live(
+            app->pulse_irq_active,
+            app->capture_owner == LabMateCapturePulse,
+            app->capture_blocked, app->capture_release_fault);
         return;
     }
 

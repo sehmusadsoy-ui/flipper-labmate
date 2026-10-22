@@ -98,6 +98,9 @@ def main():
         "labmate_scope_metrics_from_edges", "mean_abs_deviation_ticks",
         "gap_suspected"
     ])
+    contains("src/labmate_frequency_ui_state.c", [
+        "high_active", "low_active", "correct_owner"
+    ])
     contains("src/labmate_pulse_ui_state.c", [
         "native_irq_active", "native_pulse_owner", "release_fault"
     ])
@@ -162,6 +165,7 @@ def main():
                  "scripts/test-v20-scope-diagnostics-host.sh",
                  "scripts/test-v20-level-witness-host.sh",
                  "scripts/test-v20-pulse-ui-state-host.sh",
+                 "scripts/test-v20-frequency-ui-state-host.sh",
                  "scripts/test-v20-ultimate-root-grid-host.sh",
                  "scripts/test-v20-ultimate-menu-renderer-host.sh",
                  "scripts/test-v20-ultimate-ui-contract.py",
