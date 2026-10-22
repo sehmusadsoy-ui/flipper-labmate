@@ -9,7 +9,7 @@ ROOT=Path(__file__).resolve().parent.parent
 def src(path):
     return (ROOT/path).read_text(encoding="utf-8")
 def body(text,name,return_type="void"):
-    m=re.search(r"^"+return_type+r"\s+"+re.escape(name)+r"\s*\(",text,re.M)
+    m=re.search(r"^(?:static\s+)?"+return_type+r"\s+"+re.escape(name)+r"\s*\(",text,re.M)
     if not m: raise AssertionError("renderer missing: "+name)
     end=re.search(r"^}\s*$",text[m.end():],re.M)
     if not end: raise AssertionError("renderer lacks close: "+name)

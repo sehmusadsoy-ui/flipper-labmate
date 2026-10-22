@@ -27,7 +27,7 @@ done
 for cc in gcc clang; do
     command -v "$cc" >/dev/null 2>&1 || { echo "missing compiler: $cc" >&2; exit 2; }
     "$cc" -std=c11 -O1 -g -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined \
-      -fno-omit-frame-pointer -I"$tmp" \
+      -fno-omit-frame-pointer -I"$root/src" -I"$tmp" \
       "$root/tests/test_v20_ui04_records.c" -o "$tmp/ui04-$cc"
     "$tmp/ui04-$cc"
 done
