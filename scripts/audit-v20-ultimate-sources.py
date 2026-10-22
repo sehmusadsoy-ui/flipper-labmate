@@ -94,6 +94,19 @@ def main():
         "LabMateScopeMetricsReady", "m->completed_cycles < 2U",
         "m->truncated", "spread_permille"
     ])
+    contains("src/labmate_scope_diagnostics.c", [
+        "labmate_scope_metrics_from_edges", "mean_abs_deviation_ticks",
+        "gap_suspected"
+    ])
+    contains("src/labmate_menu_grid.h", [
+        "labmate_menu_root_move", "LabMateMenuTileWidth"
+    ])
+    contains("src/labmate_ui_screens.c", [
+        "labmate_menu_tile_x", "labmate_menu_tile_y"
+    ])
+    contains("src/labmate_input_menu.c", [
+        "labmate_menu_root_move", "labmate_dashboard_store_clear_source"
+    ])
     for path in ["src/labmate_doctor_frequency_bridge.c",
                  "src/labmate_doctor_pulse_bridge.c"]:
         contains(path, ["labmate_evidence_session_finish",
@@ -126,6 +139,9 @@ def main():
                  "scripts/test-v20-signal-stats-host.sh",
                  "scripts/test-v20-doctor-advice-host.sh",
                  "scripts/test-v20-scope-period-stats-host.sh",
+                 "scripts/test-v20-scope-diagnostics-host.sh",
+                 "scripts/test-v20-ultimate-root-grid-host.sh",
+                 "scripts/test-v20-ultimate-menu-renderer-host.sh",
                  "scripts/test-v20-phase3b-doctor-panel-host.sh"]:
         require((ROOT / name).is_file(), f"mandatory test runner missing {name}")
     return True
