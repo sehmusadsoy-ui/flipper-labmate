@@ -402,7 +402,7 @@ void draw_menu(Canvas* canvas, LabMateApp* app) {
         canvas_draw_str(canvas,117U,y,">");
         if(i==selected) canvas_set_color(canvas,ColorBlack);
     }
-    ui_footer_pair(canvas, "BACK", "GROUP", "OK", "OPEN");
+    ui_footer_pair(canvas, "BK", "ROOT", "OK", "OPEN");
 }
 
 void draw_gpio(Canvas* canvas, LabMateApp* app) {
