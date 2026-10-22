@@ -31,6 +31,12 @@ void ui_footer_pair(
     const char* right_key,
     const char* right_action);
 
+/* Inverse action band: physical key/action at left and passive status at
+ * right. Not a second clickable button. Labels are validated pre-draw.
+ */
+void ui_footer_info(Canvas* canvas, const char* left_key,
+                    const char* left_action, const char* notice);
+
 /* Three independent action hints for MEASURE's Frequency/Pulse main views.
  * Fixed 128x64 cells: x=2 (max 7 ASCII glyphs), x=45 (max 7),
  * x=96 (max 5); baseline 61, divider y=52. Reject malformed labels

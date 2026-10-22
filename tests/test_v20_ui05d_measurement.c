@@ -220,13 +220,14 @@ static unsigned pulse_test(void) {
         a.capture_blocked=(status==2);a.hold=(status==1);
         LabMateApp before;memcpy(&before,&a,sizeof(a));
         draw_pulse(&c,&a);assert(memcmp(&before,&a,sizeof(a))==0);
-        /* Main PULSE uses the extracted inverse triple footer, whereas
-         * STATS returns early and draws its own unboxed y=62 captions.
-         * Assert the actual UI contract for EACH branch, not all views.
+        /* Both main and STATS must use the same inverse triple footer.
+         * The STATS last data baseline is y=49, clearing the y=52 rule.
          */
-        assert(c.color==ColorBlack);
-        if(view == 0U) assert(c.boxes >= 2U);
-        else assert(c.boxes == 1U); /* Shared title rail, no STATS footer box. */
+        assert(c.color==ColorBlack && c.boxes>=2U);
+        if(view) {
+            assert(contains(&c,"^MAIN"));
+            assert(contains(&c,"vRST"));
+        }
         if(c.faults){fprintf(stderr,"PULSE pin=%u view=%u valid=%u cycles=%u duty=%u status=%u\n",pin,view,valid,ix,d,status);return 0;}
         if(view && valid && d==2)assert(contains(&c,"100.0%"));
         ++count;

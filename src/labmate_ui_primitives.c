@@ -75,6 +75,35 @@ void ui_footer_pair(Canvas* canvas, const char* left_key,
     canvas_set_color(canvas, ColorBlack);
 }
 
+/* Informational (non-interactive) right-hand caption. The key on the
+ * left must be a real input: e.g. BACK→LIST. Drawing a fake OK key for
+ * READ ONLY would give an incorrect control hint. Both captions use the
+ * same inverted action band and clipping rules as the normal footer.
+ */
+void ui_footer_info(Canvas* canvas, const char* left_key,
+                    const char* left_action, const char* notice) {
+    if(!canvas || !notice) return;
+    char left[24];
+    if(!ui_format_key(left, sizeof(left), left_key, left_action, 10U))
+        return;
+    size_t length = 0U;
+    for(const unsigned char* p = (const unsigned char*)notice; *p; ++p) {
+        if(*p < 32U || *p > 126U || ++length > 10U) return;
+    }
+    if(length == 0U) return;
+    canvas_draw_line(canvas, 0, LABMATE_UI_FOOTER_RULE_Y,
+                     LABMATE_UI_WIDTH - 1, LABMATE_UI_FOOTER_RULE_Y);
+    canvas_draw_box(canvas, 0, LABMATE_UI_FOOTER_RULE_Y + 1,
+                    LABMATE_UI_WIDTH, LABMATE_UI_HEIGHT - LABMATE_UI_FOOTER_RULE_Y - 1);
+    canvas_set_color(canvas, ColorWhite);
+    canvas_set_font(canvas, FontSecondary);
+    canvas_draw_str(canvas, LABMATE_UI_FOOTER_PAIR_LEFT_X,
+                    LABMATE_UI_FOOTER_BASELINE_Y, left);
+    canvas_draw_str(canvas, LABMATE_UI_FOOTER_PAIR_RIGHT_X,
+                    LABMATE_UI_FOOTER_BASELINE_Y, notice);
+    canvas_set_color(canvas, ColorBlack);
+}
+
 /* 3-column action footer with preflight: do not partially paint on
  * malformed labels. ASCII-only matches the current 6px host glyph model.
  * Positions leave at least one pixel of space between all three captions. */

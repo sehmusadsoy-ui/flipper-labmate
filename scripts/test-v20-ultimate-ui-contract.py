@@ -36,14 +36,12 @@ def main():
             b=body(text,name)
             count+=1
             check("ui_draw_header(" in b,name+": shared header missing")
+            check("ui_footer_pair(" in b or "ui_footer_triple(" in b or
+                  "ui_footer_info(" in b,
+                  name+": shared physical-key/footer contract missing")
             if name=="draw_history_detail":
-                # Legacy one-off footer is documented for a later exact
-                # visual migration; never pretend this is fully harmonized.
-                check('"BACK: LIST"' in b and '"READ ONLY"' in b,
-                      name+": guarded read-only footer changed")
-            else:
-                check("ui_footer_pair(" in b or "ui_footer_triple(" in b,
-                      name+": physical-key footer missing")
+                check('ui_footer_info(canvas, "BACK", "LIST", "READ ONLY")' in b,
+                      name+": passive read-only footer contract changed")
             for forbidden in ("furi_hal_gpio_", "storage_file_write(",
                               "furi_hal_resource_lease_try_acquire("):
                 check(forbidden not in b,name+": renderer acquired native resources")
@@ -53,6 +51,12 @@ def main():
           "submenu disclosure position changed")
     check("draw_pulse_stats(canvas, app);" in body(canvas,"draw_pulse"),
           "Pulse STATS display lost")
+    check('ui_footer_triple(canvas, "vRST"' in
+          body(canvas,"draw_pulse_stats"),
+          "Pulse STATS lacks the common inverse footer")
+    check('canvas_draw_str(canvas, 3, 49, "DUTY")' in
+          body(canvas,"draw_pulse_stats"),
+          "Pulse STATS must clear the footer rule")
     for title,name in (("FREQ","draw_frequency"),("PWM","draw_generator"),
                        ("PULSE","draw_pulse")):
         check(f'ui_draw_header(canvas, "{title}")' in body(canvas,name),
@@ -79,7 +83,7 @@ def main():
           "Ultimate tools missing")
     print(f"V20 APP-WIDE UI SOURCE CONTRACT PASS: {count} legacy renderers + "
           "Doctor, Dashboard and dedicated Scope chrome; "
-          "history-detail/Pulse-stats special footers deliberately exempt. "
+          "both prior special footers migrated into shared inverse chrome. "
           "PIXEL TEST AND DEVICE STILL PENDING")
 
 if __name__=="__main__":

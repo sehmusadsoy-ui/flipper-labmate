@@ -323,9 +323,10 @@ void draw_history_detail(Canvas* canvas, LabMateApp* app) {
             canvas_draw_str_aligned(canvas, 125, 51, AlignRight, AlignBottom, value);
         }
     }
-    canvas_draw_line(canvas, 0, 52, 127, 52);
-    canvas_draw_str(canvas, 6, 62, "BACK: LIST");
-    canvas_draw_str_aligned(canvas, 125, 62, AlignRight, AlignBottom, "READ ONLY");
+    /* Shared action band with a passive read-only notice, never a fake
+     * second button. History Detail has no writable action.
+     */
+    ui_footer_info(canvas, "BACK", "LIST", "READ ONLY");
 }
 
 /* Step 2: read-only renderers migrated verbatim from labmate.c. */
@@ -867,37 +868,33 @@ static void draw_pulse_stats(Canvas* canvas, LabMateApp* app) {
                  (unsigned long)(app->pulse_max_duty_permille % 10U));
     }
 
+    /* Four compact MIN..MAX rows. Removing the old fifth TYPE header
+     * gives every 8px glyph its own unclipped baseline above the common
+     * inverse footer. Left column names source, left numeric is MIN and
+     * right numeric is MAX. The Pulse help guide documents this ordering.
+     */
     canvas_set_font(canvas, FontSecondary);
-    /* Fixed table cells leave room for seven-character values in each
-     * numeric column. The row baselines are >= 8px apart. */
-    canvas_draw_str(canvas, 3, 20, "TYPE");
-    canvas_draw_str(canvas, 42, 20, "MIN");
-    canvas_draw_str(canvas, 87, 20, "MAX");
-    canvas_draw_line(canvas, 0, 22, 127, 22);
+    canvas_draw_str(canvas, 3, 22, "HIGH");
+    canvas_draw_str(canvas, 40, 22, hi_min);
+    canvas_draw_str(canvas, 85, 22, hi_max);
 
-    canvas_draw_str(canvas, 3, 30, "HIGH");
-    canvas_draw_str(canvas, 40, 30, hi_min);
-    canvas_draw_str(canvas, 85, 30, hi_max);
+    canvas_draw_str(canvas, 3, 31, "LOW");
+    canvas_draw_str(canvas, 40, 31, lo_min);
+    canvas_draw_str(canvas, 85, 31, lo_max);
 
-    canvas_draw_str(canvas, 3, 38, "LOW");
-    canvas_draw_str(canvas, 40, 38, lo_min);
-    canvas_draw_str(canvas, 85, 38, lo_max);
+    canvas_draw_str(canvas, 3, 40, "PER");
+    canvas_draw_str(canvas, 40, 40, per_min);
+    canvas_draw_str(canvas, 85, 40, per_max);
 
-    canvas_draw_str(canvas, 3, 46, "PER");
-    canvas_draw_str(canvas, 40, 46, per_min);
-    canvas_draw_str(canvas, 85, 46, per_max);
+    canvas_draw_str(canvas, 3, 49, "DUTY");
+    canvas_draw_str(canvas, 40, 49, duty_min);
+    canvas_draw_str(canvas, 85, 49, duty_max);
 
-    canvas_draw_str(canvas, 3, 54, "DUTY");
-    canvas_draw_str(canvas, 40, 54, duty_min);
-    canvas_draw_str(canvas, 85, 54, duty_max);
-
-    /* Short footer labels fit across all 128 pixels; avoid text
-     * beyond x=127 and a baseline on the bottommost pixel. */
-    /* No rule over this footer: 8px letters start at y=55 while
-     * the last measurement row ends at y=54. */
-    canvas_draw_str(canvas, 3, 62, "vRST");
-    canvas_draw_str(canvas, 45, 62, app->hold ? "OK LIVE" : "OK HOLD");
-    canvas_draw_str(canvas, 95, 62, "^BACK");
+    /* DOWN resets statistics; UP returns to the main Pulse panel.
+     * OK toggles HOLD/LIVE. All three legends are truthful and share
+     * the same inverted action band as other instruments.
+     */
+    ui_footer_triple(canvas, "vRST", app->hold ? "OK LIVE" : "OK HOLD", "^MAIN");
 }
 
 void draw_pulse(Canvas* canvas, LabMateApp* app) {
@@ -947,7 +944,7 @@ void draw_pulse(Canvas* canvas, LabMateApp* app) {
     pulse_ui_metric(canvas, 3, 41, 50, "PERIOD", period);
     pulse_ui_metric(canvas, 68, 41, 50, "DUTY", duty);
 
-    /* Main view only. The dense STATS view retains its own y=62 captions. */
+    /* Main and STATS both use the shared inverse three-key action band. */
     ui_footer_triple(canvas, "<>PIN", app->hold ? "OK LIVE" : "OK HOLD", "^STAT");
 }
 

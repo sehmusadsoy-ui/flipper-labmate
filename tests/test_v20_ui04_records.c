@@ -1,4 +1,6 @@
 #include "test_v20_ui04_harness.h"
+#include "ui_format_key.inc"
+#include "ui_footer_info.inc"
 #include "records_profiles_body.inc"
 #include "records_history_body.inc"
 #include "records_history_detail_body.inc"
@@ -98,7 +100,7 @@ static unsigned detail_cases(void){
             fprintf(stderr,"DETAIL file=%u state=%u mode=%u faults=%u\n",selectedValid,state,mode,c.faults);
             return cases+1;
         }
-        assert(has(&c,"BACK: LIST") && has(&c,"READ ONLY"));
+        assert(has(&c,"(BACK)LIST") && has(&c,"READ ONLY"));
         ++cases;
     }
     return cases;
