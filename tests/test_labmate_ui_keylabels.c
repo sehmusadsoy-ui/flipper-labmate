@@ -116,7 +116,7 @@ int main(void) {
     info_footer_reject("BACK","LIST",NULL);
     info_footer_reject("BACK","LIST","");
     info_footer_reject("BACK","LIST","READ ONLY X");
-    info_footer_reject("BACK","LIST","\\xC3\\xA9");
+    info_footer_reject("BACK","LIST","\xC3\xA9");
     info_footer_reject("BACK","MUCH TOO LONG","READ ONLY");
     ui_footer_info(NULL,"BACK","LIST","READ ONLY");
     puts("v2.0 shared pair/triple/info footer geometry & malformed-label guards PASS");
