@@ -39,6 +39,10 @@ static void check_label(const char* s) {
 int main(void) {
     /* Maximum editable values and all conservative status names. */
     check_label(">SRC PULSE");
+    check_label(">SRC GPIO");
+    check_label("HIGH SAMPLED");
+    check_label("LOW SAMPLED");
+    check_label("NO LEVEL EVIDENCE");
     check_label(">REF 100000Hz x1000");
     check_label(">F TOL 100.0%");
     check_label(">DUTY 100.0%");

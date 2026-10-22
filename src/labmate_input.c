@@ -100,7 +100,8 @@ void labmate_input_dispatch(LabMateApp* app, FuriStatus status,
         else if(event.key == InputKeyDown)
             labmate_doctor_panel_edit(&app->doctor_panel, -1);
         else if(event.key == InputKeyOk) {
-            if(app->doctor_panel.field == LabMateDoctorFieldFrequency)
+            if(app->doctor_panel.field == LabMateDoctorFieldFrequency &&
+               app->doctor_panel.source != LABMATE_DOCTOR_MONITOR_SOURCE)
                 labmate_doctor_panel_step(&app->doctor_panel);
             else app->doctor_show_advice = true;
         }

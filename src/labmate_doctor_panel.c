@@ -31,25 +31,35 @@ void labmate_doctor_panel_edit(LabMateDoctorPanel* p, int8_t d) {
         /* Source switching stays read-only; the actual engine is never
          * started by selecting a Doctor data source.
          */
-        if(d > 0) p->source = p->source == LabMateSnapshotScope ?
-            LabMateSnapshotFrequency : (uint8_t)(p->source + 1U);
-        else p->source = p->source == LabMateSnapshotFrequency ?
-            LabMateSnapshotScope : (uint8_t)(p->source - 1U);
+        if(d > 0) p->source =
+            p->source == LabMateSnapshotFrequency ? LabMateSnapshotPulse :
+            p->source == LabMateSnapshotPulse ? LabMateSnapshotScope :
+            p->source == LabMateSnapshotScope ? LABMATE_DOCTOR_MONITOR_SOURCE :
+                                               LabMateSnapshotFrequency;
+        else p->source =
+            p->source == LabMateSnapshotFrequency ? LABMATE_DOCTOR_MONITOR_SOURCE :
+            p->source == LABMATE_DOCTOR_MONITOR_SOURCE ? LabMateSnapshotScope :
+            p->source == LabMateSnapshotScope ? LabMateSnapshotPulse :
+                                                LabMateSnapshotFrequency;
         break;
     case LabMateDoctorFieldFrequency:
+        if(p->source == LABMATE_DOCTOR_MONITOR_SOURCE) break;
         p->reference.frequency_millihz = saturating_edit(
             p->reference.frequency_millihz, p->frequency_step_hz * 1000U,
             100000000U, d);
         break;
     case LabMateDoctorFieldFrequencyTolerance:
+        if(p->source == LABMATE_DOCTOR_MONITOR_SOURCE) break;
         p->reference.frequency_tolerance_permille = (uint16_t)saturating_edit(
             p->reference.frequency_tolerance_permille, 10U, 1000U, d);
         break;
     case LabMateDoctorFieldDuty:
+        if(p->source == LABMATE_DOCTOR_MONITOR_SOURCE) break;
         p->reference.expected_duty_permille = (uint16_t)saturating_edit(
             p->reference.expected_duty_permille, 10U, 1000U, d);
         break;
     case LabMateDoctorFieldDutyTolerance:
+        if(p->source == LABMATE_DOCTOR_MONITOR_SOURCE) break;
         p->reference.duty_tolerance_permille = (uint16_t)saturating_edit(
             p->reference.duty_tolerance_permille, 10U, 1000U, d);
         break;

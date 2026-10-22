@@ -27,6 +27,18 @@ void labmate_doctor_screen_draw(Canvas* c, const LabMateApp* app) {
         const char* evidence=advice.evidence;
         const char* next_check=advice.next_check;
         LabMateSnapshotV1 sealed;
+        if(p->source == LABMATE_DOCTOR_MONITOR_SOURCE) {
+            const LabMateLevelFinding found=labmate_level_assess(
+                &app->gpio_level_witness,
+                p->reference.minimum_no_signal_window_ms);
+            finding=found == LabMateLevelSampledHigh ? "HIGH SAMPLED" :
+                    found == LabMateLevelSampledLow ? "LOW SAMPLED" :
+                    found == LabMateLevelTransitions ? "LEVEL CHANGED" :
+                                                        "NO LEVEL EVIDENCE";
+            evidence=found == LabMateLevelNoEvidence ? "NOT CONFIRMED" :
+                                                       "GPIO POLLING ONLY";
+            next_check="VERIFY WITH SCOPE";
+        }
         /* Scope timing hints require the exact same real capture generation
          * and a separately verified sealed snapshot. No live reads here.
          */
@@ -61,24 +73,29 @@ void labmate_doctor_screen_draw(Canvas* c, const LabMateApp* app) {
     if(page == 0U) {
         panel_row(c, LABMATE_DOCTOR_ROW1_Y, p->field == LabMateDoctorFieldSource, "SRC",
                   p->source == LabMateSnapshotPulse ? "PULSE" :
-                  p->source == LabMateSnapshotScope ? "SCOPE" : "FREQ");
+                  p->source == LabMateSnapshotScope ? "SCOPE" :
+                  p->source == LABMATE_DOCTOR_MONITOR_SOURCE ? "GPIO" : "FREQ");
         (void)snprintf(text, sizeof(text), "%luHz x%lu",
                       (unsigned long)(p->reference.frequency_millihz / 1000U),
                       (unsigned long)p->frequency_step_hz);
-        panel_row(c, LABMATE_DOCTOR_ROW2_Y, p->field == LabMateDoctorFieldFrequency, "REF", text);
+        panel_row(c, LABMATE_DOCTOR_ROW2_Y, p->field == LabMateDoctorFieldFrequency, "REF",
+                  p->source == LABMATE_DOCTOR_MONITOR_SOURCE ? "N/A" : text);
         (void)snprintf(text, sizeof(text), "%u.%u%%",
                       (unsigned)(p->reference.frequency_tolerance_permille / 10U),
                       (unsigned)(p->reference.frequency_tolerance_permille % 10U));
-        panel_row(c, LABMATE_DOCTOR_ROW3_Y, p->field == LabMateDoctorFieldFrequencyTolerance, "F TOL", text);
+        panel_row(c, LABMATE_DOCTOR_ROW3_Y, p->field == LabMateDoctorFieldFrequencyTolerance, "F TOL",
+                  p->source == LABMATE_DOCTOR_MONITOR_SOURCE ? "N/A" : text);
     } else {
         (void)snprintf(text, sizeof(text), "%u.%u%%",
                       (unsigned)(p->reference.expected_duty_permille / 10U),
                       (unsigned)(p->reference.expected_duty_permille % 10U));
-        panel_row(c, LABMATE_DOCTOR_ROW1_Y, p->field == LabMateDoctorFieldDuty, "DUTY", text);
+        panel_row(c, LABMATE_DOCTOR_ROW1_Y, p->field == LabMateDoctorFieldDuty, "DUTY",
+                  p->source == LABMATE_DOCTOR_MONITOR_SOURCE ? "N/A" : text);
         (void)snprintf(text, sizeof(text), "%u.%u%%",
                       (unsigned)(p->reference.duty_tolerance_permille / 10U),
                       (unsigned)(p->reference.duty_tolerance_permille % 10U));
-        panel_row(c, LABMATE_DOCTOR_ROW2_Y, p->field == LabMateDoctorFieldDutyTolerance, "D TOL", text);
+        panel_row(c, LABMATE_DOCTOR_ROW2_Y, p->field == LabMateDoctorFieldDutyTolerance, "D TOL",
+                  p->source == LABMATE_DOCTOR_MONITOR_SOURCE ? "N/A" : text);
         (void)snprintf(text, sizeof(text), "%lums",
                       (unsigned long)p->reference.minimum_no_signal_window_ms);
         panel_row(c, LABMATE_DOCTOR_ROW3_Y, p->field == LabMateDoctorFieldSilence, "QUIET", text);
@@ -89,11 +106,20 @@ void labmate_doctor_screen_draw(Canvas* c, const LabMateApp* app) {
     /* Physical Phase3E screenshot exposed the old y=52 collision with
      * the shared footer divider at y=52. Keep text fully above the rule.
      */
-    canvas_draw_str(c, LABMATE_DOCTOR_TEXT_X, LABMATE_DOCTOR_STATUS_Y,
-                    labmate_doctor_panel_status_text(&a));
+    const char* status=labmate_doctor_panel_status_text(&a);
+    if(p->source == LABMATE_DOCTOR_MONITOR_SOURCE) {
+        const LabMateLevelFinding level=labmate_level_assess(
+            &app->gpio_level_witness,p->reference.minimum_no_signal_window_ms);
+        status=level == LabMateLevelSampledHigh ? "HIGH SAMPLED" :
+               level == LabMateLevelSampledLow ? "LOW SAMPLED" :
+               level == LabMateLevelTransitions ? "LEVEL CHANGED" :
+                                                  "NO LEVEL EVIDENCE";
+    }
+    canvas_draw_str(c, LABMATE_DOCTOR_TEXT_X, LABMATE_DOCTOR_STATUS_Y, status);
     /* Three real keys are used on this screen. The shared triple footer
      * keeps all actions visible, avoiding an undiscoverable advice page.
      */
     ui_footer_triple(c, "<>FIELD", "^vEDIT",
-                     p->field == LabMateDoctorFieldFrequency ? "OKx" : "OKINF");
+                     (p->field == LabMateDoctorFieldFrequency &&
+                      p->source != LABMATE_DOCTOR_MONITOR_SOURCE) ? "OKx" : "OKINF");
 }

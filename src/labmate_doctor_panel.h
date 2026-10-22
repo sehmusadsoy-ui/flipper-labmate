@@ -4,6 +4,10 @@
  */
 #include "labmate_doctor.h"
 #include "labmate_dashboard_store.h"
+/* Separate witness source, intentionally outside the five numeric Snapshot
+ * types: pooled GPIO polling cannot claim an edge-timed measurement.
+ */
+#define LABMATE_DOCTOR_MONITOR_SOURCE 250U
 
 typedef enum {
     LabMateDoctorFieldSource = 0,
