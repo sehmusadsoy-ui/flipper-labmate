@@ -1,0 +1,381 @@
+name: LabMate v2.0 UI host regressions (NO FLASH)
+
+on:
+  push:
+    branches:
+      - dev/v2.0-signal-doctor
+    paths:
+      - "src/labmate_navigation.[ch]"
+      - "src/labmate_ui_screens.c"
+      - "src/labmate_ui_primitives.[ch]"
+      - "src/labmate_ui_layout.h"
+      - "src/labmate_menu_grid.h"
+      - "src/labmate_scope_diagnostics.[ch]"
+      - "src/labmate_level_witness.[ch]"
+      - "src/labmate_pulse_ui_state.[ch]"
+      - "src/labmate_frequency_ui_state.[ch]"
+      - "src/labmate_capture_session.c"
+      - "src/labmate_input_measure.c"
+      - "src/labmate_monitor_gpio.c"
+      - "src/labmate_capture_session.c"
+      - "src/labmate_ui_status.h"
+      - "src/labmate_snapshot.[ch]"
+      - "src/labmate_snapshot_bridge.[ch]"
+      - "src/labmate_evidence_session.[ch]"
+      - "src/labmate_publication_gate.[ch]"
+      - "src/labmate_measurements.c"
+      - "src/labmate_frequency_capture.c"
+      - "src/labmate_frequency_gate.[ch]"
+      - "src/labmate_high_gate_audit.h"
+      - "src/labmate_pulse_pair_audit.h"
+      - "src/labmate_pulse_capture.c"
+      - "src/labmate_capture_session.c"
+      - "src/labmate_capture_release_gate.h"
+      - "src/labmate_event_counter.c"
+      - "src/labmate_button_capture.h"
+      - "src/labmate_frequency_tim2.c"
+      - "src/labmate_frequency_capture.h"
+      - "src/labmate_pulse_capture.h"
+      - "src/labmate_internal.h"
+      - "src/labmate_low_mailbox_audit.h"
+      - "src/labmate_low_mailbox_evidence.h"
+      - "src/labmate_dashboard_store.[ch]"
+      - "src/labmate_dashboard_screen.[ch]"
+      - "src/labmate_signal_stats.[ch]"
+      - "src/labmate_doctor_advice.[ch]"
+      - "src/labmate_doctor.[ch]"
+      - "src/labmate_doctor_panel.[ch]"
+      - "src/labmate_doctor_screen.[ch]"
+      - "src/labmate_doctor_pulse_policy.[ch]"
+      - "src/labmate_doctor_pulse_bridge.[ch]"
+      - "src/labmate_doctor_frequency_policy.[ch]"
+      - "src/labmate_doctor_frequency_bridge.[ch]"
+      - "src/labmate_frequency_capture.c"
+      - "src/labmate_measurements.c"
+      - "src/labmate_input_measure.c"
+      - "src/labmate_internal.h"
+      - "src/labmate_frequency_gate.[ch]"
+      - "src/labmate_input_measure.c"
+      - "src/labmate_pulse_capture.c"
+      - "src/labmate_input.c"
+      - "src/labmate_input_menu.c"
+      - "src/labmate_scope_ui.h"
+      - "src/labmate_i2c_ui.c"
+      - "src/labmate_onewire_ui.c"
+      - "src/labmate_uart_ui.c"
+      - "src/labmate_threshold.[ch]"
+      - "src/labmate_button_capture.c"
+      - "src/labmate_counter_math.[ch]"
+      - "tests/test_v20_*.c"
+      - "tests/test_v20_*.h"
+      - "tests/test_navigation.c.inc"
+      - "tests/test_labmate_ui_keylabels.c"
+      - "tests/test_labmate_scope_navigation.c"
+      - "tests/host_stubs/**"
+      - "scripts/test-v20-ui*-host.sh"
+      - "scripts/test-v20-snapshot-host.sh"
+      - "scripts/test-v20-phase2b-host.sh"
+      - "scripts/test-v20-phase2c-host.sh"
+      - "scripts/test-v20-phase2d-host.sh"
+      - "scripts/test-v20-phase2e-host.sh"
+      - "scripts/test-v20-phase2f-host.sh"
+      - "scripts/test-v20-phase2g-host.sh"
+      - "scripts/test-v20-phase2h-host.sh"
+      - "scripts/test-v20-phase2i-host.sh"
+      - "scripts/test-v20-phase2j-host.sh"
+      - "scripts/test-v20-phase2k-host.sh"
+      - "scripts/test-v20-phase3a-doctor-host.sh"
+      - "scripts/test-v20-phase3b-doctor-panel-host.sh"
+      - "scripts/test-v20-phase3c-pulse-host.sh"
+      - "scripts/test-v20-phase3d-frequency-host.sh"
+      - "scripts/test-v20-phase3d-frequency-wiring-host.sh"
+      - "scripts/build-v20-phase3b-e11-isolated.sh"
+      - "scripts/test-v20-offline-full-host.sh"
+      - "scripts/test-v20-ultimate-*-host.sh"
+      - "scripts/test-v20-ultimate-ui-contract.py"
+      - "scripts/test-v20-scope-diagnostics-host.sh"
+      - "scripts/test-v20-level-witness-host.sh"
+      - "scripts/test-v20-pulse-ui-state-host.sh"
+      - "scripts/test-v20-frequency-ui-state-host.sh"
+      - "scripts/test-v20-dashboard-host.sh"
+      - "scripts/test-v20-signal-stats-host.sh"
+      - "scripts/test-v20-doctor-advice-host.sh"
+      - ".github/workflows/v20-ui-host-gates.yml"
+  pull_request:
+    branches:
+      - dev/v1.9-logic-scope
+    paths:
+      - "src/labmate_navigation.[ch]"
+      - "src/labmate_ui_screens.c"
+      - "src/labmate_ui_primitives.[ch]"
+      - "src/labmate_ui_layout.h"
+      - "src/labmate_menu_grid.h"
+      - "src/labmate_scope_diagnostics.[ch]"
+      - "src/labmate_level_witness.[ch]"
+      - "src/labmate_pulse_ui_state.[ch]"
+      - "src/labmate_frequency_ui_state.[ch]"
+      - "src/labmate_capture_session.c"
+      - "src/labmate_input_measure.c"
+      - "src/labmate_monitor_gpio.c"
+      - "src/labmate_capture_session.c"
+      - "src/labmate_ui_status.h"
+      - "src/labmate_snapshot.[ch]"
+      - "src/labmate_snapshot_bridge.[ch]"
+      - "src/labmate_evidence_session.[ch]"
+      - "src/labmate_publication_gate.[ch]"
+      - "src/labmate_measurements.c"
+      - "src/labmate_frequency_capture.c"
+      - "src/labmate_frequency_gate.[ch]"
+      - "src/labmate_high_gate_audit.h"
+      - "src/labmate_pulse_pair_audit.h"
+      - "src/labmate_pulse_capture.c"
+      - "src/labmate_capture_session.c"
+      - "src/labmate_capture_release_gate.h"
+      - "src/labmate_event_counter.c"
+      - "src/labmate_button_capture.h"
+      - "src/labmate_frequency_tim2.c"
+      - "src/labmate_frequency_capture.h"
+      - "src/labmate_pulse_capture.h"
+      - "src/labmate_internal.h"
+      - "src/labmate_low_mailbox_audit.h"
+      - "src/labmate_low_mailbox_evidence.h"
+      - "src/labmate_dashboard_store.[ch]"
+      - "src/labmate_dashboard_screen.[ch]"
+      - "src/labmate_signal_stats.[ch]"
+      - "src/labmate_doctor_advice.[ch]"
+      - "src/labmate_doctor.[ch]"
+      - "src/labmate_doctor_panel.[ch]"
+      - "src/labmate_doctor_screen.[ch]"
+      - "src/labmate_doctor_pulse_policy.[ch]"
+      - "src/labmate_doctor_pulse_bridge.[ch]"
+      - "src/labmate_doctor_frequency_policy.[ch]"
+      - "src/labmate_doctor_frequency_bridge.[ch]"
+      - "src/labmate_frequency_capture.c"
+      - "src/labmate_measurements.c"
+      - "src/labmate_input_measure.c"
+      - "src/labmate_internal.h"
+      - "src/labmate_frequency_gate.[ch]"
+      - "src/labmate_input_measure.c"
+      - "src/labmate_pulse_capture.c"
+      - "src/labmate_input.c"
+      - "src/labmate_input_menu.c"
+      - "src/labmate_scope_ui.h"
+      - "src/labmate_i2c_ui.c"
+      - "src/labmate_onewire_ui.c"
+      - "src/labmate_uart_ui.c"
+      - "src/labmate_threshold.[ch]"
+      - "src/labmate_button_capture.c"
+      - "src/labmate_counter_math.[ch]"
+      - "tests/test_v20_*.c"
+      - "tests/test_v20_*.h"
+      - "tests/test_navigation.c.inc"
+      - "tests/test_labmate_ui_keylabels.c"
+      - "tests/test_labmate_scope_navigation.c"
+      - "tests/host_stubs/**"
+      - "scripts/test-v20-ui*-host.sh"
+      - "scripts/test-v20-snapshot-host.sh"
+      - "scripts/test-v20-phase2b-host.sh"
+      - "scripts/test-v20-phase2c-host.sh"
+      - "scripts/test-v20-phase2d-host.sh"
+      - "scripts/test-v20-phase2e-host.sh"
+      - "scripts/test-v20-phase2f-host.sh"
+      - "scripts/test-v20-phase2g-host.sh"
+      - "scripts/test-v20-phase2h-host.sh"
+      - "scripts/test-v20-phase2i-host.sh"
+      - "scripts/test-v20-phase2j-host.sh"
+      - "scripts/test-v20-phase2k-host.sh"
+      - "scripts/test-v20-phase3a-doctor-host.sh"
+      - "scripts/test-v20-phase3b-doctor-panel-host.sh"
+      - "scripts/test-v20-phase3c-pulse-host.sh"
+      - "scripts/test-v20-phase3d-frequency-host.sh"
+      - "scripts/test-v20-phase3d-frequency-wiring-host.sh"
+      - "scripts/build-v20-phase3b-e11-isolated.sh"
+      - "scripts/test-v20-offline-full-host.sh"
+      - "scripts/test-v20-ultimate-*-host.sh"
+      - "scripts/test-v20-ultimate-ui-contract.py"
+      - "scripts/test-v20-scope-diagnostics-host.sh"
+      - "scripts/test-v20-level-witness-host.sh"
+      - "scripts/test-v20-pulse-ui-state-host.sh"
+      - "scripts/test-v20-frequency-ui-state-host.sh"
+      - "scripts/test-v20-dashboard-host.sh"
+      - "scripts/test-v20-signal-stats-host.sh"
+      - "scripts/test-v20-doctor-advice-host.sh"
+      - ".github/workflows/v20-ui-host-gates.yml"
+
+# Future CI policy only; GitHub Actions currently has no confirmed runs.
+permissions:
+  contents: read
+
+jobs:
+  ui-host-only:
+    name: UI-01..06C source-linked host verification (GCC and Clang)
+    if: github.event_name == 'push' || github.head_ref == 'dev/v2.0-signal-doctor'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact reviewed commit, no persistent credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Assert compiler and source-only prerequisites
+        shell: bash
+        run: |
+          set -euo pipefail
+          command -v gcc
+          command -v clang
+          command -v awk
+          command -v mktemp
+          test -f src/labmate_ui_screens.c
+          test -f src/labmate_scope_ui.h
+          test -f scripts/test-v20-ui01-host.sh
+          test -f scripts/test-v20-ui05-host.sh
+          echo "UI HOST ONLY: no Flipper USB, SDK, firmware, SD, FAP deploy or release"
+
+      - name: UI-01 menu and Scope geometry
+        shell: bash
+        run: sh scripts/test-v20-ui01-host.sh
+
+      - name: UI-02 I2C and 1-Wire geometry (current enum contract)
+        shell: bash
+        run: sh scripts/test-v20-ui02-host.sh
+
+      - name: UI-03 1-Wire validity and UART RX/TX
+        shell: bash
+        run: sh scripts/test-v20-ui03-host.sh
+
+      - name: UI-04 Profiles and History
+        shell: bash
+        run: sh scripts/test-v20-ui04-host.sh
+
+      - name: UI-05A Logger geometry
+        shell: bash
+        run: sh scripts/test-v20-ui05-host.sh
+
+      - name: UI-05B Button and Threshold renderer geometry
+        shell: bash
+        run: sh scripts/test-v20-ui05b-host.sh
+
+      - name: UI-05C Counter 64-bit renderer and formatter
+        shell: bash
+        run: sh scripts/test-v20-ui05c-host.sh
+
+      - name: UI-05D Frequency Pulse and PWM renderer geometry
+        shell: bash
+        run: sh scripts/test-v20-ui05d-host.sh
+
+      - name: UI-05E GPIO Monitor source-linked renderer geometry
+        shell: bash
+        run: sh scripts/test-v20-ui05e-host.sh
+
+      - name: UI-06 real shared triple-footer contract and Frequency Pulse regression
+        shell: bash
+        run: sh scripts/test-v20-ui06-host.sh
+
+      - name: UI-06C pure status contract and GPIO screen regression
+        shell: bash
+        run: sh scripts/test-v20-ui06c-host.sh
+  
+  snapshot-host-only:
+    name: Phase 2 pure snapshot evidence gate (GCC and Clang)
+    if: github.event_name == 'push' || github.head_ref == 'dev/v2.0-signal-doctor'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact reviewed commit, no credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Snapshot C11/ASan/UBSan, no hardware
+        shell: bash
+        run: sh scripts/test-v20-snapshot-host.sh
+      - name: Phase 2B Frequency and Pulse evidence handoff (host only)
+        shell: bash
+        run: sh scripts/test-v20-phase2b-host.sh
+      - name: Phase 2C capture evidence lifecycle and strict Pulse pins
+        shell: bash
+        run: sh scripts/test-v20-phase2c-host.sh
+      - name: Phase 2D fresh-edge anti-replay provenance
+        shell: bash
+        run: sh scripts/test-v20-phase2d-host.sh
+      - name: Phase 2E LOW TIM2 Pulse genuine publication admission
+        shell: bash
+        run: sh scripts/test-v20-phase2e-host.sh
+      - name: Phase 2F atomic PC1 IRQ period mailbox (source-linked)
+        shell: bash
+        run: sh scripts/test-v20-phase2f-host.sh
+      - name: Phase 2G PC1 ISR publication and lost-mailbox accounting
+        shell: bash
+        run: sh scripts/test-v20-phase2g-host.sh
+      - name: Phase 2H coherent PC1 audit and Snapshot loss classification
+        shell: bash
+        run: sh scripts/test-v20-phase2h-host.sh
+      - name: Phase 2I native PB3/TIM2 successful-publish audit
+        shell: bash
+        run: sh scripts/test-v20-phase2i-host.sh
+      - name: Phase 2J native Pulse fresh HIGH/LOW windows
+        shell: bash
+        run: sh scripts/test-v20-phase2j-host.sh
+      - name: Phase 2K native lease release truth table and STOP ownership ordering
+        shell: bash
+        run: sh scripts/test-v20-phase2k-host.sh
+
+      - name: Phase 3A sealed Signal Doctor evaluator (host only)
+        shell: bash
+        run: sh scripts/test-v20-phase3a-doctor-host.sh
+
+      - name: Phase 3B Doctor reference and fail-closed panel policy (host only)
+        shell: bash
+        run: sh scripts/test-v20-phase3b-doctor-panel-host.sh
+
+      - name: Phase 3C Pulse native publication STOP gate (host policy only)
+        shell: bash
+        run: sh scripts/test-v20-phase3c-pulse-host.sh
+
+      - name: Phase 3D-A Frequency LOW/HIGH native admission policy (host only)
+        shell: bash
+        run: sh scripts/test-v20-phase3d-frequency-host.sh
+
+      - name: Phase 3D-B Frequency native START/STOP wiring audit (host only)
+        shell: bash
+        run: sh scripts/test-v20-phase3d-frequency-wiring-host.sh
+
+      - name: v2.0 Ultimate sealed dashboard projection and source safety
+        shell: bash
+        run: sh scripts/test-v20-dashboard-host.sh
+
+      - name: v2.0 Ultimate bounded advanced session statistics
+        shell: bash
+        run: sh scripts/test-v20-signal-stats-host.sh
+
+      - name: v2.0 Ultimate Signal Doctor explanation and safe next checks
+        shell: bash
+        run: sh scripts/test-v20-doctor-advice-host.sh
+
+      - name: Ultimate source-linked five-tile navigation geometry
+        shell: bash
+        run: sh scripts/test-v20-ultimate-root-grid-host.sh
+
+      - name: Ultimate all-selection real-menu renderer geometry
+        shell: bash
+        run: sh scripts/test-v20-ultimate-menu-renderer-host.sh
+
+      - name: App-wide source anatomy and footer consistency audit
+        shell: bash
+        run: python3 scripts/test-v20-ultimate-ui-contract.py
+
+      - name: New sealed Scope timing evidence and suspected-gap safeguards
+        shell: bash
+        run: sh scripts/test-v20-scope-diagnostics-host.sh
+
+      - name: Owned GPIO sampled-level witness fail-closed gates
+        shell: bash
+        run: sh scripts/test-v20-level-witness-host.sh
+
+      - name: Pulse resume must not claim LIVE after denied native owner
+        shell: bash
+        run: sh scripts/test-v20-pulse-ui-state-host.sh
+
+      - name: Frequency LOW/HIGH must not claim LIVE without E11 owner
+        shell: bash
+        run: sh scripts/test-v20-frequency-ui-state-host.sh

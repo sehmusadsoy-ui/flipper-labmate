@@ -22,8 +22,17 @@
 #include "labmate_scope_display.h"
 #include "labmate_scope_pair.h"
 #include "labmate_scope_tolerance.h"
+#include "labmate_low_mailbox_audit.h"
+#include "labmate_high_gate_audit.h"
+#include "labmate_pulse_pair_audit.h"
+#include "labmate_doctor_panel.h"
+#include "labmate_evidence_session.h"
+#include "labmate_doctor_frequency_policy.h"
+#include "labmate_signal_stats.h"
+#include "labmate_scope_diagnostics.h"
+#include "labmate_level_witness.h"
 
-#define LABMATE_VERSION_TEXT "v1.9DEV"
+#define LABMATE_VERSION_TEXT "v2.0DEV"
 /* Shared menu/pin counts: UI and input handling must agree. */
 #define MENU_COUNT LabMateToolCount
 #define GPIO_COUNT LABMATE_MONITOR_PIN_COUNT
@@ -54,6 +63,8 @@ typedef enum {
     LabMateScreenOneWire, /* append only; previous screen IDs preserved */
     LabMateScreenI2c, /* real I2C only on a firmware with bounded HAL API */
     LabMateScreenScope, /* v1.9 append only; historical screen values preserved */
+    LabMateScreenDoctor, /* v2.0 append only; never change prior screen IDs */
+    LabMateScreenDashboard, /* appended, no legacy screen renumbering */
 } LabMateScreen;
 
 typedef enum {
@@ -97,6 +108,7 @@ typedef struct {
 
     bool gpio_state;
     bool gpio_previous_state;
+    LabMateLevelWitness gpio_level_witness;
     uint32_t edges;
 
     /* Frequency meter */
@@ -116,12 +128,21 @@ typedef struct {
     volatile uint32_t frequency_irq_last_tick;
     volatile uint32_t frequency_irq_edges;
     volatile bool frequency_irq_new_period;
+    /* Phase 2G: ISR-published periods and overwritten one-slot messages.
+     * For host provenance audits only; not yet wired to Dashboard VALID.
+     * Read together with period+pending under a real IRQ critical section.
+     */
+    LabMateLowMailboxAudit frequency_low_mailbox_audit;
+    /* App-thread copy of one coherent IRQ period + audit observation. */
+    LabMateLowMailboxObservation frequency_low_last_observation;
     volatile uint32_t frequency_irq_cycle_accumulator;
     volatile uint8_t frequency_irq_accumulated_periods;
     bool frequency_irq_active;
 
     /* High-frequency hardware counter on PB3 / TIM2_CH2 */
     bool frequency_hw_active;
+    /* Source-specific successful TIM2 counter/time gates, not 100-ms polls. */
+    LabMateHighGateAudit frequency_high_gate_audit;
     /* True only after an input edge has been observed in this gate. */
     bool frequency_hw_gate_started;
     /* First sample of the adaptive frequency-estimation gate. */
@@ -142,6 +163,10 @@ typedef struct {
     uint32_t counter_start_tick; /* tick at beginning of current RUN segment */
     uint64_t counter_elapsed_ticks; /* completed RUN segments; STOP time excluded */
     uint32_t counter_elapsed_seconds;
+    /* Bound each TIM2 RUN to one actual release-backed dashboard sample. */
+    uint32_t counter_run_generation;
+    uint32_t counter_run_tick_hz;
+    uint64_t counter_run_start_total;
 
     /* Button Analyzer: ISR raw edges + app-thread debounced snapshot.
      * PC1 EXTI1 with internal pull-up, LOW = pressed contact.
@@ -159,6 +184,10 @@ typedef struct {
 
     /* Pulse analyzer: edge timestamps captured in GPIO IRQ. */
     bool pulse_irq_active;
+    /* ISR-proven paired phase-update epochs; no Dashboard publication yet. */
+    LabMatePulsePairAudit pulse_pair_audit;
+    /* Copied together while the IRQ is masked; not a live capture lease. */
+    LabMatePulsePairObservation pulse_pair_last_observation;
     volatile bool pulse_irq_level;
     volatile bool pulse_irq_seen;
     volatile bool pulse_irq_high_valid;
@@ -237,6 +266,9 @@ typedef struct {
     uint32_t logger_start_tick;
     uint32_t logger_last_tick;
     uint32_t logger_rows;
+    uint32_t logger_session_generation; /* only successful CSV opens */
+    uint8_t logger_session_pin; /* copied from genuinely armed native source */
+    LabMateLoggerSource logger_session_source;
     char logger_path[96];
     Storage* logger_storage;
     File* logger_file;
@@ -275,9 +307,11 @@ typedef struct {
      * sessions. NO stored raw ISR pointers and NO SD profile/CSV writes. */
     LabMateScopePair scope_pair;
     LabMateScopeMetrics scope_last_metrics;
+    LabMateScopeDiagnostics scope_diagnostics;
     uint32_t scope_capture_generation;
     uint32_t scope_last_generation;
     uint32_t scope_capture_hz;
+    uint32_t scope_capture_start_ms; /* app-thread observed true START */
     bool scope_last_valid;
     bool scope_clock_fault;
     bool scope_show_compare;
@@ -285,6 +319,28 @@ typedef struct {
     uint8_t scope_compare_page; /* 0 summary, 1 A timing, 2 B timing */
     bool scope_show_reference; /* read-only named reference result page */
     LabMateScopeReferencePreset scope_reference_preset;
+    /* Doctor: app-thread reference/UI state, no live HAL or IRQ access. */
+    LabMateDoctorPanel doctor_panel;
+    bool doctor_show_advice;
+    LabMateDashboardStore doctor_store;
+    LabMateSignalStats signal_stats;
+    uint8_t dashboard_source;
+    bool dashboard_details;
+    bool dashboard_evidence;
+    /* Phase3C: app-thread Pulse IRQ evidence lineage, not a live UI sample. */
+    LabMateEvidenceSession doctor_pulse_session;
+    uint32_t doctor_pulse_start_tick;
+    uint32_t doctor_pulse_tick_hz;
+    /* Last genuine fresh native paired publication observed by app polling.
+     * Increment is from IRQ audit, timestamp is NOT inferred from redraw.
+     */
+    uint32_t doctor_pulse_seen_pairs;
+    uint32_t doctor_pulse_last_pair_poll_tick;
+    /* Independent Frequency LOW/PC1 or HIGH/PB3 capture epoch. */
+    LabMateEvidenceSession doctor_frequency_session;
+    LabMateDoctorFrequencyCandidate doctor_frequency_last;
+    uint32_t doctor_frequency_seen_count;
+    bool doctor_frequency_poisoned;
 
     LabMateUart uart; /* USART external GPIO 13/14, no TIM1/TIM2 ownership */
     LabMateCommOwner comm_owner; /* local exclusive I2C/1Wire sessions */

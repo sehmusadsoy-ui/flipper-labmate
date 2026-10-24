@@ -3,6 +3,7 @@
 #include "labmate_capture_exti.h"
 #include "labmate_frequency_tim2.h"
 #include "labmate_resource_policy.h"
+#include "labmate_doctor_frequency_bridge.h"
 #include <furi_hal.h>
 #include <furi_hal_resources.h>
 #include <stm32wbxx_ll_exti.h>
@@ -55,6 +56,9 @@ static void frequency_gpio_callback(void* context) {
             app->frequency_irq_accumulated_periods++;
 
             if(app->frequency_irq_accumulated_periods >= 32U) {
+                /* Note any overwritten one-slot result before replacing it. */
+                labmate_low_mailbox_publish(
+                    &app->frequency_low_mailbox_audit, app->frequency_irq_new_period);
                 app->frequency_irq_period_cycles =
                     (app->frequency_irq_cycle_accumulator +
                      16U) /
@@ -69,6 +73,9 @@ static void frequency_gpio_callback(void* context) {
             app->frequency_irq_cycle_accumulator = 0;
             app->frequency_irq_accumulated_periods = 0;
 
+            /* This path also produces one completed ISR period publication. */
+            labmate_low_mailbox_publish(
+                &app->frequency_low_mailbox_audit, app->frequency_irq_new_period);
             app->frequency_irq_period_cycles =
                 period_cycles;
 
@@ -88,14 +95,16 @@ void labmate_frequency_high_stop(LabMateApp* app) {
     }
 
     labmate_frequency_tim2_shutdown();
-    if(labmate_frequency_tim2_lease_pending()) {
+    const bool lease_pending = labmate_frequency_tim2_lease_pending();
+    if(lease_pending) {
         app->capture_release_fault = true;
         app->capture_blocked = true;
     }
 
     app->frequency_hw_active = false;
     app->frequency_hw_gate_started = false;
-    if(app->capture_owner == LabMateCaptureFrequencyHigh) {
+    /* A failed return must not advertise an unowned PB3/TIM2 lease. */
+    if(!lease_pending && app->capture_owner == LabMateCaptureFrequencyHigh) {
         app->capture_owner = labmate_capture_owner_after_stop(
             app->capture_owner, LabMateCaptureFrequencyHigh);
         app->capture_pin_index = GPIO_COUNT;
@@ -122,6 +131,11 @@ void labmate_frequency_high_start(LabMateApp* app) {
         return;
     }
 
+    /* Native TIM2 configure succeeded and the counter is still stopped:
+     * a new, independently owned measurement epoch begins here.
+     * Never reset an existing audit when a resource request is denied.
+     */
+    labmate_high_gate_audit_reset(&app->frequency_high_gate_audit);
     app->frequency_hw_last_count = 0;
     app->frequency_hw_last_poll_count = 0;
     app->frequency_hw_last_cycle = DWT->CYCCNT;
@@ -132,6 +146,7 @@ void labmate_frequency_high_start(LabMateApp* app) {
     app->capture_owner = LabMateCaptureFrequencyHigh;
 
     labmate_frequency_tim2_enable();
+    labmate_doctor_frequency_started(app);
 }
 void labmate_frequency_low_stop(LabMateApp* app) {
     if(!app->frequency_irq_active) return;
@@ -148,14 +163,15 @@ void labmate_frequency_low_stop(LabMateApp* app) {
     furi_hal_gpio_init_simple(pin, GpioModeAnalog);
 
     app->frequency_irq_active = false;
-    if(app->capture_owner == LabMateCaptureFrequencyLow) {
-        app->capture_owner = labmate_capture_owner_after_stop(
-            app->capture_owner, LabMateCaptureFrequencyLow);
-        app->capture_pin_index = GPIO_COUNT;
-    }
     if(furi_hal_resource_lease_release(
            labmate_frequency_pc1_lease, FURI_HAL_LEASE_IRQ_PC1)) {
         labmate_frequency_pc1_lease = 0U;
+        /* Only the firmware's positive release result clears ownership. */
+        if(app->capture_owner == LabMateCaptureFrequencyLow) {
+            app->capture_owner = labmate_capture_owner_after_stop(
+                app->capture_owner, LabMateCaptureFrequencyLow);
+            app->capture_pin_index = GPIO_COUNT;
+        }
     } else {
         /* Never reuse a released pin with an unresolved firmware handle. */
         app->capture_release_fault = true;
@@ -164,6 +180,15 @@ void labmate_frequency_low_stop(LabMateApp* app) {
 #else
     /* A mismatched stock SDK can never have started this DEV capture. */
     app->capture_blocked = true;
+#endif
+}
+
+bool labmate_frequency_low_lease_pending(void) {
+#if defined(FURI_HAL_RESOURCE_LEASE_API_V1) && defined(FURI_HAL_GPIO_HAS_TRY_ADD_INT_CALLBACK)
+    return labmate_frequency_pc1_lease != 0U;
+#else
+    /* Unsupported SDK could not have safely claimed this lease. */
+    return false;
 #endif
 }
 
@@ -214,10 +239,14 @@ void labmate_frequency_low_start(LabMateApp* app) {
     app->frequency_irq_last_tick = 0U;
     app->frequency_irq_edges = 0U;
     app->frequency_irq_new_period = false;
+    /* Callback is disabled and lease acquired: a genuine new capture epoch. */
+    labmate_low_mailbox_reset(&app->frequency_low_mailbox_audit);
+    app->frequency_low_last_observation = (LabMateLowMailboxObservation){0};
     app->capture_pin_index = app->gpio_index;
     app->capture_owner = LabMateCaptureFrequencyLow;
     app->frequency_irq_active = true;
     furi_hal_gpio_enable_int_callback(pin);
+    labmate_doctor_frequency_started(app);
 #else
     app->capture_blocked = true; /* fail closed: no mismatched HAL fallback */
 #endif

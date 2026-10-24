@@ -19,6 +19,9 @@
 #include "labmate_input.h"
 #include "labmate_deferred.h"
 #include "labmate_navigation.h"
+#include "labmate_menu_grid.h"
+#include "labmate_pulse_ui_state.h"
+#include "labmate_frequency_ui_state.h"
 #include "labmate_history.h"
 #include "labmate_view.h"
 
@@ -33,7 +36,15 @@ void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                 const uint8_t count = app->menu_in_group ?
                     labmate_nav_group_size(app->menu_group) :
                     (uint8_t)LabMateGroupCount;
-                if(event.key == InputKeyUp) {
+                if(!app->menu_in_group &&
+                   (event.key == InputKeyUp || event.key == InputKeyDown ||
+                    event.key == InputKeyLeft || event.key == InputKeyRight)) {
+                    const int8_t dx = event.key == InputKeyLeft ? -1 :
+                                      event.key == InputKeyRight ? 1 : 0;
+                    const int8_t dy = event.key == InputKeyUp ? -1 :
+                                      event.key == InputKeyDown ? 1 : 0;
+                    app->selected=labmate_menu_root_move(app->selected,dx,dy);
+                } else if(event.key == InputKeyUp) {
                     app->selected = labmate_nav_wrap(app->selected, count, -1);
                 } else if(event.key == InputKeyDown) {
                     app->selected = labmate_nav_wrap(app->selected, count, 1);
@@ -54,6 +65,9 @@ void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                         break;
 
                     case LabMateToolFrequency:
+                        /* New capture intent invalidates earlier Doctor evidence. */
+                        labmate_dashboard_store_clear_source(
+                            &app->doctor_store, LabMateSnapshotFrequency);
                         app->screen =
                             LabMateScreenFrequency;
                         app->hold = false;
@@ -68,9 +82,17 @@ void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                         } else {
                             labmate_frequency_low_start(app);
                         }
+                        app->hold = !labmate_frequency_ui_live(
+                            app->gpio_index == 4U, app->frequency_hw_active,
+                            app->frequency_irq_active,
+                            app->capture_owner == (app->gpio_index == 4U ?
+                                LabMateCaptureFrequencyHigh : LabMateCaptureFrequencyLow),
+                            app->capture_blocked, app->capture_release_fault);
                         break;
 
                     case LabMateToolPulse:
+                        labmate_dashboard_store_clear_source(
+                            &app->doctor_store, LabMateSnapshotPulse);
                         app->screen =
                             LabMateScreenPulse;
                         app->hold = false;
@@ -80,6 +102,15 @@ void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                         pulse_stats_reset(app);
                         measurement_reset(app);
                         labmate_pulse_capture_start(app);
+                        /* Entering a tool is not proof that E11 granted
+                         * its IRQ and pin lease. An unsuccessful start must
+                         * not be represented as a live instrument.
+                         */
+                        app->hold = !labmate_pulse_ui_live(
+                            app->pulse_irq_active,
+                            app->capture_owner == LabMateCapturePulse,
+                            app->capture_blocked,
+                            app->capture_release_fault);
                         break;
 
                     case LabMateToolButton:
@@ -131,6 +162,17 @@ void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                     case LabMateToolUart:
                         app->screen = LabMateScreenUart;
                         labmate_uart_reenter(&app->uart);
+                        break;
+
+                    case LabMateToolDashboard:
+                        app->screen = LabMateScreenDashboard;
+                        app->dashboard_source = 0U;
+                        app->dashboard_details = false;
+                        break;
+
+                    case LabMateToolDoctor:
+                        /* No GPIO, IRQ, capture start, timer or storage access. */
+                        app->screen = LabMateScreenDoctor;
                         break;
 
                     case LabMateToolScope:

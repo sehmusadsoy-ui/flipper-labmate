@@ -17,6 +17,9 @@
 #include "labmate_logger_storage.h"
 #include "labmate_scope_bridge.h"
 #include "labmate_scope_exit_guard.h"
+#include "labmate_capture_release_gate.h"
+#include "labmate_pulse_ui_state.h"
+#include "labmate_frequency_ui_state.h"
 
 /* Pulse Analyzer uses GPIO edge interrupts, not polling.
  * STM32 EXTI lines are shared across GPIO ports, and the firmware already
@@ -65,17 +68,26 @@ void labmate_capture_stop_all(LabMateApp* app) {
     labmate_pulse_capture_stop(app);
     labmate_event_counter_stop(app);
     labmate_button_capture_stop(app);
-    /* A failed/stale stop must not advertise a free capture owner. */
-    if(!app->counter_active && !app->button_active &&
-       labmate_scope_native_stop_confirmed(
-           &app->scope_native, app->capture_owner) &&
-       labmate_capture_all_stopped(
-           app->frequency_irq_active, app->frequency_hw_active,
-           app->pulse_irq_active)) {
+    /* A disabled callback is not proof that firmware has released its
+     * lease. Keep any unresolved native token/owner fail-closed. */
+    const LabMateCaptureReleaseEvidence release = {
+        .scope_stop_confirmed =
+            labmate_scope_native_stop_confirmed(&app->scope_native, app->capture_owner),
+        .frequency_low_active = app->frequency_irq_active,
+        .frequency_high_active = app->frequency_hw_active,
+        .pulse_active = app->pulse_irq_active,
+        .counter_active = app->counter_active,
+        .button_active = app->button_active,
+        .frequency_low_lease_pending = labmate_frequency_low_lease_pending(),
+        .frequency_high_lease_pending = labmate_frequency_tim2_lease_pending(),
+        .pulse_lease_pending = labmate_pulse_lease_pending(),
+        .button_lease_pending = labmate_button_lease_pending(),
+        .release_fault = app->capture_release_fault,
+    };
+    if(labmate_capture_release_proven(&release)) {
         app->capture_owner = LabMateCaptureNone;
         app->capture_pin_index = GPIO_COUNT;
-        /* Never erase an unresolved lease failure during generic STOP. */
-        app->capture_blocked = app->capture_release_fault;
+        app->capture_blocked = false;
     } else {
         app->capture_blocked = true;
     }
@@ -86,6 +98,15 @@ void labmate_capture_stop_all(LabMateApp* app) {
 void labmate_gpio_activate(LabMateApp* app) {
     labmate_monitor_gpio_activate(app);
     measurement_reset(app);
+    /* Sampled-level evidence starts ONLY after actual E11 pin lease and a
+     * valid first read. No additional GPIO consumers are activated here.
+     */
+    if(app->screen == LabMateScreenGpio && app->monitor_active &&
+       !app->monitor_blocked && !app->monitor_release_fault)
+        (void)labmate_level_begin(
+            &app->gpio_level_witness,app->gpio_index,app->gpio_state,
+            furi_get_tick(),furi_kernel_get_tick_frequency());
+    else labmate_level_invalidate(&app->gpio_level_witness);
 }
 
 void labmate_gpio_change(
@@ -122,6 +143,12 @@ void labmate_gpio_change(
         } else {
             labmate_frequency_low_start(app);
         }
+        app->hold = !labmate_frequency_ui_live(
+            app->gpio_index == 4U, app->frequency_hw_active,
+            app->frequency_irq_active,
+            app->capture_owner == (app->gpio_index == 4U ?
+                LabMateCaptureFrequencyHigh : LabMateCaptureFrequencyLow),
+            app->capture_blocked, app->capture_release_fault);
 
         return;
     }
@@ -139,6 +166,10 @@ void labmate_gpio_change(
         pulse_stats_reset(app);
         measurement_reset(app);
         labmate_pulse_capture_start(app);
+        app->hold = !labmate_pulse_ui_live(
+            app->pulse_irq_active,
+            app->capture_owner == LabMateCapturePulse,
+            app->capture_blocked, app->capture_release_fault);
         return;
     }
 

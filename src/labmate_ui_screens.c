@@ -1,5 +1,7 @@
 #include "labmate_ui_screens.h"
 #include "labmate_ui_primitives.h"
+#include "labmate_menu_grid.h"
+#include "labmate_ui_status.h"
 #include "labmate_counter_math.h"
 #include "labmate_generator.h"
 
@@ -95,7 +97,7 @@ void draw_profiles(Canvas* canvas, LabMateApp* app) {
 
     if(app->profile_busy) {
         canvas_draw_line(canvas, 0, 52, 127, 52);
-        canvas_draw_str(canvas, 7, 62, "SD BUSY - PLEASE WAIT");
+        canvas_draw_str(canvas, 7, 62, "SD BUSY - WAIT");
     } else {
         /* Even under PWM ON, LR always names the operation and OK says
          * BLOCK. No hidden route to SAVE or DELETE under live PWM. */
@@ -125,7 +127,7 @@ static const LabMateHelpPage labmate_help[LabMateToolCount] = {
     },
     [LabMateToolPulse] = {
         "PULSE ANALYZER", "PC1 edges: rise/fall",
-        "HIGH LOW PERIOD DUTY", "^ STATS  OK HOLD",
+        "STATS: MIN / MAX", "UP STATS OK HOLD",
     },
     [LabMateToolGenerator] = {
         "PWM STUDIO", "PA7 TIM1 PWM / 3.3V",
@@ -140,7 +142,7 @@ static const LabMateHelpPage labmate_help[LabMateToolCount] = {
         "Open or delete one", "UD FILE LR MODE OK",
     },
     [LabMateToolAbout] = {
-        "ABOUT / GUIDE", "17 pages, 15 tools",
+        "ABOUT / GUIDE", "19 pages, 17 tools",
         "3.3V GPIO only", "<> PAGE  BK EXIT",
     },
     [LabMateToolProfiles] = {
@@ -175,6 +177,14 @@ static const LabMateHelpPage labmate_help[LabMateToolCount] = {
         "LOGIC SCOPE", "PC1 3.3V DIGITAL",
         "Measured edges only", "OK RUN/STOP BK EXIT",
     },
+    [LabMateToolDoctor] = {
+        "SIGNAL DOCTOR", "SEALED CAPTURE ONLY",
+        "Ref by user, no guesses", "OK INFO or REF STEP",
+    },
+    [LabMateToolDashboard] = {
+        "DASHBOARD", "FREQ/PULSE/SCOPE",
+        "COUNT/LOGGER REVIEW", "UD SOURCE OK STATS",
+    },
 };
 
 void draw_about(Canvas* canvas, LabMateApp* app) {
@@ -187,24 +197,23 @@ void draw_about(Canvas* canvas, LabMateApp* app) {
     ui_badge(canvas, 91, 1, 35, index, false);
     canvas_set_font(canvas, FontSecondary);
     if(page == 0U) {
-        canvas_draw_str(canvas, 3, 23, "LabMate " LABMATE_VERSION_TEXT);
-        canvas_draw_str(canvas, 3, 33, "SauronLAB / Sehmus");
-        canvas_draw_str(canvas, 3, 43, "15 tool guides");
-        canvas_draw_str(canvas, 3, 51, "3.3V GPIO ONLY");
+        canvas_draw_str(canvas, 3, 23, "LabMate Ultimate");
+        canvas_draw_str(canvas, 3, 33, LABMATE_VERSION_TEXT " / E11");
+        canvas_draw_str(canvas, 3, 42, "17 TOOL GUIDES");
+        canvas_draw_str(canvas, 3, 50, "3.3V GPIO ONLY");
     } else if(page == 1U) {
         canvas_draw_str(canvas, 3, 23, "Source / releases:");
         canvas_draw_str(canvas, 3, 33, "github.com/");
         canvas_draw_str(canvas, 3, 43, "sehmusadsoy-ui/");
-        canvas_draw_str(canvas, 3, 51, "flipper-labmate");
+        canvas_draw_str(canvas, 3, 50, "flipper-labmate");
     } else {
         const LabMateHelpPage* help = &labmate_help[page - 2U];
         canvas_draw_str(canvas, 3, 23, help->purpose);
         canvas_draw_str(canvas, 3, 33, help->input);
         canvas_draw_str(canvas, 3, 43, help->method);
-        canvas_draw_str(canvas, 3, 51, help->control);
+        canvas_draw_str(canvas, 3, 50, help->control);
     }
-    canvas_draw_line(canvas, 0, 53, 127, 53);
-    canvas_draw_str(canvas, 3, 62, "<> PAGE   BK MENU");
+    ui_footer_pair(canvas,"<>","PAGE","BACK","MENU");
 }
 
 void draw_history(Canvas* canvas, LabMateApp* app) {
@@ -314,9 +323,10 @@ void draw_history_detail(Canvas* canvas, LabMateApp* app) {
             canvas_draw_str_aligned(canvas, 125, 51, AlignRight, AlignBottom, value);
         }
     }
-    canvas_draw_line(canvas, 0, 52, 127, 52);
-    canvas_draw_str(canvas, 6, 62, "BACK: LIST");
-    canvas_draw_str_aligned(canvas, 125, 62, AlignRight, AlignBottom, "READ ONLY");
+    /* Shared action band with a passive read-only notice, never a fake
+     * second button. History Detail has no writable action.
+     */
+    ui_footer_info(canvas, "BACK", "LIST", "READ ONLY");
 }
 
 /* Step 2: read-only renderers migrated verbatim from labmate.c. */
@@ -334,50 +344,78 @@ const char* const labmate_gpio_names[GPIO_COUNT] = {
 };
 
 void draw_menu(Canvas* canvas, LabMateApp* app) {
+    if(!canvas || !app) return;
     const bool inside = app->menu_in_group;
     const uint8_t count = inside ? labmate_nav_group_size(app->menu_group) :
-                                  (uint8_t)LabMateGroupCount;
+                                   (uint8_t)LabMateGroupCount;
     const uint8_t selected = app->selected < count ? app->selected : 0U;
 
-    /* The root lists categories; each child group lists its original tools.
-     * No hardware state changes when navigating between menu levels.
-     */
-    canvas_set_font(canvas, FontPrimary);
-    canvas_draw_str(canvas, 2, 10,
-                    inside ? labmate_nav_group_title(app->menu_group) : "LABMATE");
-    ui_badge(canvas, 70, 1, 56, LABMATE_VERSION_TEXT, false);
-    canvas_draw_line(canvas, 0, 13, 127, 13);
-
-    /* In three-item groups, always keep every row visible (no blank slot). */
-    const uint8_t first = labmate_nav_first_visible(selected, count, 3U);
-    for(uint8_t row = 0U; row < 3U && (uint8_t)(first + row) < count; ++row) {
-        const uint8_t index = (uint8_t)(first + row);
-        const uint8_t y = (uint8_t)(25U + row * 12U);
-        const uint8_t tool = inside ?
-            labmate_nav_tool_at(app->menu_group, index) :
-            labmate_nav_group_icon(index);
-        const char* title = inside ?
-            labmate_nav_tool_title(tool) : labmate_nav_group_title(index);
-
-        if(index == selected) {
-            canvas_draw_box(canvas, 1, y - 10, 126, 12);
-            canvas_set_color(canvas, ColorWhite);
-        }
-        ui_draw_menu_icon(canvas, tool, 4, y - 9);
+    ui_draw_header(canvas,
+        inside ? labmate_nav_group_title(app->menu_group) : "ULTIMATE");
+    if(!inside) {
+        /* Root identity is deliberately plain secondary text: a large
+         * framed version badge crowded the 128px header on real hardware.
+         */
         canvas_set_font(canvas, FontSecondary);
-        canvas_draw_str(canvas, 20, y, title);
-        canvas_draw_str(canvas, 117, y, ">");
-        if(index == selected) canvas_set_color(canvas, ColorBlack);
+        canvas_draw_str(canvas, 79, 9, LABMATE_VERSION_TEXT);
+    } else {
+        char position[9];
+        (void)snprintf(position, sizeof(position), "%u/%u",
+                       (unsigned)(selected + 1U), (unsigned)count);
+        ui_badge(canvas, 95, 1, 31, position, false);
     }
 
-    canvas_draw_line(canvas, 0, 52, 127, 52);
-    if(inside) {
-        ui_key(canvas, 2, "BK", "ROOT");
-        ui_key(canvas, 70, "OK", "OPEN");
-    } else {
-        ui_key(canvas, 2, "^v", "MOVE");
-        ui_key(canvas, 70, "OK", "OPEN");
+    if(!inside) {
+        /* Five separated, text-first 60x10 cards in two columns.
+         * Real-device QA showed 12px borders touching and 13px icons
+         * colliding visually with seven-character category names.
+         * No icons here: high contrast and whitespace take precedence.
+         */
+        for(uint8_t i=0U; i<LabMateGroupCount; ++i) {
+            const uint8_t x=labmate_menu_tile_x(i);
+            const uint8_t y=labmate_menu_tile_y(i);
+            const bool focus=i==selected;
+            if(focus) {
+                canvas_draw_box(canvas, x, y, LabMateMenuTileWidth,
+                                LabMateMenuTileHeight);
+                canvas_set_color(canvas, ColorWhite);
+            } else {
+                canvas_draw_frame(canvas, x, y, LabMateMenuTileWidth,
+                                  LabMateMenuTileHeight);
+            }
+            canvas_set_font(canvas, FontSecondary);
+            canvas_draw_str(canvas, x+5U, y+8U, labmate_nav_group_title(i));
+            if(focus) canvas_set_color(canvas, ColorBlack);
+        }
+        /* Three discoverable physical controls: the old paired footer
+         * omitted OK and made entering a category hard to discover.
+         */
+        ui_footer_triple(canvas, "<>COL", "^vROW", "OK GO");
+        return;
     }
+
+    /* Professional tool list: stable ID, icon, name and 1-based position.
+     * Three 12px rows and a visible scroll position, no clipped text.
+     */
+    const uint8_t first = labmate_nav_first_visible(selected, count, 3U);
+    for(uint8_t row=0U; row<3U && (uint8_t)(first+row)<count; ++row) {
+        const uint8_t i=(uint8_t)(first+row);
+        const uint8_t y=(uint8_t)(25U+row*12U);
+        const uint8_t tool=labmate_nav_tool_at(app->menu_group,i);
+        if(i==selected) {
+            canvas_draw_box(canvas,1,y-10U,126,12);
+            canvas_set_color(canvas,ColorWhite);
+        }
+        ui_draw_menu_icon(canvas,tool,4U,(uint8_t)(y-9U));
+        canvas_set_font(canvas,FontSecondary);
+        canvas_draw_str(canvas,20U,y,labmate_nav_tool_title(tool));
+        /* Right-edge disclosure mark has its own 6px cell. It must not
+         * overlap 16-char legacy names such as "Threshold Alerts".
+         */
+        canvas_draw_str(canvas,117U,y,">");
+        if(i==selected) canvas_set_color(canvas,ColorBlack);
+    }
+    ui_footer_pair(canvas, "BK", "ROOT", "OK", "OPEN");
 }
 
 void draw_gpio(Canvas* canvas, LabMateApp* app) {
@@ -388,9 +426,8 @@ void draw_gpio(Canvas* canvas, LabMateApp* app) {
     ui_draw_header(canvas, "GPIO");
     ui_badge(canvas, 35, 1, 34, labmate_gpio_names[app->gpio_index], false);
     ui_badge(canvas, 91, 1, 35,
-             app->monitor_release_fault ? "ERR" :
-                 app->monitor_blocked ? "BUSY" :
-                     app->hold ? "HOLD" : "LIVE",
+             labmate_ui_status_label(labmate_ui_gpio_monitor_status(
+                 app->monitor_release_fault, app->monitor_blocked, app->hold)),
              !app->hold && !app->monitor_blocked);
 
     /* Separate the live logic level from the transition counter. */
@@ -431,9 +468,8 @@ void draw_gpio(Canvas* canvas, LabMateApp* app) {
      */
     canvas_draw_str(canvas, 70, 49, app->generator_running ? "PA7 BUSY" : "POLL");
 
-    canvas_draw_line(canvas, 0, 52, 127, 52);
-    ui_key(canvas, 2, "<>", "PIN");
-    ui_key(canvas, 70, "OK", app->hold ? "LIVE" : "HOLD");
+    /* Use the shared two-column footer to keep tool key labels aligned. */
+    ui_footer_pair(canvas, "<>", "PIN", "OK", app->hold ? "LIVE" : "HOLD");
 }
 
 /* Compact MIN/MAX display in two fixed-width cells.
@@ -500,17 +536,16 @@ void draw_frequency(Canvas* canvas, LabMateApp* app) {
     char max_value[20];
     const bool high_mode = app->gpio_index == 4U;
 
-    /* Compact status bar, matching the Pulse Analyzer layout. */
-    canvas_set_font(canvas, FontPrimary);
-    canvas_draw_str(canvas, 2, 10, "FREQ");
+    /* Shared v2.0 instrument chrome; electrical measurements unchanged. */
+    ui_draw_header(canvas, "FREQ");
     ui_badge(canvas, 34, 1, 55, high_mode ? "HIGH PB3" : "LOW PC1", false);
     ui_badge(canvas, 91, 1, 35,
+             app->capture_blocked || app->capture_release_fault ? "ERR" :
              app->threshold.armed && app->threshold.latched &&
                      app->threshold.source == LabMateAlertFrequency ?
-                 "ALRT" : app->capture_blocked ? "ERR" :
-                 (app->hold ? "HOLD" : "LIVE"),
+                 "ALRT" : (app->hold ? "HOLD" : "LIVE"),
              !app->hold);
-    canvas_draw_line(canvas, 0, 13, 127, 13);
+    /* Divider owned by shared ui_draw_header(). */
 
     if(app->frequency_valid) {
         uint32_t hz = app->frequency_millihz / 1000U;
@@ -553,12 +588,8 @@ void draw_frequency(Canvas* canvas, LabMateApp* app) {
     /* Right-align the value to leave a readable gap after MAX without clipping. */
     canvas_draw_str_aligned(canvas, 127, 49, AlignRight, AlignBottom, max_value);
 
-    /* Keep the three action hints separate at 128x64 resolution. */
-    canvas_draw_line(canvas, 0, 52, 127, 52);
-    canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 2, 61, "<> MODE");
-    canvas_draw_str(canvas, 49, 61, app->hold ? "OK LIVE" : "OK HOLD");
-    canvas_draw_str(canvas, 102, 61, "^RST");
+    /* Three identical action slots across measurement main screens. */
+    ui_footer_triple(canvas, "<> MODE", app->hold ? "OK LIVE" : "OK HOLD", "^RST");
 }
 
 /* Threshold configuration is read-only from the Canvas callback.
@@ -743,15 +774,14 @@ void draw_generator(Canvas* canvas, LabMateApp* app) {
     char step[24];
     const uint32_t freq = labmate_generator_frequency(app);
 
-    canvas_set_font(canvas, FontPrimary);
-    canvas_draw_str(canvas, 2, 10, "PWM");
+    ui_draw_header(canvas, "PWM");
     ui_badge(canvas, 34, 1, 55, "OUT PA7", false);
     ui_badge(canvas, 91, 1, 35,
              app->generator_release_fault ? "ERR" :
                  app->generator_blocked ? "BUSY" :
                      app->generator_running ? "RUN" : "STOP",
              app->generator_running && !app->generator_blocked);
-    canvas_draw_line(canvas, 0, 13, 127, 13);
+    /* Divider owned by shared ui_draw_header(). */
 
     if(freq >= 1000U && (freq % 1000U) == 0U) {
         snprintf(value, sizeof(value), "%lu kHz", (unsigned long)(freq / 1000U));
@@ -850,37 +880,36 @@ static void draw_pulse_stats(Canvas* canvas, LabMateApp* app) {
                  (unsigned long)(app->pulse_max_duty_permille % 10U));
     }
 
+    /* Four compact MIN..MAX rows. Removing the old fifth TYPE header
+     * gives every 8px glyph its own unclipped baseline above the common
+     * inverse footer. Left column names source, left numeric is MIN and
+     * right numeric is MAX. The Pulse help guide documents this ordering.
+     */
     canvas_set_font(canvas, FontSecondary);
-    /* Fixed table cells leave room for seven-character values in each
-     * numeric column. The row baselines are >= 8px apart. */
-    canvas_draw_str(canvas, 3, 20, "TYPE");
-    canvas_draw_str(canvas, 42, 20, "MIN");
-    canvas_draw_str(canvas, 87, 20, "MAX");
-    canvas_draw_line(canvas, 0, 22, 127, 22);
+    canvas_draw_str(canvas, 3, 22, "HIGH");
+    canvas_draw_str(canvas, 40, 22, hi_min);
+    canvas_draw_str(canvas, 85, 22, hi_max);
 
-    canvas_draw_str(canvas, 3, 30, "HIGH");
-    canvas_draw_str(canvas, 40, 30, hi_min);
-    canvas_draw_str(canvas, 85, 30, hi_max);
+    canvas_draw_str(canvas, 3, 31, "LOW");
+    canvas_draw_str(canvas, 40, 31, lo_min);
+    canvas_draw_str(canvas, 85, 31, lo_max);
 
-    canvas_draw_str(canvas, 3, 38, "LOW");
-    canvas_draw_str(canvas, 40, 38, lo_min);
-    canvas_draw_str(canvas, 85, 38, lo_max);
+    canvas_draw_str(canvas, 3, 40, "PER");
+    canvas_draw_str(canvas, 40, 40, per_min);
+    canvas_draw_str(canvas, 85, 40, per_max);
 
-    canvas_draw_str(canvas, 3, 46, "PER");
-    canvas_draw_str(canvas, 40, 46, per_min);
-    canvas_draw_str(canvas, 85, 46, per_max);
+    canvas_draw_str(canvas, 3, 49, "DUTY");
+    canvas_draw_str(canvas, 40, 49, duty_min);
+    canvas_draw_str(canvas, 85, 49, duty_max);
 
-    canvas_draw_str(canvas, 3, 54, "DUTY");
-    canvas_draw_str(canvas, 40, 54, duty_min);
-    canvas_draw_str(canvas, 85, 54, duty_max);
-
-    /* Short footer labels fit across all 128 pixels; avoid text
-     * beyond x=127 and a baseline on the bottommost pixel. */
-    /* No rule over this footer: 8px letters start at y=55 while
-     * the last measurement row ends at y=54. */
-    canvas_draw_str(canvas, 3, 62, "vRST");
-    canvas_draw_str(canvas, 45, 62, app->hold ? "OK LIVE" : "OK HOLD");
-    canvas_draw_str(canvas, 95, 62, "^BACK");
+    /* DOWN resets only while LIVE. Never suggest RESET while HOLD
+     * suppresses it. UP returns to main, OK resumes LIVE; both use
+     * the shared inverted action band.
+     */
+    if(app->hold)
+        ui_footer_pair(canvas, "UP", "MAIN", "OK", "LIVE");
+    else
+        ui_footer_triple(canvas, "vRST", "OK HOLD", "^MAIN");
 }
 
 void draw_pulse(Canvas* canvas, LabMateApp* app) {
@@ -889,17 +918,16 @@ void draw_pulse(Canvas* canvas, LabMateApp* app) {
     char period[24] = "---";
     char duty[24] = "---";
 
-    /* Compact instrument header with input and capture state. */
-    canvas_set_font(canvas, FontPrimary);
-    canvas_draw_str(canvas, 2, 10, "PULSE");
+    /* Common instrument title/status chrome, including dense STATS mode. */
+    ui_draw_header(canvas, "PULSE");
     ui_badge(canvas, 56, 1, 33, labmate_gpio_names[app->gpio_index], false);
     ui_badge(canvas, 91, 1, 35,
+             app->capture_blocked || app->capture_release_fault ? "ERR" :
              app->threshold.armed && app->threshold.latched &&
                      app->threshold.source == LabMateAlertPulseDuty ?
-                 "ALRT" : app->capture_blocked ? "ERR" :
-                 (app->hold ? "HOLD" : "LIVE"),
+                 "ALRT" : (app->hold ? "HOLD" : "LIVE"),
              !app->hold);
-    canvas_draw_line(canvas, 0, 13, 127, 13);
+    /* Divider owned by shared ui_draw_header(). */
 
     if(app->pulse_stats_view) {
         draw_pulse_stats(canvas, app);
@@ -931,12 +959,8 @@ void draw_pulse(Canvas* canvas, LabMateApp* app) {
     pulse_ui_metric(canvas, 3, 41, 50, "PERIOD", period);
     pulse_ui_metric(canvas, 68, 41, 50, "DUTY", duty);
 
-    /* Navigation: short captions fit the actual 128px viewport. */
-    canvas_draw_line(canvas, 0, 52, 127, 52);
-    canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 3, 61, "<>PIN");
-    canvas_draw_str(canvas, 45, 61, app->hold ? "OK LIVE" : "OK HOLD");
-    canvas_draw_str(canvas, 96, 61, "^STAT");
+    /* Main and STATS both use the shared inverse three-key action band. */
+    ui_footer_triple(canvas, "<>PIN", app->hold ? "OK LIVE" : "OK HOLD", "^STAT");
 }
 
 /* Read-only Data Logger dashboard; all SD work stays in app loop. */
@@ -1023,7 +1047,7 @@ void draw_logger(Canvas* canvas, LabMateApp* app) {
 
     if(app->logger_busy) {
         canvas_draw_line(canvas, 0, 52, 127, 52);
-        canvas_draw_str(canvas, 7, 62, "SD BUSY - PLEASE WAIT");
+        canvas_draw_str(canvas, 7, 62, "SD BUSY - WAIT");
     } else if(app->logger_recording) {
         ui_footer_pair(canvas, "OK", "STOP", "BACK", "SAVE");
     } else {

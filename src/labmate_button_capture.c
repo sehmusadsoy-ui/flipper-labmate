@@ -134,19 +134,28 @@ void labmate_button_capture_stop(LabMateApp* app) {
     labmate_capture_exti_clear((uint32_t)pin->pin, true);
     furi_hal_gpio_init_simple(pin, GpioModeAnalog);
     app->button_active = false;
-    if(app->capture_owner == LabMateCaptureButton) {
-        app->capture_owner =
-            labmate_capture_owner_after_stop(app->capture_owner, LabMateCaptureButton);
-        app->capture_pin_index = GPIO_COUNT;
-    }
     if(furi_hal_resource_lease_release(
            labmate_button_lease_handle, FURI_HAL_LEASE_IRQ_PC1)) {
         labmate_button_lease_handle = 0U;
+        /* Do not advertise a free PC1 before firmware acknowledges release. */
+        if(app->capture_owner == LabMateCaptureButton) {
+            app->capture_owner =
+                labmate_capture_owner_after_stop(app->capture_owner, LabMateCaptureButton);
+            app->capture_pin_index = GPIO_COUNT;
+        }
     } else {
         app->capture_release_fault = true;
         app->capture_blocked = true; /* retain failed-release lease */
     }
 #else
     app->capture_blocked = true;
+#endif
+}
+
+bool labmate_button_lease_pending(void) {
+#if defined(FURI_HAL_RESOURCE_LEASE_API_V1) && defined(FURI_HAL_GPIO_HAS_TRY_ADD_INT_CALLBACK)
+    return labmate_button_lease_handle != 0U;
+#else
+    return false;
 #endif
 }

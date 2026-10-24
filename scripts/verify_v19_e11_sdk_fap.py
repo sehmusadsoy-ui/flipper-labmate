@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read-only gate: refuse a v1.9DEV FAP with unexported E11 native APIs.
+"""Read-only gate: refuse a v2.0DEV FAP with unexported E11 native APIs.
 
 This is an additional build-time assertion, NEVER an installation routine.
 Run only against a source tree staged from the exact pinned Momentum base.
@@ -52,8 +52,8 @@ def verify_sources(root: Path) -> None:
     fam = (app / "application.fam").read_text(encoding="utf-8")
     internal = (app / "src/labmate_internal.h").read_text(encoding="utf-8")
     native = (app / "src/labmate_scope_native.c").read_text(encoding="utf-8")
-    require('fap_version="1.9"' in fam, "staged FAP is not v1.9DEV")
-    require('#define LABMATE_VERSION_TEXT "v1.9DEV"' in internal, "staged app does not display v1.9DEV")
+    require('fap_version="2.0"' in fam, "staged FAP is not v2.0DEV")
+    require('#define LABMATE_VERSION_TEXT "v2.0DEV"' in internal, "staged app does not display v2.0DEV")
     require("furi_hal_resource_lease_try_acquire(" in native and
             "furi_hal_gpio_try_add_int_callback(" in native,
             "staged driver does not call patched native ABI")
@@ -91,9 +91,9 @@ def main(argv: list[str]) -> int:
         verify_sources(root)
         size, digest = verify_fap(fap)
     except (OSError, VerificationError, subprocess.CalledProcessError) as exc:
-        print(f"V19 E11 SDK/FAP REVIEW NO-GO: {exc}", file=sys.stderr)
+        print(f"V20 E11 SDK/FAP REVIEW NO-GO: {exc}", file=sys.stderr)
         return 1
-    print(f"V19 E11 SDK EXPORTED-API/FAP REVIEW PASS | bytes={size} | sha256={digest}")
+    print(f"V20 E11 SDK EXPORTED-API/FAP REVIEW PASS | bytes={size} | sha256={digest}")
     print("REVIEW ONLY — NO DEVICE WRITES OR FIRMWARE INSTALLATION")
     return 0
 

@@ -1,5 +1,7 @@
 #include "labmate_scope_bridge.h"
 #include "labmate_scope_exit_guard.h"
+#include "labmate_dashboard_store.h"
+#include "labmate_snapshot.h"
 #include <furi.h>
 #include <furi_hal.h>
 
@@ -64,6 +66,7 @@ static void labmate_scope_bridge_latch(LabMateApp* a) {
     a->scope_last_generation = a->scope_capture_generation;
     a->scope_last_valid = false;
     a->scope_last_metrics = (LabMateScopeMetrics){0};
+    a->scope_diagnostics = (LabMateScopeDiagnostics){0};
     const LabMateScopeSnapshot s =
         labmate_scope_native_read(&a->scope_native, NULL, 0U, NULL);
     if(a->scope_clock_fault || a->scope_capture_hz == 0U ||
@@ -76,6 +79,44 @@ static void labmate_scope_bridge_latch(LabMateApp* a) {
     a->scope_last_valid =
         a->scope_last_metrics.status == LabMateScopeMetricsReady &&
         !a->scope_last_metrics.truncated;
+    /* Analyze only actual captured cycles AFTER E11 IRQ/lease release.
+     * Compute once, not during UI redraw or on an owned IRQ buffer.
+     */
+    if(a->scope_last_valid) {
+        (void)labmate_scope_diagnostics_compute(
+            a->scope_native.storage, s.count,
+            a->scope_capture_hz, &a->scope_diagnostics);
+    }
+
+    /* Publish only the actual native completed capture after owned IRQ
+     * and E11 lease are BOTH confirmed released. Not from screen redraw.
+     * Unsupported observations remain NO DATA; never synthesize an edge.
+     */
+    if(a->scope_last_valid && a->scope_capture_start_ms &&
+       a->scope_capture_hz == a->scope_last_metrics.timebase_hz &&
+       a->scope_last_metrics.frequency_millihz > 0U &&
+       a->scope_last_metrics.frequency_millihz <= UINT32_MAX &&
+       a->scope_last_metrics.completed_cycles > 0U) {
+        const uint32_t end_ms = labmate_scope_bridge_millis();
+        if(end_ms > a->scope_capture_start_ms) {
+            LabMateSnapshotV1 s2 = {0};
+            s2.schema_version = LABMATE_SNAPSHOT_VERSION;
+            s2.source = LabMateSnapshotScope;
+            s2.pin_index = LABMATE_MONITOR_PC1_INDEX;
+            s2.quality = LabMateSnapshotValid;
+            s2.ownership_released = true;
+            s2.capture_generation = a->scope_capture_generation;
+            s2.observation_start_ms = a->scope_capture_start_ms;
+            s2.observation_end_ms = end_ms;
+            s2.timebase_hz = a->scope_capture_hz;
+            s2.valid_sample_count = a->scope_last_metrics.completed_cycles;
+            s2.observed_edge_count = a->scope_last_metrics.edge_count;
+            s2.frequency_millihz =
+                (uint32_t)a->scope_last_metrics.frequency_millihz;
+            s2.duty_permille = a->scope_last_metrics.duty_permille;
+            (void)labmate_dashboard_store_ingest(&a->doctor_store, &s2);
+        }
+    }
 }
 
 bool labmate_scope_bridge_init(LabMateApp* a) {
@@ -283,9 +324,13 @@ void labmate_scope_bridge_input(LabMateApp* a, InputEvent event) {
         &a->scope_native, &env, &a->capture_owner, labmate_scope_bridge_millis());
     if(state == LabMateScopeNativeReady && a->scope_native.active) {
         ++a->scope_capture_generation;
+        a->scope_capture_start_ms = labmate_scope_bridge_millis();
+        labmate_dashboard_store_clear_source(
+            &a->doctor_store, LabMateSnapshotScope);
         a->scope_capture_hz = SystemCoreClock;
         a->scope_clock_fault = a->scope_capture_hz == 0U;
         a->scope_last_valid = false;
+        a->scope_diagnostics = (LabMateScopeDiagnostics){0};
         a->scope_show_compare = false;
         a->scope_show_details = false;
         a->scope_compare_page = 0U;

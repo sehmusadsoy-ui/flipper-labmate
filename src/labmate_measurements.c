@@ -1,6 +1,7 @@
 #include "labmate_measurements.h"
 #include "labmate_frequency_tim2.h"
 #include "labmate_frequency_gate.h"
+#include "labmate_doctor_frequency_bridge.h"
 #include "labmate_monitor_gpio.h"
 #include "labmate_pulse_math.h"
 #include <furi_hal.h>
@@ -9,6 +10,35 @@
 /* App-thread measurement aggregation only. ISR/HAL pin ownership remains
  * with existing capture modules and must never be changed from this file.
  * Identical logic was extracted from the device-tested v1.7 RC1 core. */
+
+/* Consume the LOW/PC1 ISR's period and acknowledge its publication flag
+ * in one IRQ-critical snapshot. Otherwise an IRQ arriving after the period
+ * read but before clearing the flag could have its update silently erased.
+ * Does NOT certify lossless ISR delivery or a completed capture epoch.
+ */
+static bool labmate_frequency_low_take_period(LabMateApp* app, uint32_t* period_cycles) {
+    if(!app || !period_cycles) return false;
+    LabMateLowMailboxObservation observation;
+    uint32_t observed_edges = 0U;
+    uint32_t last_edge_tick = 0U;
+    FURI_CRITICAL_ENTER();
+    const bool copied = labmate_low_mailbox_consume_locked(
+        &app->frequency_low_mailbox_audit,
+        &app->frequency_irq_new_period, &app->frequency_irq_period_cycles,
+        &observation);
+    observed_edges = app->frequency_irq_edges;
+    last_edge_tick = app->frequency_irq_last_tick;
+    FURI_CRITICAL_EXIT();
+    if(!copied) return false;
+    /* This is app-thread provenance, not a verified capture or lease. */
+    app->frequency_low_last_observation = observation;
+    if(observation.has_period) {
+        *period_cycles = observation.period_cycles;
+        labmate_doctor_frequency_note_low(
+            app, &observation, observed_edges, last_edge_tick);
+    }
+    return observation.has_period;
+}
 
 void measurement_reset(LabMateApp* app) {
     uint32_t now = furi_get_tick();
@@ -289,23 +319,34 @@ void measurement_update(LabMateApp* app) {
                         app->frequency_hw_last_cycle = current_cycle;
                     } else {
                         uint32_t sample_millihz = 0U;
+                        /* Keep the counted gate's ORIGINAL edge/time
+                         * interval before the normal re-arm mutations. */
+                        const uint32_t gate_edges =
+                            current_count - app->frequency_hw_last_count;
+                        const uint32_t gate_cycles =
+                            (uint32_t)(current_cycle - app->frequency_hw_last_cycle);
                         const LabMateHighGateResult gate =
                             labmate_high_gate_evaluate(
-                                current_count - app->frequency_hw_last_count,
-                                (uint32_t)(current_cycle -
-                                           app->frequency_hw_last_cycle),
-                                SystemCoreClock, &sample_millihz);
+                                gate_edges, gate_cycles, SystemCoreClock, &sample_millihz);
                         if(gate != LabMateHighGateWait) {
-                            /* This is a counted rising-edge boundary.
-                             * Re-arm immediately; high input rates still
-                             * publish as often as the ~100 ms poll allows.
-                             */
+                            /* Preserve native re-arming for Publish/NoSample;
+                             * plain 100-ms polls and WAIT never count. */
                             app->frequency_hw_last_count = current_count;
                             app->frequency_hw_last_cycle = current_cycle;
                             if(gate == LabMateHighGatePublish) {
-                                app->frequency_millihz = sample_millihz;
-                                app->frequency_valid = true;
-                                frequency_stats_record(app);
+                                if(labmate_high_gate_audit_record(
+                                       &app->frequency_high_gate_audit, gate,
+                                       current_count, gate_edges, gate_cycles,
+                                       sample_millihz)) {
+                                    app->frequency_millihz = sample_millihz;
+                                    app->frequency_valid = true;
+                                    frequency_stats_record(app);
+                                    labmate_doctor_frequency_note_high(app);
+                                } else {
+                                    /* A saturated/ambiguous audit must not
+                                     * expose a fresh VALID display reading. */
+                                    app->frequency_valid = false;
+                                }
                             }
                         }
                     }
@@ -315,19 +356,8 @@ void measurement_update(LabMateApp* app) {
             return;
         }
 
-        if(app->frequency_irq_new_period) {
-
-            uint32_t period_cycles;
-
-            /*
-             * Copy the volatile ISR value first, then
-             * acknowledge it.
-             */
-            period_cycles =
-                app->frequency_irq_period_cycles;
-
-            app->frequency_irq_new_period = false;
-
+        uint32_t period_cycles = 0U;
+        if(labmate_frequency_low_take_period(app, &period_cycles)) {
             if(period_cycles > 0 &&
                SystemCoreClock > 0) {
 
@@ -446,6 +476,7 @@ void measurement_update(LabMateApp* app) {
        (app->screen == LabMateScreenLogger && app->logger_source == LoggerPulse)) {
         uint32_t hi, lo, last_tick, count;
         bool hi_valid, lo_valid;
+        LabMatePulsePairObservation pair_observation;
 
         FURI_CRITICAL_ENTER();
         hi = app->pulse_irq_high_cycles;
@@ -454,7 +485,12 @@ void measurement_update(LabMateApp* app) {
         lo_valid = app->pulse_irq_low_valid;
         last_tick = app->pulse_irq_last_tick;
         count = app->pulse_irq_edges;
+        /* Copy both finished phase widths AND their publication identity
+         * in the same IRQ critical snapshot, never independent UI reads. */
+        (void)labmate_pulse_pair_copy_locked(
+            &app->pulse_pair_audit, &pair_observation);
         FURI_CRITICAL_EXIT();
+        app->pulse_pair_last_observation = pair_observation;
 
         /* A disconnected or stopped source must not display stale data.
          * Restart synchronization after a long quiet interval.
@@ -470,6 +506,7 @@ void measurement_update(LabMateApp* app) {
             app->pulse_irq_high_samples = 0;
             app->pulse_irq_low_samples = 0;
             app->pulse_irq_wide_window = false;
+            labmate_pulse_pair_discard_partial(&app->pulse_pair_audit);
             app->pulse_irq_last_tick = now;
             FURI_CRITICAL_EXIT();
             hi_valid = false;
@@ -494,7 +531,12 @@ void measurement_update(LabMateApp* app) {
      */
     if(app->screen != LabMateScreenGpio) return;
     bool current = false;
-    if(!labmate_monitor_gpio_read(app, app->gpio_index, &current)) return;
+    if(!labmate_monitor_gpio_read(app, app->gpio_index, &current)) {
+        labmate_level_invalidate(&app->gpio_level_witness);
+        return;
+    }
+    (void)labmate_level_observe(
+        &app->gpio_level_witness,app->gpio_index,current,now,tick_frequency);
     if(current != app->gpio_previous_state) {
         app->edges++;
         app->gpio_previous_state = current;

@@ -1,5 +1,6 @@
 #include "labmate_pulse_capture.h"
 #include "labmate_capture_core.h"
+#include "labmate_doctor_pulse_bridge.h"
 #include "labmate_capture_exti.h"
 #include "labmate_resource_policy.h"
 #include <furi_hal.h>
@@ -38,6 +39,8 @@ static void pulse_gpio_callback(void* context) {
     if(app->pulse_irq_seen) {
         const uint32_t delta = cycle - app->pulse_irq_last_cycle;
         if(delta > 0U) {
+            bool new_high=false;
+            bool new_low=false;
             /* At ordinary frequencies preserve the 16-sample response.
              * For very short pulses, collect 128 HIGH and 128 LOW widths
              * and publish them TOGETHER. Independent publications could
@@ -55,6 +58,8 @@ static void pulse_gpio_callback(void* context) {
                 app->pulse_irq_high_samples = 0U;
                 app->pulse_irq_low_samples = 0U;
                 app->pulse_irq_wide_window = wide_window;
+                /* Never combine phase estimates from different smoothing modes. */
+                labmate_pulse_pair_discard_partial(&app->pulse_pair_audit);
             }
 
             if(fast_half_period > 0U && delta <= fast_half_period) {
@@ -65,6 +70,7 @@ static void pulse_gpio_callback(void* context) {
                         app->pulse_irq_high_cycles =
                             (app->pulse_irq_high_sum + 8U) >> 4;
                         app->pulse_irq_high_valid = true;
+                        new_high=true;
                         app->pulse_irq_high_sum = 0U;
                         app->pulse_irq_high_samples = 0U;
                     }
@@ -75,6 +81,7 @@ static void pulse_gpio_callback(void* context) {
                         app->pulse_irq_low_cycles =
                             (app->pulse_irq_low_sum + 8U) >> 4;
                         app->pulse_irq_low_valid = true;
+                        new_low=true;
                         app->pulse_irq_low_sum = 0U;
                         app->pulse_irq_low_samples = 0U;
                     }
@@ -93,6 +100,8 @@ static void pulse_gpio_callback(void* context) {
                         app->pulse_irq_low_samples;
                     app->pulse_irq_high_valid = true;
                     app->pulse_irq_low_valid = true;
+                    new_high=true;
+                    new_low=true;
                     app->pulse_irq_high_sum = 0U;
                     app->pulse_irq_low_sum = 0U;
                     app->pulse_irq_high_samples = 0U;
@@ -109,12 +118,26 @@ static void pulse_gpio_callback(void* context) {
                     app->pulse_irq_high_samples = 0U;
                     app->pulse_irq_high_cycles = delta;
                     app->pulse_irq_high_valid = true;
+                    new_high=true;
                 } else {
                     app->pulse_irq_low_sum = 0U;
                     app->pulse_irq_low_samples = 0U;
                     app->pulse_irq_low_cycles = delta;
                     app->pulse_irq_low_valid = true;
+                    new_low=true;
                 }
+            }
+            /* One new paired publication requires one fresh completed update
+             * of BOTH phases. These are averaging windows, not necessarily
+             * widths from the same individual waveform cycle. */
+            /* 20k IRQ/s is possible: skip publication audit work
+             * unless this transition truly completed a phase window. */
+            if(new_high || new_low) {
+                (void)labmate_pulse_pair_note(
+                    &app->pulse_pair_audit, new_high, new_low,
+                    app->pulse_irq_high_valid, app->pulse_irq_low_valid,
+                    app->pulse_irq_high_cycles, app->pulse_irq_low_cycles,
+                    app->pulse_irq_edges + 1U);
             }
         }
     }
@@ -151,15 +174,16 @@ void labmate_pulse_capture_stop(LabMateApp* app) {
     labmate_capture_exti_clear((uint32_t)pin->pin, true);
     furi_hal_gpio_init_simple(pin, GpioModeAnalog);
     app->pulse_irq_active = false;
-    if(app->capture_owner == LabMateCapturePulse) {
-        app->capture_owner = labmate_capture_owner_after_stop(
-            app->capture_owner, LabMateCapturePulse);
-        app->capture_pin_index = GPIO_COUNT;
-    }
     if(furi_hal_resource_lease_release(
            labmate_pulse_lease_handle, labmate_pulse_lease_mask)) {
         labmate_pulse_lease_handle = 0U;
         labmate_pulse_lease_mask = 0U;
+        /* Neither HOLD nor callback-detach alone certifies lease release. */
+        if(app->capture_owner == LabMateCapturePulse) {
+            app->capture_owner = labmate_capture_owner_after_stop(
+                app->capture_owner, LabMateCapturePulse);
+            app->capture_pin_index = GPIO_COUNT;
+        }
     } else {
         /* Lost release: retain the handle and reject any later restart. */
         app->capture_release_fault = true;
@@ -167,6 +191,14 @@ void labmate_pulse_capture_stop(LabMateApp* app) {
     }
 #else
     app->capture_blocked = true;
+#endif
+}
+
+bool labmate_pulse_lease_pending(void) {
+#if defined(FURI_HAL_RESOURCE_LEASE_API_V1) && defined(FURI_HAL_GPIO_HAS_TRY_ADD_INT_CALLBACK)
+    return labmate_pulse_lease_handle != 0U || labmate_pulse_lease_mask != 0U;
+#else
+    return false;
 #endif
 }
 
@@ -215,6 +247,9 @@ void labmate_pulse_capture_start(LabMateApp* app) {
     app->pulse_irq_high_samples = 0U;
     app->pulse_irq_low_samples = 0U;
     app->pulse_irq_wide_window = false;
+    /* The native callback is disabled after owning its E11 lease. */
+    labmate_pulse_pair_reset(&app->pulse_pair_audit);
+    app->pulse_pair_last_observation = (LabMatePulsePairObservation){0};
 
     furi_hal_gpio_init(
         pin, GpioModeInterruptRiseFall, GpioPullNo, GpioSpeedVeryHigh);
@@ -226,6 +261,8 @@ void labmate_pulse_capture_start(LabMateApp* app) {
     app->capture_owner = LabMateCapturePulse;
     app->pulse_irq_active = true;
     furi_hal_gpio_enable_int_callback(pin);
+    /* Started only AFTER native callback installation and ownership. */
+    labmate_doctor_pulse_started(app);
 #else
     app->capture_blocked = true;
 #endif

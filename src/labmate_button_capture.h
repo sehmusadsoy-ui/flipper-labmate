@@ -10,3 +10,6 @@ void labmate_button_capture_poll(LabMateApp* app);
 void labmate_button_capture_stop(LabMateApp* app);
 void labmate_button_capture_reset(LabMateApp* app);
 void labmate_button_capture_change_quiet(LabMateApp* app, int8_t direction);
+
+/* True while a native Button PC1 lease token remains unresolved. */
+bool labmate_button_lease_pending(void);

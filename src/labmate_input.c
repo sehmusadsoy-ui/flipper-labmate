@@ -61,6 +61,51 @@ void labmate_input_dispatch(LabMateApp* app, FuriStatus status,
     case LabMateScreenI2c:
         labmate_input_i2c(app, event, work);
         break;
+    case LabMateScreenDashboard:
+        /* No ISR, storage or native resource acquisition in read-only dashboard. */
+        if(event.key == InputKeyBack) app->screen = LabMateScreenMenu;
+        else if(event.key == InputKeyOk) {
+            if(!app->dashboard_details) {
+                app->dashboard_details = true;
+                app->dashboard_evidence = false;
+            } else if(!app->dashboard_evidence) {
+                app->dashboard_evidence = true;
+            } else {
+                app->dashboard_details = false;
+                app->dashboard_evidence = false;
+            }
+        }
+        else if(event.key == InputKeyUp)
+            app->dashboard_source = (uint8_t)(
+                (app->dashboard_source + LabMateSnapshotSourceCount - 1U) %
+                LabMateSnapshotSourceCount);
+        else if(event.key == InputKeyDown)
+            app->dashboard_source = (uint8_t)(
+                (app->dashboard_source + 1U) % LabMateSnapshotSourceCount);
+        else if(event.key == InputKeyLeft || event.key == InputKeyRight)
+            app->dashboard_source = app->dashboard_source < 3U ? 3U : 0U;
+        break;
+    case LabMateScreenDoctor:
+        /* All advisory/config work remains app-thread UI only. */
+        if(event.key == InputKeyBack) app->screen = LabMateScreenMenu;
+        else if(app->doctor_show_advice) {
+            if(event.key == InputKeyOk || event.key == InputKeyLeft ||
+               event.key == InputKeyRight) app->doctor_show_advice = false;
+        } else if(event.key == InputKeyLeft)
+            labmate_doctor_panel_move(&app->doctor_panel, -1);
+        else if(event.key == InputKeyRight)
+            labmate_doctor_panel_move(&app->doctor_panel, 1);
+        else if(event.key == InputKeyUp)
+            labmate_doctor_panel_edit(&app->doctor_panel, 1);
+        else if(event.key == InputKeyDown)
+            labmate_doctor_panel_edit(&app->doctor_panel, -1);
+        else if(event.key == InputKeyOk) {
+            if(app->doctor_panel.field == LabMateDoctorFieldFrequency &&
+               app->doctor_panel.source != LABMATE_DOCTOR_MONITOR_SOURCE)
+                labmate_doctor_panel_step(&app->doctor_panel);
+            else app->doctor_show_advice = true;
+        }
+        break;
     case LabMateScreenScope:
         labmate_scope_bridge_input(app, event);
         break;

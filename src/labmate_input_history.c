@@ -111,6 +111,10 @@ void labmate_input_logger(LabMateApp* app, InputEvent event, LabMateDeferredWork
                         app->logger_busy_stopping = true;
                     }
                     labmate_logger_capture_stop(app);
+                    /* Storage may have stopped via OK earlier. Finalize
+                     * only after both owned IRQ and CSV handle are closed.
+                     */
+                    labmate_logger_dashboard_finalize(app);
                     app->screen = LabMateScreenMenu;
                 }
 

@@ -23,6 +23,10 @@
 #include "labmate_view.h"
 
 #include "labmate_input_tools.h"
+#include "labmate_doctor_pulse_bridge.h"
+#include "labmate_doctor_frequency_bridge.h"
+#include "labmate_pulse_ui_state.h"
+#include "labmate_frequency_ui_state.h"
 void labmate_input_button(LabMateApp* app, InputEvent event, LabMateDeferredWork* work) {
     UNUSED(work);
 
@@ -86,10 +90,20 @@ void labmate_input_gpio(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                     if(!app->hold) pulse_stats_reset(app);
 
                 } else if(event.key == InputKeyLeft) {
+                    if(app->screen == LabMateScreenPulse)
+                        labmate_doctor_pulse_abandon(app);
+                    if(app->screen == LabMateScreenFrequency &&
+                       app->gpio_index != 1U)
+                        labmate_doctor_frequency_abandon(app);
                     labmate_gpio_change(app, -1);
 
                 } else if(
                     event.key == InputKeyRight) {
+                    if(app->screen == LabMateScreenPulse)
+                        labmate_doctor_pulse_abandon(app);
+                    if(app->screen == LabMateScreenFrequency &&
+                       app->gpio_index != 4U)
+                        labmate_doctor_frequency_abandon(app);
                     labmate_gpio_change(app, 1);
 
                 } else if(
@@ -102,14 +116,53 @@ void labmate_input_gpio(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                             pulse_stats_window_reset(app);
                             measurement_reset(app);
                             labmate_pulse_capture_start(app);
-                            app->hold = false;
+                            /* TRY-ADD / E11 lease denial must never leave
+                             * the UI advertising LIVE after failed START.
+                             * HOLD stays retryable when ownership was denied.
+                             */
+                            app->hold = !labmate_pulse_ui_live(
+                                app->pulse_irq_active,
+                                app->capture_owner == LabMateCapturePulse,
+                                app->capture_blocked,
+                                app->capture_release_fault);
                         } else {
                             /* Freeze displayed values and stop IRQ load. */
+                            labmate_doctor_pulse_prepare_stop(app);
                             labmate_pulse_capture_stop(app);
+                            labmate_doctor_pulse_finish_stop(app);
                             app->hold = true;
                         }
                     } else {
-                        app->hold = !app->hold;
+                        /* Frequency HOLD retains the native IRQ/TIM2 lease.
+                         * It is NOT a STOP and can never certify a Doctor
+                         * reading, including on subsequent HOLD resume.
+                         */
+                        if(app->screen == LabMateScreenFrequency)
+                            labmate_doctor_frequency_abandon(app);
+                        /* The Frequency HOLD path normally owns EXTI/TIM2.
+                         * If an earlier START was denied, OK may retry,
+                         * but must never mark the UI LIVE without ownership.
+                         */
+                        if(app->screen == LabMateScreenFrequency && app->hold &&
+                           !labmate_frequency_ui_live(
+                               app->gpio_index == 4U,
+                               app->frequency_hw_active,app->frequency_irq_active,
+                               app->capture_owner == (app->gpio_index == 4U ?
+                                   LabMateCaptureFrequencyHigh : LabMateCaptureFrequencyLow),
+                               app->capture_blocked,app->capture_release_fault)) {
+                            if(app->gpio_index == 4U)
+                                labmate_frequency_high_start(app);
+                            else labmate_frequency_low_start(app);
+                        }
+                        if(app->screen == LabMateScreenFrequency) {
+                            const bool live = labmate_frequency_ui_live(
+                                app->gpio_index == 4U,
+                                app->frequency_hw_active,app->frequency_irq_active,
+                                app->capture_owner == (app->gpio_index == 4U ?
+                                    LabMateCaptureFrequencyHigh : LabMateCaptureFrequencyLow),
+                                app->capture_blocked,app->capture_release_fault);
+                            app->hold = !live || !app->hold;
+                        } else app->hold = !app->hold;
                         if(!app->hold) {
                             /* HOLD resume cannot treat an unowned GPIO
                              * as a valid electrical LOW sample. */
@@ -139,7 +192,15 @@ void labmate_input_gpio(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                     event.key == InputKeyBack) {
 
                     /* Release active capture before returning to Menu. */
+                    if(app->screen == LabMateScreenPulse)
+                        labmate_doctor_pulse_prepare_stop(app);
+                    if(app->screen == LabMateScreenFrequency)
+                        labmate_doctor_frequency_prepare_stop(app);
                     labmate_capture_stop_all(app);
+                    if(app->screen == LabMateScreenPulse)
+                        labmate_doctor_pulse_finish_stop(app);
+                    if(app->screen == LabMateScreenFrequency)
+                        labmate_doctor_frequency_finish_stop(app);
                     labmate_monitor_gpio_release(app, app->gpio_index);
 
                     app->hold = false;

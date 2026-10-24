@@ -20,16 +20,18 @@ static const char* const tool_titles[LabMateToolCount] = {
     "1-Wire Temp",
     "I2C Explorer",
     "Logic Scope",
+    "Signal Doctor",
+    "Dashboard",
 };
 
 /* Each instrument remains reachable once, with its previous tool ID. */
-static const uint8_t group_sizes[LabMateGroupCount] = {6U, 2U, 3U, 3U, 1U};
+static const uint8_t group_sizes[LabMateGroupCount] = {7U, 2U, 4U, 3U, 1U};
 static const uint8_t group_tools[LabMateGroupCount][LABMATE_NAV_MAX_CHILDREN] = {
-    {LabMateToolGpio, LabMateToolFrequency, LabMateToolPulse, LabMateToolCounter, LabMateToolButton, LabMateToolScope},
-    {LabMateToolGenerator, LabMateToolAlerts, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
-    {LabMateToolLogger, LabMateToolHistory, LabMateToolProfiles, LabMateToolInvalid, LabMateToolInvalid},
-    {LabMateToolUart, LabMateToolI2c, LabMateToolOneWire, LabMateToolInvalid, LabMateToolInvalid},
-    {LabMateToolAbout, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid}
+    {LabMateToolGpio, LabMateToolFrequency, LabMateToolPulse, LabMateToolCounter, LabMateToolButton, LabMateToolScope, LabMateToolDoctor},
+    {LabMateToolGenerator, LabMateToolAlerts, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
+    {LabMateToolLogger, LabMateToolHistory, LabMateToolProfiles, LabMateToolDashboard, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
+    {LabMateToolUart, LabMateToolI2c, LabMateToolOneWire, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
+    {LabMateToolAbout, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid}
 };
 
 uint8_t labmate_nav_group_size(uint8_t group) {

@@ -7,3 +7,8 @@
 
 bool labmate_logger_storage_start(LabMateApp* app);
 void labmate_logger_storage_stop(LabMateApp* app);
+
+/* Call with the UI mutex held, AFTER file sync/close and native release.
+ * Valid means CSV rows were successfully written, not GPIO validity.
+ */
+void labmate_logger_dashboard_finalize(LabMateApp* app);

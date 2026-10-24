@@ -1,0 +1,34 @@
+name: LabMate v2.0 Actions trigger probe (NO BUILD)
+
+# Minimal CI activation diagnostic. Independent of source path filters,
+# compiler availability, E11 SDK, device connectivity and artifact uploads.
+on:
+  push:
+    branches:
+      - dev/v2.0-signal-doctor
+  pull_request:
+    branches:
+      - dev/v1.9-logic-scope
+
+permissions:
+  contents: read
+
+jobs:
+  trigger-only:
+    name: Verify GitHub event delivery (NO DEVICE / NO BUILD)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Confirm event ref without checking out or writing code
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'EVENT=%s\nREF=%s\nHEAD_REF=%s\nSHA=%s\nRUN_ID=%s\n' \
+            "$GITHUB_EVENT_NAME" "$GITHUB_REF" "${GITHUB_HEAD_REF:-}" \
+            "$GITHUB_SHA" "$GITHUB_RUN_ID"
+          case "$GITHUB_EVENT_NAME" in
+            push) test "$GITHUB_REF" = "refs/heads/dev/v2.0-signal-doctor" ;;
+            pull_request) test "$GITHUB_HEAD_REF" = "dev/v2.0-signal-doctor" ;;
+            *) exit 2 ;;
+          esac
+          echo 'TRIGGER PROBE PASS: event arrived; this is NOT host tests or E11 compile evidence.'
