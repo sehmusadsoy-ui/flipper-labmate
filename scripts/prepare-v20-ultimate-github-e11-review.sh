@@ -18,8 +18,14 @@ if git -C "$APP" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
         echo "NO-GO: expected dev/v2.0-signal-doctor branch, got $BRANCH" >&2
         exit 2
     }
-    test -z "$(git -C "$APP" status --porcelain --untracked-files=no)" || {
-        echo 'NO-GO: tracked changes; exact GitHub commit required' >&2
+    # An untracked src/test/script can affect a globbed build despite a clean
+    # tracked diff. Preserve it and fail closed; never delete user files.
+    STATUS="$(git -C "$APP" status --porcelain --untracked-files=normal)" || {
+        echo 'NO-GO: Git status inspection failed; source provenance unknown' >&2
+        exit 2
+    }
+    test -z "$STATUS" || {
+        echo 'NO-GO: tracked or untracked changes; review requires a clean checkout' >&2
         exit 2
     }
     printf 'REVIEW SOURCE GIT: %s\n' "$(git -C "$APP" rev-parse HEAD)"
