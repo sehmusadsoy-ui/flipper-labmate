@@ -106,7 +106,7 @@ def run_case(globals_,initial,mode,firmware_ok=True,consent=True):
         proposed=b"\x7fELF"+b"NEW-V2.0-"*35
         fap.write_bytes(proposed)
         backup=folder/"backups"
-        globals_["verify_fap"]=lambda file_path: hashlib.sha256(Path(file_path).read_bytes()).hexdigest()
+        globals_["main"].__globals__["verify_fap"]=lambda file_path: hashlib.sha256(Path(file_path).read_bytes()).hexdigest()
         io=builtins.input
         argv=sys.argv
         def input_with_backup(prompt):
