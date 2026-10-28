@@ -22,6 +22,7 @@ def discover_device_faps(device):
     level. Report likely previous LabMate builds and all Tools FAP names.
     A file name alone is not proof of app identity.
     """
+    print("READ-ONLY DEVICE FAP SCAN: checking /ext/apps",flush=True)
     if not device.exist_dir("/ext/apps"):
         raise RuntimeError("NO-GO: /ext/apps missing, no device write")
     queue=[("/ext/apps",0)]
@@ -34,16 +35,17 @@ def discover_device_faps(device):
         visited.add(folder)
         if len(visited)>90:
             raise RuntimeError("NO-GO: unexpectedly large apps directory inventory")
+        print("READ-ONLY SCANNING:",folder,flush=True)
         # Momentum CLI protocol: storage list yields [D] and [F] lines.
-        device.send_and_wait_eol('storage list "'+folder+'"\\r')
+        device.send_and_wait_eol('storage list "'+folder+'"\r')
         data=device.read.until(device.CLI_PROMPT)
         if device.has_error(data):
             raise RuntimeError("NO-GO: cannot list "+folder)
-        for rawline in data.split(b"\\r\\n"):
+        for rawline in data.split(b"\r\n"):
             line=rawline.decode("utf-8","replace").strip()
             if line.startswith("[D] "):
                 name=line[4:].strip()
-                if level<2 and name not in (".","..") and "/" not in name and "\\\\" not in name:
+                if level<2 and name not in (".","..") and "/" not in name and "\\" not in name:
                     queue.append((folder+"/"+name,level+1))
             elif line.startswith("[F] "):
                 entry=line[4:].strip()
@@ -53,6 +55,7 @@ def discover_device_faps(device):
                     continue
                 if name.lower().endswith(".fap") and size.isdigit():
                     files.append((folder+"/"+name,int(size)))
+    print("READ-ONLY SCAN COMPLETE:",len(visited),"folders",flush=True)
     hits=[(p,n) for p,n in files if any(
         word in p.rsplit("/",1)[-1].lower()
         for word in ("labmate","lab_mate","counter-step3","ultimate")
