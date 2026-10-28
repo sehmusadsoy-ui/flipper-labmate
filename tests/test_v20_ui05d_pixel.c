@@ -1,6 +1,7 @@
 /* v2.0 E11 exact Frequency/Pulse/PWM renderer test; no HAL or SD.
  * Exact production ui_kit rendering helpers are also source-linked.
  * Only device Canvas, clock conversion and generator selection are mocks.
+ * Secondary text uses a 5px host approximation; real Flipper raster stays an open gate.
  */
 #include "ui_kit.h"
 #include <assert.h>
@@ -44,7 +45,7 @@ uint8_t canvas_current_font_height(Canvas* c){
 }
 uint16_t canvas_string_width(Canvas* c,const char* s){
     return (uint16_t)(strlen(s)*(c->font==FontBigNumbers?10U:
-                                   c->font==FontPrimary?8U:6U));
+                                   c->font==FontPrimary?8U:5U));
 }
 void canvas_draw_str(Canvas* c,int32_t x,int32_t y,const char* s) {
     unsigned w=canvas_string_width(c,s);
