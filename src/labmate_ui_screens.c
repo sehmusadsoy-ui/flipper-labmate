@@ -1002,7 +1002,7 @@ void draw_button(Canvas* canvas, LabMateApp* app) {
     const bool completed = app->button_stats.presses != 0U ||
                            app->button_stats.releases != 0U;
     const UiKitInstrumentState state = app->capture_release_fault ?
-        UiKitInstrumentError : app->capture_blocked ? UiKitInstrumentBusy :
+        UiKitInstrumentError : blocked ? UiKitInstrumentBusy :
         app->button_active ? UiKitInstrumentLive :
         app->button_session_started ? UiKitInstrumentStopped : UiKitInstrumentReady;
 
