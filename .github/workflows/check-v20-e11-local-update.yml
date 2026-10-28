@@ -5,10 +5,12 @@ on:
     paths:
       - "scripts/build-v20-e11-exact-local.sh"
       - "scripts/install-v20-e11-usb.py"
+      - "scripts/verify_v20_e11_debuglink_parity.py"
       - "scripts/update-v20-e11-from-github.ps1"
       - ".github/workflows/check-v20-e11-local-update.yml"
 permissions:
   contents: read
+  actions: read
 jobs:
   linux_static:
     runs-on: ubuntu-24.04
@@ -21,7 +23,7 @@ jobs:
         run: |
           set -euo pipefail
           bash -n scripts/build-v20-e11-exact-local.sh
-          python3 -m py_compile scripts/install-v20-e11-usb.py
+          python3 -m py_compile scripts/install-v20-e11-usb.py scripts/verify_v20_e11_debuglink_parity.py
           python3 - <<'PY'
           from pathlib import Path
           s=Path('scripts/build-v20-e11-exact-local.sh').read_text()
@@ -57,6 +59,9 @@ jobs:
           assert 'old=device.read_file(TARGET)' in u
           assert 'saved.open("xb")' in u
           assert 'device.send_file(str(args.fap),TARGET)' in u
+          assert 'verify_fap(args.fap)' in u
+          assert 'verify_v20_e11_debuglink_parity.py' in s
+          assert 'sha256sum "$HOME/.local/share/labmate-e11/labmate.fap"' in p
           assert 'if (-not $Install)' in p
           # Regression: Windows PowerShell 5.1 strips nested shell quotes
           # from wsl.exe bash -lc; stdin Bash -s must be used throughout.
@@ -101,3 +106,58 @@ jobs:
             throw "PowerShell -> Bash stdin quote-preservation regression"
           }
           Write-Host 'WINDOWS POWERSHELL PARSER + BASH STDIN QUOTING PASS | NO USB WRITE'
+
+  verify_exact_ci_reference:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Retrieve exact historic CI FAP for read-only byte parity test
+        uses: actions/download-artifact@v4
+        with:
+          name: labmate-e11-candidate-40774609065
+          run-id: 40774609065
+          github-token: \${{ github.token }}
+          path: ci-reference
+      - name: Validate audited CI FAP and CRC-only/tamper cases
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/verify_v20_e11_debuglink_parity.py ci-reference/labmate.fap
+          python3 - <<'PY'
+          import pathlib,sys,struct
+          sys.path.insert(0,'scripts')
+          from verify_v20_e11_debuglink_parity import (normalize_debuglink,verify_fap,IdentityFailure)
+          path=pathlib.Path('ci-reference/labmate.fap')
+          original=path.read_bytes()
+          normalized,_,_=normalize_debuglink(original)
+          assert verify_fap(path) == '6dbe192ba7d1b0f2b05702c90cf68d791f041f75ed53a6b41135176b6ad4de5b'
+          shoff=struct.unpack_from('<I',original,32)[0]
+          entries=struct.unpack_from('<H',original,48)[0]
+          headers=[struct.unpack_from('<10I',original,shoff+40*i) for i in range(entries)]
+          strings=headers[16]
+          names=original[strings[4]:strings[4]+strings[5]]
+          debug=None
+          text=None
+          for h in headers:
+              n=names[h[0]:names.find(b'\0',h[0])].decode('ascii')
+              if n=='.gnu_debuglink': debug=h[4]
+              if n=='.text': text=h[4]
+          assert debug is not None and text is not None
+          changed=bytearray(original)
+          changed[debug+16]^=1
+          assert normalize_debuglink(bytes(changed))[0] == normalized
+          changed=bytearray(original)
+          changed[text]^=1
+          assert normalize_debuglink(bytes(changed))[0] != normalized
+          changed=bytearray(original)
+          changed[debug]^=1
+          try:
+              normalize_debuglink(bytes(changed))
+          except IdentityFailure:
+              pass
+          else:
+              raise AssertionError('Tampered debuglink was not rejected')
+          print('CI FAP + GNU DEBUGLINK VARIANCE + EXECUTABLE TAMPER REJECTION PASS')
+          PY
