@@ -6,6 +6,7 @@ param(
     [ValidatePattern('^(auto|COM[1-9][0-9]{0,2})$')][string]$Port='auto',
     [string]$FirmwareRoot=(Join-Path $HOME 'Momentum-Firmware'),
     [switch]$Install,
+    [switch]$Discover,
     [switch]$ReuseVerifiedLocalFap
 )
 Set-StrictMode -Version Latest
@@ -66,7 +67,8 @@ function Invoke-WslBash {
 try {
     if ($env:OS -ne 'Windows_NT') { throw 'Windows required' }
     if (-not (Get-Command wsl.exe -ErrorAction SilentlyContinue)) { throw 'WSL Ubuntu missing' }
-    if ($Install -and (Get-Process qFlipper -ErrorAction SilentlyContinue)) {
+    if ($Install -and $Discover) { throw 'Choose -Discover or -Install, not both' }
+    if (($Install -or $Discover) -and (Get-Process qFlipper -ErrorAction SilentlyContinue)) {
         throw 'Close qFlipper before serial USB update'
     }
     $Linux = @'
@@ -113,8 +115,8 @@ LABMATE_REUSE_EXACT_FAP=__LABMATE_REUSE__ bash "$DIR/scripts/build-v20-e11-exact
     if ($ActualWindows -ine $Expected) {
         Write-Host 'CI raw SHA differs ONLY in verified 4-byte GNU debuglink CRC.' -ForegroundColor Yellow
     }
-    if (-not $Install) {
-        Write-Host 'PC-ONLY PASS. Device untouched. Add -Install for USB.'
+    if (-not $Install -and -not $Discover) {
+        Write-Host 'PC-ONLY PASS. Device untouched. Add -Discover (read-only) or -Install.'
         exit 0
     }
     # Prefer an installed Windows Momentum fbtenv, but the owner already has
@@ -152,14 +154,23 @@ LABMATE_REUSE_EXACT_FAP=__LABMATE_REUSE__ bash "$DIR/scripts/build-v20-e11-exact
     foreach($Value in $ArgumentsToCheck) {
         if ($Value -match '["&|<>^%!]') { throw 'Unsafe Windows command path' }
     }
+    $UsbFlag = if ($Discover) { '--discover' } else { '--apply' }
     if ($UseWindowsFirmware) {
-        $Line='set "FBT_ROOT=" && set "FBT_NOENV=" && call "{0}" env && set "PYTHONPATH={1}" && python "{2}" --fap "{3}" --backup-root "{4}" --port {5} --apply' -f $EnvCmd,(Join-Path $Fw 'scripts'),$Helper,$Fap,$Backup,$Port
+        $Line='set "FBT_ROOT=" && set "FBT_NOENV=" && call "{0}" env && set "PYTHONPATH={1}" && python "{2}" --fap "{3}" --backup-root "{4}" --port {5} {6}' -f $EnvCmd,(Join-Path $Fw 'scripts'),$Helper,$Fap,$Backup,$Port,$UsbFlag
     } else {
-        $Line='set "PYTHONPATH={0}" && py -3 -B "{1}" --fap "{2}" --backup-root "{3}" --port {4} --apply' -f $SdkScripts,$Helper,$Fap,$Backup,$Port
+        $Line='set "PYTHONPATH={0}" && py -3 -B "{1}" --fap "{2}" --backup-root "{3}" --port {4} {5}' -f $SdkScripts,$Helper,$Fap,$Backup,$Port,$UsbFlag
     }
-    Write-Host 'USB: read existing device FAP, save verified PC backup, require E11 consent.'
+    if ($Discover) {
+        Write-Host 'USB READ-ONLY: enumerate old FAP paths/sizes. NO device writes or backup changes.' -ForegroundColor Cyan
+    } else {
+        Write-Host 'USB: read existing device FAP, save verified PC backup, require E11 consent.'
+    }
     & cmd.exe /d /s /c $Line
-    if ($LASTEXITCODE -ne 0) { throw 'USB stage stopped; DO NOT RETRY blindly' }
+    if ($LASTEXITCODE -ne 0) { throw 'USB stage stopped; no automatic retry' }
+    if ($Discover) {
+        Write-Host 'READ-ONLY Flipper FAP discovery complete. No installation attempted.' -ForegroundColor Green
+        exit 0
+    }
     Write-Host 'Single labmate.fap USB readback PASS. Physical UI test is still needed.' -ForegroundColor Green
     exit 0
 } catch {
