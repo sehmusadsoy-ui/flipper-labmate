@@ -24,6 +24,28 @@ assert {'furi_hal_resource_lease_try_acquire',
 assert '#define FURI_HAL_RESOURCE_LEASE_API_V1 1' in (p/'targets/f7/furi_hal/furi_hal_resources.h').read_text()
 print('PINNED E11 SDK PREFLIGHT PASS')
 PY
+# The owner's immediately preceding WSL compile ALREADY passed the full
+# native APPCHK, exact CI normalized parity, and local debug ELF CRC checks.
+# That run stopped only at a stale raw-CI-hash assertion AFTER writing OUT.
+# A named opt-in may reuse ONLY those exact 174192 bytes; never allow
+# arbitrary locally built FAPs or bypass the CI content verifier.
+if [ "${LABMATE_REUSE_EXACT_FAP:-0}" = 1 ]; then
+  RECORDED_SHA=39261383d4b6ad38a74541fa8934098206e37764aee79321740404ee6dbe0bfc
+  test -s "$OUT" || { echo 'NO-GO: previously verified PC FAP missing' >&2; exit 3; }
+  test "$(stat -c %s "$OUT")" = 174192 || {
+    echo 'NO-GO: previously verified PC FAP size differs' >&2; exit 3;
+  }
+  RECORDED_ACTUAL="$(sha256sum "$OUT" | cut -d ' ' -f 1)"
+  if [ "$RECORDED_ACTUAL" != "$RECORDED_SHA" ]; then
+    echo "NO-GO: existing PC FAP SHA does not match the operator-proven native build: $RECORDED_ACTUAL" >&2
+    exit 3
+  fi
+  python3 "$APP/scripts/verify_v20_e11_debuglink_parity.py" "$OUT"
+  echo "EXACT E11 PREVIOUSLY VERIFIED PC FAP PASS: $RECORDED_ACTUAL"
+  echo "ONE LOCAL FAP: $OUT"
+  echo 'NO DEVICE WRITE / NO FIRMWARE FLASH'
+  exit 0
+fi
 sh "$APP/scripts/test-v20-e11-final-ui-predevice-host.sh"
 mkdir -p "$HOME/.cache"
 WORK="$(mktemp -d "$HOME/.cache/labmate-e11-build-XXXXXXXX")"
