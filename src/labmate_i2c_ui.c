@@ -1,8 +1,9 @@
 #include "labmate_ui_screens.h"
-#include "labmate_ui_primitives.h"
+#include "labmate_comm_ui.h"
 #include "labmate_i2c_runtime.h"
 #include <stdio.h>
 
+/* Present a snapshot only; no bus acquisition or scan from drawing code. */
 void draw_i2c(Canvas* canvas, LabMateApp* app) {
     LabMateI2cView result;
     const LabMateI2cRuntimeStatus status =
@@ -45,29 +46,30 @@ void draw_i2c(Canvas* canvas, LabMateApp* app) {
         break;
     }
 
-    ui_draw_header(canvas, "I2C");
-    ui_badge(canvas, 82U, 1U, 44U, badge, scanning);
+    labmate_comm_ui_header(canvas, "I2C", badge, scanning);
     canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 3U, 22U, "PC0 SCL / PC1 SDA");
-    canvas_draw_line(canvas, 2U, 25U, 125U, 25U);
+    canvas_set_color(canvas, ColorBlack);
+    (void)ui_kit_text(canvas, 4U, 20U, 120U, "PC0 SCL / PC1 SDA", NULL);
+    canvas_draw_line(canvas, 4U, 24U, 123U, 24U);
 
     if(status == LabMateI2cRuntimeResults) {
         char summary[32];
         snprintf(summary, sizeof(summary), "%u FOUND P%u/%u",
                  (unsigned)result.found_total,
                  (unsigned)(result.page + 1U), (unsigned)result.page_count);
-        canvas_draw_str(canvas, 3U, 33U, summary);
-        for(uint8_t i = 0; i < result.row_count; ++i) {
+        (void)ui_kit_text(canvas, 4U, 33U, 120U, summary, NULL);
+        for(uint8_t i = 0U; i < result.row_count && i < 4U; ++i) {
             char address[12];
             snprintf(address, sizeof(address), "0x%02X", result.row_address[i]);
-            const uint8_t x = (i & 1U) ? 67U : 3U;
+            const uint8_t x = (i & 1U) ? 67U : 4U;
             const uint8_t y = (i < 2U) ? 43U : 51U;
-            canvas_draw_str(canvas, x, y, address);
+            (void)ui_kit_text(canvas, x, y, 60U, address, NULL);
         }
     } else {
-        canvas_draw_str(canvas, 3U, 38U, message);
+        (void)ui_kit_text(canvas, 4U, 38U, 120U, message, NULL);
         if(status == LabMateI2cRuntimeApiMissing)
-            canvas_draw_str(canvas, 3U, 49U, "NO UNSAFE BUS LOCK");
+            (void)ui_kit_text(canvas, 4U, 49U, 120U, "NO UNSAFE BUS LOCK", NULL);
     }
-    ui_footer_pair(canvas, "OK", scanning ? "STOP" : "SCAN", "BACK", "EXIT");
+    labmate_comm_ui_keys(canvas, UiKitKeyOk, scanning ? "Stop" : "Scan",
+                         UiKitKeyBack, "Exit");
 }
