@@ -34,7 +34,7 @@
 | UI02 / UI03 COMM exact current renderer tests | PASS on migration branch |
 | UI05B Button / Alerts exact current renderer tests | PASS on migration branch |
 | UI06C pure status plus exact GPIO | PASS (retained compatible gate) |
-| Four unmigrated excluded UI runners: UI04 / UI05 / UI05D / UI06 | **OPEN**, not waived |
+| UI04 Profiles / History / Log Detail exact production render (300 cases per compiler) | **PASS**, Actions 40771017169 (GCC+Clang) |\n| Three excluded UI runners: UI05 / UI05D / UI06 | **OPEN**, not waived |
 
 ### Follow-up physical acceptance (single labmate.fap only)
 
@@ -69,9 +69,13 @@ Current-source replacements now include:
 - **UI06C:** original status truth table remains passing and runs the current
   exact GPIO source renderer through UI05E.
 
-**Still excluded:** UI04 (profiles/history/detail), UI05 (logger), UI05D
-(frequency/pulse/PWM old presentation), UI06 (old footer/layout plus UI05D).
-These are four runner names, not four unrelated feature modules. Passing
-historical geometry is not equivalent to pixel-raster acceptance. Source-only
+**UI04 migrated:** exact current Profiles / History / Log Detail bodies, with
+216 + 44 + 40 read-only state cases under each of GCC and Clang. Combined
+pre-device CI **PASS**, Actions 40771017169; no device or FAP work.
+
+**Still excluded:** UI05 (logger), UI05D (frequency/pulse/PWM old
+presentation), UI06 (old footer/layout plus UI05D). These are three runner
+names, not three unrelated feature modules. Passing historical geometry is
+not equivalent to pixel-raster acceptance. Source-only
 contracts and native E11 compilation remain useful, but cannot waive the
 missing exact-renderer tests or physical QA.
