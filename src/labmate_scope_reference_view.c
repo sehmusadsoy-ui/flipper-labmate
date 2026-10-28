@@ -129,4 +129,4 @@ bool labmate_scope_reference_view_draw(
     (void)ui_kit_key_hint(c, 70U, UiKitKeyDown, "Next");
     canvas_set_color(c, ColorBlack);
     return true;
-
+}

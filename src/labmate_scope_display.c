@@ -167,4 +167,4 @@ bool labmate_scope_display_draw(Canvas* c, const LabMateScopeDisplay* d) {
         (void)ui_kit_key_hint(c, 70U, UiKitKeyDown, "Next");
     canvas_set_color(c, ColorBlack);
     return true;
-
+}
