@@ -234,6 +234,10 @@ typedef enum {
     UiKitInstrumentStopped,
     UiKitInstrumentBusy,
     UiKitInstrumentError,
+    /* Additive scope/reference verdicts. Preserve existing enum values. */
+    UiKitInstrumentWaiting,
+    UiKitInstrumentMatch,
+    UiKitInstrumentOff,
     UiKitInstrumentStateCount,
 } UiKitInstrumentState;
 
@@ -279,3 +283,49 @@ bool ui_kit_hero_value(
  * Full text must fit with a >=4px gap or nothing is drawn. */
 bool ui_kit_stat_row(
     Canvas* canvas, uint8_t y, const char* label, const char* value);
+
+
+/* Button/Scope pixel V2.0 — ADDITIVE, stateless components.
+ * Existing menus, GPIO, Counter and legacy ui_kit users are unchanged.
+ * All bool functions preflight dimensions and reject non-fitting text
+ * WITHOUT painting a clipped/partial value. No HAL, time read or allocation.
+ */
+
+/* Uniform chevron (5,2)-(2,5)-(5,8), FontPrimary title x=9/y=9.
+ * show_chip=false is for Compare/Sample; when true right-align a measured
+ * state chip (Ready/Live/Held/Stopped/Waiting/Match/Off/Busy/Error).
+ * Refuses title/chip collisions instead of truncation or moving >2px. */
+bool ui_kit_pixel_header(
+    Canvas* canvas, const char* title, bool show_chip,
+    UiKitInstrumentState state, bool pulse);
+
+/* Five-argument pixel stat row: y is the text BASELINE (not top).
+ * Secondary label at x=4, Primary value flush RIGHT at x=123, and optional
+ * Secondary ASCII unit with an explicit leading space (" kHz", " ms").
+ * Four-argument ui_kit_stat_row remains entirely source/ABI compatible.
+ * No automatic numeric rounding, abbreviations or silent truncation. */
+bool ui_kit_stat_row_unit(
+    Canvas* canvas, uint8_t y_baseline, const char* label,
+    const char* value, const char* unit);
+#define UI_KIT_STAT_ROW_SELECT(_1,_2,_3,_4,_5,NAME,...) NAME
+#define ui_kit_stat_row(...) \
+    UI_KIT_STAT_ROW_SELECT(__VA_ARGS__,ui_kit_stat_row_unit,ui_kit_stat_row,ui_kit_stat_row_unused)(__VA_ARGS__)
+
+/* Empty-data outline: dotted every 2px, flat to about 55%, 4px rise,
+ * 6px high plateau, 4px fall, then flat. Width is X SPAN: [x..x+w]. */
+bool ui_kit_pulse_line_dotted(Canvas* canvas, uint8_t x, uint8_t y, uint8_t w);
+
+/* Source-provided samples of actual HIGH (1) / LOW (0) levels only.
+ * No interpolation of unobserved edge times; per-column min/max preserves
+ * transitions. 2<=width<=128, 2<=height, 1<=count<=256. */
+bool ui_kit_mini_trace(
+    Canvas* canvas, uint8_t x, uint8_t y, uint8_t w, uint8_t h,
+    const uint8_t* samples, uint16_t count);
+
+/* Fixed 4-page Scope strip: inactive 2x2 dots at x=99+7*i,y=15,
+ * active radius-2 disc centered x=100+7*i,y=16. Never replace the
+ * legacy centered page dots; these are a separate scoped component. */
+bool ui_kit_scope_page_dots(Canvas* canvas, uint8_t active_index);
+
+/* Small down triangle within [61..65]x[59..61], on chipless pages only. */
+void ui_kit_next_cue(Canvas* canvas);

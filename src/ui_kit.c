@@ -919,6 +919,9 @@ static const char* ui_kit_instrument_state_name(UiKitInstrumentState state) {
     case UiKitInstrumentStopped: return "Stopped";
     case UiKitInstrumentBusy: return "Busy";
     case UiKitInstrumentError: return "Error";
+    case UiKitInstrumentWaiting: return "Waiting";
+    case UiKitInstrumentMatch: return "Match";
+    case UiKitInstrumentOff: return "Off";
     default: return NULL;
     }
 }
@@ -978,8 +981,28 @@ static void ui_kit_instrument_glyph(
         canvas_draw_line(c, gx-1U, gy+2U, gx+1U, gy+2U);
         break;
     case UiKitInstrumentError:
+        /* Preserve the approved Error glyph on existing screens. */
         canvas_draw_line(c, gx, gy-2U, gx, gy);
         canvas_draw_dot(c, gx, gy+2U);
+        break;
+    case UiKitInstrumentOff:
+        canvas_draw_line(c, gx, gy-3U, gx, gy);
+        canvas_draw_dot(c, gx, gy+2U);
+        break;
+    case UiKitInstrumentWaiting:
+        /* The Ready/Waiting unfilled disc shares the source glyph. */
+        canvas_draw_line(c, gx-1U, gy-2U, gx+1U, gy-2U);
+        canvas_draw_dot(c, gx-2U, gy-1U);
+        canvas_draw_dot(c, gx+2U, gy-1U);
+        canvas_draw_dot(c, gx-2U, gy);
+        canvas_draw_dot(c, gx+2U, gy);
+        canvas_draw_dot(c, gx-2U, gy+1U);
+        canvas_draw_dot(c, gx+2U, gy+1U);
+        canvas_draw_line(c, gx-1U, gy+2U, gx+1U, gy+2U);
+        break;
+    case UiKitInstrumentMatch:
+        canvas_draw_line(c, gx-2U, gy, gx-1U, gy+1U);
+        canvas_draw_line(c, gx-1U, gy+1U, gx+2U, gy-2U);
         break;
     default: break;
     }
@@ -1120,6 +1143,7 @@ bool ui_kit_hero_value(
     return true;
 }
 
+#undef ui_kit_stat_row
 bool ui_kit_stat_row(
     Canvas* c, uint8_t y, const char* label, const char* value) {
     if(!c || !label || !value || !label[0] || !value[0] ||
@@ -1134,4 +1158,134 @@ bool ui_kit_stat_row(
     canvas_draw_str(c, 124U - right_width, y + 7U, value);
     canvas_set_color(c, ColorBlack);
     return true;
+}
+
+
+/* ---------- Button + Scope pixel shared primitives (Step 1 only) ---------- */
+
+bool ui_kit_pixel_header(
+    Canvas* c, const char* title, bool show_chip,
+    UiKitInstrumentState state, bool pulse) {
+    if(!c || !title || !title[0]) return false;
+    canvas_set_font(c, FontPrimary);
+    const uint16_t title_w = canvas_string_width(c, title);
+    if(!title_w || 9U + title_w > 127U) return false;
+    if(show_chip) {
+        const uint8_t chip_w = ui_kit_state_chip_width(c, state);
+        if(!chip_w) return false;
+        const uint16_t chip_x = 127U - chip_w;
+        if(9U + title_w + 2U > chip_x) return false;
+    }
+    canvas_set_color(c, ColorBlack);
+    canvas_draw_line(c, 5U, 2U, 2U, 5U);
+    canvas_draw_line(c, 2U, 5U, 5U, 8U);
+    canvas_set_font(c, FontPrimary);
+    canvas_draw_str(c, 9U, 9U, title);
+    if(show_chip && !ui_kit_state_chip_compact(c, state, pulse)) return false;
+    canvas_set_color(c, ColorBlack);
+    return true;
+}
+
+bool ui_kit_stat_row_unit(
+    Canvas* c, uint8_t y, const char* label, const char* value,
+    const char* unit) {
+    if(!c || !label || !label[0] || !value || !value[0] ||
+       y < 9U || y > 63U || (unit && unit[0] && unit[0] != ' '))
+        return false;
+    canvas_set_font(c, FontSecondary);
+    const uint16_t label_w = canvas_string_width(c, label);
+    const uint16_t unit_w = unit ? canvas_string_width(c, unit) : 0U;
+    canvas_set_font(c, FontPrimary);
+    const uint16_t value_w = canvas_string_width(c, value);
+    if(!label_w || !value_w || label_w > 116U || unit_w > 116U ||
+       value_w > 116U || value_w + unit_w > 120U) return false;
+    const int32_t unit_x = 124 - (int32_t)unit_w;
+    const int32_t value_x = unit_x - (int32_t)value_w;
+    if(value_x < 4 + (int32_t)label_w + 4) return false;
+    canvas_set_color(c, ColorBlack);
+    canvas_set_font(c, FontSecondary);
+    canvas_draw_str(c, 4U, y, label);
+    canvas_set_font(c, FontPrimary);
+    canvas_draw_str(c, value_x, y, value);
+    if(unit_w) {
+        canvas_set_font(c, FontSecondary);
+        canvas_draw_str(c, unit_x, y, unit);
+    }
+    canvas_set_color(c, ColorBlack);
+    return true;
+}
+
+bool ui_kit_pulse_line_dotted(Canvas* c, uint8_t x, uint8_t y, uint8_t w) {
+    if(!c || w < 24U || w > 127U || y < 4U ||
+       !ui_kit_rect(x, y-4U, (uint8_t)(w+1U), 5U)) return false;
+    const uint16_t knee = (uint16_t)w * 55U / 100U;
+    if(knee + 14U > w) return false;
+    canvas_set_color(c, ColorBlack);
+    for(uint16_t p = 0U; p <= w; p += 2U) {
+        int16_t yy = y;
+        if(p >= knee && p < knee + 4U) yy = (int16_t)y - (int16_t)(p-knee);
+        else if(p >= knee + 4U && p <= knee + 10U) yy = (int16_t)y - 4;
+        else if(p > knee + 10U && p < knee + 14U)
+            yy = (int16_t)y - 4 + (int16_t)(p-knee-10U);
+        canvas_draw_dot(c, (int16_t)x + p, yy);
+    }
+    canvas_set_color(c, ColorBlack);
+    return true;
+}
+
+bool ui_kit_mini_trace(
+    Canvas* c, uint8_t x, uint8_t y, uint8_t w, uint8_t h,
+    const uint8_t* samples, uint16_t count) {
+    if(!c || !samples || !count || count > 256U ||
+       w < 2U || h < 2U || !ui_kit_rect(x, y, w, h)) return false;
+    /* Scan ALL values before drawing. 2/unknown is not a digital sample. */
+    for(uint16_t i = 0U; i < count; ++i)
+        if(samples[i] > 1U) return false;
+    canvas_set_color(c, ColorBlack);
+    bool previous_valid = false;
+    uint8_t previous = 0U;
+    for(uint16_t col = 0U; col < w; ++col) {
+        uint16_t first = (uint16_t)((uint32_t)col * count / w);
+        uint16_t stop = (uint16_t)((uint32_t)(col + 1U) * count / w);
+        if(stop <= first) stop = first + 1U;
+        if(stop > count) stop = count;
+        uint8_t min_level = samples[first], max_level = samples[first];
+        for(uint16_t j = first + 1U; j < stop; ++j) {
+            if(samples[j] < min_level) min_level = samples[j];
+            if(samples[j] > max_level) max_level = samples[j];
+        }
+        const uint8_t first_level = samples[first];
+        const uint8_t last_level = samples[stop-1U];
+        const int16_t px = (int16_t)x + col;
+        const int16_t high_y = y, low_y = (int16_t)y + h-1U;
+        if(previous_valid && previous != first_level)
+            canvas_draw_line(c, px, high_y, px, low_y);
+        if(min_level != max_level)
+            canvas_draw_line(c, px, high_y, px, low_y);
+        else canvas_draw_dot(c, px, first_level ? high_y : low_y);
+        previous = last_level;
+        previous_valid = true;
+    }
+    canvas_set_color(c, ColorBlack);
+    return true;
+}
+
+bool ui_kit_scope_page_dots(Canvas* c, uint8_t active_index) {
+    if(!c || active_index >= 4U) return false;
+    canvas_set_color(c, ColorBlack);
+    for(uint8_t i = 0U; i < 4U; ++i) {
+        const uint8_t cx = 100U + 7U * i;
+        if(i == active_index) ui_kit_instrument_disc(c, cx, 16U, 2U);
+        else canvas_draw_box(c, cx-1U, 15U, 2U, 2U);
+    }
+    canvas_set_color(c, ColorBlack);
+    return true;
+}
+
+void ui_kit_next_cue(Canvas* c) {
+    if(!c) return;
+    canvas_set_color(c, ColorBlack);
+    canvas_draw_line(c, 61U, 59U, 65U, 59U);
+    canvas_draw_line(c, 62U, 60U, 64U, 60U);
+    canvas_draw_dot(c, 63U, 61U);
 }

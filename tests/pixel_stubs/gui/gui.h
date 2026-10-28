@@ -10,3 +10,6 @@ void canvas_set_color(Canvas*, Color);
 void canvas_draw_rbox(Canvas*, int32_t, int32_t, int32_t, int32_t, int32_t);
 void canvas_draw_rframe(Canvas*, int32_t, int32_t, int32_t, int32_t, int32_t);
 void canvas_draw_str(Canvas*, int32_t, int32_t, const char*);
+void canvas_draw_line(Canvas*, int32_t, int32_t, int32_t, int32_t);
+void canvas_draw_dot(Canvas*, int32_t, int32_t);
+void canvas_draw_box(Canvas*, int32_t, int32_t, int32_t, int32_t);
