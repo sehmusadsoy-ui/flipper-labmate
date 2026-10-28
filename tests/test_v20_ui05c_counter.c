@@ -1,89 +1,121 @@
-/* UI-05C: original Counter drawing function, real pure counter formatter. */
-#include <assert.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
-#include <limits.h>
+/* UI-05C E11 Counter: source-identical renderer with real pure formatter.
+ * Canvas/chip/hint are bounded host mocks, not framebuffer/physical fonts.
+ * Source-linked status/number/time/action test, NO GPIO/TIM2/device access.
+ */
+#include "ui_kit.h"
 #include "labmate_threshold.h"
 #include "labmate_counter_math.h"
-typedef enum {FontSecondary=0,FontPrimary=1} Font;
-typedef enum {AlignRight=0,AlignCenter=1} Align;
-typedef enum {AlignBottom=0} VerticalAlign;
-typedef struct {int x0,y0,x1,y1;} Rect;
-typedef struct Canvas Canvas;
-struct Canvas { Font font; Rect texts[32]; char strings[32][32]; unsigned n,errors; int bx,by,bw;};
-static bool overlap(Rect a,Rect b) {return !(a.x1<b.x0||b.x1<a.x0||a.y1<b.y0||b.y1<a.y0);}
-static void canvas_text(Canvas* c,int x,int y,const char* s){
-    assert(c&&s&&c->n<32);
-    int width=(int)strlen(s)*(c->font==FontPrimary?8:6);
-    int height=c->font==FontPrimary?11:8;
-    Rect rc={x,y-height+1,x+width-1,y};
-    if(width<1||rc.x0<0||rc.y0<0||rc.x1>=128||rc.y1>=64){
-        fprintf(stderr,"OUT OF LCD: %s x=%d y=%d\n",s,x,y); c->errors++;
-    }
-    if(c->bw && x==c->bx+4 && y==c->by+8 && rc.x1>=c->bx+c->bw){
-        fprintf(stderr,"BADGE CLIP: %s\n",s);c->errors++;
-    }
-    for(unsigned i=0;i<c->n;i++)if(overlap(rc,c->texts[i])){
-        fprintf(stderr,"OVERLAP: %s and %s\n",s,c->strings[i]);c->errors++;
-    }
-    c->texts[c->n]=rc;snprintf(c->strings[c->n],sizeof(c->strings[0]),"%s",s);c->n++;
-}
+#include <assert.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <limits.h>
+struct Canvas {
+    Font font;
+    Color color;
+    unsigned errors, text_count, chip_count, key_count;
+    UiKitInstrumentState chip;
+    struct { int x,y; char label[40]; } text[24];
+    struct { unsigned x; UiKitKey key; char label[12]; } keys[3];
+};
 void canvas_set_font(Canvas* c,Font f){c->font=f;}
-void canvas_draw_str(Canvas* c,int x,int y,const char* s){canvas_text(c,x,y,s);}
-void canvas_draw_str_aligned(Canvas* c,int x,int y,Align a,VerticalAlign v,const char* s){
-    assert(v==AlignBottom);
-    int w=(int)strlen(s)*(c->font==FontPrimary?8:6);
-    canvas_text(c,a==AlignRight?x-w:x-w/2,y,s);
+void canvas_set_color(Canvas* c,Color v){c->color=v;}
+uint16_t canvas_string_width(Canvas* c,const char* s){
+    const unsigned w=c->font==FontSecondary?6U:c->font==FontPrimary?7U:12U;
+    return (uint16_t)(strlen(s)*w);
 }
-void canvas_draw_line(Canvas* c,int a,int b,int d,int e){
-    if(a<0||d<0||b<0||e<0||a>=128||d>=128||b>=64||e>=64)c->errors++;
+void canvas_draw_str(Canvas* c,int32_t x,int32_t y,const char* s) {
+    const int w=canvas_string_width(c,s);
+    const int h=c->font==FontSecondary?8:c->font==FontPrimary?10:17;
+    if(w<=0 || x<0 || y-h+1<0 || x+w>128 || y>=64) c->errors++;
+    if(c->text_count>=24U) {c->errors++;return;}
+    c->text[c->text_count].x=x;
+    c->text[c->text_count].y=y;
+    snprintf(c->text[c->text_count].label,40,"%s",s);
+    c->text_count++;
 }
-void ui_draw_header(Canvas* c,const char* t){canvas_set_font(c,FontPrimary);canvas_draw_str(c,2,10,t);canvas_draw_line(c,0,13,127,13);}
-void ui_badge(Canvas* c,uint8_t x,uint8_t y,uint8_t w,const char* s,bool selected){
-    (void)selected;if(x+w>128||y+11>64)c->errors++;c->bx=x;c->by=y;c->bw=w;
-    canvas_set_font(c,FontSecondary);canvas_draw_str(c,x+4,y+8,s);
+void canvas_draw_line(Canvas* c,int32_t x,int32_t y,int32_t xx,int32_t yy) {
+    if(x<0||xx<0||x>=128||xx>=128||y<0||yy<0||y>=64||yy>=64)c->errors++;
 }
-void ui_footer_pair(Canvas* c,const char* lk,const char* la,const char* rk,const char* ra){
-    char label[32];int n=snprintf(label,sizeof(label),"(%s) %s",lk,la);
-    if(n>10)n=snprintf(label,sizeof(label),"(%s)%s",lk,la);
-    assert(n>=1&&n<=10);canvas_draw_line(c,0,52,127,52);
-    canvas_set_font(c,FontSecondary);canvas_draw_str(c,2,61,label);
-    n=snprintf(label,sizeof(label),"(%s) %s",rk,ra);
-    if(n>10)n=snprintf(label,sizeof(label),"(%s)%s",rk,ra);
-    assert(n>=1&&n<=10);canvas_draw_str(c,66,61,label);
+bool ui_kit_state_chip_compact(Canvas* c,UiKitInstrumentState s,bool pulse){
+    (void)pulse;c->chip=s;c->chip_count++;return true;
 }
+uint8_t ui_kit_key_hint_compact(Canvas* c,uint8_t x,UiKitKey key,const char* label){
+    const unsigned key_width=key==UiKitKeyOk?19U:key==UiKitKeyUp?16U:18U;
+    if(x+key_width+3U+6U*strlen(label)>127U)c->errors++;
+    if(c->key_count>=3U){c->errors++;return 0;}
+    c->keys[c->key_count].x=x;
+    c->keys[c->key_count].key=key;
+    snprintf(c->keys[c->key_count].label,12,"%s",label);
+    c->key_count++;
+    return (uint8_t)(x+key_width+3U+6U*strlen(label));
+}
+static uint32_t mock_tick=1000U;
+uint32_t furi_get_tick(void){return mock_tick;}
 typedef struct {
     uint64_t counter_total,counter_elapsed_ticks;
-    uint32_t counter_elapsed_seconds;
-    bool counter_active,capture_blocked;
+    uint32_t counter_start_tick,counter_elapsed_seconds;
+    bool counter_active,capture_blocked,capture_release_fault;
     LabMateThreshold threshold;
 } LabMateApp;
-#include "draw_counter_body.inc"
-static bool contains(Canvas* c,const char* s){for(unsigned i=0;i<c->n;i++)if(!strcmp(s,c->strings[i]))return true;return false;}
-int main(void){
-    const uint64_t counts[]={0,1,9,10,999,9999999,10000000,99999999999ULL,100000000000ULL,18446744073709551615ULL};
-    const uint32_t seconds[]={0,59,60,3599,3600,359999,360000,UINT32_MAX};
-    unsigned cases=0,failed=0;
-    for(unsigned i=0;i<sizeof(counts)/sizeof(counts[0]);i++)
-    for(unsigned j=0;j<sizeof(seconds)/sizeof(seconds[0]);j++)
-    for(unsigned scenario=0;scenario<8;scenario++){
-        LabMateApp a={0};Canvas c={0};
-        a.counter_total=counts[i];a.counter_elapsed_seconds=seconds[j];
-        a.counter_elapsed_ticks=counts[i]?1:0;
-        a.counter_active=(scenario&1U)!=0;
-        a.capture_blocked=(scenario&2U)!=0;
-        a.threshold.source=LabMateAlertCounter;
-        a.threshold.armed=(scenario&4U)!=0;
-        a.threshold.latched=(scenario&4U)!=0;
-        LabMateApp before;memcpy(&before,&a,sizeof(a));
-        draw_counter(&c,&a);
-        assert(memcmp(&before,&a,sizeof(a))==0);
-        if(i==9)assert(contains(&c,"18446744073709551615"));
-        if(c.errors){fprintf(stderr,"COUNTER ERROR value=%llu seconds=%u scenario=%u\n",(unsigned long long)counts[i],seconds[j],scenario);failed++;}
-        cases++;
+#include "counter_count.inc"
+#include "counter_time.inc"
+#include "draw_counter.inc"
+static bool has(const Canvas* c,const char* text){
+    for(unsigned i=0;i<c->text_count;i++)
+        if(strcmp(c->text[i].label,text)==0)return true;
+    return false;
+}
+static bool key(const Canvas* c,UiKitKey id,const char* label){
+    for(unsigned i=0;i<c->key_count;i++)
+        if(c->keys[i].key==id&&strcmp(c->keys[i].label,label)==0)return true;
+    return false;
+}
+static unsigned cases=0U;
+static void run(uint64_t count,uint32_t secs,unsigned flags) {
+    Canvas c={0};LabMateApp a={0};
+    a.counter_total=count;
+    a.counter_elapsed_seconds=secs;
+    a.counter_start_tick=flags&1U ? 456U:0U;
+    a.counter_elapsed_ticks=flags&2U ? 123U:0U;
+    a.counter_active=(flags&4U)!=0;
+    a.capture_blocked=(flags&8U)!=0;
+    a.capture_release_fault=(flags&16U)!=0;
+    a.threshold.source=LabMateAlertCounter;
+    a.threshold.armed=(flags&32U)!=0;
+    a.threshold.latched=(flags&32U)!=0;
+    LabMateApp before=a;
+    draw_counter(&c,&a);
+    assert(memcmp(&before,&a,sizeof(a))==0);
+    assert(c.errors==0 && c.color==ColorBlack);
+    assert(c.chip_count==1U);
+    assert(has(&c,"Counter")&&has(&c,"Count")&&has(&c,"Time"));
+    const UiKitInstrumentState expected=a.capture_release_fault ? UiKitInstrumentError:
+        a.capture_blocked ? UiKitInstrumentBusy:a.counter_active?UiKitInstrumentLive:
+        a.counter_start_tick||a.counter_elapsed_ticks||a.counter_total ?
+            UiKitInstrumentStopped:UiKitInstrumentReady;
+    assert(c.chip==expected);
+    if(expected==UiKitInstrumentError||expected==UiKitInstrumentBusy){
+        assert(c.key_count==0U && has(&c,"-"));
+    }else if(expected==UiKitInstrumentLive) {
+        assert(c.key_count==1U&&key(&c,UiKitKeyOk,"Stop"));
+    }else if(expected==UiKitInstrumentStopped) {
+        assert(c.key_count==2U&&key(&c,UiKitKeyOk,"Resume")&&key(&c,UiKitKeyUp,"Reset"));
+    }else{
+        assert(c.key_count==1U&&key(&c,UiKitKeyOk,"Start"));
     }
-    printf("UI-05C Counter host: %u cases, %u failures\n",cases,failed);
-    return failed?1:0;
+    ++cases;
+}
+int main(void){
+    const uint64_t count[]={0ULL,1ULL,145ULL,999999ULL,1000000ULL,
+        123456789ULL,1000000000ULL,UINT32_MAX,UINT64_MAX};
+    const uint32_t sec[]={0U,1U,59U,60U,71U,3599U,3600U,UINT32_MAX};
+    for(unsigned i=0;i<sizeof(count)/sizeof(count[0]);i++)
+        for(unsigned j=0;j<sizeof(sec)/sizeof(sec[0]);j++)
+            for(unsigned f=0;f<64U;f++)
+                run(count[i],sec[j],f);
+    assert(cases==4608U);
+    printf("E11 COUNTER SOURCE RENDER HOST PASS: %u state/count/time cases\n",cases);
+    return 0;
 }

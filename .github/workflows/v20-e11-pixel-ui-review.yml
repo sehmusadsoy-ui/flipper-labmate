@@ -15,6 +15,8 @@ on:
       - "tests/test_navigation.c.inc"
       - "tests/test_v20_ultimate_root_grid.c"
       - "scripts/test-v20-ultimate-root-grid-host.sh"
+      - "tests/test_v20_ui05c_counter.c"
+      - "scripts/test-v20-ui05c-host.sh"
       - "tests/pixel_stubs/**"
       - ".github/workflows/v20-e11-pixel-ui-review.yml"
   pull_request:
