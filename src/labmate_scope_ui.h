@@ -19,10 +19,14 @@ static inline bool labmate_scope_ui_header(
     Canvas* c, const char* title, const char* page) {
     if(!c || !title || !page ||
        strlen(title) > 9U || strlen(page) > 3U) return false;
-    labmate_scope_ui_text(c, FontPrimary, 3, 11, title);
+    /* Compact E11 pixel header: chevron + restrained title + page + pin.
+     * Reserve the existing y=15..42 waveform viewport exactly as before. */
+    canvas_draw_line(c, 7, 2, 4, 5);
+    canvas_draw_line(c, 4, 5, 7, 8);
+    labmate_scope_ui_text(c, FontSecondary, 12, 9, title);
     labmate_scope_ui_text(c, FontSecondary, 82, 9, page);
     labmate_scope_ui_text(c, FontSecondary, 105, 9, "PC1");
-    canvas_draw_line(c, 0, 13, 127, 13);
+    canvas_draw_line(c, 2, 13, 125, 13);
     return true;
 }
 
