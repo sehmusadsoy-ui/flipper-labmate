@@ -71,7 +71,7 @@ static void test_scope_chrome(void) {
         struct Canvas c = {0};
         assert(labmate_scope_ui_header(&c, titles[i], "1/4"));
         assert(labmate_scope_ui_footer(&c, "(OK)Run", "(v)Pg"));
-        assert(c.count == 6U && c.lines == 4U);
+        assert(c.count == 6U && c.lines == 6U); /* pixel chevron = 2 lines */
         /* Every header is above the graph, every footer below status row. */
         for(size_t n = 0U; n < 3U; ++n) assert(c.label[n].y1 <= 12);
         for(size_t n = 3U; n < 6U; ++n) assert(c.label[n].y0 >= 55);
@@ -79,7 +79,7 @@ static void test_scope_chrome(void) {
     struct Canvas active = {0};
     assert(labmate_scope_ui_header(&active, "SCOPE", "1/4"));
     assert(labmate_scope_ui_footer(&active, "(OK)Stop", ""));
-    assert(active.count == 5U && active.lines == 3U);
+    assert(active.count == 5U && active.lines == 5U);
     struct Canvas limits = {0};
     assert(labmate_scope_ui_header(&limits, "123456789", "123"));
     assert(labmate_scope_ui_footer(&limits, "1234567", "12345"));
@@ -112,10 +112,11 @@ static void test_menu_text_and_navigation(void) {
     for(uint8_t group = 0; group < LabMateGroupCount; ++group) {
         const uint8_t count = labmate_nav_group_size(group);
         assert(count == sizes[group]);
+        /* Current root is a carousel; list header is FontSecondary
+         * at x=12, baseline 9, and has no old version badge. */
         const Rect group_title = text_rect(
-            FontPrimary, 2, 10, labmate_nav_group_title(group));
-        const Rect version_badge = {70, 1, 125, 11};
-        assert(rect_inside(group_title) && !rect_intersects(group_title, version_badge));
+            FontSecondary, 12, 9, labmate_nav_group_title(group));
+        assert(rect_inside(group_title) && group_title.x1 < 98);
         for(uint8_t i = 0; i < count; ++i) {
             const uint8_t tool = labmate_nav_tool_at(group, i);
             assert(tool < LabMateToolCount && !seen[tool]);
@@ -125,15 +126,16 @@ static void test_menu_text_and_navigation(void) {
                 assert(first <= selected && selected < (uint8_t)(first + 3U));
                 if(i < first || i >= (uint8_t)(first + 3U)) continue;
                 const uint8_t row = i - first;
-                const int32_t y = 25 + 12 * row;
-                const Rect selected_bg = {1, y-10, 126, y+1};
-                const Rect icon = {4, y-9, 16, y+3};
-                const Rect label = text_rect(
-                    FontSecondary, 20, y, labmate_nav_tool_title(tool));
-                const Rect arrow = text_rect(FontSecondary, 117, y, ">");
-                assert(rect_inside(selected_bg) && selected_bg.y1 < 52);
-                assert(rect_inside(icon) && rect_inside(label) && rect_inside(arrow));
-                assert(label.x1 < arrow.x0 && label.y1 < 52);
+                /* Real ui_kit list: at most 3 rows, y=12,26,40.
+                 * The selected 124x14 pill stays above the fourth hint.
+                 * Tool text is preflighted against a 91px slot at x=22. */
+                const int32_t y = 12 + 14 * row;
+                const Rect selected_bg = {2, y, 125, y+13};
+                const Rect icon = {6, y+2, 15, y+11};
+                const Rect text_slot = {22, y+2, 112, y+10};
+                assert(rect_inside(selected_bg) && selected_bg.y1 <= 53);
+                assert(rect_inside(icon) && rect_inside(text_slot));
+                assert(icon.x1 < text_slot.x0 && text_slot.x1 < 118);
             }
         }
         assert(labmate_nav_tool_at(group, count) == LabMateToolInvalid);
@@ -148,9 +150,11 @@ static void test_menu_text_and_navigation(void) {
     assert(labmate_nav_wrap(0, 6, -1) == 5);
     assert(labmate_nav_wrap(5, 6, 1) == 0);
     assert(labmate_nav_tool_at(LabMateGroupMeasure, 5) == LabMateToolScope);
-    /* Menu footer baseline 61 must fit below divider y=52. */
-    assert(rect_inside(text_rect(FontSecondary, 2, 61, "(^v) MOVE")));
-    assert(rect_inside(text_rect(FontSecondary, 70, 61, "(OK) OPEN")));
+    /* Carousel has label baselines 46/55 and page dots at 63.
+     * Submenu may display a complete fourth hint at baseline 62. */
+    assert(rect_inside(text_rect(FontPrimary, 30, 46, "MEASURE")));
+    assert(rect_inside(text_rect(FontSecondary, 20, 55, "7 tools")));
+    assert(rect_inside(text_rect(FontSecondary, 22, 62, "Scope")));
 }
 
 int main(void) {
