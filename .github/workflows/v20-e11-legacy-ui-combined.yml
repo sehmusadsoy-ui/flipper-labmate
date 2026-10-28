@@ -26,6 +26,6 @@ jobs:
         run: sh scripts/test-v20-e11-final-ui-predevice-host.sh
       - name: State remaining release blockers
         run: |
-          echo "Unmigrated excluded runners: UI05 UI05D UI06."
+          echo "Unmigrated excluded runners: UI05D UI06."
           echo "Physical 128x64 screenshots, resource contention, SD/fault gates OPEN."
           echo "No FAP install, no stable promotion."
