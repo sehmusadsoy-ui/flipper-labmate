@@ -44,7 +44,7 @@ jobs:
           assert 'if (-not $Install)' in p
           # Regression: Windows PowerShell 5.1 strips nested shell quotes
           # from wsl.exe bash -lc; stdin Bash -s must be used throughout.
-          assert p.count('--exec bash -s') == 3
+          assert p.count('--exec bash -s') == 4
           assert '($Linux -replace "`r", "")' in p
           assert 'NormalizedLinux | & wsl.exe' in p
           assert '& wsl.exe --distribution $Distro --exec bash -lc' not in p
@@ -69,4 +69,19 @@ jobs:
             $errors | ForEach-Object { Write-Error $_.Message }
             exit 1
           }
-          Write-Host 'WINDOWS POWERSHELL PARSER PASS | NO USB WRITE'
+          # Exercise PowerShell -> Bash stdin quoting with Windows Git Bash
+          # (WSL itself is not configured on the hosted runner).
+          $gitBash = Join-Path $env:ProgramFiles 'Git\bin\bash.exe'
+          if (-not (Test-Path -LiteralPath $gitBash)) { throw "Git Bash not present" }
+          $probe = @'
+set -Eeuo pipefail
+D="$HOME/.local/share/labmate-e11-source"
+test -n "$D"
+case "$D" in */.local/share/labmate-e11-source) ;; *) exit 13 ;; esac
+printf 'BASH_STDIN_QUOTES_PASS\n'
+'@
+          $output = ($probe -replace "`r", "") | & $gitBash -s
+          if ($LASTEXITCODE -ne 0 -or $output -notcontains 'BASH_STDIN_QUOTES_PASS') {
+            throw "PowerShell -> Bash stdin quote-preservation regression"
+          }
+          Write-Host 'WINDOWS POWERSHELL PARSER + BASH STDIN QUOTING PASS | NO USB WRITE'
