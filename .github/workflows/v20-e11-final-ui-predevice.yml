@@ -3,8 +3,14 @@ on:
   push:
     branches: [dev/v2.0-e11-compare-sample-pixel-step4-20261028]
     paths:
-      - "scripts/test-v20-e11-final-ui-predevice-host.sh"
+      - "src/**"
+      - "tests/**"
+      - "application.fam"
+      - "scripts/test-v20-*-host.sh"
+      - "scripts/audit-v20-e11-predevice.sh"
       - "scripts/audit-v20-e11-ui-integration.py"
+      - "scripts/audit-v20-e11-ui-completion.py"
+      - "scripts/audit-v20-e11-current-ui-contracts.py"
       - ".github/workflows/v20-e11-final-ui-predevice.yml"
 permissions:
   contents: read

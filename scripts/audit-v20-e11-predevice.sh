@@ -11,4 +11,4 @@ for suite in dashboard snapshot signal-stats doctor-advice scope-period-stats; d
     sh "$root/scripts/test-v20-$suite-host.sh"
 done
 echo "E11 REVIEWED PRE-DEVICE HOST PASS: 1 UI/safety + 10 core + 5 evidence suites"
-echo "PENDING: 13 obsolete UI host harnesses; full pixel render + device tests."
+echo "PENDING: 9 obsolete pre-pixel UI host harnesses; full pixel render + device tests."

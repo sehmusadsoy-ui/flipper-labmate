@@ -1,7 +1,7 @@
 # E11 Button + Scope / Compare + Sample A/B — pre-device acceptance
 
-**Development source**: exact commit under \`dev/v2.0-e11-compare-sample-pixel-step4-20261028\`.
-**Workflow**: \`.github/workflows/v20-e11-final-ui-predevice.yml\`.
+**Development source**: exact commit under `dev/v2.0-e11-compare-sample-pixel-step4-20261028`.
+**Workflow**: `.github/workflows/v20-e11-final-ui-predevice.yml`.
 **Boundary**: no firmware flashing, FAP download/copy, SD cleanup, branch merge, or Stable write.
 
 ## Approved source-stage implementation
