@@ -79,6 +79,15 @@ jobs:
           assert '$UsbFlag = if ($Discover) { \'--discover\' } else { \'--apply\' }' in p
           assert 'verify_v20_e11_debuglink_parity.py' in s
           assert 'sha256sum "$HOME/.local/share/labmate-e11/labmate.fap"' in p
+          # Windows WSL UNC FAP can read/hash but Python os.fstat() fails with
+          # Errno 22 on send_file(). Only local NTFS staging is a valid source.
+          assert "$UsbTempFolder = Join-Path $env:TEMP" in p
+          assert "[System.IO.File]::Copy($Fap, $UsbFap, $false)" in p
+          assert "$StageSHA -ine $ActualWindows -or $StageSHA -ine $ExpectedRaw" in p
+          assert "(Get-Item -LiteralPath $UsbFap).Length -ne 174192" in p
+          assert "Remove-Item -LiteralPath $UsbTempFolder -Recurse -Force" in p
+          assert p.count('$Helper,$UsbFap,$Backup,$Port,$UsbFlag') == 2
+          assert "LOCAL WINDOWS USB STAGE SHA256 PASS" in p
           # Regression: the original stale raw-CI-hash check ran AFTER the
           # correctly verified copy and falsely reported NO-GO every time.
           assert 'test "$(sha256sum "$OUT" | cut -d \' \' -f 1)" = "$SHA"' not in s
@@ -195,6 +204,31 @@ jobs:
             if ($_.Exception.Message -notmatch 'exit 17') { throw }
           }
           Write-Host 'WINDOWS POWERSHELL 5.1 LF-ONLY STDIN & EXIT-STATUS PASS | NO USB WRITE'
+          # Regression for the real user's Errno 22: validate local Windows
+          # filesystem staging supports Python os.fstat() on the FAP file.
+          $original = Join-Path $env:TEMP ('labmate-origin-'+[guid]::NewGuid().ToString('N')+'.fap')
+          $stageDir = Join-Path $env:TEMP ('labmate-e11-stage-fixture-'+[guid]::NewGuid().ToString('N'))
+          try {
+            [void](New-Item -ItemType Directory -Path $stageDir)
+            $fixture = New-Object byte[] 174192
+            [System.IO.File]::WriteAllBytes($original, $fixture)
+            $localFap = Join-Path $stageDir 'labmate.fap'
+            [System.IO.File]::Copy($original, $localFap, $false)
+            $h1 = (Get-FileHash -LiteralPath $original -Algorithm SHA256).Hash
+            $h2 = (Get-FileHash -LiteralPath $localFap -Algorithm SHA256).Hash
+            if ($h1 -ine $h2 -or (Get-Item -LiteralPath $localFap).Length -ne 174192) {
+              throw 'NTFS stage digest/length mismatch'
+            }
+            if (-not (Get-Command py.exe -ErrorAction SilentlyContinue)) { throw 'Windows py.exe missing' }
+            $testSize = & py.exe -3 -c 'import os,sys; f=open(sys.argv[1],"rb"); print(os.fstat(f.fileno()).st_size)' $localFap
+            if ($LASTEXITCODE -ne 0 -or $testSize -ne '174192') {
+              throw 'Windows Python local FAP open/fstat regression'
+            }
+            Write-Host 'WINDOWS LOCAL NTFS SHA256 + PYTHON FSTAT PASS | NO USB WRITE'
+          } finally {
+            Remove-Item -LiteralPath $original -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $stageDir -Recurse -Force -ErrorAction SilentlyContinue
+          }
 
   verify_exact_ci_reference:
     runs-on: ubuntu-24.04
