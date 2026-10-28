@@ -103,8 +103,9 @@ jobs:
           PY
           python3 - <<'PY'
           from pathlib import Path
-          import runpy
+          import runpy,sys
           from types import SimpleNamespace
+          sys.path.insert(0,'scripts')
           discovery = runpy.run_path('scripts/install-v20-e11-usb.py')['discover_device_faps']
           class FakeStorage:
               CLI_PROMPT='>: '
