@@ -1,0 +1,22 @@
+name: LabMate E11 migrated Button and Alerts exact-source host (NO FAP)
+on:
+  push:
+    branches: [dev/v2.0-e11-legacy-ui-harness-review-20261029]
+    paths:
+      - "scripts/test-v20-ui05b-host.sh"
+      - "tests/test_v20_ui05b_alerts_e11.c"
+      - "scripts/audit-v20-e11-predevice.sh"
+      - ".github/workflows/v20-e11-ui05b-migration.yml"
+permissions:
+  contents: read
+jobs:
+  migrated_button_alerts:
+    name: Exact production Button and Alerts GCC+Clang
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Test Button and Alerts without firmware/device
+        run: sh scripts/test-v20-ui05b-host.sh
