@@ -28,14 +28,17 @@
 | Step 3 Scope/Reference data + bounds | PASS in prior reviews |
 | Step 4 Compare/Sample pairs and guards | PASS, Actions 40766889387 |
 | Pinned Momentum E11 SDK API 87.1 FAP / SDKCHK / APPCHK | PASS, Actions 40766889352 |
-| Consolidated current UI/capture + Phase 2B..2K + evidence suites | See combined workflow |
-| Original pair generation/save + persisted navigation IDs (GCC + Clang) | See combined workflow |
+| Consolidated current UI/capture + Phase 2B..2K + evidence suites | **PASS**, Actions 40773486845 (GCC+Clang) |
+| Original pair generation/save + persisted navigation IDs (GCC + Clang) | **PASS**, Actions 40773486845 |
 | Physical full 128×64 screenshots, resource conflicts, SD, PC1 edges | **OPEN** |
 | UI02 / UI03 COMM exact current renderer tests | PASS on migration branch |
 | UI05B Button / Alerts exact current renderer tests | PASS on migration branch |
 | UI06C pure status plus exact GPIO | PASS (retained compatible gate) |
 | UI04 Profiles / History / Log Detail exact production render (300 cases per compiler) | **PASS**, Actions 40771017169 (GCC+Clang) |
-| UI05 Logger exact production render (240 cases per compiler) | **PASS**, Actions 40771605748 (GCC+Clang) |\n| Two excluded UI runners: UI05D / UI06 | **OPEN**, not waived |
+| UI05 Logger exact production render (240 cases per compiler) | **PASS**, Actions 40771605748 (GCC+Clang) |
+| UI05D Frequency/Pulse/PWM current render (4,704 cases per compiler) | **PASS**, Actions 40773486845 (GCC+Clang) |
+| UI06 quiet pair/triple footer (11+5 valid, 10 rejected per compiler) | **PASS**, Actions 40773486845 (GCC+Clang) |
+| Remaining unmigrated historical UI runners | **None**; physical acceptance still **OPEN** |
 
 ### Follow-up physical acceptance (single labmate.fap only)
 
@@ -81,9 +84,21 @@ bounds, and zero app-state mutation. The combined GCC+Clang pre-device CI
 **PASS** is recorded in Actions run 40771605748. This does not certify SD
 writes or real Flipper pixels.
 
-**Still excluded:** UI05D (frequency/pulse/PWM old presentation), UI06
-(old footer/layout plus UI05D). These are two runner names, not two unrelated
-feature modules. Passing historical geometry is
-not equivalent to pixel-raster acceptance. Source-only
-contracts and native E11 compilation remain useful, but cannot waive the
-missing exact-renderer tests or physical QA.
+**UI05D migrated:** exact current Frequency/Pulse/PWM drawing functions plus
+source-linked UI Kit text, header, pulse line and sparkline primitives. 288
+Frequency + 384 PWM + 4,032 Pulse fixtures per compiler; GCC/Clang **PASS**,
+Actions 40773486845. Secondary-font host geometry is approximate, not a
+physical Flipper font-raster certification.
+
+**UI06 migrated:** original quiet pair/triple footer functions source-linked,
+with 11 pair cases, 5 triple cases, and 10 invalid-input rejection cases per
+compiler, plus the original layout constants test. GCC/Clang **PASS**,
+Actions 40773486845. The obsolete `ui_footer_info` fixture and the old
+inverse footer-band assumption are not the current implementation.
+
+**All eight initially excluded legacy runner names have current-source
+dispositions** (UI06C retained; seven migrated). The complete combined gate
+reports 8 UI/safety + 10 core + 5 evidence suites passing. These source-side
+results **do not** establish real device pixel raster, 3.3 V PC1 signal
+handling, SD writes, resource contention, or physical firmware E11 behavior.
+Never treat CI PASS as authority to overwrite the approved FAP or Stable.
