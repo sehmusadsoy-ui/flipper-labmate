@@ -131,54 +131,120 @@ def main():
         if args.discover:
             discover_device_faps(device)
             return 0
-        if not device.exist_file(TARGET):
-            raise RuntimeError("NO-GO: no existing canonical FAP; refuse new install")
-        old=device.read_file(TARGET)
-        if len(old)<64 or old[:4]!=b"\x7fELF":
-            raise RuntimeError("NO-GO: existing FAP is not valid ELF")
-        old_md5=hashlib.md5(old).hexdigest()
-        if device.hash_flipper(TARGET).strip().lower()!=old_md5:
-            raise RuntimeError("NO-GO: original USB readback differs from device MD5")
-        root=args.backup_root.resolve()
-        root.mkdir(parents=True,exist_ok=True)
-        folder=root/("before-v20-e11-"+datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ"))
-        folder.mkdir(exist_ok=False)
-        saved=folder/"labmate.fap"
-        with saved.open("xb") as f:
-            f.write(old)
-            f.flush()
-            os.fsync(f.fileno())
-        if saved.read_bytes()!=old:
-            raise RuntimeError("NO-GO: PC original backup verification failure")
-        print("OLD FAP SAVED TO PC:",saved)
-        print("OLD FAP SHA256:",hashlib.sha256(old).hexdigest())
-        print("NEW FAP SHA256:",actual_raw_sha)
-        print("CI normalized verified SHA256:",EXPECTED)
-        if old_md5==hashlib.md5(new).hexdigest():
-            print("EXACT NEW FAP ALREADY INSTALLED. No device write.")
-            return 0
-        print("CAUTION: device_info does NOT independently prove matched E11 custom ABI.")
-        print("Confirm the device is running the same previously tested PATCHED E11.")
-        if input("Type YUKLE-E11-LABMATE for ONE FAP replacement: ").strip()!="YUKLE-E11-LABMATE":
-            raise RuntimeError("NO-GO: operator declined installation")
-        if device.hash_flipper(TARGET).strip().lower()!=old_md5:
-            raise RuntimeError("NO-GO: device FAP changed since backup")
-        for _ in range(10):
-            device.send_and_wait_eol("loader close\r")
-            result=device.read.until(device.CLI_EOL)
-            if b"was closed" in result:
-                device.read.until(device.CLI_EOL)
-            elif result.startswith(b"No application"):
-                device.read.until(device.CLI_EOL)
-                break
-            else:
-                raise RuntimeError("NO-GO: unexpected foreground app result")
+        # Momentum's native CLI prints '[F] name.fap 12345b'.
+        # List all apps in THIS same USB session; don't equate a missing
+        # canonical filename with a missing previously tested LabMate.
+        inventory=discover_device_faps(device)
+        all_paths={p for p,_ in inventory}
+        target_exists=device.exist_file(TARGET)
+        if target_exists and TARGET not in all_paths:
+            raise RuntimeError("NO-GO: canonical FAP stat/list disagreement")
+        # An extra legacy candidate alongside canonical is a duplicate.
+        # Refuse an ambiguous migration instead of overwriting an app.
+        candidates=sorted(
+            p for p,_ in inventory if p!=TARGET and any(
+                tag in p.rsplit("/",1)[-1].lower()
+                for tag in ("labmate","lab_mate","lab-mate","lab mate","counter-step3")
+            )
+        )
+        if len(candidates)>1 or (target_exists and candidates):
+            for p in candidates:
+                print("AMBIGUOUS LEGACY FAP:",p,flush=True)
+            raise RuntimeError("NO-GO: multiple LabMate files; refuse ambiguous replacement")
+        if target_exists:
+            old_path=TARGET
+            mode="REPLACE CANONICAL"
+        elif candidates:
+            old_path=candidates[0]
+            mode="MIGRATE LEGACY TO CANONICAL"
         else:
-            raise RuntimeError("NO-GO: app remains running")
-        # Sends ONLY TARGET; do not retry or self-rollback on error.
+            old_path=None
+            mode="FIRST INSTALL (no LabMate filename found)"
+        print("INSTALL PLAN:",mode,flush=True)
+        print("INSTALL TARGET:",TARGET,flush=True)
+        old=None
+        old_md5=None
+        saved=None
+        if old_path is not None:
+            print("SOURCE FAP:",old_path,flush=True)
+            if not device.exist_file(old_path):
+                raise RuntimeError("NO-GO: listed old FAP has disappeared")
+            old=bytes(device.read_file(old_path))
+            if len(old)<64 or old[:4]!=b"\x7fELF":
+                raise RuntimeError("NO-GO: old FAP does not have expected ELF signature")
+            old_md5=hashlib.md5(old).hexdigest()
+            if device.hash_flipper(old_path).strip().lower()!=old_md5:
+                raise RuntimeError("NO-GO: original USB readback differs from device MD5")
+            root=args.backup_root.resolve()
+            root.mkdir(parents=True,exist_ok=True)
+            folder=root/("before-v20-e11-"+datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ"))
+            folder.mkdir(exist_ok=False)
+            saved=folder/old_path.rsplit("/",1)[-1]
+            with saved.open("xb") as stream:
+                stream.write(old)
+                stream.flush()
+                os.fsync(stream.fileno())
+            if saved.read_bytes()!=old:
+                raise RuntimeError("NO-GO: original PC backup verification failure")
+            print("OLD FAP SAVED TO PC:",saved,flush=True)
+            print("OLD FAP SHA256:",hashlib.sha256(old).hexdigest(),flush=True)
+            if old_md5==hashlib.md5(new).hexdigest() and old_path==TARGET:
+                print("EXACT NEW FAP ALREADY INSTALLED. No device write.")
+                return 0
+        else:
+            print("NO PREVIOUS LABMATE FAP FOUND BY NAME; first install requires consent.",flush=True)
+        print("NEW FAP SHA256:",actual_raw_sha,flush=True)
+        print("CI normalized verified SHA256:",EXPECTED,flush=True)
+        # Firmware API version alone is NOT proof of patched resource ABI.
+        fields={}
+        for line in firmware:
+            if ":" in line:
+                k,v=line.split(":",1)
+                fields[k.strip()]=v.strip()
+        if (fields.get("firmware_commit")!="d3f89dfe"
+            or fields.get("firmware_api_major")!="87"
+            or fields.get("firmware_api_minor")!="1"
+            or fields.get("firmware_commit_dirty")!="true"):
+            raise RuntimeError("NO-GO: device firmware identity differs from audited dirty E11")
+        print("CAUTION: firmware identity does NOT prove exact custom E11 resource ABI.")
+        print("Only approve if this is your previously tested PATCHED Momentum E11.")
+        if old_path is None:
+            print("NO ORIGINAL FAP TO BACK UP. Verify your old app was intentionally removed.")
+        elif old_path!=TARGET:
+            print("AFTER successful NEW FAP readback, legacy device file will be removed:")
+            print("  ",old_path)
+            print("The VERIFIED original remains in PC backup:",saved)
+        print("Firmware, GPIO, CSV and profile files will NOT be modified.")
+        if input("Type YUKLE-E11-LABMATE to approve the above one-FAP plan: ").strip()!="YUKLE-E11-LABMATE":
+            raise RuntimeError("NO-GO: operator declined installation")
+        if old_path is not None:
+            if not device.exist_file(old_path) or device.hash_flipper(old_path).strip().lower()!=old_md5:
+                raise RuntimeError("NO-GO: old FAP changed since verified PC backup")
+            if saved is None or saved.read_bytes()!=old:
+                raise RuntimeError("NO-GO: original backup disappeared or changed")
+        if old_path!=TARGET and device.exist_file(TARGET):
+            raise RuntimeError("NO-GO: canonical destination appeared after discovery")
+        # Refuse writing FAP while any app is running. Asking the user to
+        # leave the app is safer than forcibly closing unknown foreground apps.
+        loader=device.send_and_wait_prompt("loader info\r")
+        if b"No application is running" not in loader:
+            raise RuntimeError("NO-GO: close running application on Flipper before install")
+        # FlipperStorage.send_file deletes/replaces the TARGET if present.
+        # With legacy migration, old file is untouched until NEW file MD5 PASS.
         device.send_file(str(args.fap),TARGET)
-        if device.size(TARGET)!=len(new) or device.hash_flipper(TARGET).strip().lower()!=hashlib.md5(new).hexdigest():
+        if (device.size(TARGET)!=len(new)
+            or device.hash_flipper(TARGET).strip().lower()!=hashlib.md5(new).hexdigest()):
             raise RuntimeError("NO-GO: installed FAP size/MD5 differ; DO NOT RETRY")
+        print("NEW CANONICAL FAP DEVICE READBACK PASS:",TARGET,flush=True)
+        if old_path is not None and old_path!=TARGET:
+            if saved is None or saved.read_bytes()!=old:
+                raise RuntimeError("NO-GO: old FAP PC backup changed; legacy left intact")
+            if device.hash_flipper(old_path).strip().lower()!=old_md5:
+                raise RuntimeError("NO-GO: legacy device FAP changed; legacy left intact")
+            device.remove(old_path)
+            if device.exist_file(old_path):
+                raise RuntimeError("NO-GO: legacy cleanup unverified; PC backup preserved")
+            print("LEGACY FAP CLEANUP PASS:",old_path,flush=True)
         print("USB SINGLE FAP WRITE/READBACK PASS:",TARGET)
         print("Physical Button/Scope/UI tests NOT YET PERFORMED")
         return 0
