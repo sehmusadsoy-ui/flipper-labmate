@@ -40,12 +40,14 @@ int main(void) {
     assert(p.source==LabMateSnapshotPulse);
     labmate_doctor_panel_edit(&p,-1);
     assert(p.source==LabMateSnapshotFrequency);
+    /* UI Step 2 intentionally restricts the reference editor to the
+     * two capture-backed sources. No hidden Scope/Monitor path. */
     labmate_doctor_panel_edit(&p,-1);
-    assert(p.source==LABMATE_DOCTOR_MONITOR_SOURCE);
+    assert(p.source==LabMateSnapshotPulse);
     labmate_doctor_panel_edit(&p,-1);
-    assert(p.source==LabMateSnapshotScope);
+    assert(p.source==LabMateSnapshotFrequency);
     labmate_doctor_panel_edit(&p,+1);
-    assert(p.source==LABMATE_DOCTOR_MONITOR_SOURCE);
+    assert(p.source==LabMateSnapshotPulse);
     labmate_doctor_panel_edit(&p,+1);
     assert(p.source==LabMateSnapshotFrequency);
     assert(!strcmp(labmate_doctor_panel_status_text(NULL),"WAIT"));
