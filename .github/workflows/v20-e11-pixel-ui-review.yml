@@ -17,6 +17,8 @@ on:
       - "scripts/test-v20-ultimate-root-grid-host.sh"
       - "tests/test_v20_ui05c_counter.c"
       - "scripts/test-v20-ui05c-host.sh"
+      - "tests/test_v20_ui05e_gpio.c"
+      - "scripts/test-v20-ui05e-host.sh"
       - "tests/pixel_stubs/**"
       - ".github/workflows/v20-e11-pixel-ui-review.yml"
   pull_request:

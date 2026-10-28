@@ -1,135 +1,134 @@
-/* UI-05E: source-identical draw_gpio, on-host ASCII 128x64 Canvas model.
- * No GPIO acquisition, timers, FAP SDK, physical font raster, or SD IO.
+/* UI-05E E11 GPIO: exact approved renderer, state/pin/label host matrix.
+ * The waveform and trace helpers are deliberately stubbed: this test is
+ * NOT the earlier 104-bit history regression or actual pin/IRQ testing.
+ * No E11 SDK, hardware, storage, GPIO writes or capture acquisition.
  */
+#include "ui_kit.h"
 #include <assert.h>
-#include <stdbool.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
-#include "labmate_ui_status.h"
-
-typedef enum { FontSecondary=0, FontPrimary=1 } Font;
-typedef enum { ColorBlack=0, ColorWhite=1 } Color;
-typedef struct {int x0,y0,x1,y1;} Rect;
-typedef struct Canvas Canvas;
-struct Canvas {
-    Font font;
-    Color color;
-    Rect text[32];
-    char strings[32][40];
-    unsigned count, errors, boxes, frames, lines;
-    int bx, by, bw;
-};
-static bool intersect(Rect a,Rect b) {
-    return !(a.x1<b.x0 || b.x1<a.x0 || a.y1<b.y0 || b.y1<a.y0);
-}
-static void draw_text(Canvas* c,int x,int y,const char* str) {
-    assert(c && str && c->count<32);
-    const int width=(int)strlen(str)*(c->font==FontPrimary?8:6);
-    const int height=c->font==FontPrimary?11:8;
-    const Rect r={x,y-height+1,x+width-1,y};
-    if(width<=0 || r.x0<0 || r.y0<0 || r.x1>127 || r.y1>63) {
-        fprintf(stderr,"SCREEN OUT: %s x=%d y=%d x1=%d\n",str,x,y,r.x1);
-        c->errors++;
-    }
-    for(unsigned i=0;i<c->count;i++)if(intersect(r,c->text[i])) {
-        fprintf(stderr,"TEXT OVERLAP: '%s' '%s'\n",str,c->strings[i]);
-        c->errors++;
-    }
-    if(c->bw>0 && x==c->bx+4 && y==c->by+8 && r.x1>=c->bx+c->bw) {
-        fprintf(stderr,"BADGE OUT: %s\n",str);c->errors++;
-    }
-    c->text[c->count]=r;
-    snprintf(c->strings[c->count],sizeof(c->strings[0]),"%s",str);
-    c->count++;
-}
-void canvas_set_font(Canvas* c,Font f){assert(c);c->font=f;}
-void canvas_set_color(Canvas* c,Color color){assert(c);c->color=color;}
-void canvas_draw_str(Canvas* c,int x,int y,const char* s){draw_text(c,x,y,s);}
-void canvas_draw_line(Canvas* c,int x,int y,int x2,int y2){
-    assert(c);if(x<0||x>127||x2<0||x2>127||y<0||y>63||y2<0||y2>63)c->errors++;
-    c->lines++;
-}
-void canvas_draw_box(Canvas* c,int x,int y,int w,int h){
-    assert(c);if(x<0||y<0||w<=0||h<=0||x+w>128||y+h>64)c->errors++;
-    c->boxes++;
-}
-void canvas_draw_frame(Canvas* c,int x,int y,int w,int h){
-    assert(c);if(x<0||y<0||w<=0||h<=0||x+w>128||y+h>64)c->errors++;
-    c->frames++;
-}
-void ui_draw_header(Canvas* c,const char* t){
-    canvas_set_font(c,FontPrimary);canvas_draw_str(c,2,10,t);canvas_draw_line(c,0,13,127,13);
-}
-void ui_badge(Canvas* c,uint8_t x,uint8_t y,uint8_t w,const char* t,bool filled){
-    assert(c);if(filled){canvas_draw_box(c,x,y,w,11);canvas_set_color(c,ColorWhite);}
-    else canvas_draw_frame(c,x,y,w,11);
-    c->bx=x;c->by=y;c->bw=w;
-    canvas_set_font(c,FontSecondary);canvas_draw_str(c,x+4,y+8,t);
-    if(filled)canvas_set_color(c,ColorBlack);
-}
-void ui_key(Canvas* c,uint8_t x,const char* key,const char* action){
-    char s[24];int n=snprintf(s,sizeof(s),"(%s) %s",key,action);
-    if(n>10)n=snprintf(s,sizeof(s),"(%s)%s",key,action);
-    assert(n>0&&n<=10);
-    canvas_set_font(c,FontSecondary);canvas_draw_str(c,x,61,s);
-}
-void ui_footer_pair(Canvas* c,const char* left_key,const char* left_action,const char* right_key,const char* right_action){
-    canvas_draw_line(c,0,52,127,52);
-    ui_key(c,2,left_key,left_action);
-    ui_key(c,66,right_key,right_action);
-}
-static const char* const labmate_gpio_names[]={"PC0","PC1","PC3","PB2","PB3","PA4","PA6","PA7"};
+enum { GPIO_COUNT=8 };
 typedef struct {
     uint8_t gpio_index;
     uint32_t edges;
-    bool monitor_release_fault,monitor_blocked,hold,gpio_state,generator_running;
+    bool monitor_release_fault,monitor_blocked,monitor_active;
+    bool hold,gpio_state;
 } LabMateApp;
+typedef struct { unsigned touched; } LabMateGpioUiTrace;
+static LabMateGpioUiTrace labmate_gpio_trace;
+struct Canvas {
+    Font font;
+    Color color;
+    unsigned faults,text_count,chips,keys,pins,levels,panels;
+    bool sampled_valid,panel_hold,level_high;
+    uint8_t pin_index;
+    UiKitInstrumentState chip_state;
+    struct { int x,y,w; char label[32]; } text[16];
+    struct { uint8_t x; UiKitKey key; char label[10]; } hints[2];
+};
+static uint32_t tick=1000U;
+uint32_t furi_get_tick(void){return tick;}
+void canvas_set_font(Canvas* c,Font f){c->font=f;}
+void canvas_set_color(Canvas* c,Color v){c->color=v;}
+uint16_t canvas_string_width(Canvas* c,const char* s) {
+    const unsigned w=c->font==FontSecondary?5U:c->font==FontPrimary?6U:12U;
+    return (uint16_t)(strlen(s)*w);
+}
+void canvas_draw_str(Canvas* c,int32_t x,int32_t y,const char* s) {
+    int w=(int)canvas_string_width(c,s);
+    int h=c->font==FontPrimary?10:8;
+    if(w<=0||x<0||x+w>128||y-h+1<0||y>=64)c->faults++;
+    if(c->text_count>=16U){c->faults++;return;}
+    unsigned n=c->text_count++;
+    c->text[n].x=x;c->text[n].y=y;c->text[n].w=w;
+    snprintf(c->text[n].label,32,"%s",s);
+}
+void canvas_draw_line(Canvas* c,int32_t x,int32_t y,int32_t xx,int32_t yy) {
+    if(x<0||xx<0||x>=128||xx>=128||y<0||yy<0||y>=64)c->faults++;
+}
+uint8_t ui_kit_state_chip_width(Canvas* c,UiKitInstrumentState state) {
+    (void)c;(void)state;return 45U;
+}
+bool ui_kit_state_chip_compact(Canvas* c,UiKitInstrumentState state,bool pulse) {
+    (void)pulse;c->chip_state=state;c->chips++;return true;
+}
+uint8_t ui_kit_key_hint_compact(Canvas* c,uint8_t x,UiKitKey k,const char* s) {
+    const unsigned width=k==UiKitKeyLeftRight?18U:19U;
+    const unsigned end=x+width+3U+5U*strlen(s);
+    if(end>127U)c->faults++;
+    if(c->keys>=2U){c->faults++;return 0;}
+    c->hints[c->keys].x=x;c->hints[c->keys].key=k;
+    snprintf(c->hints[c->keys].label,10,"%s",s);
+    c->keys++;
+    return (uint8_t)end;
+}
+static void labmate_gpio_trace_update(LabMateGpioUiTrace* t,LabMateApp* app,
+                                      uint32_t now,bool valid) {
+    (void)app;(void)now;t->touched++;
+    (void)valid;
+}
+static void labmate_gpio_pin_strip(Canvas* c,uint8_t pin) {
+    c->pins++;c->pin_index=pin;
+}
+static void labmate_gpio_signal_panel(Canvas* c,const LabMateGpioUiTrace* trace,
+                                      bool valid,bool hold,bool pulse) {
+    (void)trace;(void)pulse;c->panels++;c->sampled_valid=valid;c->panel_hold=hold;
+}
+static void labmate_gpio_level_marker(Canvas* c,bool high) {
+    c->levels++;c->level_high=high;
+}
 #include "draw_gpio.inc"
-static bool contains(const Canvas* c,const char* s) {
-    for(unsigned i=0;i<c->count;i++)if(!strcmp(c->strings[i],s))return true;
+static bool key(const Canvas* c,UiKitKey k,const char* label){
+    for(unsigned i=0;i<c->keys;i++)
+        if(c->hints[i].key==k&&!strcmp(c->hints[i].label,label))return true;
     return false;
 }
-static bool at(const Canvas* c,const char* value,int x){
-    for(unsigned i=0;i<c->count;i++)if(!strcmp(c->strings[i],value) && c->text[i].x0==x)return true;
+static bool has(const Canvas* c,const char* s){
+    for(unsigned i=0;i<c->text_count;i++)
+        if(strcmp(c->text[i].label,s)==0)return true;
     return false;
-}
-static void format_expected(char out[32],uint32_t edges){
-    if(edges>=1000000U)snprintf(out,32,"%lu.%luM",(unsigned long)(edges/1000000U),(unsigned long)((edges%1000000U)/100000U));
-    else if(edges>=10000U)snprintf(out,32,"%lu.%luk",(unsigned long)(edges/1000U),(unsigned long)((edges%1000U)/100U));
-    else snprintf(out,32,"%lu",(unsigned long)edges);
 }
 int main(void) {
-    const uint32_t edges[]={0,1,9,10,999,9999,10000,10001,99999,100000,999999,1000000,1000001,10000000,UINT32_MAX};
-    unsigned count=0;
-    for(unsigned pin=0;pin<8;pin++)for(unsigned index=0;index<15;index++)
-    for(unsigned level=0;level<2;level++)for(unsigned status=0;status<5;status++)
-    for(unsigned pwm=0;pwm<2;pwm++) {
-        LabMateApp a={0};Canvas c={0};char formatted[32];
-        a.gpio_index=(uint8_t)pin;a.edges=edges[index];a.gpio_state=level!=0;
-        a.monitor_release_fault=status==3||status==4;
-        a.monitor_blocked=status==2||status==4;
-        a.hold=status==1;
-        a.generator_running=pwm!=0;
-        LabMateApp original;memcpy(&original,&a,sizeof(a));
+    const uint32_t counts[]={0U,1U,145U,9999U,UINT32_MAX};
+    unsigned total=0U;
+    for(unsigned pin=0;pin<8;pin++)
+    for(unsigned level=0;level<2;level++)
+    for(unsigned flags=0;flags<16;flags++)
+    for(unsigned j=0;j<5;j++) {
+        Canvas c={0};LabMateApp a={0};
+        a.gpio_index=(uint8_t)pin;a.edges=counts[j];
+        a.gpio_state=level!=0;a.monitor_active=(flags&1U)!=0;
+        a.hold=(flags&2U)!=0;a.monitor_blocked=(flags&4U)!=0;
+        a.monitor_release_fault=(flags&8U)!=0;
+        LabMateApp before=a;
         draw_gpio(&c,&a);
-        assert(memcmp(&a,&original,sizeof(a))==0);
-        format_expected(formatted,a.edges);
-        assert(contains(&c,labmate_gpio_names[pin]));
-        assert(contains(&c,level?"HIGH":"LOW"));
-        assert(contains(&c,formatted));
-        assert(contains(&c,pwm?"PA7 BUSY":"POLL"));
-        assert(contains(&c,a.monitor_release_fault?"ERR":a.monitor_blocked?"BUSY":a.hold?"HOLD":"LIVE"));
-        assert(contains(&c,a.hold?"(OK) LIVE":"(OK) HOLD"));
-        assert(contains(&c,"(<>) PIN"));
-        assert(at(&c,"(<>) PIN",2));
-        assert(at(&c,a.hold?"(OK) LIVE":"(OK) HOLD",66));
-        assert(c.color==ColorBlack);
-        assert(c.boxes>=((level!=0)?1U:0U));
-        if(c.errors){fprintf(stderr,"UI05E ERROR pin=%u edgeidx=%u level=%u status=%u pwm=%u faults=%u\n",pin,index,level,status,pwm,c.errors);return 1;}
-        count++;
+        assert(memcmp(&before,&a,sizeof(a))==0);
+        assert(c.faults==0U&&c.color==ColorBlack);
+        assert(c.chips==1U&&c.pins==1U&&c.panels==1U);
+        assert(c.pin_index==pin&&labmate_gpio_trace.touched>0U);
+        const bool valid=a.monitor_active&&!a.monitor_blocked&&!a.monitor_release_fault;
+        assert(c.sampled_valid==valid&&c.panel_hold==a.hold);
+        assert(c.levels==(valid?1U:0U));
+        if(valid)assert(c.level_high==a.gpio_state);
+        const UiKitInstrumentState expect=a.monitor_release_fault?UiKitInstrumentError:
+            a.monitor_blocked?UiKitInstrumentBusy:!a.monitor_active?UiKitInstrumentReady:
+            a.hold?UiKitInstrumentHeld:UiKitInstrumentLive;
+        assert(c.chip_state==expect);
+        assert(c.keys==2U&&c.hints[0].x==4&&c.hints[1].x==70);
+        assert(key(&c,UiKitKeyLeftRight,"Pin"));
+        assert(key(&c,UiKitKeyOk,a.hold?"Resume":"Hold"));
+        assert(has(&c,valid?(a.gpio_state?"High":"Low"):"-"));
+        /* Count and level never overlap inside y=52, even at UINT32_MAX. */
+        for(unsigned i=0;i<c.text_count;i++)if(c.text[i].y==52)
+            for(unsigned k=i+1;k<c.text_count;k++)if(c.text[k].y==52)
+                assert(c.text[i].x+c.text[i].w<=c.text[k].x||
+                       c.text[k].x+c.text[k].w<=c.text[i].x);
+        total++;
     }
-    printf("UI-05E GPIO host PASS: %u source/level/status/PWM combinations\n",count);
-    return count==2400?0:1;
+    assert(total==1280U);
+    printf("E11 GPIO PRODUCTION RENDER HOST PASS: %u pin/state/level/count cases\n",total);
+    return 0;
 }
