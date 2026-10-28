@@ -15,6 +15,7 @@ for cc in gcc clang; do
     "$tmp/header-$cc"
 done
 sh "$root/scripts/test-v20-e11-ui-live-guards-host.sh"
+sh "$root/scripts/test-v20-ui01-host.sh"
 sh "$root/scripts/test-v20-phase3a-doctor-host.sh"
 sh "$root/scripts/test-v20-phase3b-doctor-panel-host.sh"
 sh "$root/scripts/test-v20-phase3c-pulse-host.sh"
