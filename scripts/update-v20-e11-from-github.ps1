@@ -53,21 +53,50 @@ bash "$DIR/scripts/build-v20-e11-exact-local.sh"
         Write-Host 'PC-ONLY PASS. Device untouched. Add -Install for USB.'
         exit 0
     }
-    $Fw=(Resolve-Path -LiteralPath $FirmwareRoot).ProviderPath
-    $EnvCmd=Join-Path $Fw 'scripts\toolchain\fbtenv.cmd'
-    $Module=Join-Path $Fw 'scripts\flipper\storage.py'
-    if (-not (Test-Path -LiteralPath $EnvCmd -PathType Leaf) -or -not (Test-Path -LiteralPath $Module -PathType Leaf)) {
-        throw "Windows Momentum USB scripts missing: $Fw"
+    # Prefer an installed Windows Momentum fbtenv, but the owner already has
+    # the pinned E11 source under WSL. With Windows pyserial installed, its
+    # read-only scripts are valid as a Python import path over the WSL UNC share.
+    $Fw = $null
+    if (Test-Path -LiteralPath $FirmwareRoot -PathType Container) {
+        $Fw = (Resolve-Path -LiteralPath $FirmwareRoot).ProviderPath
+    }
+    $EnvCmd = if ($Fw) { Join-Path $Fw 'scripts\toolchain\fbtenv.cmd' } else { $null }
+    $Module = if ($Fw) { Join-Path $Fw 'scripts\flipper\storage.py' } else { $null }
+    $UseWindowsFirmware = ($Fw -and (Test-Path -LiteralPath $EnvCmd -PathType Leaf) -and
+        (Test-Path -LiteralPath $Module -PathType Leaf))
+    if (-not $UseWindowsFirmware) {
+        Write-Host 'Windows Momentum toolchain unavailable. Checking existing WSL E11 USB Python transport.' -ForegroundColor Yellow
+        $SdkPathLinux = 'wslpath -w "$HOME/labmate-build/momentum-src/scripts"'
+        $SdkPathResult = $SdkPathLinux | & wsl.exe --distribution $Distro --exec bash -s
+        if ($LASTEXITCODE -ne 0) { throw 'Cannot locate the pinned E11 WSL SDK transport' }
+        $SdkScripts = ([string]($SdkPathResult | Select-Object -Last 1)).Trim()
+        if (-not (Test-Path -LiteralPath (Join-Path $SdkScripts 'flipper\storage.py') -PathType Leaf)) {
+            throw 'No Windows or WSL Momentum USB transport available; nothing written to Flipper'
+        }
+        if (-not (Get-Command py.exe -ErrorAction SilentlyContinue)) {
+            throw 'Windows Python launcher py.exe required for existing WSL SDK transport'
+        }
+        & py.exe -3 -c 'import serial'
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Windows Python pyserial is missing. No automatic package install or device write.'
+        }
     }
     $HelperPathLinux = 'wslpath -w "$HOME/.local/share/labmate-e11-source/scripts/install-v20-e11-usb.py"'
     $HelperResult = $HelperPathLinux | & wsl.exe --distribution $Distro --exec bash -s
     if ($LASTEXITCODE -ne 0) { throw 'USB helper path resolution failed' }
     $Helper=([string]($HelperResult | Select-Object -Last 1)).Trim()
     $Backup=Join-Path $HOME 'Documents\LabMate-FAP-PC-Backups'
-    foreach($Value in @($Fap,$Helper,$EnvCmd,$Backup)) {
+    $ArgumentsToCheck = @($Fap,$Helper,$Backup)
+    if ($UseWindowsFirmware) { $ArgumentsToCheck += @($EnvCmd,(Join-Path $Fw 'scripts')) }
+    else { $ArgumentsToCheck += $SdkScripts }
+    foreach($Value in $ArgumentsToCheck) {
         if ($Value -match '["&|<>^%!]') { throw 'Unsafe Windows command path' }
     }
-    $Line='set "FBT_ROOT=" && set "FBT_NOENV=" && call "{0}" env && set "PYTHONPATH={1}" && python "{2}" --fap "{3}" --backup-root "{4}" --port {5} --apply' -f $EnvCmd,(Join-Path $Fw 'scripts'),$Helper,$Fap,$Backup,$Port
+    if ($UseWindowsFirmware) {
+        $Line='set "FBT_ROOT=" && set "FBT_NOENV=" && call "{0}" env && set "PYTHONPATH={1}" && python "{2}" --fap "{3}" --backup-root "{4}" --port {5} --apply' -f $EnvCmd,(Join-Path $Fw 'scripts'),$Helper,$Fap,$Backup,$Port
+    } else {
+        $Line='set "PYTHONPATH={0}" && py -3 -B "{1}" --fap "{2}" --backup-root "{3}" --port {4} --apply' -f $SdkScripts,$Helper,$Fap,$Backup,$Port
+    }
     Write-Host 'USB: read existing device FAP, save verified PC backup, require E11 consent.'
     & cmd.exe /d /s /c $Line
     if ($LASTEXITCODE -ne 0) { throw 'USB stage stopped; DO NOT RETRY blindly' }
