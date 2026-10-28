@@ -27,7 +27,8 @@ for name in screens:
                 break
     assert end is not None, name
     body = src[start:end]
-    assert "labmate_pixel_header(canvas," in body, name
+    expected = "ui_kit_pixel_header(" if name == "draw_button" else "labmate_pixel_header(canvas,"
+    assert expected in body, name
     assert "ui_draw_header(" not in body, name
     assert "ui_badge(" not in body, name
     assert "ui_footer_pair(" not in body, name

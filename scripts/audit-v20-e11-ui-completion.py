@@ -68,8 +68,14 @@ migrated = (
 )
 for name in migrated:
     body = function(current, name)
-    check("labmate_pixel_header(canvas," in body,
-          "Pixel header absent in " + name)
+    header = "ui_kit_pixel_header(" if name == "draw_button" else "labmate_pixel_header(canvas,"
+    check(header in body, "Pixel header absent in " + name)
+    if name == "draw_button":
+        check("UiKitInstrumentError" in body and
+              "UiKitInstrumentBusy" in body and
+              "UiKitInstrumentStopped" in body and
+              "UiKitKeyDown" in body and "button_session_started" in body,
+              "Button Step 2 state/key contract missing")
     for forbidden in (
         "ui_draw_header(", "ui_badge(", "ui_footer_pair(",
         "furi_hal_gpio_", "furi_hal_resource_lease_",
