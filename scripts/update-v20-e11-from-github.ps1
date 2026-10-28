@@ -5,7 +5,8 @@ param(
     [ValidateSet('Ubuntu')][string]$Distro='Ubuntu',
     [ValidatePattern('^(auto|COM[1-9][0-9]{0,2})$')][string]$Port='auto',
     [string]$FirmwareRoot=(Join-Path $HOME 'Momentum-Firmware'),
-    [switch]$Install
+    [switch]$Install,
+    [switch]$ReuseVerifiedLocalFap
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
@@ -32,8 +33,13 @@ test -z "$(git -C "$DIR" status --porcelain)"
 git -C "$DIR" fetch --no-tags origin "$BRANCH"
 git -C "$DIR" -c advice.detachedHead=false checkout -B labmate-e11-review FETCH_HEAD
 git -C "$DIR" merge-base --is-ancestor "$PIN" HEAD
-bash "$DIR/scripts/build-v20-e11-exact-local.sh"
+LABMATE_REUSE_EXACT_FAP=__LABMATE_REUSE__ bash "$DIR/scripts/build-v20-e11-exact-local.sh"
 '@
+    $ReuseMode = if ($ReuseVerifiedLocalFap) { '1' } else { '0' }
+    $Linux = $Linux.Replace('__LABMATE_REUSE__', $ReuseMode)
+    if ($ReuseVerifiedLocalFap) {
+        Write-Host 'Reusing ONLY the previously validated 39261383... FAP (strict SHA + CI parity).' -ForegroundColor Cyan
+    }
     Write-Host 'GITHUB -> WSL UBUNTU -> PINNED E11 (PC ONLY FIRST)' -ForegroundColor Cyan
     # Windows PowerShell 5.1 cannot reliably pass embedded Bash quotes in -lc
     # arguments through wsl.exe; Bash must parse a script from STDIN instead.
