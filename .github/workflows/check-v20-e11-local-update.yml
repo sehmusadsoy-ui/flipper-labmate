@@ -65,7 +65,8 @@ jobs:
           assert 'verify_fap(args.fap)' in u
           assert 'candidates=sorted(' in u
           assert 'mode="FIRST INSTALL (no LabMate filename found)"' in u
-          assert 'if device.exist_file(old_path):' not in u
+          assert 'if not device.exist_file(old_path):' in u
+          assert 'if device.exist_file(old_path):' in u
           assert 'device.remove(old_path)' in u
           assert 'saved.read_bytes()!=old' in u
           assert 'loader info\\r' in u
