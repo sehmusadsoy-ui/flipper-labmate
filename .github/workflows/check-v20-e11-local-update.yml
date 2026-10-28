@@ -113,7 +113,7 @@ jobs:
                   self.current=''
                   self.listings={
                       '/ext/apps': b'[D] Tools\r\n[D] GPIO\r\n',
-                      '/ext/apps/Tools': b'[F] LabMate-Counter-Step3-E11-Trial.fap 151552\r\n[F] other.fap 123\r\n',
+                      '/ext/apps/Tools': b'[F] LabMate-Counter-Step3-E11-Trial.fap 151552 bytes\r\n[F] other.fap 123\r\n[F] README.txt 42\r\n',
                       '/ext/apps/GPIO': b'[F] gpio.fap 456\r\n',
                   }
                   self.read=SimpleNamespace(until=lambda marker: self.listings[self.current])
@@ -129,8 +129,9 @@ jobs:
               def read_file(self,*args):
                   raise AssertionError('USB FAP READ not authorized by discovery!')
           files=discovery(FakeStorage())
-          assert ('/ext/apps/Tools/LabMate-Counter-Step3-E11-Trial.fap',151552) in files
+          assert ('/ext/apps/Tools/LabMate-Counter-Step3-E11-Trial.fap','151552 bytes') in files
           assert ('/ext/apps/GPIO/gpio.fap',456) in files
+          assert ('/ext/apps/Tools/other.fap',123) in files
           assert len(files)==3
           assert all(p.startswith('/ext/apps/') for p,_ in files)
           print('DEVICE FAP DISCOVERY READ-ONLY / LEGACY NAME FIXTURE PASS')
