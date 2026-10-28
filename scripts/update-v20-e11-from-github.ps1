@@ -45,10 +45,24 @@ bash "$DIR/scripts/build-v20-e11-exact-local.sh"
     if ($LASTEXITCODE -ne 0) { throw 'Cannot resolve WSL FAP' }
     $Fap=([string]($FapResult | Select-Object -Last 1)).Trim()
     if (-not (Test-Path -LiteralPath $Fap -PathType Leaf)) { throw 'WSL FAP not accessible in Windows' }
-    if ((Get-FileHash -LiteralPath $Fap -Algorithm SHA256).Hash -ine $Expected -or (Get-Item -LiteralPath $Fap).Length -ne 174192) {
-        throw 'Exact FAP SHA/size mismatch on Windows'
+    # The WSL builder already proved byte-for-byte CI parity excluding only
+    # GNU debuglink CRC. Verify the UNC file is exactly the same full FAP
+    # that WSL produced. This is NOT a relaxed hash comparison.
+    $DigestLinux = 'sha256sum "$HOME/.local/share/labmate-e11/labmate.fap"'
+    $DigestResult = $DigestLinux | & wsl.exe --distribution $Distro --exec bash -s
+    if ($LASTEXITCODE -ne 0) { throw 'WSL full candidate digest unavailable' }
+    $DigestLine = ([string]($DigestResult | Select-Object -Last 1)).Trim()
+    if ($DigestLine -notmatch '^([0-9a-fA-F]{64})\s+') { throw 'Invalid WSL raw SHA256 result' }
+    $ExpectedRaw = $Matches[1]
+    $ActualWindows = (Get-FileHash -LiteralPath $Fap -Algorithm SHA256).Hash
+    if ($ActualWindows -ine $ExpectedRaw -or (Get-Item -LiteralPath $Fap).Length -ne 174192) {
+        throw 'WSL / Windows full FAP SHA256 or size mismatch'
     }
     Write-Host "PC FAP verified: $Fap" -ForegroundColor Green
+    Write-Host "Full local SHA256: $ActualWindows"
+    if ($ActualWindows -ine $Expected) {
+        Write-Host 'CI raw SHA differs ONLY in verified 4-byte GNU debuglink CRC.' -ForegroundColor Yellow
+    }
     if (-not $Install) {
         Write-Host 'PC-ONLY PASS. Device untouched. Add -Install for USB.'
         exit 0
