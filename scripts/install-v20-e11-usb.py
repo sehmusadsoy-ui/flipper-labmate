@@ -15,13 +15,72 @@ from verify_v20_e11_debuglink_parity import verify_fap, IdentityFailure
 EXPECTED="ddc27aa9e095c5ff809b000e4119d14151caf0d1a191c6a35c96f46ad1b01d72"
 TARGET="/ext/apps/Tools/labmate.fap"
 
+def discover_device_faps(device):
+    """Read-only inventory of app file names/sizes; no device writes.
+
+    Inspect /ext/apps and its immediate category folders, plus one nested
+    level. Report likely previous LabMate builds and all Tools FAP names.
+    A file name alone is not proof of app identity.
+    """
+    if not device.exist_dir("/ext/apps"):
+        raise RuntimeError("NO-GO: /ext/apps missing, no device write")
+    queue=[("/ext/apps",0)]
+    visited=set()
+    files=[]
+    while queue:
+        folder,level=queue.pop(0)
+        if folder in visited:
+            continue
+        visited.add(folder)
+        if len(visited)>90:
+            raise RuntimeError("NO-GO: unexpectedly large apps directory inventory")
+        # Momentum CLI protocol: storage list yields [D] and [F] lines.
+        device.send_and_wait_eol('storage list "'+folder+'"\\r')
+        data=device.read.until(device.CLI_PROMPT)
+        if device.has_error(data):
+            raise RuntimeError("NO-GO: cannot list "+folder)
+        for rawline in data.split(b"\\r\\n"):
+            line=rawline.decode("utf-8","replace").strip()
+            if line.startswith("[D] "):
+                name=line[4:].strip()
+                if level<2 and name not in (".","..") and "/" not in name and "\\\\" not in name:
+                    queue.append((folder+"/"+name,level+1))
+            elif line.startswith("[F] "):
+                entry=line[4:].strip()
+                try:
+                    name,size=entry.rsplit(" ",1)
+                except ValueError:
+                    continue
+                if name.lower().endswith(".fap") and size.isdigit():
+                    files.append((folder+"/"+name,int(size)))
+    hits=[(p,n) for p,n in files if any(
+        word in p.rsplit("/",1)[-1].lower()
+        for word in ("labmate","lab_mate","counter-step3","ultimate")
+    )]
+    tools=[(p,n) for p,n in files if p.startswith("/ext/apps/Tools/")]
+    print("DEVICE FAP INVENTORY (READ ONLY):",len(files),"FAP files across",len(visited),"folders")
+    print("EXACT CANONICAL PRESENT:",any(p==TARGET for p,_ in files))
+    for path,size in sorted(hits):
+        print("LABMATE_CANDIDATE:",path,"bytes=",size)
+    if not hits:
+        print("NO MATCH BY FILE NAME. Filename alone does not identify the app.")
+    for path,size in sorted(tools)[:120]:
+        print("TOOLS_FAP:",path,"bytes=",size)
+    if len(tools)>120:
+        print("TOOLS_FAP_LIST_TRUNCATED:",len(tools)-120)
+    print("DISCOVERY ONLY: no FAP readback backup, no install, no firmware write")
+    return files
+
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument("--fap",type=Path,required=True)
     parser.add_argument("--backup-root",type=Path,required=True)
     parser.add_argument("--port",default="auto")
     parser.add_argument("--apply",action="store_true")
+    parser.add_argument("--discover",action="store_true")
     args=parser.parse_args()
+    if args.apply and args.discover:
+        raise RuntimeError("NO-GO: --discover and --apply cannot be combined")
     if args.fap.name!="labmate.fap" or not args.fap.is_file():
         raise RuntimeError("NO-GO: local canonical labmate.fap missing")
     # The ONLY permitted difference from CI is a 4-byte debuglink CRC.
@@ -30,7 +89,7 @@ def main():
     new=args.fap.read_bytes()
     if hashlib.sha256(new).hexdigest()!=actual_raw_sha:
         raise RuntimeError("NO-GO: candidate changed during verification")
-    if not args.apply:
+    if not args.apply and not args.discover:
         print("EXACT FAP PC-ONLY VERIFY PASS. No USB write.")
         return 0
 
@@ -46,6 +105,9 @@ def main():
         for line in firmware[:18]:print("DEVICE:",line)
         if not any("mntm" in line.lower() or "momentum" in line.lower() for line in firmware):
             raise RuntimeError("NO-GO: expected Momentum firmware identity absent")
+        if args.discover:
+            discover_device_faps(device)
+            return 0
         if not device.exist_file(TARGET):
             raise RuntimeError("NO-GO: no existing canonical FAP; refuse new install")
         old=device.read_file(TARGET)
