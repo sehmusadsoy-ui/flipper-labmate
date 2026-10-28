@@ -42,6 +42,13 @@ jobs:
           assert 'saved.open("xb")' in u
           assert 'device.send_file(str(args.fap),TARGET)' in u
           assert 'if (-not $Install)' in p
+          # Regression: Windows PowerShell 5.1 strips nested shell quotes
+          # from wsl.exe bash -lc; stdin Bash -s must be used throughout.
+          assert p.count('--exec bash -s') == 3
+          assert '($Linux -replace "`r", "")' in p
+          assert 'NormalizedLinux | & wsl.exe' in p
+          assert '& wsl.exe --distribution $Distro --exec bash -lc' not in p
+          assert 'git clone --single-branch --branch "$BRANCH" "$URL" "$DIR"' in p
           print('E11 EXACT LOCAL WSL/USB SOURCE CONTRACT PASS; NO DEVICE')
           PY
   windows_parser:
