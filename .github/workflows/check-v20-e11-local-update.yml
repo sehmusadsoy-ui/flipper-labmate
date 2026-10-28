@@ -34,6 +34,22 @@ jobs:
           assert source in s and source in p
           assert 'd3f89dfe2ef6b01839201598e9be1590cba80322' in s
           assert 'src application.fam labmate_10px.png' in s
+          assert 'git clone --local --no-hardlinks --no-checkout "$BASE" "$SDK"' in s
+          assert 'cp -a "$BASE" "$SDK"' not in s
+          assert 'exact-e11-ci-patch-replay.sh' in s
+          assert "script.count('python3 labmate/scripts/patch_momentum_')>=40" in s
+          import re
+          for block in re.findall(r"(?ms)^python3 - .*? <<'PY'\n(.*?)\nPY$",s):
+              compile(block,'e11-local-preflight','exec')
+          workflow=Path('.github/workflows/build-v20-e11-pixel-ui-native-review.yml').read_text()
+          start='      - name: Reapply the previously audited E11 patch chain (SOURCE ONLY)\n'
+          end='      - name: Stage v2.0 working tree into native FAP source (no install)\n'
+          assert workflow.count(start)==1 and workflow.count(end)==1
+          section=workflow.split(start,1)[1].split(end,1)[0]
+          assert section.count('        run: |\n')==1
+          command=section.split('        run: |\n',1)[1]
+          assert command.count('python3 labmate/scripts/patch_momentum_')==70
+          assert 'E11 SOURCE PATCH PARITY PASS' in command
           assert 'sh "$APP/scripts/test-v20-e11-final-ui-predevice-host.sh"' in s
           assert './fbt fap_labmate' in s
           assert 'TARGET="/ext/apps/Tools/labmate.fap"' in u
