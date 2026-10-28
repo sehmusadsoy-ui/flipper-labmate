@@ -107,10 +107,14 @@ contains(logger,(
  ),"Logger")
 button=draws["draw_button"]
 contains(button,(
- "labmate_pixel_header(","app->capture_release_fault",
- "app->capture_blocked","\"PC1 / PULLUP\"",
- "\"SETTLING\"","\"OPEN\"","\"CLOSED\"",
- "labmate_pixel_keys(",
+ "ui_kit_pixel_header(","app->capture_release_fault",
+ "app->capture_blocked","button_session_started",
+ "button_details_view","button_quiet_ms",
+ "button_stats.stable_level","button_stats.pending",
+ "\"Settling\"","\"Open\"","\"Closed\"",
+ "\"Bounce time\"","\"Settle time\"","\"Hold time\"",
+ "\"Bounces\"","ui_kit_stat_row(",
+ "UiKitKeyDown","UiKitKeyOk",
  ),"Button")
 alerts=draws["draw_alerts"]
 contains(alerts,(

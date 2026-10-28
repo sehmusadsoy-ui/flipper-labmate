@@ -993,67 +993,143 @@ void draw_alerts(Canvas* canvas, LabMateApp* app) {
  * This renderer reads only the app-thread published snapshot.
  */
 void draw_button(Canvas* canvas, LabMateApp* app) {
-    char value[32];
+    /* Step 2 is strictly visual: don't alter filter, PC1 EXTI ownership,
+     * debounce settings, counters, input behavior or the capture session.
+     * State order is fail closed: sticky release fault wins over LIVE. */
     const bool alert = app->threshold.armed && app->threshold.latched &&
                        app->threshold.source == LabMateAlertButtonSettle;
-    labmate_pixel_header(canvas, "Button",
-        alert ? "ALRT" : app->capture_release_fault ? "ERR" :
-        app->capture_blocked ? "BUSY" :
-        app->button_active ? "RUN" : "STOP", alert || app->button_active);
+    const bool blocked = app->capture_blocked || app->capture_release_fault;
+    const bool completed = app->button_stats.presses != 0U ||
+                           app->button_stats.releases != 0U;
+    const UiKitInstrumentState state = app->capture_release_fault ?
+        UiKitInstrumentError : blocked ? UiKitInstrumentBusy :
+        app->button_active ? UiKitInstrumentLive :
+        app->button_session_started ? UiKitInstrumentStopped : UiKitInstrumentReady;
 
-    canvas_set_font(canvas, FontSecondary);
-    if(!app->button_details_view) {
-        /* Source and debounce remain on their own line. */
-        canvas_draw_str(canvas, 3, 22, "PC1 / PULLUP");
-        snprintf(value, sizeof(value), "DB %u ms",
-                 (unsigned)app->button_quiet_ms);
-        canvas_draw_str_aligned(canvas, 125, 22, AlignRight, AlignBottom, value);
+    /* E11 pixel title y=9 and right chip y=0..10. Animation is UI-only;
+     * the app thread already advances ui_frame outside this renderer. */
+    (void)ui_kit_pixel_header(
+        canvas, "Button", true, state, (app->ui_frame & 16U) != 0U);
 
-        /* Simple status row avoids crowding text inside a narrow frame.
-         * A single divider separates contact state from measurements. */
-        canvas_draw_str(canvas, 3, 31, "CONTACT");
-        canvas_draw_str_aligned(canvas, 125, 31, AlignRight, AlignBottom,
-                                app->button_stats.pending ? "SETTLING" :
-                                app->button_stats.stable_level ? "OPEN" : "CLOSED");
-        canvas_draw_line(canvas, 2, 34, 125, 34);
-        canvas_draw_line(canvas, 63, 36, 63, 51);
-        canvas_draw_str(canvas, 3, 42, "PRESSES");
-        canvas_draw_str(canvas, 67, 42, "RELEASES");
-        snprintf(value, sizeof(value), "%lu",
-                 (unsigned long)app->button_stats.presses);
-        canvas_draw_str(canvas, 3, 51, value);
-        snprintf(value, sizeof(value), "%lu",
-                 (unsigned long)app->button_stats.releases);
-        canvas_draw_str(canvas, 67, 51, value);
-    } else {
-        /* Dense data is split into a 2x2 grid with separate labels. */
-        canvas_draw_line(canvas, 63, 17, 63, 51);
-        canvas_draw_line(canvas, 2, 33, 125, 33);
-        canvas_draw_str(canvas, 3, 22, "BOUNCE us");
-        canvas_draw_str(canvas, 67, 22, "SETTLE ms");
-        snprintf(value, sizeof(value), "%lu",
-                 (unsigned long)app->button_bounce_us);
-        canvas_draw_str(canvas, 3, 31, value);
-        snprintf(value, sizeof(value), "%lu",
-                 (unsigned long)app->button_settle_ms);
-        canvas_draw_str(canvas, 67, 31, value);
-
-        canvas_draw_str(canvas, 3, 42, "HOLD ms");
-        canvas_draw_str(canvas, 67, 42, "BOUNCE N");
-        snprintf(value, sizeof(value), "%lu",
-                 (unsigned long)app->button_hold_ms);
-        canvas_draw_str(canvas, 3, 51, value);
-        snprintf(value, sizeof(value), "%u",
-                 (unsigned)app->button_stats.last_bounce_edges);
-        canvas_draw_str(canvas, 67, 51, value);
+    /* Keep latched Alert visible without masking a Busy/Error/Live state
+     * chip or implying an unowned PC1 signal is being measured. */
+    if(alert) {
+        canvas_set_font(canvas, FontSecondary);
+        canvas_set_color(canvas, ColorBlack);
+        canvas_draw_str(canvas, 61U, 9U, "!");
     }
 
-    const char* button_action = app->button_active ? "STOP" :
-        (app->button_session_started ? "RESUME" : "START");
-    if(app->button_details_view) {
-        labmate_pixel_keys(canvas, UiKitKeyDown, "Main", UiKitKeyOk, button_action);
+    char value[32];
+    if(!app->button_details_view) {
+        /* Source and real selected debounce. ASCII-only punctuation is
+         * intentional: no unsupported middle-dot font dependency. */
+        canvas_set_font(canvas, FontSecondary);
+        snprintf(value, sizeof(value), "PC1  %s  %u ms",
+                 alert ? "ALRT" : "Pull-up",
+                 (unsigned)app->button_quiet_ms);
+        (void)ui_kit_text(canvas, 4, 23, 120U, value,
+                          alert ? "PC1 ALERT" : "PC1 Pull-up");
+
+        /* Contact circuit: last debounced stable level is authoritative.
+         * PENDING is explicitly Settling; it is not a new stable edge. */
+        const bool open = app->button_stats.stable_level;
+        canvas_set_color(canvas, ColorBlack);
+        canvas_draw_line(canvas, 5U, 39U, 12U, 39U);
+        canvas_draw_disc(canvas, 14U, 39U, 2U);
+        if(open) {
+            canvas_draw_line(canvas, 16U, 39U, 31U, 39U);
+            canvas_draw_line(canvas, 31U, 39U, 45U, 31U);
+        } else {
+            canvas_draw_line(canvas, 16U, 39U, 56U, 39U);
+        }
+        canvas_draw_disc(canvas, 58U, 39U, 2U);
+        canvas_draw_line(canvas, 60U, 39U, 64U, 39U);
+
+        /* Contact pill: open outline, closed inverted. All glyph widths
+         * are checked before paint. The quiet interval is never guessed. */
+        const bool settling = app->button_stats.pending;
+        const bool filled = !settling && !open;
+        const char* contact = settling ? "Settling" : open ? "Open" : "Closed";
+        canvas_set_font(canvas, settling ? FontSecondary : FontPrimary);
+        const uint16_t text_width = canvas_string_width(canvas, contact);
+        if(text_width && text_width <= 49U) {
+            canvas_set_color(canvas, ColorBlack);
+            if(filled) canvas_draw_rbox(canvas, 70U, 31U, 55U, 14U, 3U);
+            else canvas_draw_rframe(canvas, 70U, 31U, 55U, 14U, 3U);
+            canvas_set_color(canvas, filled ? ColorWhite : ColorBlack);
+            canvas_draw_str(canvas, 70U + (55U - text_width) / 2U, 41U, contact);
+            canvas_set_color(canvas, ColorBlack);
+        }
+
+        /* Count labels have a measured compact fallback, not cropped
+         * digits, for fonts or counter widths that exceed 59 px. */
+        char presses[32], releases[32], short_p[24], short_r[24];
+        snprintf(presses, sizeof(presses), "%lu presses",
+                 (unsigned long)app->button_stats.presses);
+        snprintf(releases, sizeof(releases), "%lu releases",
+                 (unsigned long)app->button_stats.releases);
+        snprintf(short_p, sizeof(short_p), "P:%lu",
+                 (unsigned long)app->button_stats.presses);
+        snprintf(short_r, sizeof(short_r), "R:%lu",
+                 (unsigned long)app->button_stats.releases);
+        canvas_set_font(canvas, FontSecondary);
+        (void)ui_kit_text(canvas, 4U, 52U, 58U, presses, short_p);
+        (void)ui_kit_text(canvas, 66U, 52U, 60U, releases, short_r);
     } else {
-        labmate_pixel_keys(canvas, UiKitKeyDown, "More", UiKitKeyOk, button_action);
+        /* Completed electrical transitions only. Hold requires a completed
+         * RELEASE; elapsed hold while the contact remains down is unknown. */
+        const bool hold_valid = app->button_stats.releases > 0U;
+        char bounce[24], settle[24], hold[24], edges[24];
+        snprintf(bounce, sizeof(bounce), "%lu",
+                 (unsigned long)app->button_bounce_us);
+        snprintf(settle, sizeof(settle), "%lu",
+                 (unsigned long)app->button_settle_ms);
+        snprintf(hold, sizeof(hold), "%lu",
+                 (unsigned long)app->button_hold_ms);
+        snprintf(edges, sizeof(edges), "%u",
+                 (unsigned)app->button_stats.last_bounce_edges);
+
+        /* Rows at exact baselines 24,33,42,51; 54..63 is footer-only.
+         * Return value false means too wide: never truncate a measurement
+         * or invent a compact approximation of a real value. */
+        if(!ui_kit_stat_row(canvas, 24U, "Bounce time",
+                            completed ? bounce : "--",
+                            completed ? " us" : NULL)) {
+            canvas_set_font(canvas, FontSecondary);
+            (void)ui_kit_text(canvas, 4U, 24U, 120U, "Bounce value too wide", NULL);
+        }
+        if(!ui_kit_stat_row(canvas, 33U, "Settle time",
+                            completed ? settle : "--",
+                            completed ? " ms" : NULL)) {
+            canvas_set_font(canvas, FontSecondary);
+            (void)ui_kit_text(canvas, 4U, 33U, 120U, "Settle value too wide", NULL);
+        }
+        if(!ui_kit_stat_row(canvas, 42U, "Hold time",
+                            hold_valid ? hold : "--",
+                            hold_valid ? " ms" : NULL)) {
+            canvas_set_font(canvas, FontSecondary);
+            (void)ui_kit_text(canvas, 4U, 42U, 120U, "Hold value too wide", NULL);
+        }
+        if(!ui_kit_stat_row(canvas, 51U, "Bounces",
+                            completed ? edges : "--", NULL)) {
+            canvas_set_font(canvas, FontSecondary);
+            (void)ui_kit_text(canvas, 4U, 51U, 120U, "Bounces too wide", NULL);
+        }
+    }
+
+    /* DOWN toggles Summary/Details on BOTH pages. The existing UP action
+     * remains stopped-only RESET, not a mislabeled Summary shortcut.
+     * No Start/Resume action is advertised after sticky release failure. */
+    (void)ui_kit_key_hint(
+        canvas, 4U, UiKitKeyDown,
+        app->button_details_view ? "Summary" : "Details");
+    if(app->capture_release_fault) {
+        (void)ui_kit_key_hint(canvas, 66U, UiKitKeyBack, "Exit");
+    } else {
+        const char* action = app->button_active ? "Stop" :
+            app->capture_blocked ? "Retry" :
+            app->button_session_started ? "Resume" : "Start";
+        (void)ui_kit_key_hint(canvas, 66U, UiKitKeyOk, action);
     }
 }
 
