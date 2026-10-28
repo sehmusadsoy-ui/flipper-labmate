@@ -31,7 +31,9 @@ jobs:
           u=Path('scripts/install-v20-e11-usb.py').read_text()
           digest='6dbe192ba7d1b0f2b05702c90cf68d791f041f75ed53a6b41135176b6ad4de5b'
           source='98a3357dade93aacac83c04e01110804b3b3f7b0'
-          for text in (s,u):assert digest in text
+          verifier=Path('scripts/verify_v20_e11_debuglink_parity.py').read_text()
+          assert digest in s and digest in verifier
+          assert '95d7dee6d1edd37d74c906c476347498e0adc1ae2f20aa408ec26c70bc12f90a' in u
           assert digest.upper() in p
           assert source in s and source in p
           assert 'd3f89dfe2ef6b01839201598e9be1590cba80322' in s
@@ -118,7 +120,7 @@ jobs:
         with:
           name: labmate-e11-candidate-40774609065
           run-id: 40774609065
-          github-token: \${{ github.token }}
+          github-token: ${{ github.token }}
           path: ci-reference
       - name: Validate audited CI FAP and CRC-only/tamper cases
         shell: bash
