@@ -6,6 +6,7 @@ on:
       - "scripts/build-v20-e11-exact-local.sh"
       - "scripts/install-v20-e11-usb.py"
       - "scripts/verify_v20_e11_debuglink_parity.py"
+      - "scripts/test_e11_usb_install_operator.py"
       - "scripts/update-v20-e11-from-github.ps1"
       - ".github/workflows/check-v20-e11-local-update.yml"
 permissions:
@@ -23,7 +24,7 @@ jobs:
         run: |
           set -euo pipefail
           bash -n scripts/build-v20-e11-exact-local.sh
-          python3 -m py_compile scripts/install-v20-e11-usb.py scripts/verify_v20_e11_debuglink_parity.py
+          python3 -m py_compile scripts/install-v20-e11-usb.py scripts/verify_v20_e11_debuglink_parity.py scripts/test_e11_usb_install_operator.py
           python3 - <<'PY'
           from pathlib import Path
           s=Path('scripts/build-v20-e11-exact-local.sh').read_text()
@@ -58,14 +59,20 @@ jobs:
           assert './fbt fap_labmate' in s
           assert 'TARGET="/ext/apps/Tools/labmate.fap"' in u
           assert 'if not args.apply and not args.discover:' in u
-          assert 'old=device.read_file(TARGET)' in u
+          assert 'old=bytes(device.read_file(old_path))' in u
           assert 'saved.open("xb")' in u
           assert 'device.send_file(str(args.fap),TARGET)' in u
           assert 'verify_fap(args.fap)' in u
+          assert 'candidates=sorted(' in u
+          assert 'mode="FIRST INSTALL (no LabMate filename found)"' in u
+          assert 'if device.exist_file(old_path):' not in u
+          assert 'device.remove(old_path)' in u
+          assert 'saved.read_bytes()!=old' in u
+          assert 'loader info\\r' in u
           assert 'parser.add_argument("--discover",action="store_true")' in u
           assert 'if args.apply and args.discover:' in u
           assert 'if args.discover:\n            discover_device_faps(device)\n            return 0' in u
-          assert u.index('if args.discover:\n            discover_device_faps(device)') < u.index('if not device.exist_file(TARGET):')
+          assert u.index('if args.discover:\n            discover_device_faps(device)') < u.index('inventory=discover_device_faps(device)')
           assert '[switch]$Discover' in p
           assert 'if ($Install -and $Discover)' in p
           assert '$UsbFlag = if ($Discover) { \'--discover\' } else { \'--apply\' }' in p
@@ -136,6 +143,11 @@ jobs:
           assert all(p.startswith('/ext/apps/') for p,_ in files)
           print('DEVICE FAP DISCOVERY READ-ONLY / LEGACY NAME FIXTURE PASS')
           PY
+      - name: Mock complete guarded USB migration and first install (NO HARDWARE)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/test_e11_usb_install_operator.py
   windows_parser:
     runs-on: windows-2022
     steps:
