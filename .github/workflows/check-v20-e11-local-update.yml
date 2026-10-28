@@ -78,12 +78,14 @@ jobs:
           assert '[switch]$ReuseVerifiedLocalFap' in p
           assert "Replace('__LABMATE_REUSE__', $ReuseMode)" in p
           assert 'if (-not $Install)' in p
-          # Regression: Windows PowerShell 5.1 strips nested shell quotes
-          # from wsl.exe bash -lc; stdin Bash -s must be used throughout.
-          assert p.count('--exec bash -s') == 5
-          assert '($Linux -replace "`r", "")' in p
-          assert 'NormalizedLinux | & wsl.exe' in p
-          assert '& wsl.exe --distribution $Distro --exec bash -lc' not in p
+          # PowerShell 5.1 CRLF native pipes are forbidden: raw LF-only
+          # .NET StandardInput writes are mandatory for ALL five WSL calls.
+          assert p.count('Invoke-WslBash -Source') == 5
+          assert p.count('--exec bash -s') == 1
+          assert 'StandardInput.Write($Source.Replace([string][char]13, \'\') + [char]10)' in p
+          assert 'RedirectStandardInput = $true' in p
+          assert '| & wsl.exe' not in p
+          assert 'bash -lc' not in p
           assert 'git clone --single-branch --branch "$BRANCH" "$URL" "$DIR"' in p
           print('E11 EXACT LOCAL WSL/USB SOURCE CONTRACT PASS; NO DEVICE')
           PY
@@ -93,34 +95,46 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Windows PowerShell script parser (NO USB)
-        shell: pwsh
+      - name: Windows PowerShell 5.1 LF-only stdin execution test (NO USB)
+        shell: powershell
         run: |
           $tokens = $null
           $errors = $null
-          [System.Management.Automation.Language.Parser]::ParseFile(
+          $ast = [System.Management.Automation.Language.Parser]::ParseFile(
             (Resolve-Path scripts/update-v20-e11-from-github.ps1),
-            [ref]$tokens, [ref]$errors) | Out-Null
+            [ref]$tokens, [ref]$errors)
           if ($errors.Count -gt 0) {
             $errors | ForEach-Object { Write-Error $_.Message }
             exit 1
           }
-          # Exercise PowerShell -> Bash stdin quoting with Windows Git Bash
-          # (WSL itself is not configured on the hosted runner).
+          $functions = @($ast.FindAll({
+            param($node)
+            ($node -is [System.Management.Automation.Language.FunctionDefinitionAst]) -and
+            ($node.Name -eq 'Invoke-LfStdinProcess')
+          }, $true))
+          if ($functions.Count -ne 1) { throw "LF-only stdin function missing" }
+          # Load ONLY the production helper, NEVER execute the installer.
+          Invoke-Expression $functions[0].Extent.Text
           $gitBash = Join-Path $env:ProgramFiles 'Git\bin\bash.exe'
-          if (-not (Test-Path -LiteralPath $gitBash)) { throw "Git Bash not present" }
+          if (-not (Test-Path -LiteralPath $gitBash)) { throw "Git Bash not installed" }
           $probe = @'
           set -Eeuo pipefail
           D="$HOME/.local/share/labmate-e11-source"
           test -n "$D"
           case "$D" in */.local/share/labmate-e11-source) ;; *) exit 13 ;; esac
-          printf 'BASH_STDIN_QUOTES_PASS\n'
+          printf 'BASH_LF_ONLY_STDIN_PASS\n'
           '@
-          $output = ($probe -replace "`r", "") | & $gitBash -s
-          if ($LASTEXITCODE -ne 0 -or $output -notcontains 'BASH_STDIN_QUOTES_PASS') {
-            throw "PowerShell -> Bash stdin quote-preservation regression"
+          # Deliberately create CRLF first: the helper MUST remove the CRs.
+          $probe = $probe.Replace([string][char]10, ([string][char]13 + [char]10))
+          $result = Invoke-LfStdinProcess -ExePath $gitBash -Arguments '-s' -Source $probe -CaptureOutput
+          if ($result -ne 'BASH_LF_ONLY_STDIN_PASS') { throw "CRLF entered Bash input" }
+          try {
+            Invoke-LfStdinProcess -ExePath $gitBash -Arguments '-s' -Source 'exit 17' -CaptureOutput
+            throw "Expected Bash exit status was ignored"
+          } catch {
+            if ($_.Exception.Message -notmatch 'exit 17') { throw }
           }
-          Write-Host 'WINDOWS POWERSHELL PARSER + BASH STDIN QUOTING PASS | NO USB WRITE'
+          Write-Host 'WINDOWS POWERSHELL 5.1 LF-ONLY STDIN & EXIT-STATUS PASS | NO USB WRITE'
 
   verify_exact_ci_reference:
     runs-on: ubuntu-24.04
