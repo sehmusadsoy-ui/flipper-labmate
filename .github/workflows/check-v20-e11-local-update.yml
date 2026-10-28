@@ -74,12 +74,12 @@ jobs:
           $gitBash = Join-Path $env:ProgramFiles 'Git\bin\bash.exe'
           if (-not (Test-Path -LiteralPath $gitBash)) { throw "Git Bash not present" }
           $probe = @'
-set -Eeuo pipefail
-D="$HOME/.local/share/labmate-e11-source"
-test -n "$D"
-case "$D" in */.local/share/labmate-e11-source) ;; *) exit 13 ;; esac
-printf 'BASH_STDIN_QUOTES_PASS\n'
-'@
+          set -Eeuo pipefail
+          D="$HOME/.local/share/labmate-e11-source"
+          test -n "$D"
+          case "$D" in */.local/share/labmate-e11-source) ;; *) exit 13 ;; esac
+          printf 'BASH_STDIN_QUOTES_PASS\n'
+          '@
           $output = ($probe -replace "`r", "") | & $gitBash -s
           if ($LASTEXITCODE -ne 0 -or $output -notcontains 'BASH_STDIN_QUOTES_PASS') {
             throw "PowerShell -> Bash stdin quote-preservation regression"
