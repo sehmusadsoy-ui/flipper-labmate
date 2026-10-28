@@ -64,6 +64,19 @@ jobs:
           assert 'verify_fap(args.fap)' in u
           assert 'verify_v20_e11_debuglink_parity.py' in s
           assert 'sha256sum "$HOME/.local/share/labmate-e11/labmate.fap"' in p
+          # Regression: the original stale raw-CI-hash check ran AFTER the
+          # correctly verified copy and falsely reported NO-GO every time.
+          assert 'test "$(sha256sum "$OUT" | cut -d \' \' -f 1)" = "$SHA"' not in s
+          assert '"$(sha256sum "$OUT" | cut -d \' \' -f 1)" != "$ACTUAL"' in s
+          assert 'cmp -s -- "$FAP" "$OUT"' in s
+          assert 'verify_v20_e11_debuglink_parity.py" "$OUT"' in s
+          # Strictly permit reuse ONLY of the exact previous operator-built
+          # and CI-content-verified FAP; not a generic raw SHA bypass.
+          assert '39261383d4b6ad38a74541fa8934098206e37764aee79321740404ee6dbe0bfc' in s
+          assert 'LABMATE_REUSE_EXACT_FAP:-0' in s
+          assert 'verify_v20_e11_debuglink_parity.py" "$OUT"' in s
+          assert '[switch]$ReuseVerifiedLocalFap' in p
+          assert "Replace('__LABMATE_REUSE__', $ReuseMode)" in p
           assert 'if (-not $Install)' in p
           # Regression: Windows PowerShell 5.1 strips nested shell quotes
           # from wsl.exe bash -lc; stdin Bash -s must be used throughout.
