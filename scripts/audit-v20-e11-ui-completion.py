@@ -22,7 +22,7 @@ def check(test, reason):
         raise AssertionError(reason)
 
 def function(text, name):
-    match = re.search(r"(?m)^void " + re.escape(name) + r"\(", text)
+    match = re.search(r"(?m)^(?:static\\s+)?void " + re.escape(name) + r"\(", text)
     check(match is not None, name + " not found")
     begin = text.index("{", match.end())
     depth = 0
