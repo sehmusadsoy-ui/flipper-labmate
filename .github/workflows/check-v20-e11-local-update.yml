@@ -1,0 +1,65 @@
+name: LabMate E11 local WSL USB operator script review (NO DEVICE)
+on:
+  push:
+    branches: [dev/v2.0-e11-legacy-ui-harness-review-20261029]
+    paths:
+      - "scripts/build-v20-e11-exact-local.sh"
+      - "scripts/install-v20-e11-usb.py"
+      - "scripts/update-v20-e11-from-github.ps1"
+      - ".github/workflows/check-v20-e11-local-update.yml"
+permissions:
+  contents: read
+jobs:
+  linux_static:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Bash and Python strict syntax and pinned source/target contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n scripts/build-v20-e11-exact-local.sh
+          python3 -m py_compile scripts/install-v20-e11-usb.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/build-v20-e11-exact-local.sh').read_text()
+          p=Path('scripts/update-v20-e11-from-github.ps1').read_text()
+          u=Path('scripts/install-v20-e11-usb.py').read_text()
+          digest='6dbe192ba7d1b0f2b05702c90cf68d791f041f75ed53a6b41135176b6ad4de5b'
+          source='98a3357dade93aacac83c04e01110804b3b3f7b0'
+          for text in (s,u):assert digest in text
+          assert digest.upper() in p
+          assert source in s and source in p
+          assert 'd3f89dfe2ef6b01839201598e9be1590cba80322' in s
+          assert 'src application.fam labmate_10px.png' in s
+          assert 'sh "$APP/scripts/test-v20-e11-final-ui-predevice-host.sh"' in s
+          assert './fbt fap_labmate' in s
+          assert 'TARGET="/ext/apps/Tools/labmate.fap"' in u
+          assert 'if not args.apply:' in u
+          assert 'old=device.read_file(TARGET)' in u
+          assert 'saved.open("xb")' in u
+          assert 'device.send_file(str(args.fap),TARGET)' in u
+          assert 'if (-not $Install)' in p
+          print('E11 EXACT LOCAL WSL/USB SOURCE CONTRACT PASS; NO DEVICE')
+          PY
+  windows_parser:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Windows PowerShell script parser (NO USB)
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path scripts/update-v20-e11-from-github.ps1),
+            [ref]$tokens, [ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }
+          Write-Host 'WINDOWS POWERSHELL PARSER PASS | NO USB WRITE'
