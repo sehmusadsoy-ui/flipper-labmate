@@ -1,7 +1,7 @@
 /* E11 UI02/UI03 migration: exact current I2C, OneWire and UART renderers,
  * driven by bounded test-only snapshot/port states. No GPIO or transport.
  */
-#include "labmate_pixel_ui.h"
+#include "labmate_comm_ui.h"
 #include <assert.h>
 #include <stdint.h>
 #include <stdbool.h>
