@@ -11,7 +11,8 @@ import os
 from pathlib import Path
 import sys
 
-EXPECTED="6dbe192ba7d1b0f2b05702c90cf68d791f041f75ed53a6b41135176b6ad4de5b"
+from verify_v20_e11_debuglink_parity import verify_fap, IdentityFailure
+EXPECTED="95d7dee6d1edd37d74c906c476347498e0adc1ae2f20aa408ec26c70bc12f90a"
 TARGET="/ext/apps/Tools/labmate.fap"
 
 def main():
@@ -23,11 +24,12 @@ def main():
     args=parser.parse_args()
     if args.fap.name!="labmate.fap" or not args.fap.is_file():
         raise RuntimeError("NO-GO: local canonical labmate.fap missing")
+    # The ONLY permitted difference from CI is a 4-byte debuglink CRC.
+    # verify_fap checks every remaining byte against a pinned CI SHA256.
+    actual_raw_sha=verify_fap(args.fap)
     new=args.fap.read_bytes()
-    if len(new)!=174192 or hashlib.sha256(new).hexdigest()!=EXPECTED:
-        raise RuntimeError("NO-GO: candidate SHA-256 or size differs from GitHub E11 CI")
-    if new[:4]!=b"\x7fELF":
-        raise RuntimeError("NO-GO: candidate is not an ELF FAP")
+    if hashlib.sha256(new).hexdigest()!=actual_raw_sha:
+        raise RuntimeError("NO-GO: candidate changed during verification")
     if not args.apply:
         print("EXACT FAP PC-ONLY VERIFY PASS. No USB write.")
         return 0
@@ -65,7 +67,8 @@ def main():
             raise RuntimeError("NO-GO: PC original backup verification failure")
         print("OLD FAP SAVED TO PC:",saved)
         print("OLD FAP SHA256:",hashlib.sha256(old).hexdigest())
-        print("NEW FAP SHA256:",EXPECTED)
+        print("NEW FAP SHA256:",actual_raw_sha)
+        print("CI normalized verified SHA256:",EXPECTED)
         if old_md5==hashlib.md5(new).hexdigest():
             print("EXACT NEW FAP ALREADY INSTALLED. No device write.")
             return 0
