@@ -27,6 +27,21 @@ Review: Draft PR #24. No Stable/firmware/device writes.
 
 The old full-host runner is not the current release gate. No physical acceptance claim follows from these host-only tests.
 
+## Final source-side UI audit (separate from legacy test migration)
+
+The additional `scripts/audit-v20-e11-current-ui-contracts.py` checks the
+**actual production bodies** for UART/I2C/1-Wire, Logger/History/Profiles,
+Button/Alerts, Frequency/Pulse/PWM, and the root menu. It enforces display
+status/guard/action contracts plus forbidden resource/SD writes in render
+paths. This adds coverage to the existing GCC/Clang geometry and safety
+tests; it is **not** a replacement for pixel raster/device testing.
+
+The nine pre-pixel UI fixture tests remain legacy/unmigrated and are not
+certified green. They are not prerequisites for starting another UI-design
+iteration, but must be migrated or given equivalent actual-renderer test
+coverage before Stable release. The production code and current FAP build
+identity are unchanged by this additional audit.
+
 ## Physical consolidated acceptance — NOT YET PERFORMED
 
 Prepare exactly one uniquely named E11 UI trial from exact CI-reviewed source when ready. Do not overwrite existing LabMate FAPs. Before cleaning up duplicate app names, inventory actual SD paths and hashes.

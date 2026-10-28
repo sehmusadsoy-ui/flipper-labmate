@@ -6,6 +6,7 @@ on:
     paths:
       - "src/**"
       - "scripts/audit-v20-e11-ui-completion.py"
+      - "scripts/audit-v20-e11-current-ui-contracts.py"
       - "scripts/test-v20-e11-pixel-ui-host.sh"
       - "scripts/test-v20-pixel-ui-batch*-source.py"
       - "tests/test_v20_e11_pixel_header.c"
