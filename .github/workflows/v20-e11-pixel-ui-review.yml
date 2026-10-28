@@ -1,0 +1,38 @@
+name: LabMate v2.0 E11 pixel UI host review (NO FAP / NO FLASH)
+on:
+  push:
+    branches:
+      - dev/v2.0-e11-ui-completion-20261028
+    paths:
+      - "src/**"
+      - "scripts/audit-v20-e11-ui-completion.py"
+      - "scripts/test-v20-e11-pixel-ui-host.sh"
+      - "scripts/test-v20-pixel-ui-batch*-source.py"
+      - "tests/test_v20_e11_pixel_header.c"
+      - "tests/pixel_stubs/**"
+      - ".github/workflows/v20-e11-pixel-ui-review.yml"
+  pull_request:
+    branches:
+      - dev/v2.0-e11-counter-pixel-step3-20261028
+permissions:
+  contents: read
+jobs:
+  host_pixel_review:
+    name: Source-linked UI/capture safety gates GCC+Clang
+    if: github.event_name == 'push' || github.head_ref == 'dev/v2.0-e11-ui-completion-20261028'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Check exact E11 pixel source and host contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          sh scripts/test-v20-e11-pixel-ui-host.sh
+      - name: Report review scope
+        shell: bash
+        run: |
+          echo "HOST ONLY — No native E11 SDK, FAP, device, GPIO, SD or Stable operations"
