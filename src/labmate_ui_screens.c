@@ -1062,58 +1062,126 @@ void draw_button(Canvas* canvas, LabMateApp* app) {
     }
 }
 
-/* Event Counter is a passive 64-bit display of PB3/TIM2 rising edges.
- * No hardware or timer access is performed from a Canvas callback.
- */
+/* Event Counter pixel target, Step 3: PASSIVE PB3/TIM2 rising-edge
+ * presentation only. The existing capture, STOP/RESUME, reset, timer,
+ * threshold, GPIO and storage paths remain completely unchanged. */
+static void labmate_counter_ui_count(char* out, size_t size, uint64_t count) {
+    if(count < 1000000ULL) {
+        if(!labmate_counter_format(count,out,size)) snprintf(out,size,"-");
+        return;
+    }
+    const bool billions = count >= 1000000000ULL;
+    const uint64_t divisor = billions ? 1000000000ULL : 1000000ULL;
+    const uint64_t integer = count/divisor;
+    const uint8_t decimal = (uint8_t)((count%divisor)/
+                                      (billions ? 100000000ULL : 10000ULL));
+    char whole[24];
+    if(!labmate_counter_format(integer,whole,sizeof(whole))) {
+        snprintf(out,size,"-");
+        return;
+    }
+    const size_t digits = strlen(whole);
+    const size_t suffix = billions ? 3U : 4U;
+    if(digits + suffix >= size) { snprintf(out,size,"-"); return; }
+    memcpy(out,whole,digits);
+    out[digits] = '.';
+    if(billions) {
+        out[digits+1U] = (char)('0' + decimal);
+        out[digits+2U] = 'G';
+        out[digits+3U] = '\0';
+    } else {
+        out[digits+1U] = (char)('0' + decimal/10U);
+        out[digits+2U] = (char)('0' + decimal%10U);
+        out[digits+3U] = 'M';
+        out[digits+4U] = '\0';
+    }
+}
+
+static void labmate_counter_ui_time(char* out, size_t size, uint32_t seconds) {
+    if(seconds < 60U)
+        snprintf(out,size,"%lu s",(unsigned long)seconds);
+    else if(seconds < 3600U)
+        snprintf(out,size,"%lu:%02lu",(unsigned long)(seconds/60U),
+                 (unsigned long)(seconds%60U));
+    else
+        snprintf(out,size,"%lu:%02lu:%02lu",(unsigned long)(seconds/3600U),
+                 (unsigned long)((seconds/60U)%60U),
+                 (unsigned long)(seconds%60U));
+}
+
 void draw_counter(Canvas* canvas, LabMateApp* app) {
     char count[24];
-    char time_text[16];
+    char time_text[24];
+    /* RESET/entry clears these markers; STOP retains them even if no
+     * edges arrived. An extremely early zero-tick START/STOP can be
+     * ambiguous without changing app state (out of this UI-only scope). */
     const bool started_this_visit = app->counter_start_tick != 0U ||
         app->counter_elapsed_ticks != 0U || app->counter_total != 0U;
     const UiKitInstrumentState state = app->capture_release_fault ?
         UiKitInstrumentError : app->capture_blocked ? UiKitInstrumentBusy :
         app->counter_active ? UiKitInstrumentLive :
         started_this_visit ? UiKitInstrumentStopped : UiKitInstrumentReady;
-    if(!labmate_counter_format(app->counter_total,count,sizeof(count))) {
-        snprintf(count,sizeof(count),"-");
-    }
-    const uint32_t seconds=app->counter_elapsed_seconds;
-    if(seconds<60U) snprintf(time_text,sizeof(time_text),"%lu s",(unsigned long)seconds);
-    else if(seconds<3600U)
-        snprintf(time_text,sizeof(time_text),"%lu:%02lu",
-                 (unsigned long)(seconds/60U),(unsigned long)(seconds%60U));
-    else if(seconds<360000U)
-        snprintf(time_text,sizeof(time_text),"%luh%02lum",
-                 (unsigned long)(seconds/3600U),
-                 (unsigned long)((seconds/60U)%60U));
-    else snprintf(time_text,sizeof(time_text),">99h");
-
-    /* Full title is never cropped; frame moves the chip to the context row. */
+    const bool valid = state != UiKitInstrumentBusy && state != UiKitInstrumentError;
     const bool alert = app->threshold.armed && app->threshold.latched &&
                        app->threshold.source == LabMateAlertCounter;
-    (void)ui_kit_instrument_frame(canvas,"Event counter",NULL,
-                                  alert ? "Counter threshold alert" :
-                                          "Pin PB3 - rising edges",
-                                  alert ? "PB3 alert" : "PB3 rising",
-                                  state,(uint32_t)app->ui_pulse_phase*UI_KIT_FRAME_MS);
+    const bool pulse = (furi_get_tick()/500U % 2U) != 0U;
+    canvas_set_color(canvas,ColorBlack);
+    /* Exact header: back chevron, x=9 Primary title, right-anchored chip. */
+    canvas_draw_line(canvas,5,2,2,5);
+    canvas_draw_line(canvas,2,5,5,8);
+    canvas_set_font(canvas,FontPrimary);
+    canvas_draw_str(canvas,9,9,"Counter");
+    (void)ui_kit_state_chip(canvas,state,pulse);
 
-    /* The Count label and the read-only Time field share a single measured
-     * top baseline; the full count owns the entire large-number line. */
-    (void)ui_kit_hero_value(canvas,"Count",
-                            state==UiKitInstrumentReady ||
-                                state==UiKitInstrumentBusy ||
-                                state==UiKitInstrumentError ? NULL : count,
-                            NULL,124U,22U);
-    (void)ui_kit_stat_row(canvas,21U,"Time",
-                          state==UiKitInstrumentReady ||
-                              state==UiKitInstrumentBusy ||
-                              state==UiKitInstrumentError ? "-" : time_text);
-    if(!app->counter_active) {
-        const char* action = started_this_visit ? "Resume" : "Start";
-        (void)ui_kit_key_hint(canvas,3U,54U,UiKitKeyOk,action);
-        (void)ui_kit_key_hint(canvas,69U,54U,UiKitKeyUp,"Reset");
+    canvas_set_font(canvas,FontSecondary);
+    /* Active threshold remains visible, without displaying TIM2/RISE. */
+    const char* context = alert ? "Rising edges on PB3 !" : "Rising edges on PB3";
+    if(canvas_string_width(canvas,context)<=120U)
+        canvas_draw_str(canvas,4,20,context);
+    canvas_draw_str(canvas,5,32,"Count");
+    canvas_draw_str(canvas,84,32,"Time");
+
+    if(valid) {
+        labmate_counter_ui_count(count,sizeof(count),app->counter_total);
+        labmate_counter_ui_time(time_text,sizeof(time_text),app->counter_elapsed_seconds);
     } else {
-        (void)ui_kit_key_hint(canvas,3U,54U,UiKitKeyOk,"Stop");
+        snprintf(count,sizeof(count),"-");
+        snprintf(time_text,sizeof(time_text),"-");
+    }
+    canvas_set_font(canvas,FontBigNumbers);
+    if(canvas_string_width(canvas,count)>78U) {
+        /* Extreme 64-bit totals cannot fit on a 78px BigNumbers display.
+         * Preserve exact application counter, show an explicit lower bound. */
+        snprintf(count,sizeof(count),">9999G");
+    }
+    if(canvas_string_width(canvas,count)<=78U)
+        canvas_draw_str(canvas,4,50,count);
+
+    canvas_set_font(canvas,FontPrimary);
+    /* Real FontPrimary glyph widths vary by firmware. At most a 2px left
+     * shift is allowed; when still too wide, keep the hours/minutes and
+     * mark their resolution explicitly rather than overlap Count/Time. */
+    int16_t time_x=84;
+    const uint16_t tw=canvas_string_width(canvas,time_text);
+    if(tw>44U && tw<=46U) time_x=82;
+    else if(tw>46U && app->counter_elapsed_seconds>=3600U && valid) {
+        const uint32_t hours=app->counter_elapsed_seconds/3600U;
+        if(hours<=99U)
+            snprintf(time_text,sizeof(time_text),"%luh%02lum",
+                     (unsigned long)hours,
+                     (unsigned long)((app->counter_elapsed_seconds/60U)%60U));
+        else snprintf(time_text,sizeof(time_text),">99h");
+    }
+    if(canvas_string_width(canvas,time_text)<=128U-(uint16_t)time_x)
+        canvas_draw_str(canvas,time_x,50,time_text);
+
+    if(state==UiKitInstrumentLive) {
+        (void)ui_kit_key_hint(canvas,4U,UiKitKeyOk,"Stop");
+    } else if(state==UiKitInstrumentStopped) {
+        (void)ui_kit_key_hint(canvas,4U,UiKitKeyOk,"Resume");
+        (void)ui_kit_key_hint(canvas,72U,UiKitKeyUp,"Reset");
+    } else if(state==UiKitInstrumentReady) {
+        (void)ui_kit_key_hint(canvas,4U,UiKitKeyOk,"Start");
     }
     canvas_set_color(canvas,ColorBlack);
 }
