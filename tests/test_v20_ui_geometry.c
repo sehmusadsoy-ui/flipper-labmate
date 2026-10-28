@@ -107,7 +107,7 @@ static void test_menu_text_and_navigation(void) {
     bool seen[LabMateToolCount] = {false};
     assert(LabMateToolCount == 17 && LabMateGroupCount == 5);
     assert(LabMateGroupComm + 1 == LabMateGroupInfo);
-    assert(strcmp(labmate_nav_group_title(LabMateGroupInfo), "INFO") == 0);
+    assert(strcmp(labmate_nav_group_title(LabMateGroupInfo), "SETTINGS") == 0);
     assert(labmate_nav_tool_at(LabMateGroupInfo, 0) == LabMateToolAbout);
     for(uint8_t group = 0; group < LabMateGroupCount; ++group) {
         const uint8_t count = labmate_nav_group_size(group);
