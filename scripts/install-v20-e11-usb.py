@@ -12,7 +12,7 @@ from pathlib import Path
 import sys
 
 from verify_v20_e11_debuglink_parity import verify_fap, IdentityFailure
-EXPECTED="95d7dee6d1edd37d74c906c476347498e0adc1ae2f20aa408ec26c70bc12f90a"
+EXPECTED="ddc27aa9e095c5ff809b000e4119d14151caf0d1a191c6a35c96f46ad1b01d72"
 TARGET="/ext/apps/Tools/labmate.fap"
 
 def main():
