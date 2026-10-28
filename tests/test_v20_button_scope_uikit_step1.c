@@ -12,8 +12,12 @@ struct Canvas {
 };
 static void pos(Canvas* c,int32_t x,int32_t y) {
     if(x<0||x>=128||y<0||y>=64)c->faults++;
-    else {if(x<c->leftmost)c->leftmost=x;if(x>c->rightmost)c->rightmost=x;
-          if(y<c->topmost)c->topmost=y;if(y>c->bottommost)c->bottommost=y;}
+    else {
+        if(x<c->leftmost) c->leftmost=x;
+        if(x>c->rightmost) c->rightmost=x;
+        if(y<c->topmost) c->topmost=y;
+        if(y>c->bottommost) c->bottommost=y;
+    }
     c->paints++;
 }
 void canvas_set_font(Canvas* c,Font f){c->font=f;}
