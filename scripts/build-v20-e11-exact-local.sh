@@ -94,7 +94,16 @@ cp "$FAP" "$TMP"
 cmp "$FAP" "$TMP"
 mv -f -- "$TMP" "$OUT"
 TMP=''
-test "$(sha256sum "$OUT" | cut -d ' ' -f 1)" = "$SHA"
+# This full raw hash must match the byte-identical, just-verified local FAP,
+# NOT the GitHub CI raw hash: the only allowed variance is the audited
+# 4-byte GNU debuglink CRC already verified above.
+if [ "$(sha256sum "$OUT" | cut -d ' ' -f 1)" != "$ACTUAL" ] || ! cmp -s -- "$FAP" "$OUT"; then
+  echo 'NO-GO: final PC labmate.fap changed after CI content-parity validation' >&2
+  exit 3
+fi
+# Re-check the final canonical PC file against the GitHub CI normalized
+# digest, not only its copied raw digest. No writes to device in this step.
+python3 "$APP/scripts/verify_v20_e11_debuglink_parity.py" "$OUT"
 echo "EXACT E11 WSL FAP CONTENT PARITY PASS: $BYTES bytes / $ACTUAL"
 echo "ONE LOCAL FAP: $OUT"
 echo 'NO DEVICE WRITE / NO FIRMWARE FLASH'
