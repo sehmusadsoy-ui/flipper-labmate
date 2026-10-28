@@ -1,8 +1,8 @@
-name: LabMate v2.0 Button Step2 + E11 pixel host review (NO FAP / NO FLASH)
+name: LabMate v2.0 Scope Reference Step3 + E11 pixel host review (NO FAP / NO FLASH)
 on:
   push:
     branches:
-      - dev/v2.0-e11-button-pixel-step2-20261028
+      - dev/v2.0-e11-scope-reference-pixel-step3-20261028
     paths:
       - "src/**"
       - "scripts/audit-v20-e11-ui-completion.py"
@@ -14,6 +14,10 @@ on:
       - "scripts/test-v20-button-scope-uikit-step1-host.sh"
       - "tests/test_v20_button_pixel_step2.c"
       - "scripts/test-v20-button-pixel-step2-host.sh"
+      - "tests/test_v20_scope_reference_pixel_step3.c"
+      - "scripts/test-v20-scope-reference-pixel-step3-host.sh"
+      - "src/labmate_scope_display.c"
+      - "src/labmate_scope_reference_view.c"
       - "tests/test_v20_doctor.c"
       - "tests/test_v20_phase3b_panel.c"
       - "tests/test_v20_ui_geometry.c"
@@ -28,13 +32,13 @@ on:
       - ".github/workflows/v20-e11-pixel-ui-review.yml"
   pull_request:
     branches:
-      - dev/v2.0-e11-button-scope-pixel-step1-20261028
+      - dev/v2.0-e11-button-pixel-step2-20261028
 permissions:
   contents: read
 jobs:
   host_pixel_review:
     name: Source-linked UI/capture safety gates GCC+Clang
-    if: github.event_name == 'push' || github.head_ref == 'dev/v2.0-e11-button-pixel-step2-20261028'
+    if: github.event_name == 'push' || github.head_ref == 'dev/v2.0-e11-scope-reference-pixel-step3-20261028'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:

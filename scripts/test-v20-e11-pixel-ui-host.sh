@@ -8,6 +8,7 @@ python3 "$root/scripts/audit-v20-e11-ui-completion.py"
 python3 "$root/scripts/audit-v20-e11-current-ui-contracts.py"
 sh "$root/scripts/test-v20-button-scope-uikit-step1-host.sh"
 sh "$root/scripts/test-v20-button-pixel-step2-host.sh"
+sh "$root/scripts/test-v20-scope-reference-pixel-step3-host.sh"
 python3 "$root/scripts/test-v20-pixel-ui-batch2-source.py"
 python3 "$root/scripts/test-v20-pixel-ui-batch3-source.py"
 for cc in gcc clang; do
