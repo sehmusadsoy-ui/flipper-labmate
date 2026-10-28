@@ -34,7 +34,8 @@
 | UI02 / UI03 COMM exact current renderer tests | PASS on migration branch |
 | UI05B Button / Alerts exact current renderer tests | PASS on migration branch |
 | UI06C pure status plus exact GPIO | PASS (retained compatible gate) |
-| UI04 Profiles / History / Log Detail exact production render (300 cases per compiler) | **PASS**, Actions 40771017169 (GCC+Clang) |\n| Three excluded UI runners: UI05 / UI05D / UI06 | **OPEN**, not waived |
+| UI04 Profiles / History / Log Detail exact production render (300 cases per compiler) | **PASS**, Actions 40771017169 (GCC+Clang) |
+| Three excluded UI runners: UI05 / UI05D / UI06 | **OPEN**, not waived |
 
 ### Follow-up physical acceptance (single labmate.fap only)
 
