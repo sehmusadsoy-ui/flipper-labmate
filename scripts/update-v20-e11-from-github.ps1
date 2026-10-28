@@ -34,9 +34,15 @@ function Invoke-LfStdinProcess {
     try {
         $Started = $Proc.Start()
         if (-not $Started) { throw "Could not start $ExePath" }
-        $Proc.StandardInput.NewLine = [string][char]10
-        $Proc.StandardInput.Write($Source.Replace([string][char]13, '') + [char]10)
-        $Proc.StandardInput.Close()
+        # Windows PowerShell 5.1/.NET Framework's StreamWriter emits
+        # UTF-8 BOM (EF BB BF) at first write, which Bash treats as a
+        # literal part of the first command. Write raw UTF-8 NO BOM bytes.
+        $NoBomUtf8 = New-Object System.Text.UTF8Encoding($false)
+        $Bytes = $NoBomUtf8.GetBytes($Source.Replace([string][char]13, '') + [char]10)
+        $InputStream = $Proc.StandardInput.BaseStream
+        $InputStream.Write($Bytes, 0, $Bytes.Length)
+        $InputStream.Flush()
+        $InputStream.Close()
         $Output = ''
         if ($CaptureOutput) { $Output = $Proc.StandardOutput.ReadToEnd() }
         $Proc.WaitForExit()
