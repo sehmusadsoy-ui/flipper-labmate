@@ -57,7 +57,7 @@ jobs:
           assert 'sh "$APP/scripts/test-v20-e11-final-ui-predevice-host.sh"' in s
           assert './fbt fap_labmate' in s
           assert 'TARGET="/ext/apps/Tools/labmate.fap"' in u
-          assert 'if not args.apply:' in u
+          assert 'if not args.apply and not args.discover:' in u
           assert 'old=device.read_file(TARGET)' in u
           assert 'saved.open("xb")' in u
           assert 'device.send_file(str(args.fap),TARGET)' in u
@@ -84,7 +84,7 @@ jobs:
           assert 'verify_v20_e11_debuglink_parity.py" "$OUT"' in s
           assert '[switch]$ReuseVerifiedLocalFap' in p
           assert "Replace('__LABMATE_REUSE__', $ReuseMode)" in p
-          assert 'if (-not $Install)' in p
+          assert 'if (-not $Install -and -not $Discover)' in p
           # PowerShell 5.1 CRLF native pipes are forbidden: raw LF-only
           # .NET StandardInput writes are mandatory for ALL five WSL calls.
           assert p.count('Invoke-WslBash -Source') == 5
