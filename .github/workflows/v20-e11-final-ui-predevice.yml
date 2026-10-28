@@ -1,0 +1,29 @@
+name: LabMate E11 combined Button Scope UI pre-device acceptance (NO FLASH)
+on:
+  push:
+    branches: [dev/v2.0-e11-compare-sample-pixel-step4-20261028]
+    paths:
+      - "scripts/test-v20-e11-final-ui-predevice-host.sh"
+      - "scripts/audit-v20-e11-ui-integration.py"
+      - ".github/workflows/v20-e11-final-ui-predevice.yml"
+permissions:
+  contents: read
+jobs:
+  acceptance:
+    name: Combined pixel, capture, save, evidence, navigation GCC+Clang
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Run all compatible accepted host regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          sh scripts/test-v20-e11-final-ui-predevice-host.sh
+      - name: State non-waived acceptance blockers
+        run: |
+          echo "No device flashing, FAP transfer, or Stable modification."
+          echo "Pending: 9 legacy UI pixel harness migrations and physical 128x64 review."
