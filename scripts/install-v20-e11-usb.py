@@ -8,6 +8,7 @@ import argparse
 from datetime import datetime, timezone
 import hashlib
 import os
+import re
 from pathlib import Path
 import sys
 
@@ -16,11 +17,12 @@ EXPECTED="ddc27aa9e095c5ff809b000e4119d14151caf0d1a191c6a35c96f46ad1b01d72"
 TARGET="/ext/apps/Tools/labmate.fap"
 
 def discover_device_faps(device):
-    """Read-only inventory of app file names/sizes; no device writes.
+    """Read-only inventory of legacy FAP paths; no device writes.
 
-    Inspect /ext/apps and its immediate category folders, plus one nested
-    level. Report likely previous LabMate builds and all Tools FAP names.
-    A file name alone is not proof of app identity.
+    The old parser silently discarded every file whose listing had a
+    non-decimal size suffix. Report raw directory evidence and count files
+    separately from successfully recognized .fap entries; never infer that
+    the device has no apps from an empty parsed list.
     """
     print("READ-ONLY DEVICE FAP SCAN: checking /ext/apps",flush=True)
     if not device.exist_dir("/ext/apps"):
@@ -28,6 +30,9 @@ def discover_device_faps(device):
     queue=[("/ext/apps",0)]
     visited=set()
     files=[]
+    raw_files=0
+    unrecognized=[]
+    sample=[]
     while queue:
         folder,level=queue.pop(0)
         if folder in visited:
@@ -36,26 +41,41 @@ def discover_device_faps(device):
         if len(visited)>90:
             raise RuntimeError("NO-GO: unexpectedly large apps directory inventory")
         print("READ-ONLY SCANNING:",folder,flush=True)
-        # Momentum CLI protocol: storage list yields [D] and [F] lines.
         device.send_and_wait_eol('storage list "'+folder+'"\r')
         data=device.read.until(device.CLI_PROMPT)
         if device.has_error(data):
             raise RuntimeError("NO-GO: cannot list "+folder)
         for rawline in data.split(b"\r\n"):
             line=rawline.decode("utf-8","replace").strip()
+            if folder == "/ext/apps/Tools" and len(sample)<60 and line:
+                sample.append(line[:250])
             if line.startswith("[D] "):
                 name=line[4:].strip()
                 if level<2 and name not in (".","..") and "/" not in name and "\\" not in name:
                     queue.append((folder+"/"+name,level+1))
             elif line.startswith("[F] "):
+                raw_files+=1
                 entry=line[4:].strip()
-                try:
-                    name,size=entry.rsplit(" ",1)
-                except ValueError:
-                    continue
-                if name.lower().endswith(".fap") and size.isdigit():
-                    files.append((folder+"/"+name,int(size)))
+                # Accept size fields that are missing, have suffixes/units,
+                # or include additional words; they are for display only.
+                match=re.match(r"(?is)^(.+?\.fap)(?:\s+(.*))?$",entry)
+                if match:
+                    name=match.group(1)
+                    size_field=(match.group(2) or "?").strip()
+                    size=int(size_field) if size_field.isdigit() else size_field
+                    files.append((folder+"/"+name,size))
+                elif len(unrecognized)<24:
+                    unrecognized.append((folder,line[:250]))
     print("READ-ONLY SCAN COMPLETE:",len(visited),"folders",flush=True)
+    print("RAW FILE LISTING ROWS:",raw_files)
+    print("RECOGNIZED FAP ROWS:",len(files))
+    print("RAW TOOLS DIRECTORY SAMPLE (MAX 60 ROWS):")
+    for line in sample:
+        print("RAW_TOOLS_ENTRY:",repr(line))
+    if not sample:
+        print("RAW_TOOLS_EMPTY: No nonempty CLI listing lines for /ext/apps/Tools")
+    for path,line in unrecognized:
+        print("UNRECOGNIZED_FILE_ENTRY:",path,repr(line))
     hits=[(p,n) for p,n in files if any(
         word in p.rsplit("/",1)[-1].lower()
         for word in ("labmate","lab_mate","counter-step3","ultimate")
@@ -64,11 +84,11 @@ def discover_device_faps(device):
     print("DEVICE FAP INVENTORY (READ ONLY):",len(files),"FAP files across",len(visited),"folders")
     print("EXACT CANONICAL PRESENT:",any(p==TARGET for p,_ in files))
     for path,size in sorted(hits):
-        print("LABMATE_CANDIDATE:",path,"bytes=",size)
+        print("LABMATE_CANDIDATE:",path,"size_listing=",size)
     if not hits:
-        print("NO MATCH BY FILE NAME. Filename alone does not identify the app.")
+        print("NO MATCH BY FILE NAME; not proof that no LabMate exists.")
     for path,size in sorted(tools)[:120]:
-        print("TOOLS_FAP:",path,"bytes=",size)
+        print("TOOLS_FAP:",path,"size_listing=",size)
     if len(tools)>120:
         print("TOOLS_FAP_LIST_TRUNCATED:",len(tools)-120)
     print("DISCOVERY ONLY: no FAP readback backup, no install, no firmware write")
