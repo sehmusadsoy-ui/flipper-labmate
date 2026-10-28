@@ -266,7 +266,16 @@ def test_callers() -> None:
         remainder = content[start:]
         assert remainder.index(required) < remainder.index("app->capture_owner ="), path
     for path in ("src/labmate_frequency_capture.c", "src/labmate_event_counter.c"):
-        assert "if(labmate_frequency_tim2_lease_pending()) {" in (ROOT/path).read_text()
+        # Current Counter STOP caches the one lease-pending read and checks
+        # it immediately; legacy Frequency STOP checks the call directly.
+        # Both must set sticky fault + blocked before returning ownership.
+        source = (ROOT/path).read_text()
+        if "if(labmate_frequency_tim2_lease_pending()) {" not in source:
+            assert "const bool lease_pending = labmate_frequency_tim2_lease_pending();" in source, path
+            assert "if(lease_pending) {" in source, path
+            pending_block = source.split("if(lease_pending) {", 1)[1].split("}", 1)[0]
+            assert "app->capture_release_fault = true;" in pending_block, path
+            assert "app->capture_blocked = true;" in pending_block, path
     assert "bool labmate_frequency_tim2_configure(void);" in HEADER.read_text()
     assert "bool labmate_frequency_tim2_lease_pending(void);" in HEADER.read_text()
     assert "bool labmate_frequency_tim2_capture_valid(void);" in HEADER.read_text()
