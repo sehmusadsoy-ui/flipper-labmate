@@ -170,7 +170,7 @@ index 819c807..2dec8a2 100644
                      case LabMateToolButton:
 diff --git a/tests/test_v20_e11_ui_live_guards.c b/tests/test_v20_e11_ui_live_guards.c
 new file mode 100644
-index 0000000..39e1c5e
+index 0000000..1f1efea
 --- /dev/null
 +++ b/tests/test_v20_e11_ui_live_guards.c
 @@ -0,0 +1,31 @@
