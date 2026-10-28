@@ -80,12 +80,14 @@ cp "$APP"/src/*.c "$APP"/src/*.h "$SDK/applications_user/labmate/src/"
 FAP="$SDK/build/f7-firmware-C/.extapps/labmate.fap"
 test -s "$FAP"
 python3 "$APP/scripts/verify_v19_e11_sdk_fap.py" "$SDK" "$FAP"
+# FBT embeds a GNU debuglink CRC of its separate labmate_d.elf; the
+# CRC may depend on absolute WSL build paths. Prove exact identity of
+# EVERY OTHER BYTE against the CI artifact, rather than comparing CRC.
+# Also check the local CRC against the actual debug ELF before accepting.
+# The verifier fails closed for any .text/.rodata/reloc/symbol/ABI change.
+python3 "$APP/scripts/verify_v20_e11_debuglink_parity.py" "$FAP" --check-local-debug-elf
 ACTUAL="$(sha256sum "$FAP" | cut -d ' ' -f 1)"
 BYTES="$(stat -c %s "$FAP")"
-if [ "$ACTUAL" != "$SHA" ] || [ "$BYTES" -ne 174192 ]; then
-  echo "NO-GO: local FAP differs from CI: $BYTES bytes / $ACTUAL" >&2
-  exit 3
-fi
 mkdir -p "$(dirname "$OUT")"
 TMP="$(mktemp "$(dirname "$OUT")/.labmate-verified-XXXXXXXX")"
 cp "$FAP" "$TMP"
@@ -93,6 +95,6 @@ cmp "$FAP" "$TMP"
 mv -f -- "$TMP" "$OUT"
 TMP=''
 test "$(sha256sum "$OUT" | cut -d ' ' -f 1)" = "$SHA"
-echo "EXACT E11 WSL FAP PASS: $BYTES bytes / $SHA"
+echo "EXACT E11 WSL FAP CONTENT PARITY PASS: $BYTES bytes / $ACTUAL"
 echo "ONE LOCAL FAP: $OUT"
 echo 'NO DEVICE WRITE / NO FIRMWARE FLASH'
