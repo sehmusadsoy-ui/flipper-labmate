@@ -91,6 +91,7 @@ uint32_t labmate_generator_custom_step_hz(const LabMateApp* a){
 uint64_t pulse_cycles_to_us(uint32_t cycles){
     return ((uint64_t)cycles*1000000ULL+32000000ULL)/64000000ULL;
 }
+#include "ui_kit_rect.inc"
 #include "ui_kit_text.inc"
 #include "ui_kit_center_text.inc"
 #include "ui_kit_back_title.inc"

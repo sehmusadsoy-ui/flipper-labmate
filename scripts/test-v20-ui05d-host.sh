@@ -16,7 +16,7 @@ names={
  "screen":["frequency_format_compact","frequency_format_tiny","frequency_hero_text",
            "draw_frequency","draw_generator","pulse_ui_format_value",
            "draw_pulse_stats","draw_pulse"],
- "kit":["ui_kit_text","ui_kit_center_text","ui_kit_back_title",
+ "kit":["ui_kit_rect","ui_kit_text","ui_kit_center_text","ui_kit_back_title",
         "ui_kit_pulse_line","ui_kit_sparkline"],
 }
 for source,functions in names.items():
@@ -37,7 +37,7 @@ for source,functions in names.items():
                        "labmate_generator_start(","labmate_capture_start("):
             assert unsafe not in body,(name,unsafe)
         (dest/(name+".inc")).write_text(body+"\n")
-print("E11 UI05D exact production UI bodies extracted (13)")
+print("E11 UI05D exact production UI bodies extracted (14)")
 PY
 for cc in gcc clang; do
     command -v "$cc" >/dev/null 2>&1 || exit 2
