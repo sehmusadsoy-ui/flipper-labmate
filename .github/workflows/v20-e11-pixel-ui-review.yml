@@ -13,6 +13,8 @@ on:
       - "tests/test_v20_phase3b_panel.c"
       - "tests/test_v20_ui_geometry.c"
       - "tests/test_navigation.c.inc"
+      - "tests/test_v20_ultimate_root_grid.c"
+      - "scripts/test-v20-ultimate-root-grid-host.sh"
       - "tests/pixel_stubs/**"
       - ".github/workflows/v20-e11-pixel-ui-review.yml"
   pull_request:
