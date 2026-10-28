@@ -31,7 +31,10 @@
 | Consolidated current UI/capture + Phase 2B..2K + evidence suites | See combined workflow |
 | Original pair generation/save + persisted navigation IDs (GCC + Clang) | See combined workflow |
 | Physical full 128×64 screenshots, resource conflicts, SD, PC1 edges | **OPEN** |
-| Nine unconverted pre-pixel isolated UI fixture harnesses | **OPEN**, not waived |
+| UI02 / UI03 COMM exact current renderer tests | PASS on migration branch |
+| UI05B Button / Alerts exact current renderer tests | PASS on migration branch |
+| UI06C pure status plus exact GPIO | PASS (retained compatible gate) |
+| Four unmigrated excluded UI runners: UI04 / UI05 / UI05D / UI06 | **OPEN**, not waived |
 
 ### Follow-up physical acceptance (single labmate.fap only)
 
@@ -47,3 +50,28 @@ inputs only within validated 3.3V limits and common ground.
 
 Do not promote to Stable without on-device acceptance and non-regression
 for firmware E11 API 87.1 plus compatibility/legacy UI fixture disposition.
+
+
+## Legacy harness triage (E11; branch-only, no production diff)
+
+The old CI runner inventory was audited rather than counted from memory:
+11 historical `test-v20-ui*-host.sh` runners; three already covered by
+pre-device CI (UI01, UI05C Counter, UI05E GPIO). Eight were excluded.
+
+An isolated diagnostic run showed **seven old failures, one pass (UI06C)**:
+https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/40768877702
+
+Current-source replacements now include:
+- **UI02/UI03:** exact production I2C, 1-Wire, UART pixel renderers (24+56+32
+  scenarios per compiler), using controlled host I/O snapshot types only.
+- **UI05B:** existing Step2 exact Button renderer (4096 combinations per
+  compiler), plus exact-source Alerts (72 source/limit/status cases).
+- **UI06C:** original status truth table remains passing and runs the current
+  exact GPIO source renderer through UI05E.
+
+**Still excluded:** UI04 (profiles/history/detail), UI05 (logger), UI05D
+(frequency/pulse/PWM old presentation), UI06 (old footer/layout plus UI05D).
+These are four runner names, not four unrelated feature modules. Passing
+historical geometry is not equivalent to pixel-raster acceptance. Source-only
+contracts and native E11 compilation remain useful, but cannot waive the
+missing exact-renderer tests or physical QA.

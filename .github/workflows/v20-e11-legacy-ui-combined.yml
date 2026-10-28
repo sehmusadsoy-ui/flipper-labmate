@@ -1,0 +1,29 @@
+name: LabMate E11 migrated legacy UI combined pre-device acceptance
+on:
+  push:
+    branches: [dev/v2.0-e11-legacy-ui-harness-review-20261029]
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "scripts/test-v20-*-host.sh"
+      - "scripts/audit-v20-e11-predevice.sh"
+      - "scripts/audit-v20-e11-current-ui-contracts.py"
+      - "docs/development/V20_E11_BUTTON_SCOPE_COMBINED_ACCEPTANCE.md"
+      - ".github/workflows/v20-e11-legacy-ui-combined.yml"
+permissions:
+  contents: read
+jobs:
+  combined:
+    name: E11 current render + captures + A/B + all accepted core/evidence gates
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Combined GCC and Clang exact source acceptance
+        run: sh scripts/test-v20-e11-final-ui-predevice-host.sh
+      - name: State remaining release blockers
+        run: |
+          echo "Unmigrated excluded runners: UI04 UI05 UI05D UI06."
+          echo "Physical 128x64 screenshots, resource contention, SD/fault gates OPEN."
+          echo "No FAP install, no stable promotion."

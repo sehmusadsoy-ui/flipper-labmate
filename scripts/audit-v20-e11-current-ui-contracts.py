@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """E11 final UI source contract audit, NOT a real framebuffer/device test.
 
-The nine pre-pixel renderer fixtures are historical and not admissible as
+Pre-pixel renderer fixtures are historical and not admissible as
 release proof. This checks the production bodies against *current* semantics
 for COMM/RECORDS/LOGGER/BUTTON/ALERTS/FREQ/PULSE/PWM/MENU, without editing them.
 """
@@ -161,4 +161,4 @@ contains(chrome,(
 print("E11 CURRENT UI SOURCE CONTRACT PASS: 13 production renderer bodies")
 print("COVERAGE: COMM (UART/I2C/1W), records, logger, button/alerts,")
 print("frequency/pulse/PWM, root menu, shared measured pixel header")
-print("NOT A PIXEL RASTER, TIMER/GPIO, OLD-NINE-SUITE OR DEVICE PASS")
+print("NOT A PIXEL RASTER, TIMER/GPIO, FOUR-UNMIGRATED-SUITES OR DEVICE PASS")
