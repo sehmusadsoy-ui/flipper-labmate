@@ -1,0 +1,23 @@
+name: LabMate E11 current COMM renderer migration (NO FAP)
+on:
+  push:
+    branches: [dev/v2.0-e11-legacy-ui-harness-review-20261029]
+    paths:
+      - "tests/test_v20_comm_e11_current.c"
+      - "scripts/test-v20-e11-comm-current-host.sh"
+      - "scripts/test-v20-ui02-host.sh"
+      - "scripts/test-v20-ui03-host.sh"
+      - "scripts/audit-v20-e11-predevice.sh"
+      - ".github/workflows/v20-e11-comm-migration.yml"
+permissions:
+  contents: read
+jobs:
+  comm_current:
+    name: Production UART/I2C/OneWire pixel host GCC+Clang
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Verify current COMM draw functions with real source
+        run: sh scripts/test-v20-e11-comm-current-host.sh
