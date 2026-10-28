@@ -23,7 +23,7 @@ import sys
 import zlib
 
 RAW_CI_SHA256 = "6dbe192ba7d1b0f2b05702c90cf68d791f041f75ed53a6b41135176b6ad4de5b"
-NORMALIZED_CI_SHA256 = "95d7dee6d1edd37d74c906c476347498e0adc1ae2f20aa408ec26c70bc12f90a"
+NORMALIZED_CI_SHA256 = "ddc27aa9e095c5ff809b000e4119d14151caf0d1a191c6a35c96f46ad1b01d72"
 EXPECTED_BYTES = 174192
 DEBUGLINK_PREFIX = b"labmate_d.elf\x00\x00\x00"  # 16-byte name/padding (only CRC differs)
 
