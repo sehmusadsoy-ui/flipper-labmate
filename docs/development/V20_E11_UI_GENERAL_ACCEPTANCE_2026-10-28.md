@@ -19,8 +19,11 @@ Review: Draft PR #24. No Stable/firmware/device writes.
 - UI-01: direct production `labmate_scope_ui_header/footer` geometry, current carousel/list layout, and stable navigation IDs; GCC+Clang PASS.
 - Root-grid: replaced obsolete `labmate_menu_grid.h` dependency with production `draw_menu` source-contract checks and the current 5-group / 17-tool carousel and list viewport test; GCC+Clang PASS. This validates navigation/geometry contracts, **not** complete pixel raster output.
 - Evidence: [Actions run 40743327323](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/40743327323), [earlier UI-01 run 40742892634](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/40742892634).
+- UI-05C Counter: exact production `draw_counter`, actual counter-formatting C, 4608 state/count/time cases per compiler (GCC+Clang) PASS; ui-kit state chip and key hints are bounded test doubles, not a physical pixel raster or TIM2 measurement.
+- UI-05E GPIO: exact production `draw_gpio`, 1280 pin/state/level/count cases per compiler (GCC+Clang) PASS; waveform history and pin-strip rendering are separate tests, not simulated here.
+- Evidence: [Actions run 40744222874](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/40744222874) (both source-linked display matrix tests PASS).
 
-**Eleven old UI suites still require migration**: UI-02, UI-03, UI-04, UI-05, UI-05B, UI-05C Counter, UI-05D, UI-05E GPIO, UI-06, UI-06C and the old Ultimate Menu Renderer. Their earlier FAIL results are **not waived**. Some use outdated geometry, deleted menu header or obsolete Canvas function mocks. Replace with equivalent source-linked current `ui_kit` renderer/128×64 tests. The previous diagnostic's 15 failures remain an accurate result for its older commit, not today's latest suite status.
+**Nine old UI suites still require migration**: UI-02, UI-03, UI-04, UI-05, UI-05B, UI-05D, UI-06, UI-06C and the old Ultimate Menu Renderer. Their earlier FAIL results are **not waived**. Some use outdated geometry, deleted menu header or obsolete Canvas function mocks. Replace with equivalent source-linked current `ui_kit` renderer/128×64 tests. The previous diagnostic's 15 failures remain an accurate result for its older commit, not today's latest suite status.
 
 The old full-host runner is not the current release gate. No physical acceptance claim follows from these host-only tests.
 
