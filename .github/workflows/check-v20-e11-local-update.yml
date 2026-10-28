@@ -112,15 +112,15 @@ jobs:
               def __init__(self):
                   self.current=''
                   self.listings={
-                      '/ext/apps': b'[D] Tools\\r\\n[D] GPIO\\r\\n',
-                      '/ext/apps/Tools': b'[F] LabMate-Counter-Step3-E11-Trial.fap 151552\\r\\n[F] other.fap 123\\r\\n',
-                      '/ext/apps/GPIO': b'[F] gpio.fap 456\\r\\n',
+                      '/ext/apps': b'[D] Tools\r\n[D] GPIO\r\n',
+                      '/ext/apps/Tools': b'[F] LabMate-Counter-Step3-E11-Trial.fap 151552\r\n[F] other.fap 123\r\n',
+                      '/ext/apps/GPIO': b'[F] gpio.fap 456\r\n',
                   }
                   self.read=SimpleNamespace(until=lambda marker: self.listings[self.current])
               def exist_dir(self,path):
                   return path == '/ext/apps'
               def send_and_wait_eol(self,command):
-                  assert command.startswith('storage list "') and command.endswith('"\\r')
+                  assert command.startswith('storage list "') and command.endswith('"\r')
                   self.current=command.split('"')[1]
               def has_error(self,data):
                   return b'Storage error:' in data
@@ -131,6 +131,8 @@ jobs:
           files=discovery(FakeStorage())
           assert ('/ext/apps/Tools/LabMate-Counter-Step3-E11-Trial.fap',151552) in files
           assert ('/ext/apps/GPIO/gpio.fap',456) in files
+          assert len(files)==3
+          assert all(p.startswith('/ext/apps/') for p,_ in files)
           print('DEVICE FAP DISCOVERY READ-ONLY / LEGACY NAME FIXTURE PASS')
           PY
   windows_parser:
