@@ -1,8 +1,8 @@
-name: LabMate v2.0 Button Step2 pinned E11 native review (NO FLASH)
+name: LabMate v2.0 Scope Reference Step3 pinned E11 native review (NO FLASH)
 
 on:
   push:
-    branches: [dev/v2.0-e11-button-pixel-step2-20261028]
+    branches: [dev/v2.0-e11-scope-reference-pixel-step3-20261028]
     paths:
       - "application.fam"
       - "src/**"
@@ -19,7 +19,7 @@ on:
       - "tests/test_v20_*.c"
       - ".github/workflows/build-v20-e11-pixel-ui-native-review.yml"
   pull_request:
-    branches: [dev/v2.0-e11-button-scope-pixel-step1-20261028]
+    branches: [dev/v2.0-e11-button-pixel-step2-20261028]
 
 permissions:
   contents: read
@@ -46,7 +46,7 @@ jobs:
           printf 'EVENT=%s\nREF=%s\nSOURCE_SHA=%s\n' "$GITHUB_EVENT_NAME" "$GITHUB_REF" "$GITHUB_SHA"
           # A push or manual run must never build application code from main.
           if [[ "$GITHUB_EVENT_NAME" != "pull_request" ]]; then
-            test "$GITHUB_REF" = "refs/heads/dev/v2.0-e11-button-pixel-step2-20261028"
+            test "$GITHUB_REF" = "refs/heads/dev/v2.0-e11-scope-reference-pixel-step3-20261028"
           fi
 
       - name: Checkout exact pixel UI review branch; never checkout Stable
