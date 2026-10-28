@@ -10,7 +10,9 @@ static inline void labmate_pixel_header(
     if(!canvas || !title || !status) return;
     canvas_set_font(canvas, FontSecondary);
     const uint16_t label_width = canvas_string_width(canvas, status);
-    if(!label_width || label_width > 38U) return;
+    /* A seven-character status (e.g. DELETED) must not disappear.
+     * The subsequent measured title/chip collision guard still applies. */
+    if(!label_width || label_width > 60U) return;
     const uint8_t chip_width = (uint8_t)(label_width + 12U);
     const uint8_t x = (uint8_t)(127U - chip_width);
     if(canvas_string_width(canvas, title) + 15U >= x) return;
