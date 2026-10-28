@@ -33,7 +33,7 @@ jobs:
           source='98a3357dade93aacac83c04e01110804b3b3f7b0'
           verifier=Path('scripts/verify_v20_e11_debuglink_parity.py').read_text()
           assert digest in s and digest in verifier
-          assert '95d7dee6d1edd37d74c906c476347498e0adc1ae2f20aa408ec26c70bc12f90a' in u
+          assert 'ddc27aa9e095c5ff809b000e4119d14151caf0d1a191c6a35c96f46ad1b01d72' in u
           assert digest.upper() in p
           assert source in s and source in p
           assert 'd3f89dfe2ef6b01839201598e9be1590cba80322' in s
@@ -67,7 +67,7 @@ jobs:
           assert 'if (-not $Install)' in p
           # Regression: Windows PowerShell 5.1 strips nested shell quotes
           # from wsl.exe bash -lc; stdin Bash -s must be used throughout.
-          assert p.count('--exec bash -s') == 4
+          assert p.count('--exec bash -s') == 5
           assert '($Linux -replace "`r", "")' in p
           assert 'NormalizedLinux | & wsl.exe' in p
           assert '& wsl.exe --distribution $Distro --exec bash -lc' not in p
