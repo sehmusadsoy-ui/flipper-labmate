@@ -154,24 +154,53 @@ LABMATE_REUSE_EXACT_FAP=__LABMATE_REUSE__ bash "$DIR/scripts/build-v20-e11-exact
     foreach($Value in $ArgumentsToCheck) {
         if ($Value -match '["&|<>^%!]') { throw 'Unsafe Windows command path' }
     }
+    # The candidate on \\wsl.localhost passed byte checks, but Windows
+    # pyserial/FlipperStorage.send_file() calls os.fstat() on its input file.
+    # On WSL UNC redirected files that can fail with Windows Errno 22
+    # AFTER operator consent. Use one short-lived LOCAL NTFS copy instead.
+    # Keep all SDK/FAP origin and digest checks above unchanged.
     $UsbFlag = if ($Discover) { '--discover' } else { '--apply' }
-    if ($UseWindowsFirmware) {
-        $Line='set "FBT_ROOT=" && set "FBT_NOENV=" && call "{0}" env && set "PYTHONPATH={1}" && python "{2}" --fap "{3}" --backup-root "{4}" --port {5} {6}' -f $EnvCmd,(Join-Path $Fw 'scripts'),$Helper,$Fap,$Backup,$Port,$UsbFlag
-    } else {
-        $Line='set "PYTHONPATH={0}" && py -3 -B "{1}" --fap "{2}" --backup-root "{3}" --port {4} {5}' -f $SdkScripts,$Helper,$Fap,$Backup,$Port,$UsbFlag
+    $UsbFap = $Fap
+    $UsbTempFolder = $null
+    try {
+        if ($Install) {
+            $UsbTempFolder = Join-Path $env:TEMP ('labmate-e11-usb-' + [guid]::NewGuid().ToString('N'))
+            [void](New-Item -ItemType Directory -Path $UsbTempFolder -ErrorAction Stop)
+            $UsbFap = Join-Path $UsbTempFolder 'labmate.fap'
+            if ($UsbFap.StartsWith('\\')) { throw 'NO-GO: staging FAP requires a LOCAL Windows filesystem, not a UNC path' }
+            [System.IO.File]::Copy($Fap, $UsbFap, $false)
+            $StageSHA = (Get-FileHash -LiteralPath $UsbFap -Algorithm SHA256).Hash
+            if ($StageSHA -ine $ActualWindows -or $StageSHA -ine $ExpectedRaw -or
+                (Get-Item -LiteralPath $UsbFap).Length -ne 174192) {
+                throw 'NO-GO: local NTFS USB staging FAP hash or size differs from verified WSL candidate'
+            }
+            Write-Host 'LOCAL WINDOWS USB STAGE SHA256 PASS; no WSL UNC input to FlipperStorage.' -ForegroundColor Green
+        }
+        if ($UsbFap -match '["&|<>^%!]') { throw 'Unsafe Windows USB FAP stage path' }
+        if ($UseWindowsFirmware) {
+            $Line='set "FBT_ROOT=" && set "FBT_NOENV=" && call "{0}" env && set "PYTHONPATH={1}" && python "{2}" --fap "{3}" --backup-root "{4}" --port {5} {6}' -f $EnvCmd,(Join-Path $Fw 'scripts'),$Helper,$UsbFap,$Backup,$Port,$UsbFlag
+        } else {
+            $Line='set "PYTHONPATH={0}" && py -3 -B "{1}" --fap "{2}" --backup-root "{3}" --port {4} {5}' -f $SdkScripts,$Helper,$UsbFap,$Backup,$Port,$UsbFlag
+        }
+        if ($Discover) {
+            Write-Host 'USB READ-ONLY: enumerate old FAP paths/sizes. NO device writes or backup changes.' -ForegroundColor Cyan
+        } else {
+            Write-Host 'USB: read existing device FAP, save verified PC backup, require E11 consent.'
+        }
+        & cmd.exe /d /s /c $Line
+        if ($LASTEXITCODE -ne 0) { throw 'USB stage stopped; no automatic retry' }
+        if ($Discover) {
+            Write-Host 'READ-ONLY Flipper FAP discovery complete. No installation attempted.' -ForegroundColor Green
+        } else {
+            Write-Host 'Single labmate.fap USB readback PASS. Physical UI test is still needed.' -ForegroundColor Green
+        }
+    } finally {
+        # Never accumulate Windows copies of labmate.fap; the ONLY retained
+        # PC backup is the old verified device FAP saved by the installer.
+        if ($UsbTempFolder -and (Test-Path -LiteralPath $UsbTempFolder)) {
+            Remove-Item -LiteralPath $UsbTempFolder -Recurse -Force -ErrorAction Stop
+        }
     }
-    if ($Discover) {
-        Write-Host 'USB READ-ONLY: enumerate old FAP paths/sizes. NO device writes or backup changes.' -ForegroundColor Cyan
-    } else {
-        Write-Host 'USB: read existing device FAP, save verified PC backup, require E11 consent.'
-    }
-    & cmd.exe /d /s /c $Line
-    if ($LASTEXITCODE -ne 0) { throw 'USB stage stopped; no automatic retry' }
-    if ($Discover) {
-        Write-Host 'READ-ONLY Flipper FAP discovery complete. No installation attempted.' -ForegroundColor Green
-        exit 0
-    }
-    Write-Host 'Single labmate.fap USB readback PASS. Physical UI test is still needed.' -ForegroundColor Green
     exit 0
 } catch {
     [Console]::Error.WriteLine("LabMate E11 NO-GO: $($_.Exception.Message)")
