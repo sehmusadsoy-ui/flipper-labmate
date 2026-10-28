@@ -16,6 +16,7 @@ import types
 
 def make_fake(initial, firmware_ok=True):
     class FakeDevice:
+        CLI_PROMPT=">: "
         def __init__(self, *_):
             self.files=dict(initial)
             self.events=[]
