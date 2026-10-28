@@ -1,5 +1,6 @@
 #include "labmate_scope_pair_view.h"
 #include "labmate_scope_ui.h"
+#include "ui_kit.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -45,21 +46,22 @@ static void duration(char* out, size_t cap, uint64_t ticks,
 }
 
 static bool metric_valid(const LabMateScopeMetrics* m) {
-    return m->status == LabMateScopeMetricsReady &&
-           m->completed_cycles > 0U && m->timebase_hz > 0U &&
-           m->duty_permille <= 1000U &&
+    return m->status == LabMateScopeMetricsReady && !m->truncated &&
+           m->completed_cycles > 0U && m->edge_count >= 3U &&
+           m->edge_count <= LABMATE_SCOPE_MAX_EDGES &&
+           m->timebase_hz > 0U && m->frequency_millihz > 0U &&
+           m->frequency_millihz <= (uint64_t)m->timebase_hz * 500U &&
+           m->duty_permille <= 1000U && m->min_period_ticks >= 2U &&
+           m->max_period_ticks >= m->min_period_ticks &&
            m->total_high_ticks <= UINT64_MAX - m->total_low_ticks;
-}
-
-static void aligned_value(Canvas* c, int32_t y, const char* value) {
-    const int32_t x = 124 - (int32_t)strlen(value) * 6;
-    labmate_scope_ui_text(c, FontSecondary, x, y, value);
 }
 
 bool labmate_scope_pair_view_draw(Canvas* c, const LabMateScopePair* p,
                                   bool last_valid, uint8_t page) {
     if(!c || !p || page > 2U ||
-       (p->has_b && (!p->has_a || !p->delta.comparable)) ||
+       (p->has_a && p->generation_a == 0U) ||
+       (p->has_b && (!p->has_a || !p->delta.comparable ||
+                     p->generation_b <= p->generation_a)) ||
        (p->has_a && !metric_valid(&p->a)) ||
        (p->has_b && !metric_valid(&p->b))) return false;
 
@@ -111,54 +113,95 @@ bool labmate_scope_pair_view_draw(Canvas* c, const LabMateScopePair* p,
     for(uint8_t i = 0; i < 5U; ++i)
         if(strlen(detail[i]) > 10U) return false;
 
-    if(page == 0U) {
-        (void)labmate_scope_ui_header(c, "COMPARE", "2/4");
-        if(!p->has_a) {
-            /* One restrained empty-state instead of an instruction wall. */
-            labmate_scope_ui_text(c, FontPrimary, 27, 29, "A  /  B");
-            labmate_scope_ui_text(c, FontSecondary, 16, 45, "No saved samples");
-        } else {
-            labmate_scope_ui_text(c, FontSecondary, 4, 23,
-                p->a.truncated ? "A*" : "A");
-            labmate_scope_ui_text(c, FontSecondary, 21, 23, af);
-            labmate_scope_ui_text(c, FontSecondary, 90, 23, ad);
-            labmate_scope_ui_text(c, FontSecondary, 4, 32,
-                p->has_b && p->b.truncated ? "B*" : "B");
-            labmate_scope_ui_text(c, FontSecondary, 21, 32, bf);
-            labmate_scope_ui_text(c, FontSecondary, 90, 32, bd);
-            canvas_draw_line(c, 4, 36, 123, 36);
-            if(p->has_b) {
-                labmate_scope_ui_text(c, FontSecondary, 4, 44, "dF");
-                labmate_scope_ui_text(c, FontSecondary, 27, 44, df);
-                labmate_scope_ui_text(c, FontSecondary, 4, 52, "dD");
-                labmate_scope_ui_text(c, FontSecondary, 27, 52, dd);
-            } else {
-                labmate_scope_ui_text(c, FontSecondary, 8, 49, "B not saved");
-            }
+    /* Step 4 pixel layout: A/B are two distinct finished PC1 captures,
+     * not concurrent channels. No waveform is stored in LabMateScopePair;
+     * do not invent a trace from aggregate frequency/duty statistics. */
+    canvas_set_font(c, FontSecondary);
+    const uint16_t af_w = canvas_string_width(c, af);
+    const uint16_t bf_w = canvas_string_width(c, bf);
+    const uint16_t df_w = p->has_b ? canvas_string_width(c, df) : 0U;
+    if(af_w > 54U || bf_w > 54U || (p->has_b && df_w > 100U))
+        return false;
+    if(page != 0U && saved) {
+        const char* labels[] = {"Frequency", "Duty", "High", "Low"};
+        for(uint8_t i = 0U; i < 4U; ++i) {
+            const uint16_t lw = canvas_string_width(c, labels[i]);
+            const uint16_t vw = canvas_string_width(c, detail[i]);
+            if(!vw || 4U + lw + 5U > 124U - vw) return false;
         }
-        const char* action =
-            !p->has_a ? (last_valid ? "(<)Save" : "(OK)Run") :
-            !p->has_b ? (last_valid ? "(>)Save" : "(OK)Run") :
-            "(^)More";
-        (void)labmate_scope_ui_footer(c, action, "(v)Pg");
-    } else {
-        (void)labmate_scope_ui_header(
-            c, page == 1U ? "A DETAIL" : "B DETAIL", "3/4");
-        if(!saved) {
-            labmate_scope_ui_text(c, FontSecondary, 23, 30,
-                page == 1U ? "No sample A" : "No sample B");
-            labmate_scope_ui_text(c, FontSecondary, 14, 44,
-                "Capture and save");
-        } else {
-            const char* label[] = {"FREQ", "DUTY", "HIGH", "LOW", "PERIOD"};
-            const int32_t rows[] = {21, 29, 37, 45, 53};
-            for(uint8_t i = 0U; i < 5U; ++i) {
-                labmate_scope_ui_text(c, FontSecondary, 4, rows[i], label[i]);
-                aligned_value(c, rows[i], detail[i]);
-            }
-        }
-        (void)labmate_scope_ui_footer(
-            c, p->has_a && p->has_b ? "(^)Next" : "", "(v)Pg");
     }
+    const char* title = page == 0U ? "Compare" :
+                        page == 1U ? "Sample A" : "Sample B";
+    /* Preflight every variable string before painting; reject out-of-range
+     * dimensions rather than cropping measurement digits. */
+    canvas_set_font(c, FontPrimary);
+    if(9U + canvas_string_width(c, title) > 127U) return false;
+    if(!ui_kit_pixel_header(c, title, false, UiKitInstrumentReady, false))
+        return false;
+    canvas_set_color(c, ColorBlack);
+    canvas_set_font(c, FontSecondary);
+    canvas_draw_str(c, 4U, 20U, "Pin PC1");
+    if(!ui_kit_scope_page_dots(c, page == 0U ? 1U : 2U))
+        return false;
+
+    if(page == 0U) {
+        /* Two independent sample cards; unsaved B must stay visibly EMPTY,
+         * never "0 Hz" or a repeated copy of A. */
+        canvas_draw_rframe(c, 4U, 25U, 58U, 21U, 3U);
+        canvas_draw_rframe(c, 66U, 25U, 58U, 21U, 3U);
+        canvas_set_font(c, FontSecondary);
+        canvas_draw_str(c, 8U, 33U, "A");
+        canvas_draw_str(c, 70U, 33U, "B");
+        const char* av = p->has_a ? af : "Empty";
+        const char* bv = p->has_b ? bf : "Empty";
+        const uint16_t aw = canvas_string_width(c, av);
+        const uint16_t bw = canvas_string_width(c, bv);
+        canvas_draw_str(c, 4U + (58U - aw) / 2U, 43U, av);
+        canvas_draw_str(c, 66U + (58U - bw) / 2U, 43U, bv);
+
+        if(p->has_b) {
+            /* Real B-A FREQUENCY difference, not an invented relative %
+             * delta. Full value stays visible with a measured short label
+             * only when the long heading would collide. */
+            const char* label =
+                4U + canvas_string_width(c, "Frequency") + 5U <= 124U - df_w ?
+                    "Frequency" : "dF";
+            canvas_draw_str(c, 4U, 53U, label);
+            canvas_draw_str(c, 124U - df_w, 53U, df);
+        } else {
+            const char* instruction = p->has_a ?
+                (last_valid ? "RIGHT saves B" : "Capture new B") :
+                (last_valid ? "LEFT saves A" : "Capture then save");
+            canvas_draw_str(c, 4U, 53U, instruction);
+        }
+    } else if(!saved) {
+        canvas_draw_rframe(c, 4U, 25U, 120U, 12U, 3U);
+        /* Distinct decorative "not captured" dash; NOT a fabricated wave. */
+        (void)ui_kit_pulse_line_dotted(c, 9U, 33U, 108U);
+        canvas_set_font(c, FontPrimary);
+        canvas_draw_str(c, 20U, 46U,
+                        page == 1U ? "No sample A" : "No sample B");
+        canvas_set_font(c, FontSecondary);
+        canvas_draw_str(c, 10U, 54U, "Capture then save");
+    } else {
+        /* No authentic per-sample edge history is retained; use four
+         * real metrics instead of rendering a fictional oscilloscope wave.
+         * The fifth metric (Period) remains in the underlying data/engine. */
+        const char* labels[] = {"Frequency", "Duty", "High", "Low"};
+        const uint8_t ys[] = {30U, 38U, 46U, 54U};
+        canvas_set_font(c, FontSecondary);
+        for(uint8_t i = 0U; i < 4U; ++i) {
+            const uint16_t width = canvas_string_width(c, detail[i]);
+            canvas_draw_str(c, 4U, ys[i], labels[i]);
+            canvas_draw_str(c, 124U - width, ys[i], detail[i]);
+        }
+    }
+
+    /* DOWN still advances Compare -> Details -> Reference, even with
+     * missing saved samples. UP continues switching A/B when B exists.
+     * LEFT/RIGHT/OK input logic stays in labmate_scope_bridge.c. */
+    ui_kit_next_cue(c);
+    canvas_set_color(c, ColorBlack);
     return true;
 }
+
