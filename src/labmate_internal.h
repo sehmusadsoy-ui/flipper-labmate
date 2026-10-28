@@ -26,11 +26,12 @@
 #include "labmate_high_gate_audit.h"
 #include "labmate_pulse_pair_audit.h"
 #include "labmate_doctor_panel.h"
+#include "labmate_doctor_setup.h"
+#include "labmate_doctor_symptoms.h"
 #include "labmate_evidence_session.h"
 #include "labmate_doctor_frequency_policy.h"
 #include "labmate_signal_stats.h"
-#include "labmate_scope_diagnostics.h"
-#include "labmate_level_witness.h"
+#include "labmate_ui_prefs.h"
 
 #define LABMATE_VERSION_TEXT "v2.0DEV"
 /* Shared menu/pin counts: UI and input handling must agree. */
@@ -65,6 +66,7 @@ typedef enum {
     LabMateScreenScope, /* v1.9 append only; historical screen values preserved */
     LabMateScreenDoctor, /* v2.0 append only; never change prior screen IDs */
     LabMateScreenDashboard, /* appended, no legacy screen renumbering */
+    LabMateScreenSettings, /* v2.0 Settings; do not renumber previous screens */
 } LabMateScreen;
 
 typedef enum {
@@ -85,10 +87,64 @@ typedef struct {
     bool running;
     bool hold;
 
+    /* Presentation-only animation state. No ISR, GPIO, CSV or FAP persistence. */
+    bool ui_splash;
+    uint32_t ui_splash_tick;
+    uint32_t ui_frame_tick;
+    uint8_t ui_frame;
+    uint8_t ui_from;
+    int8_t ui_direction;
+    bool ui_carousel_motion;
+    bool ui_list_motion;
+    uint8_t ui_list_previous;
+    uint8_t ui_pulse_phase;
+    uint32_t ui_trace_tick;
+    uint8_t ui_frequency_trace[100];
+    uint8_t ui_frequency_trace_count;
+    uint8_t ui_frequency_trace_head;
+
+    /* Separate versioned UI-only preferences; never part of profiles/logs. */
+    LabMateUiPreferences ui_prefs;
+    uint8_t ui_prefs_active_copy;
+    LabMateUiPrefsIoResult ui_prefs_io;
+    bool ui_prefs_busy;
+    uint8_t ui_prefs_notice; /* 0 none, 1 saved, 2 save failed */
+    uint8_t settings_selected; /* 0..4, screen-local selection */
+    uint8_t settings_page; /* 0 list, 1 language, 2 reset confirmation */
+    bool settings_reset_confirm_selected; /* Left Cancel / Right Reset */
+    uint8_t settings_anim_frame; /* 0..6 for vertical selection animation */
+    uint8_t settings_anim_previous;
+    uint32_t settings_anim_tick;
+    bool settings_selection_motion;
+    bool settings_toggle_motion;
+    uint8_t settings_toggle_index; /* 1 Motion, 2 Startup intro */
+    uint8_t settings_toggle_frame; /* 0..4 */
+    bool settings_toast_active;
+    bool settings_toast_reset; /* after verified reset save, not merely OK */
+    uint32_t settings_toast_tick;
+
     uint8_t selected; /* active row within root or current tool group */
     bool menu_in_group;
     uint8_t menu_group; /* LabMateMenuGroup, valid when menu_in_group */
-    uint8_t about_page; /* 0 overview, 1 repository, 2..12 tool quick guides */
+    /* Info navigation: presentation-only, not persisted in profiles. */
+    uint8_t about_page; /* legacy state kept for ABI-stable source review */
+    uint8_t info_section; /* LabMateInfoSection, separate from about_page */
+    uint8_t info_selected; /* 0 Tool guides, 1 Project, 2 Safety */
+    uint8_t info_safety_page; /* 0 approved warning, 1 original details */
+    uint8_t info_guide_selected; /* 0..16, stable LabMateTool order */
+    uint8_t info_guide_scroll_steps; /* 12px whole-row scroll, no clipping */
+    /* Info Step 4 animation: UI-only, never saved or used by a driver. */
+    bool info_page_motion;
+    bool info_scroll_motion;
+    bool info_section_motion;
+    uint8_t info_motion_frame; /* 0..6, independent of root menu motion */
+    uint8_t info_previous_section; /* previous LabMateInfoSection */
+    uint8_t info_previous_home_selected;
+    uint8_t info_previous_guide;
+    int8_t info_page_direction; /* +1 next, -1 previous */
+    int16_t info_previous_scroll_px;
+    int16_t info_scroll_from_px;
+    int16_t info_scroll_render_px;
     uint8_t gpio_index;
     uint8_t preferred_frequency_pin;
     uint8_t preferred_pulse_pin;
@@ -108,7 +164,6 @@ typedef struct {
 
     bool gpio_state;
     bool gpio_previous_state;
-    LabMateLevelWitness gpio_level_witness;
     uint32_t edges;
 
     /* Frequency meter */
@@ -307,13 +362,17 @@ typedef struct {
      * sessions. NO stored raw ISR pointers and NO SD profile/CSV writes. */
     LabMateScopePair scope_pair;
     LabMateScopeMetrics scope_last_metrics;
-    LabMateScopeDiagnostics scope_diagnostics;
     uint32_t scope_capture_generation;
     uint32_t scope_last_generation;
     uint32_t scope_capture_hz;
     uint32_t scope_capture_start_ms; /* app-thread observed true START */
     bool scope_last_valid;
     bool scope_clock_fault;
+    /* v2.0 Signal Doctor symptom rules: computed ONCE per Scope capture, only
+     * after owned IRQ + firmware lease are confirmed released. App thread. */
+    LabMateDoctorSymptomReport scope_symptoms;
+    uint32_t scope_symptoms_generation; /* capture generation analysed */
+    uint8_t scope_end_reason; /* LabMateSymptomEndReason of last capture */
     bool scope_show_compare;
     bool scope_show_details; /* distinct fourth-page navigation */
     uint8_t scope_compare_page; /* 0 summary, 1 A timing, 2 B timing */
@@ -321,7 +380,9 @@ typedef struct {
     LabMateScopeReferencePreset scope_reference_preset;
     /* Doctor: app-thread reference/UI state, no live HAL or IRQ access. */
     LabMateDoctorPanel doctor_panel;
+    LabMateDoctorSetupUi doctor_setup_ui; /* presentation/edit rollback only */
     bool doctor_show_advice;
+    bool doctor_show_symptoms; /* page 4/4, only reachable from advice */
     LabMateDashboardStore doctor_store;
     LabMateSignalStats signal_stats;
     uint8_t dashboard_source;

@@ -19,6 +19,9 @@ typedef struct {
     bool profiles_delete_requested;
     LabMateProfileStore proposed_profiles;
     uint8_t proposed_copy;
+    bool ui_prefs_save_requested;
+    LabMateUiPreferences proposed_ui_prefs;
+    uint8_t proposed_ui_prefs_copy;
     char pending_log_row[160];
     bool pending_log;
     bool uart_tx_requested;

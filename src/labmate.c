@@ -21,6 +21,8 @@
 #include "labmate_scope_bridge.h"
 #include "labmate_scope_exit_guard.h"
 #include "labmate_doctor_pulse_bridge.h"
+#include "labmate_ui_motion.h"
+#include "labmate_ui_prefs_storage.h"
 
 /* App coordinator: lifecycle, sampling, dispatch and teardown only. */
 int32_t labmate_app(void* p) {
@@ -78,6 +80,10 @@ int32_t labmate_app(void* p) {
     app->screen = LabMateScreenMenu;
     app->capture_owner = LabMateCaptureNone;
     app->capture_pin_index = GPIO_COUNT;
+    /* Read only before GUI creation: no startup SD writes or lock contention. */
+    app->ui_prefs_io = labmate_ui_prefs_sd_load(
+        &app->ui_prefs, &app->ui_prefs_active_copy);
+    labmate_ui_motion_init(app);
 
     app->mutex =
         furi_mutex_alloc(
@@ -139,6 +145,7 @@ int32_t labmate_app(void* p) {
     while(app->running) {
         LabMateDeferredWork work = {0};
         work.proposed_copy = LABMATE_PROFILE_COPY_NONE;
+        work.proposed_ui_prefs_copy = LABMATE_UI_PREFS_COPY_NONE;
         FuriStatus status =
             furi_message_queue_get(
                 queue,
@@ -170,6 +177,7 @@ int32_t labmate_app(void* p) {
         if(app->i2c) labmate_i2c_runtime_poll(app->i2c);
 
         labmate_input_dispatch(app, status, event, &work);
+        labmate_ui_motion_step(app);
         labmate_deferred_prepare(app, &work);
         furi_mutex_release(app->mutex);
 

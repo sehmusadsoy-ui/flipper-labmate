@@ -19,15 +19,17 @@
 #include "labmate_input.h"
 #include "labmate_deferred.h"
 #include "labmate_navigation.h"
-#include "labmate_menu_grid.h"
-#include "labmate_pulse_ui_state.h"
-#include "labmate_frequency_ui_state.h"
 #include "labmate_history.h"
 #include "labmate_view.h"
 
 #include "labmate_input_tools.h"
 #include "labmate_uart.h"
 #include "labmate_scope_bridge.h"
+#include "labmate_ui_motion.h"
+#include "labmate_info_ui.h"
+#include "labmate_info_guides.h"
+#include "labmate_settings_view.h"
+#include "labmate_capture_live.h"
 void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork* work) {
 
                 /* One navigation source defines both renderer and key map.
@@ -36,24 +38,33 @@ void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                 const uint8_t count = app->menu_in_group ?
                     labmate_nav_group_size(app->menu_group) :
                     (uint8_t)LabMateGroupCount;
-                if(!app->menu_in_group &&
-                   (event.key == InputKeyUp || event.key == InputKeyDown ||
-                    event.key == InputKeyLeft || event.key == InputKeyRight)) {
-                    const int8_t dx = event.key == InputKeyLeft ? -1 :
-                                      event.key == InputKeyRight ? 1 : 0;
-                    const int8_t dy = event.key == InputKeyUp ? -1 :
-                                      event.key == InputKeyDown ? 1 : 0;
-                    app->selected=labmate_menu_root_move(app->selected,dx,dy);
-                } else if(event.key == InputKeyUp) {
+                if(event.key == InputKeyUp || (!app->menu_in_group && event.key == InputKeyLeft)) {
+                    const uint8_t old_index = app->selected;
                     app->selected = labmate_nav_wrap(app->selected, count, -1);
-                } else if(event.key == InputKeyDown) {
+                    if(app->menu_in_group) labmate_ui_motion_list(app, old_index);
+                    else labmate_ui_motion_carousel(app, old_index, -1);
+                } else if(event.key == InputKeyDown || (!app->menu_in_group && event.key == InputKeyRight)) {
+                    const uint8_t old_index = app->selected;
                     app->selected = labmate_nav_wrap(app->selected, count, 1);
+                    if(app->menu_in_group) labmate_ui_motion_list(app, old_index);
+                    else labmate_ui_motion_carousel(app, old_index, 1);
                 } else if(event.key == InputKeyOk) {
                     if(!app->menu_in_group) {
                         if(app->selected < LabMateGroupCount) {
                             app->menu_group = app->selected;
-                            app->selected = 0U;
-                            app->menu_in_group = true;
+                            if(app->menu_group == LabMateGroupInfo) {
+                                app->screen = LabMateScreenSettings;
+                                app->settings_page = LabMateSettingsList;
+                                app->settings_selected = 0U;
+                                app->settings_selection_motion = false;
+                                app->settings_toggle_motion = false;
+                                app->menu_in_group = false;
+                            } else {
+                                app->selected = 0U;
+                                app->menu_in_group = true;
+                            }
+                            app->ui_carousel_motion = false;
+                            app->ui_list_motion = false;
                         }
                     } else if(app->selected < count) {
                     switch(labmate_nav_tool_at(app->menu_group, app->selected)) {
@@ -66,8 +77,7 @@ void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
 
                     case LabMateToolFrequency:
                         /* New capture intent invalidates earlier Doctor evidence. */
-                        labmate_dashboard_store_clear_source(
-                            &app->doctor_store, LabMateSnapshotFrequency);
+                        labmate_dashboard_store_init(&app->doctor_store);
                         app->screen =
                             LabMateScreenFrequency;
                         app->hold = false;
@@ -75,6 +85,8 @@ void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                         app->gpio_index = app->preferred_frequency_pin;
                         frequency_stats_reset(app);
                         measurement_reset(app);
+                        app->ui_frequency_trace_head = 0U;
+                        app->ui_frequency_trace_count = 0U;
                         /* A loaded profile may select PC1 LOW instead of PB3 HIGH.
                          * Start the capture engine that owns the selected pin. */
                         if(app->gpio_index == 4U) {
@@ -91,8 +103,7 @@ void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                         break;
 
                     case LabMateToolPulse:
-                        labmate_dashboard_store_clear_source(
-                            &app->doctor_store, LabMateSnapshotPulse);
+                        labmate_dashboard_store_init(&app->doctor_store);
                         app->screen =
                             LabMateScreenPulse;
                         app->hold = false;
@@ -102,15 +113,10 @@ void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                         pulse_stats_reset(app);
                         measurement_reset(app);
                         labmate_pulse_capture_start(app);
-                        /* Entering a tool is not proof that E11 granted
-                         * its IRQ and pin lease. An unsuccessful start must
-                         * not be represented as a live instrument.
-                         */
                         app->hold = !labmate_pulse_ui_live(
                             app->pulse_irq_active,
                             app->capture_owner == LabMateCapturePulse,
-                            app->capture_blocked,
-                            app->capture_release_fault);
+                            app->capture_blocked, app->capture_release_fault);
                         break;
 
                     case LabMateToolButton:
@@ -173,6 +179,10 @@ void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                     case LabMateToolDoctor:
                         /* No GPIO, IRQ, capture start, timer or storage access. */
                         app->screen = LabMateScreenDoctor;
+                        app->doctor_show_advice = false;
+                        app->doctor_show_symptoms = false;
+                        labmate_doctor_setup_reset(
+                            &app->doctor_setup_ui, &app->doctor_panel);
                         break;
 
                     case LabMateToolScope:
@@ -196,6 +206,13 @@ void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                     case LabMateToolAbout:
                         app->screen = LabMateScreenAbout;
                         app->about_page = 0U;
+                        app->info_section = LabMateInfoHome;
+                        app->info_selected = 0U;
+                        app->info_safety_page = 0U;
+                        app->info_guide_selected = 0U;
+                        app->info_guide_scroll_steps = 0U;
+                        labmate_ui_motion_info_cancel(app);
+                        app->ui_pulse_phase = 0U;
                         break;
 
                     case LabMateToolProfiles:
@@ -213,6 +230,8 @@ void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
                     if(app->menu_in_group) {
                         app->menu_in_group = false;
                         app->selected = app->menu_group;
+                        app->ui_carousel_motion = false;
+                        app->ui_list_motion = false;
                     } else {
                         app->running = false;
                     }
@@ -222,17 +241,95 @@ void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork* 
 
 void labmate_input_about(LabMateApp* app, InputEvent event, LabMateDeferredWork* work) {
     UNUSED(work);
-
-                /* Pure UI paging. Never touches capture/GPIO or stored profiles. */
-                if(event.key == InputKeyRight || event.key == InputKeyDown) {
-                    app->about_page = labmate_nav_wrap(
-                        app->about_page, (uint8_t)(LabMateToolCount + 2U), 1);
-                } else if(event.key == InputKeyLeft || event.key == InputKeyUp) {
-                    app->about_page = labmate_nav_wrap(
-                        app->about_page, (uint8_t)(LabMateToolCount + 2U), -1);
-                } else if(event.key == InputKeyBack) {
-                    app->screen = LabMateScreenMenu;
-                }
-
+    /* All branches are UI-only. None can start a measurement, touch stored
+     * settings, or change resource ownership or Doctor diagnosis results. */
+    switch(app->info_section) {
+    case LabMateInfoHome:
+        if(event.key == InputKeyUp && app->info_selected > 0U) {
+            --app->info_selected;
+        } else if(event.key == InputKeyDown &&
+                  app->info_selected + 1U < LABMATE_INFO_ITEM_COUNT) {
+            ++app->info_selected;
+        } else if(event.key == InputKeyOk) {
+            if(app->info_selected == 0U) {
+                app->info_section = LabMateInfoGuideList;
+                app->info_guide_selected = 0U;
+                app->info_guide_scroll_steps = 0U;
+                labmate_ui_motion_info_section(app, LabMateInfoHome, 1);
+            } else if(app->info_selected == 1U) {
+                app->info_section = LabMateInfoProject;
+                labmate_ui_motion_info_section(app, LabMateInfoHome, 1);
+            } else {
+                app->info_section = LabMateInfoSafety;
+                app->info_safety_page = 0U;
+                labmate_ui_motion_info_section(app, LabMateInfoHome, 1);
+            }
+        } else if(event.key == InputKeyBack) {
+            app->screen = LabMateScreenSettings;
+        }
+        break;
+    case LabMateInfoProject:
+        if(event.key == InputKeyBack) {
+            app->info_section = LabMateInfoHome;
+            labmate_ui_motion_info_section(app, LabMateInfoProject, -1);
+        }
+        break;
+    case LabMateInfoSafety:
+        if(event.key == InputKeyDown) app->info_safety_page = 1U;
+        else if(event.key == InputKeyUp) app->info_safety_page = 0U;
+        else if(event.key == InputKeyBack) {
+            app->info_section = LabMateInfoHome;
+            labmate_ui_motion_info_section(app, LabMateInfoSafety, -1);
+        }
+        break;
+    case LabMateInfoGuideList:
+        if(event.key == InputKeyUp && app->info_guide_selected > 0U) {
+            --app->info_guide_selected;
+        } else if(event.key == InputKeyDown &&
+                  app->info_guide_selected + 1U < LABMATE_INFO_GUIDE_COUNT) {
+            ++app->info_guide_selected;
+        } else if(event.key == InputKeyOk) {
+            app->info_section = LabMateInfoGuideCard;
+            app->info_guide_scroll_steps = 0U;
+            labmate_ui_motion_info_section(app, LabMateInfoGuideList, 1);
+        } else if(event.key == InputKeyBack) {
+            app->info_section = LabMateInfoHome;
+            labmate_ui_motion_info_section(app, LabMateInfoGuideList, -1);
+        }
+        break;
+    case LabMateInfoGuideCard:
+        if(event.key == InputKeyRight) {
+            const uint8_t previous = app->info_guide_selected;
+            app->info_guide_selected =
+                (uint8_t)((app->info_guide_selected + 1U) % LABMATE_INFO_GUIDE_COUNT);
+            app->info_guide_scroll_steps = 0U;
+            labmate_ui_motion_info_page(app, previous, 1);
+        } else if(event.key == InputKeyLeft) {
+            const uint8_t previous = app->info_guide_selected;
+            app->info_guide_selected = app->info_guide_selected == 0U ?
+                LABMATE_INFO_GUIDE_COUNT - 1U : (uint8_t)(app->info_guide_selected - 1U);
+            app->info_guide_scroll_steps = 0U;
+            labmate_ui_motion_info_page(app, previous, -1);
+        } else if(event.key == InputKeyDown) {
+            const uint8_t max_scroll =
+                labmate_info_guide_max_scroll_steps(app->info_guide_selected);
+            if(app->info_guide_scroll_steps < max_scroll) {
+                ++app->info_guide_scroll_steps;
+                labmate_ui_motion_info_scroll(app);
+            }
+        } else if(event.key == InputKeyUp) {
+            if(app->info_guide_scroll_steps > 0U) {
+                --app->info_guide_scroll_steps;
+                labmate_ui_motion_info_scroll(app);
+            }
+        } else if(event.key == InputKeyBack) {
+            app->info_section = LabMateInfoGuideList;
+            labmate_ui_motion_info_section(app, LabMateInfoGuideCard, -1);
+        }
+        break;
+    default:
+        app->info_section = LabMateInfoHome;
+        break;
+    }
 }
 

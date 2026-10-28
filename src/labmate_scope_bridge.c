@@ -55,6 +55,37 @@ static void labmate_scope_bridge_refresh(LabMateApp* a) {
         a->scope_display.state = LabMateScopeDisplayError;
 }
 
+/* v2.0 Signal Doctor: classify the genuinely captured edges ONCE per capture,
+ * strictly after owned IRQ + E11 lease teardown (called from latch only).
+ * Reads the stopped native buffer; never touches GPIO/IRQ/firmware. */
+static void labmate_scope_bridge_symptoms(
+    LabMateApp* a, const LabMateScopeSnapshot* s) {
+    a->scope_symptoms = (LabMateDoctorSymptomReport){0};
+    a->scope_symptoms_generation = a->scope_capture_generation;
+    if(s->state != LabMateScopeStopped || s->count > LABMATE_SCOPE_MAX_EDGES) {
+        a->scope_symptoms.status = LabMateSymptomUnsafe;
+        return;
+    }
+    const LabMateScopeBuffer* b = &a->scope_native.buffer;
+    LabMateDoctorSymptomInput in = {0};
+    in.edges = a->scope_native.storage;
+    in.count = s->count;
+    /* Trigger is "either edge": the first stored edge leaves the armed
+     * level, so the armed level is the opposite of that edge's level. */
+    in.initial_level = s->count ? !a->scope_native.storage[0].high
+                                : b->previous_level;
+    in.last_level = b->previous_level;
+    in.timebase_hz = a->scope_capture_hz;
+    /* The time guard's own accumulated poll time is the proven window. */
+    in.window_ms = a->scope_native.timeguard.elapsed_ms;
+    in.end_reason = (LabMateSymptomEndReason)a->scope_end_reason;
+    in.truncated = s->overflowed || s->dropped_edges > 0U;
+    in.clock_fault = a->scope_clock_fault || a->scope_capture_hz == 0U ||
+                     s->timebase_error;
+    const LabMateDoctorSymptomConfig cfg = labmate_doctor_symptom_defaults();
+    (void)labmate_doctor_symptoms_analyze(&in, &cfg, &a->scope_symptoms);
+}
+
 /* Called only after the matching PC1 IRQ callback has been detached
  * and the E11 firmware lease was positively released. Accessing the
  * full 256-edge native array while live is categorically forbidden. */
@@ -66,9 +97,9 @@ static void labmate_scope_bridge_latch(LabMateApp* a) {
     a->scope_last_generation = a->scope_capture_generation;
     a->scope_last_valid = false;
     a->scope_last_metrics = (LabMateScopeMetrics){0};
-    a->scope_diagnostics = (LabMateScopeDiagnostics){0};
     const LabMateScopeSnapshot s =
         labmate_scope_native_read(&a->scope_native, NULL, 0U, NULL);
+    labmate_scope_bridge_symptoms(a, &s);
     if(a->scope_clock_fault || a->scope_capture_hz == 0U ||
        s.state != LabMateScopeStopped || s.timebase_error ||
        s.count < 3U ||
@@ -79,14 +110,6 @@ static void labmate_scope_bridge_latch(LabMateApp* a) {
     a->scope_last_valid =
         a->scope_last_metrics.status == LabMateScopeMetricsReady &&
         !a->scope_last_metrics.truncated;
-    /* Analyze only actual captured cycles AFTER E11 IRQ/lease release.
-     * Compute once, not during UI redraw or on an owned IRQ buffer.
-     */
-    if(a->scope_last_valid) {
-        (void)labmate_scope_diagnostics_compute(
-            a->scope_native.storage, s.count,
-            a->scope_capture_hz, &a->scope_diagnostics);
-    }
 
     /* Publish only the actual native completed capture after owned IRQ
      * and E11 lease are BOTH confirmed released. Not from screen redraw.
@@ -200,14 +223,21 @@ void labmate_scope_bridge_poll(LabMateApp* a) {
         switch(state) {
         case LabMateScopeGuardRunning: break;
         case LabMateScopeGuardNoTrigger:
+            a->scope_end_reason = LabMateSymptomEndNoTrigger;
             a->scope_display.state = LabMateScopeDisplayNoTrigger; break;
         case LabMateScopeGuardQuiet:
+            a->scope_end_reason = LabMateSymptomEndQuiet;
             a->scope_display.state = LabMateScopeDisplayQuiet; break;
         case LabMateScopeGuardFull:
+            a->scope_end_reason = LabMateSymptomEndFull;
             a->scope_display.state = LabMateScopeDisplayFull; break;
-        case LabMateScopeGuardStopped:
         case LabMateScopeGuardDurationLimit:
+            a->scope_end_reason = LabMateSymptomEndDurationLimit;
+            a->scope_display.state = LabMateScopeDisplayStopped; break;
         case LabMateScopeGuardSampleComplete:
+            a->scope_end_reason = LabMateSymptomEndSampleComplete;
+            a->scope_display.state = LabMateScopeDisplayStopped; break;
+        case LabMateScopeGuardStopped:
             /* Native poll has already detached the owned IRQ and lease.
              * The subsequent latch validates full cycles and overflow. */
             a->scope_display.state = LabMateScopeDisplayStopped; break;
@@ -325,12 +355,14 @@ void labmate_scope_bridge_input(LabMateApp* a, InputEvent event) {
     if(state == LabMateScopeNativeReady && a->scope_native.active) {
         ++a->scope_capture_generation;
         a->scope_capture_start_ms = labmate_scope_bridge_millis();
+        a->scope_end_reason = LabMateSymptomEndUserStop;
+        a->scope_symptoms = (LabMateDoctorSymptomReport){0};
+        a->scope_symptoms_generation = 0U;
         labmate_dashboard_store_clear_source(
             &a->doctor_store, LabMateSnapshotScope);
         a->scope_capture_hz = SystemCoreClock;
         a->scope_clock_fault = a->scope_capture_hz == 0U;
         a->scope_last_valid = false;
-        a->scope_diagnostics = (LabMateScopeDiagnostics){0};
         a->scope_show_compare = false;
         a->scope_show_details = false;
         a->scope_compare_page = 0U;

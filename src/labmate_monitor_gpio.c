@@ -48,11 +48,7 @@ void labmate_monitor_gpio_release(LabMateApp* app, uint8_t index) {
         labmate_monitor_lease_handle = 0U;
         labmate_monitor_lease_mask = 0U;
         labmate_monitor_lease_index = GPIO_COUNT;
-        labmate_level_finish(
-            &app->gpio_level_witness,index,true,
-            furi_get_tick(),furi_kernel_get_tick_frequency());
     } else {
-        labmate_level_invalidate(&app->gpio_level_witness);
         app->monitor_release_fault = true;
         app->monitor_blocked = true;
     }

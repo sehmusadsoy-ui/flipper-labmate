@@ -1,6 +1,7 @@
 #include "labmate_ui_primitives.h"
 #include "labmate_ui_layout.h"
 #include "labmate_navigation.h"
+#include "ui_kit.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -14,19 +15,12 @@ void ui_badge(
     const char* text,
     bool filled) {
 
-    if(filled) {
-        canvas_draw_box(canvas, x, y, w, 11);
-        canvas_set_color(canvas, ColorWhite);
-    } else {
-        canvas_draw_frame(canvas, x, y, w, 11);
-    }
-
+    /* Status tags remain visible, but never become another solid toolbar. */
+    (void)filled;
+    canvas_set_color(canvas, ColorBlack);
+    canvas_draw_rframe(canvas, x, y, w, 11, 3);
     canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, x + 4, y + 8, text);
-
-    if(filled) {
-        canvas_set_color(canvas, ColorBlack);
-    }
+    (void)ui_kit_text(canvas, x + 4, y + 8, w - 6U, text, NULL);
 }
 
 /* One shared parenthesized-key system across existing LabMate screens.
@@ -63,45 +57,10 @@ void ui_footer_pair(Canvas* canvas, const char* left_key,
     if(!ui_format_key(left, sizeof(left), left_key, left_action, 10U) ||
        !ui_format_key(right, sizeof(right), right_key, right_action, 10U))
         return; /* Never paint a half-footer on malformed arguments. */
-    /* One inverted action band across all paired-footer tools. Keep
-     * one blank pixel after the body; avoid unreadable black-on-black.
-     */
-    canvas_draw_line(canvas, 0, LABMATE_UI_FOOTER_RULE_Y, LABMATE_UI_WIDTH - 1, LABMATE_UI_FOOTER_RULE_Y);
-    canvas_draw_box(canvas, 0, LABMATE_UI_FOOTER_RULE_Y + 1,
-                    LABMATE_UI_WIDTH, LABMATE_UI_HEIGHT - LABMATE_UI_FOOTER_RULE_Y - 1);
-    canvas_set_color(canvas, ColorWhite);
+    /* Quiet typography, no inverted black footer and no separator rule. */
+    canvas_set_color(canvas, ColorBlack);
     ui_footer_action(canvas, LABMATE_UI_FOOTER_PAIR_LEFT_X, left_key, left_action);
     ui_footer_action(canvas, LABMATE_UI_FOOTER_PAIR_RIGHT_X, right_key, right_action);
-    canvas_set_color(canvas, ColorBlack);
-}
-
-/* Informational (non-interactive) right-hand caption. The key on the
- * left must be a real input: e.g. BACK→LIST. Drawing a fake OK key for
- * READ ONLY would give an incorrect control hint. Both captions use the
- * same inverted action band and clipping rules as the normal footer.
- */
-void ui_footer_info(Canvas* canvas, const char* left_key,
-                    const char* left_action, const char* notice) {
-    if(!canvas || !notice) return;
-    char left[24];
-    if(!ui_format_key(left, sizeof(left), left_key, left_action, 10U))
-        return;
-    size_t length = 0U;
-    for(const unsigned char* p = (const unsigned char*)notice; *p; ++p) {
-        if(*p < 32U || *p > 126U || ++length > 10U) return;
-    }
-    if(length == 0U) return;
-    canvas_draw_line(canvas, 0, LABMATE_UI_FOOTER_RULE_Y,
-                     LABMATE_UI_WIDTH - 1, LABMATE_UI_FOOTER_RULE_Y);
-    canvas_draw_box(canvas, 0, LABMATE_UI_FOOTER_RULE_Y + 1,
-                    LABMATE_UI_WIDTH, LABMATE_UI_HEIGHT - LABMATE_UI_FOOTER_RULE_Y - 1);
-    canvas_set_color(canvas, ColorWhite);
-    canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, LABMATE_UI_FOOTER_PAIR_LEFT_X,
-                    LABMATE_UI_FOOTER_BASELINE_Y, left);
-    canvas_draw_str(canvas, LABMATE_UI_FOOTER_PAIR_RIGHT_X,
-                    LABMATE_UI_FOOTER_BASELINE_Y, notice);
-    canvas_set_color(canvas, ColorBlack);
 }
 
 /* 3-column action footer with preflight: do not partially paint on
@@ -120,10 +79,7 @@ void ui_footer_triple(Canvas* canvas, const char* left, const char* center, cons
     if(!canvas || !ui_footer_triple_label_valid(left, LABMATE_UI_FOOTER_TRIPLE_LEFT_MAX_CHARS) ||
        !ui_footer_triple_label_valid(center, LABMATE_UI_FOOTER_TRIPLE_CENTER_MAX_CHARS) ||
        !ui_footer_triple_label_valid(right, LABMATE_UI_FOOTER_TRIPLE_RIGHT_MAX_CHARS)) return;
-    canvas_draw_line(canvas, 0, LABMATE_UI_FOOTER_RULE_Y, LABMATE_UI_WIDTH - 1, LABMATE_UI_FOOTER_RULE_Y);
-    canvas_draw_box(canvas, 0, LABMATE_UI_FOOTER_RULE_Y + 1,
-                    LABMATE_UI_WIDTH, LABMATE_UI_HEIGHT - LABMATE_UI_FOOTER_RULE_Y - 1);
-    canvas_set_color(canvas, ColorWhite);
+    canvas_set_color(canvas, ColorBlack);
     canvas_set_font(canvas, FontSecondary);
     canvas_draw_str(canvas, LABMATE_UI_FOOTER_TRIPLE_LEFT_X, LABMATE_UI_FOOTER_BASELINE_Y, left);
     canvas_draw_str(canvas, LABMATE_UI_FOOTER_TRIPLE_CENTER_X, LABMATE_UI_FOOTER_BASELINE_Y, center);
@@ -272,14 +228,21 @@ void ui_draw_menu_icon(Canvas* canvas, uint8_t item, uint8_t x, uint8_t y) {
 void ui_draw_header(
     Canvas* canvas,
     const char* title) {
-
-    /* Shared 1px left instrument marker fits the existing x=2 title
-     * clearance without shifting any measurement field or badge.
-     */
-    canvas_draw_box(canvas, 0, 1, 1, 10);
-    canvas_set_font(canvas, FontPrimary);
-    canvas_draw_str(canvas, LABMATE_UI_HEADER_TITLE_X, LABMATE_UI_HEADER_BASELINE_Y, title);
-
-    canvas_draw_line(canvas, 0, LABMATE_UI_HEADER_RULE_Y, LABMATE_UI_WIDTH - 1, LABMATE_UI_HEADER_RULE_Y);
+    if(!canvas || !title) return;
+    /* Older tool pages keep their field coordinates but receive the new
+     * unobtrusive back-title language; status badges start at x=77. */
+    char human[24];
+    uint8_t n = 0U;
+    while(title[n] && n < sizeof(human)-1U) {
+        char ch = title[n];
+        if(n && ch >= 'A' && ch <= 'Z') ch = (char)(ch-'A'+'a');
+        human[n++] = ch;
+    }
+    human[n] = '\0';
+    canvas_set_color(canvas, ColorBlack);
+    canvas_set_font(canvas, FontSecondary);
+    canvas_draw_line(canvas, 7, 2, 4, 5);
+    canvas_draw_line(canvas, 4, 5, 7, 8);
+    (void)ui_kit_text(canvas, 12, 9, 61U, human, "Tool");
 }
 

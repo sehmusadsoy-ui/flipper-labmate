@@ -1,11 +1,15 @@
 #include "labmate_dashboard_screen.h"
 #include "labmate_ui_primitives.h"
 #include "labmate_scope_period_stats.h"
+#include "ui_kit.h"
 #include <stdio.h>
 #include <stdint.h>
 
 static const char* const labels[LabMateSnapshotSourceCount] = {
     "FREQ", "PULSE", "SCOPE", "COUNT", "LOGGER"
+};
+static const char* const pretty_labels[LabMateSnapshotSourceCount] = {
+    "Frequency", "Pulse", "Scope", "Counter", "Logger"
 };
 static void hz_text(uint32_t mhz, char* out, size_t cap) {
     const uint64_t tenhz = ((uint64_t)mhz + 50U) / 100U;
@@ -25,10 +29,14 @@ void labmate_dashboard_screen_draw(Canvas* c, const LabMateApp* a) {
     const uint8_t selected=a->dashboard_source < LabMateSnapshotSourceCount ?
          a->dashboard_source : 0U;
     const uint8_t page=selected < 3U ? 0U : 1U;
-    char buf[22], hz[16];
-    ui_draw_header(c,!a->dashboard_details ? "DASHBOARD" :
-                          a->dashboard_evidence ? "EVIDENCE" : "STATS");
-    ui_badge(c,95,1,31,page ? "2/2" : "1/2",false);
+    /* The CV status can require 25 bytes plus NUL at its numeric limits.
+     * Keep the full formatted text in this draw-local buffer; line() still
+     * applies the existing 128px LCD presentation limit unchanged. */
+    char buf[32], hz[16];
+    if(a->dashboard_details) {
+        ui_draw_header(c,a->dashboard_evidence ? "EVIDENCE" : "STATS");
+        ui_badge(c,95,1,31,page ? "2/2" : "1/2",false);
+    }
     if(a->dashboard_details && a->dashboard_evidence) {
         const LabMateDashboardSlot* slot = &a->doctor_store.slots[selected];
         line(c,22,false,labels[selected]);
@@ -74,7 +82,14 @@ void labmate_dashboard_screen_draw(Canvas* c, const LabMateApp* a) {
             hz_text(max,hz,sizeof(hz));
             (void)snprintf(buf,sizeof(buf),"MAX  %s",hz);
             line(c,40,false,buf);
-            (void)snprintf(buf,sizeof(buf),"%u SEALED SESSIONS",(unsigned)count);
+            uint32_t sd, cv;
+            if(labmate_signal_stats_spread(&a->signal_stats,selected,&sd,&cv))
+                (void)snprintf(buf,sizeof(buf),"%u RUNS CV %lu.%lu%%",
+                    (unsigned)count,(unsigned long)(cv / 10U),
+                    (unsigned long)(cv % 10U));
+            else
+                (void)snprintf(buf,sizeof(buf),"%u RUN%s CV N/A",
+                    (unsigned)count,count == 1U ? "" : "S");
             line(c,50,false,buf);
         } else if(selected==LabMateSnapshotScope &&
            labmate_dashboard_store_read_measurement(
@@ -92,19 +107,13 @@ void labmate_dashboard_screen_draw(Canvas* c, const LabMateApp* a) {
             (void)snprintf(buf,sizeof(buf),"MAX %lu ticks",
                 (unsigned long)a->scope_last_metrics.max_period_ticks);
             line(c,40,false,buf);
-            /* Anomalies are descriptive, never automatic faulty-part
-             * assertions. All values are sealed real-cycle observations.
-             */
-            if(a->scope_diagnostics.valid) {
-                const LabMateScopeDiagnostics* q=&a->scope_diagnostics;
-                if(q->gap_suspected) {
-                    line(c,50,false,"GAP? CHECK SOURCE");
-                } else {
-                    (void)snprintf(buf,sizeof(buf),"MAD %lu ticks",
-                        (unsigned long)q->mean_abs_deviation_ticks);
-                    line(c,50,false,buf);
-                }
-            } else line(c,50,false,"TIMING N/A");
+            LabMateScopePeriodStats spread;
+            if(labmate_scope_period_stats(&a->scope_last_metrics,&spread)) {
+                (void)snprintf(buf,sizeof(buf),"SPREAD %lu.%lu%%",
+                    (unsigned long)(spread.spread_permille / 10U),
+                    (unsigned long)(spread.spread_permille % 10U));
+                line(c,50,false,buf);
+            } else line(c,50,false,"SPREAD N/A");
         } else if(labmate_dashboard_store_read_measurement(
                       &a->doctor_store,selected,&snapshot) &&
                   (selected==LabMateSnapshotCounter ||
@@ -113,10 +122,18 @@ void labmate_dashboard_screen_draw(Canvas* c, const LabMateApp* a) {
                 (unsigned long)snapshot.valid_sample_count,
                 selected==LabMateSnapshotLogger ? "CSV ROWS" : "TIM2 EDGES");
             line(c,22,false,buf);
-            (void)snprintf(buf,sizeof(buf),"PIN %u", (unsigned)snapshot.pin_index);
-            line(c,31,false,buf);
             const uint32_t elapsed_ms =
                 snapshot.observation_end_ms - snapshot.observation_start_ms;
+            if(selected==LabMateSnapshotCounter && elapsed_ms > 0U) {
+                /* Average over the real RUN window; not an instantaneous rate. */
+                const uint64_t tenths = ((uint64_t)snapshot.valid_sample_count *
+                    10000U + elapsed_ms / 2U) / elapsed_ms;
+                if(tenths > 9999999U) (void)snprintf(buf,sizeof(buf),"AVG >999k/s");
+                else (void)snprintf(buf,sizeof(buf),"AVG %lu.%lu/s",
+                    (unsigned long)(tenths / 10U),(unsigned long)(tenths % 10U));
+            } else
+                (void)snprintf(buf,sizeof(buf),"PIN %u", (unsigned)snapshot.pin_index);
+            line(c,31,false,buf);
             (void)snprintf(buf,sizeof(buf),"WINDOW %lums",(unsigned long)elapsed_ms);
             line(c,40,false,buf);
             line(c,50,false,"HISTORICAL ONLY");
@@ -128,28 +145,46 @@ void labmate_dashboard_screen_draw(Canvas* c, const LabMateApp* a) {
         ui_footer_pair(c,"<>","PAGE","OK","LIST");
         return;
     }
-    const uint8_t first=page?3U:0U;
-    const uint8_t end=page?LabMateSnapshotSourceCount:3U;
-    for(uint8_t i=first;i<end;++i) {
-        const LabMateDashboardSlot* slot=&a->doctor_store.slots[i];
-        LabMateSnapshotV1 snap;
-        const char* state="NO DATA";
-        if(labmate_dashboard_store_read_measurement(&a->doctor_store,i,&snap)) {
-            if(i<=LabMateSnapshotScope && snap.frequency_millihz) {
-                hz_text(snap.frequency_millihz,hz,sizeof(hz));
-                state=hz;
-            } else if(i==LabMateSnapshotCounter || i==LabMateSnapshotLogger) {
-                (void)snprintf(hz,sizeof(hz),
-                              i==LabMateSnapshotLogger ? "%lu ROWS" : "%lu EVENTS",
-                              (unsigned long)snap.valid_sample_count);
-                state=hz;
-            } else state="VALID";
-        } else if(slot->has_snapshot) {
-            state=labmate_snapshot_v1_quality_text(slot->latest.quality);
+    /* Single-focus historical result. SEALED / NOT LIVE: snapshots remain
+     * validated by the existing store, never inferred from running GPIO. */
+    ui_kit_back_title(c,"Dashboard",NULL,NULL);
+    LabMateSnapshotV1 snap;
+    const bool available = labmate_dashboard_store_read_measurement(
+        &a->doctor_store,selected,&snap);
+    canvas_set_font(c,FontSecondary);
+    ui_kit_center_text(c,19,pretty_labels[selected],NULL);
+    if(available) {
+        char number[24];
+        const char* unit="";
+        if(selected<=LabMateSnapshotScope && snap.frequency_millihz) {
+            if(snap.frequency_millihz>=1000000U) {
+                (void)snprintf(number,sizeof(number),"%lu.%02lu",
+                    (unsigned long)(snap.frequency_millihz/1000000U),
+                    (unsigned long)((snap.frequency_millihz%1000000U)/10000U));
+                unit="kHz";
+            } else {
+                (void)snprintf(number,sizeof(number),"%lu.%01lu",
+                    (unsigned long)(snap.frequency_millihz/1000U),
+                    (unsigned long)((snap.frequency_millihz%1000U)/100U));
+                unit="Hz";
+            }
+        } else {
+            (void)snprintf(number,sizeof(number),"%lu",
+                           (unsigned long)snap.valid_sample_count);
+            unit=selected==LabMateSnapshotLogger ? "rows" : "events";
         }
-        (void)snprintf(buf,sizeof(buf),"%s %s",labels[i],state);
-        line(c,(uint8_t)(22U+9U*(i-first)),i==selected,buf);
+        canvas_set_font(c,FontBigNumbers);
+        if(canvas_current_font_height(c)>22U ||
+           canvas_string_width(c,number)>87U) canvas_set_font(c,FontPrimary);
+        canvas_draw_str_aligned(c,92,38,AlignRight,AlignBottom,number);
+        canvas_set_font(c,FontSecondary);
+        (void)ui_kit_text(c,97,36,29,unit,"#");
+        (void)ui_kit_text(c,4,49,120,"Saved result",NULL);
+    } else {
+        canvas_set_font(c,FontPrimary);
+        ui_kit_center_text(c,38,"No saved data",NULL);
+        canvas_set_font(c,FontSecondary);
+        (void)ui_kit_text(c,4,49,120,"Record a measurement",NULL);
     }
-    line(c,50,false,"SEALED / NOT LIVE");
-    ui_footer_pair(c,"^v","SOURCE","OK","STATS");
+    ui_kit_pulse_line(c,18,58,92,0,false);
 }

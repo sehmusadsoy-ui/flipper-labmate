@@ -33,7 +33,7 @@ typedef enum {
     LabMateGroupOutput,
     LabMateGroupRecords,
     LabMateGroupComm, /* communication tools immediately above INFO */
-    LabMateGroupInfo, /* final root entry: About always at bottom */
+    LabMateGroupInfo, /* legacy numeric ID 4: Settings root, Info nested */
     LabMateGroupCount
 } LabMateMenuGroup;
 

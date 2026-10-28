@@ -10,6 +10,9 @@
 #include "labmate_scope_exit_guard.h"
 #include "labmate_doctor_screen.h"
 #include "labmate_dashboard_screen.h"
+#include "labmate_ui_motion.h"
+#include "ui_kit.h"
+#include "labmate_settings.h"
 
 /* ---------- DRAWING (stateful screens) ---------- */
 
@@ -24,6 +27,24 @@ void labmate_view_render_callback(
         FuriWaitForever);
 
     canvas_clear(canvas);
+
+    if(app->ui_splash) {
+        canvas_set_color(canvas, ColorBlack);
+        ui_kit_splash_logo(canvas, 54, 4);
+        canvas_set_font(canvas, FontPrimary);
+        ui_kit_center_text(canvas, 30, "LabMate", NULL);
+        canvas_set_font(canvas, FontSecondary);
+        ui_kit_center_text(canvas, 43, "Ultimate", NULL);
+        const uint32_t elapsed = (uint32_t)(furi_get_tick() - app->ui_splash_tick);
+        const uint32_t total = furi_kernel_get_tick_frequency() * 12U / 10U;
+        const uint8_t phase = total ? (uint8_t)((elapsed < total ? elapsed : total) * 255U / total) : 0U;
+        ui_kit_pulse_line(canvas, 53, 53, 22, phase, true);
+        furi_mutex_release(app->mutex);
+        return;
+    }
+
+    /* Reset only the GPIO presentation trace on exit, not any measured value. */
+    if(app->screen != LabMateScreenGpio) labmate_gpio_trace_reset_ui();
 
     switch(app->screen) {
     case LabMateScreenMenu:
@@ -72,6 +93,9 @@ void labmate_view_render_callback(
 
     case LabMateScreenAbout:
         draw_about(canvas, app);
+        break;
+    case LabMateScreenSettings:
+        labmate_settings_draw(canvas, app);
         break;
     case LabMateScreenProfiles:
         draw_profiles(canvas, app);
@@ -204,6 +228,19 @@ void labmate_redraw_init(LabMateRedrawThrottle* state) {
 
 void labmate_redraw_maybe(LabMateRedrawThrottle* state, LabMateApp* app,
                           FuriStatus status, InputEvent event, ViewPort* viewport) {
+        /* Animations are non-blocking; keep them at most 30 Hz, then fall
+         * back to the legacy 10/5 Hz refresh that protects capture work. */
+        if(labmate_ui_motion_is_active(app)) {
+            const uint32_t now = furi_get_tick();
+            uint32_t interval = furi_kernel_get_tick_frequency() / 30U;
+            if(!interval) interval = 1U;
+            if(status == FuriStatusOk ||
+               (uint32_t)(now - state->normal_redraw_last_tick) >= interval) {
+                view_port_update(viewport);
+                state->normal_redraw_last_tick = now;
+            }
+            return;
+        }
         /* Under heavy IRQ load, use a calmer LCD refresh rate while
          * preserving immediate response to keys and all captured edges.
          */
@@ -224,8 +261,15 @@ void labmate_redraw_maybe(LabMateRedrawThrottle* state, LabMateApp* app,
             }
         } else {
             const uint32_t redraw_tick = furi_get_tick();
+            /* GPIO visual trace is 25 Hz (40 ms); no change to the existing
+             * 10 ms GPIO measurement polling or any IRQ/capture cadence. */
+            uint32_t interval=state->normal_redraw_interval;
+            if(app->screen == LabMateScreenGpio) {
+                interval=(furi_kernel_get_tick_frequency()*40U+999U)/1000U;
+                if(interval==0U) interval=1U;
+            }
             if(status == FuriStatusOk ||
-               (uint32_t)(redraw_tick - state->normal_redraw_last_tick) >= state->normal_redraw_interval) {
+               (uint32_t)(redraw_tick - state->normal_redraw_last_tick) >= interval) {
                 view_port_update(viewport);
                 state->normal_redraw_last_tick = redraw_tick;
             }

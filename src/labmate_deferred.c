@@ -7,6 +7,7 @@
 #include "labmate_logger_storage.h"
 #include "labmate_history.h"
 #include "labmate_profile_storage.h"
+#include "labmate_ui_prefs_storage.h"
 #include "labmate_uart.h"
 
 #define LOGGER_SYNC_EVERY_ROWS 10U
@@ -83,6 +84,28 @@ void labmate_deferred_execute(LabMateApp* app, LabMateDeferredWork* work,
                 app->profile_notice = 5U; /* WRITE ERR */
             }
             app->profile_busy = false;
+            furi_mutex_release(app->mutex);
+        }
+
+        if(work->ui_prefs_save_requested) {
+            uint8_t new_copy = LABMATE_UI_PREFS_COPY_NONE;
+            const bool ok = labmate_ui_prefs_sd_save(
+                &work->proposed_ui_prefs, work->proposed_ui_prefs_copy, &new_copy);
+            furi_mutex_acquire(app->mutex, FuriWaitForever);
+            if(ok) {
+                app->ui_prefs = work->proposed_ui_prefs;
+                app->ui_prefs_active_copy = new_copy;
+                app->ui_prefs_io = LabMateUiPrefsIoOk;
+                app->ui_prefs_notice = 1U;
+                app->settings_toast_tick = furi_get_tick();
+                app->settings_toast_active = true;
+            } else {
+                /* Keep the visible choice, but never claim persistence. */
+                app->ui_prefs_notice = 2U;
+                app->ui_prefs_io = LabMateUiPrefsIoError;
+                app->settings_toast_active = false;
+            }
+            app->ui_prefs_busy = false;
             furi_mutex_release(app->mutex);
         }
 

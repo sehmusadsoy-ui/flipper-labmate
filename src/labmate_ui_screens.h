@@ -11,6 +11,8 @@ void draw_history(Canvas* canvas, LabMateApp* app);
 void draw_history_detail(Canvas* canvas, LabMateApp* app);
 void draw_menu(Canvas* canvas, LabMateApp* app);
 void draw_gpio(Canvas* canvas, LabMateApp* app);
+/* Display-only 104-bit trace lifecycle: no hardware or measurement access. */
+void labmate_gpio_trace_reset_ui(void);
 void draw_frequency(Canvas* canvas, LabMateApp* app);
 void draw_generator(Canvas* canvas, LabMateApp* app);
 void draw_counter(Canvas* canvas, LabMateApp* app);

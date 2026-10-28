@@ -1,7 +1,7 @@
 #include "labmate_navigation.h"
 
 static const char* const group_titles[LabMateGroupCount] = {
-    "MEASURE", "OUTPUT", "RECORDS", "COMM", "INFO"
+    "MEASURE", "OUTPUT", "RECORDS", "COMM", "SETTINGS"
 };
 
 static const char* const tool_titles[LabMateToolCount] = {
