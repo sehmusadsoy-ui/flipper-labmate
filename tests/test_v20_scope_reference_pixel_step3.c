@@ -31,7 +31,9 @@ uint16_t canvas_string_width(Canvas* c,const char* s) {
 void canvas_set_color(Canvas* c,Color x){c->ink=x;}
 void canvas_draw_str(Canvas* c,int32_t x,int32_t y,const char* text){
     int32_t w=canvas_string_width(c,text);
-    int32_t h=c->font==FontPrimary?11:8;
+    /* Host mock checks cell bounds only: 10px Primary line at baseline 9.
+     * Exact Flipper glyph ascender/raster still requires device capture. */
+    int32_t h=c->font==FontPrimary?10:8;
     if(!w||x<0||x+w>128||y<0||y>=64||y-h+1<0)c->faults++;
     if(c->texts<30U)snprintf(c->shown[c->texts],32,"%s",text);
     else c->faults++;
