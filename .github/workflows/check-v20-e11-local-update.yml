@@ -220,7 +220,7 @@ jobs:
               throw 'NTFS stage digest/length mismatch'
             }
             if (-not (Get-Command py.exe -ErrorAction SilentlyContinue)) { throw 'Windows py.exe missing' }
-            $testSize = & py.exe -3 -c 'import os,sys; f=open(sys.argv[1],"rb"); print(os.fstat(f.fileno()).st_size)' $localFap
+            $testSize = & py.exe -3 -c 'import os,sys; fd=os.open(sys.argv[1],os.O_RDONLY); print(os.fstat(fd).st_size); os.close(fd)' $localFap
             if ($LASTEXITCODE -ne 0 -or $testSize -ne '174192') {
               throw 'Windows Python local FAP open/fstat regression'
             }
