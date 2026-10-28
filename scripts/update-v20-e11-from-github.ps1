@@ -35,9 +35,13 @@ git -C "$DIR" merge-base --is-ancestor "$PIN" HEAD
 bash "$DIR/scripts/build-v20-e11-exact-local.sh"
 '@
     Write-Host 'GITHUB -> WSL UBUNTU -> PINNED E11 (PC ONLY FIRST)' -ForegroundColor Cyan
-    & wsl.exe --distribution $Distro --exec bash -lc $Linux
+    # Windows PowerShell 5.1 cannot reliably pass embedded Bash quotes in -lc
+    # arguments through wsl.exe; Bash must parse a script from STDIN instead.
+    $NormalizedLinux = ($Linux -replace "`r", "") + "`n"
+    $NormalizedLinux | & wsl.exe --distribution $Distro --exec bash -s
     if ($LASTEXITCODE -ne 0) { throw 'WSL source/SDK/FAP verification failed; NO USB WRITE' }
-    $FapResult=& wsl.exe --distribution $Distro --exec bash -lc 'wslpath -w "$HOME/.local/share/labmate-e11/labmate.fap"'
+    $FapPathLinux = 'wslpath -w "$HOME/.local/share/labmate-e11/labmate.fap"'
+    $FapResult = $FapPathLinux | & wsl.exe --distribution $Distro --exec bash -s
     if ($LASTEXITCODE -ne 0) { throw 'Cannot resolve WSL FAP' }
     $Fap=([string]($FapResult | Select-Object -Last 1)).Trim()
     if (-not (Test-Path -LiteralPath $Fap -PathType Leaf)) { throw 'WSL FAP not accessible in Windows' }
@@ -55,7 +59,8 @@ bash "$DIR/scripts/build-v20-e11-exact-local.sh"
     if (-not (Test-Path -LiteralPath $EnvCmd -PathType Leaf) -or -not (Test-Path -LiteralPath $Module -PathType Leaf)) {
         throw "Windows Momentum USB scripts missing: $Fw"
     }
-    $HelperResult=& wsl.exe --distribution $Distro --exec bash -lc 'wslpath -w "$HOME/.local/share/labmate-e11-source/scripts/install-v20-e11-usb.py"'
+    $HelperPathLinux = 'wslpath -w "$HOME/.local/share/labmate-e11-source/scripts/install-v20-e11-usb.py"'
+    $HelperResult = $HelperPathLinux | & wsl.exe --distribution $Distro --exec bash -s
     if ($LASTEXITCODE -ne 0) { throw 'USB helper path resolution failed' }
     $Helper=([string]($HelperResult | Select-Object -Last 1)).Trim()
     $Backup=Join-Path $HOME 'Documents\LabMate-FAP-PC-Backups'
