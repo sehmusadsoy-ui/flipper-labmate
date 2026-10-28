@@ -80,11 +80,13 @@ int main(void) {
     expect_verdict(s, LabMateDoctorNotReady, false);
     s.quality = LabMateSnapshotInsufficient;
     expect_verdict(s, LabMateDoctorNotReady, false);
+    /* Current Doctor only assesses Frequency and Pulse. Scope has a
+     * separate symptom analyzer and cannot be silently treated as Pulse. */
     s = make_valid(LabMateSnapshotScope);
-    s.duty_permille = 500U; /* real Scope cycle duty, not inferred pulse widths */
-    expect_verdict(s, LabMateDoctorWithinExpected, true);
+    s.duty_permille = 500U;
+    expect_verdict(s, LabMateDoctorNotReady, false);
     s.duty_permille = 525U;
-    expect_verdict(s, LabMateDoctorDutyDeviation, true);
+    expect_verdict(s, LabMateDoctorNotReady, false);
     s.pin_index = 4U; /* Scope only has a verified PC1 capture owner */
     expect_verdict(s, LabMateDoctorNotReady, false);
     s = make_valid(LabMateSnapshotScope);

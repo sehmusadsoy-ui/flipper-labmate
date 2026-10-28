@@ -1,0 +1,27 @@
+name: LabMate v2.0 E11 reviewed pre-device host regressions (NO FLASH)
+on:
+  push:
+    branches: [dev/v2.0-e11-ui-completion-20261028]
+    paths:
+      - "scripts/audit-v20-e11-predevice.sh"
+      - ".github/workflows/v20-e11-predevice-host-review.yml"
+permissions:
+  contents: read
+jobs:
+  reviewed_host_regressions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Execute source-linked compatible regressions GCC and Clang
+        shell: bash
+        run: |
+          set -euo pipefail
+          sh scripts/audit-v20-e11-predevice.sh
+      - name: Declare scope
+        shell: bash
+        run: |
+          echo "No device/flash/firmware/Stable. Legacy UI failures remain open."

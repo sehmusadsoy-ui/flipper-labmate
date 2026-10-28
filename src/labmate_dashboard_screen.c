@@ -2,6 +2,7 @@
 #include "labmate_ui_primitives.h"
 #include "labmate_scope_period_stats.h"
 #include "ui_kit.h"
+#include "labmate_pixel_ui.h"
 #include <stdio.h>
 #include <stdint.h>
 
@@ -34,8 +35,9 @@ void labmate_dashboard_screen_draw(Canvas* c, const LabMateApp* a) {
      * applies the existing 128px LCD presentation limit unchanged. */
     char buf[32], hz[16];
     if(a->dashboard_details) {
-        ui_draw_header(c,a->dashboard_evidence ? "EVIDENCE" : "STATS");
-        ui_badge(c,95,1,31,page ? "2/2" : "1/2",false);
+        labmate_pixel_header(c,
+            a->dashboard_evidence ? "Evidence" : "Stats",
+            page ? "2/2" : "1/2", false);
     }
     if(a->dashboard_details && a->dashboard_evidence) {
         const LabMateDashboardSlot* slot = &a->doctor_store.slots[selected];
@@ -63,7 +65,7 @@ void labmate_dashboard_screen_draw(Canvas* c, const LabMateApp* a) {
             (void)snprintf(buf,sizeof(buf),"WINDOW %lums",(unsigned long)duration);
             line(c,50,false,buf);
         }
-        ui_footer_pair(c,"<>","PAGE","OK","LIST");
+        labmate_pixel_keys(c, UiKitKeyLeftRight, "Page", UiKitKeyOk, "List");
         return;
     }
     if(a->dashboard_details) {
@@ -142,7 +144,7 @@ void labmate_dashboard_screen_draw(Canvas* c, const LabMateApp* a) {
             line(c,34,false,"NO VERIFIED STATS");
             line(c,50,false,"SEALED ONLY");
         }
-        ui_footer_pair(c,"<>","PAGE","OK","LIST");
+        labmate_pixel_keys(c, UiKitKeyLeftRight, "Page", UiKitKeyOk, "More");
         return;
     }
     /* Single-focus historical result. SEALED / NOT LIVE: snapshots remain
@@ -186,5 +188,5 @@ void labmate_dashboard_screen_draw(Canvas* c, const LabMateApp* a) {
         canvas_set_font(c,FontSecondary);
         (void)ui_kit_text(c,4,49,120,"Record a measurement",NULL);
     }
-    ui_kit_pulse_line(c,18,58,92,0,false);
+    labmate_pixel_keys(c, UiKitKeyUpDown, "Source", UiKitKeyOk, "Stats");
 }

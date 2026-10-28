@@ -1,6 +1,7 @@
 #include "labmate_ui_screens.h"
 #include "labmate_ui_primitives.h"
 #include "ui_kit.h"
+#include "labmate_pixel_ui.h"
 #include "labmate_ui_status.h"
 #include "labmate_counter_math.h"
 #include "labmate_generator.h"
@@ -38,8 +39,7 @@ void draw_profiles(Canvas* canvas, LabMateApp* app) {
     else if(app->profile_notice == 7U) state = "PRESET";
     else if(app->profile_notice == 8U) state = "BUSY";
 
-    ui_draw_header(canvas, "PROFILES");
-    ui_badge(canvas, 77, 1, 49, state, false);
+    labmate_pixel_header(canvas, "Profiles", state, false);
     canvas_set_font(canvas, FontSecondary);
 
     if(!app->profile_busy && app->profile_confirm) {
@@ -92,12 +92,12 @@ void draw_profiles(Canvas* canvas, LabMateApp* app) {
     }
 
     if(app->profile_busy) {
-        canvas_draw_line(canvas, 0, 52, 127, 52);
-        canvas_draw_str(canvas, 7, 62, "SD BUSY - WAIT");
+        (void)ui_kit_text(canvas, 4U, 62U, 120U, "SD BUSY - WAIT", NULL);
     } else {
         /* Even under PWM ON, LR always names the operation and OK says
          * BLOCK. No hidden route to SAVE or DELETE under live PWM. */
-        ui_footer_pair(canvas, "LR", action, "OK", blocked ? "BLOCK" : "SELECT");
+        labmate_pixel_keys(canvas, UiKitKeyLeftRight, action,
+                           UiKitKeyOk, blocked ? "Block" : "Select");
     }
 }
 
@@ -259,8 +259,7 @@ void draw_history(Canvas* canvas, LabMateApp* app) {
                  (unsigned)(app->history_selected + 1U),
                  (unsigned)app->history_count);
     }
-    ui_draw_header(canvas, "HISTORY");
-    ui_badge(canvas, 91, 1, 35,
+    labmate_pixel_header(canvas, "History",
              app->history_busy ? "WAIT" :
              app->history_error ? "ERR" :
              app->history_delete_notice == 2U ? "FAIL" :
@@ -288,6 +287,7 @@ void draw_history(Canvas* canvas, LabMateApp* app) {
         ui_kit_pulse_line(canvas, 22, 40, 84, 0, false);
         canvas_set_font(canvas, FontSecondary);
         ui_kit_center_text(canvas, 51, "Start a recording", NULL);
+        (void)ui_kit_key_hint(canvas, 4U, UiKitKeyBack, "Menu");
         return;
     } else {
         const uint8_t first = (uint8_t)((app->history_selected / 3U) * 3U);
@@ -311,12 +311,11 @@ void draw_history(Canvas* canvas, LabMateApp* app) {
         }
     }
     if(app->history_busy || app->history_error || app->history_count == 0U) {
-        canvas_draw_line(canvas, 0, 52, 127, 52);
-        canvas_draw_str(canvas, 6, 62, "BACK: MENU");
+        (void)ui_kit_key_hint(canvas, 4U, UiKitKeyBack, "Menu");
     } else {
         /* LEFT/RIGHT toggles action; OK previews or asks to delete. */
-        ui_footer_pair(canvas, "LR", "MODE", "OK",
-                       app->history_delete_mode ? "DELETE" : "OPEN");
+        labmate_pixel_keys(canvas, UiKitKeyLeftRight, "Mode",
+                           UiKitKeyOk, app->history_delete_mode ? "Delete" : "Open");
     }
 }
 
@@ -326,8 +325,7 @@ void draw_history_detail(Canvas* canvas, LabMateApp* app) {
                         app->history_error ? "ERR" :
                         app->history_loading ? "READ" : "CSV";
 
-    ui_draw_header(canvas, "LOG VIEW");
-    ui_badge(canvas, 91, 1, 35, state, false);
+    labmate_pixel_header(canvas, "Log view", state, false);
     canvas_set_font(canvas, FontSecondary);
 
     if(!has_file) {
@@ -360,9 +358,8 @@ void draw_history_detail(Canvas* canvas, LabMateApp* app) {
             canvas_draw_str_aligned(canvas, 125, 51, AlignRight, AlignBottom, value);
         }
     }
-    canvas_draw_line(canvas, 0, 52, 127, 52);
-    canvas_draw_str(canvas, 6, 62, "BACK: LIST");
-    canvas_draw_str_aligned(canvas, 125, 62, AlignRight, AlignBottom, "READ ONLY");
+    (void)ui_kit_key_hint(canvas, 4U, UiKitKeyBack, "List");
+    (void)ui_kit_text(canvas, 70U, 62U, 57U, "READ ONLY", "VIEW");
 }
 
 /* Step 2: read-only renderers migrated verbatim from labmate.c. */
@@ -958,10 +955,8 @@ void draw_frequency(Canvas* canvas, LabMateApp* app) {
 void draw_alerts(Canvas* canvas, LabMateApp* app) {
     char limit[32];
     const bool latched = app->threshold.armed && app->threshold.latched;
-    ui_draw_header(canvas, "THRESHOLDS");
-    ui_badge(canvas, 92, 1, 35,
-             latched ? "ALRT" : app->threshold.armed ? "ARM" : "OFF",
-             app->threshold.armed);
+    labmate_pixel_header(canvas, "Alerts",
+        latched ? "ALRT" : app->threshold.armed ? "ARM" : "OFF", latched);
 
     canvas_set_font(canvas, FontSecondary);
     canvas_draw_str(canvas, 3, 23, "SOURCE");
@@ -982,15 +977,15 @@ void draw_alerts(Canvas* canvas, LabMateApp* app) {
                              latched ? "ALERT LATCHED" :
                              !app->threshold.has_sample ? "WAITING FOR INPUT" :
                              app->threshold.active ? "LIMIT REACHED" : "BELOW LIMIT";
-    canvas_draw_frame(canvas, 2, 39, 124, 12);
-    canvas_draw_str(canvas, 6, 48, state_text);
+    ui_kit_panel(canvas, 2U, 39U, 124U, 12U);
+    (void)ui_kit_text(canvas, 6U, 48U, 116U, state_text, NULL);
 
     if(!app->threshold.armed) {
-        ui_footer_pair(canvas, "LR", "SOURCE", "OK", "ARM");
+        labmate_pixel_keys(canvas, UiKitKeyLeftRight, "Source", UiKitKeyOk, "Arm");
     } else if(latched) {
-        ui_footer_pair(canvas, "DOWN", "ACK", "OK", "OFF");
+        labmate_pixel_keys(canvas, UiKitKeyDown, "Ack", UiKitKeyOk, "Off");
     } else {
-        ui_footer_pair(canvas, "OK", "OFF", "BACK", "EXIT");
+        labmate_pixel_keys(canvas, UiKitKeyOk, "Off", UiKitKeyBack, "Exit");
     }
 }
 
@@ -1001,10 +996,10 @@ void draw_button(Canvas* canvas, LabMateApp* app) {
     char value[32];
     const bool alert = app->threshold.armed && app->threshold.latched &&
                        app->threshold.source == LabMateAlertButtonSettle;
-    ui_draw_header(canvas, "BUTTON");
-    ui_badge(canvas, 92, 1, 34,
-             alert ? "ALRT" : app->capture_blocked ? "BUSY" :
-             app->button_active ? "RUN" : "STOP", app->button_active);
+    labmate_pixel_header(canvas, "Button",
+        alert ? "ALRT" : app->capture_release_fault ? "ERR" :
+        app->capture_blocked ? "BUSY" :
+        app->button_active ? "RUN" : "STOP", alert || app->button_active);
 
     canvas_set_font(canvas, FontSecondary);
     if(!app->button_details_view) {
@@ -1056,9 +1051,9 @@ void draw_button(Canvas* canvas, LabMateApp* app) {
     const char* button_action = app->button_active ? "STOP" :
         (app->button_session_started ? "RESUME" : "START");
     if(app->button_details_view) {
-        ui_footer_pair(canvas, "DOWN", "MAIN", "OK", button_action);
+        labmate_pixel_keys(canvas, UiKitKeyDown, "Main", UiKitKeyOk, button_action);
     } else {
-        ui_footer_pair(canvas, "DOWN", "MORE", "OK", button_action);
+        labmate_pixel_keys(canvas, UiKitKeyDown, "More", UiKitKeyOk, button_action);
     }
 }
 
@@ -1432,8 +1427,7 @@ void draw_logger(Canvas* canvas, LabMateApp* app) {
         snprintf(state, sizeof(state), "READY / 1 SEC SAMPLE");
     }
 
-    ui_draw_header(canvas, "LOGGER");
-    ui_badge(canvas, 91, 1, 35, badge, app->logger_recording);
+    labmate_pixel_header(canvas, "Logger", badge, app->logger_recording);
     canvas_set_font(canvas, FontSecondary);
     canvas_draw_str(canvas, 3, 22, "MODE");
     canvas_draw_str_aligned(canvas, 125, 22, AlignRight, AlignBottom, mode);
@@ -1443,12 +1437,11 @@ void draw_logger(Canvas* canvas, LabMateApp* app) {
     canvas_draw_str(canvas, 3, 48, state);
 
     if(app->logger_busy) {
-        canvas_draw_line(canvas, 0, 52, 127, 52);
-        canvas_draw_str(canvas, 7, 62, "SD BUSY - WAIT");
+        (void)ui_kit_text(canvas, 4U, 62U, 120U, "SD BUSY - WAIT", NULL);
     } else if(app->logger_recording) {
-        ui_footer_pair(canvas, "OK", "STOP", "BACK", "SAVE");
+        labmate_pixel_keys(canvas, UiKitKeyOk, "Stop", UiKitKeyBack, "Save");
     } else {
-        ui_footer_pair(canvas, "LR", "SOURCE", "OK", "RECORD");
+        labmate_pixel_keys(canvas, UiKitKeyLeftRight, "Source", UiKitKeyOk, "Record");
     }
 }
 
