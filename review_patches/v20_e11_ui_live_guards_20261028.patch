@@ -1,0 +1,207 @@
+diff --git a/scripts/test-v20-e11-ui-live-guards-host.sh b/scripts/test-v20-e11-ui-live-guards-host.sh
+new file mode 100644
+index 0000000..8b3f662
+--- /dev/null
++++ b/scripts/test-v20-e11-ui-live-guards-host.sh
+@@ -0,0 +1,11 @@
++#!/bin/sh
++set -eu
++root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
++tmp=$(mktemp -d)
++trap 'rm -rf "$tmp"' EXIT HUP INT TERM
++for cc in gcc clang; do
++    command -v "$cc" >/dev/null 2>&1 || { echo "MISSING $cc" >&2; exit 2; }
++    "$cc" -std=c11 -Wall -Wextra -Werror -pedantic -I"$root/src" \
++        "$root/tests/test_v20_e11_ui_live_guards.c" -o "$tmp/live-$cc"
++    "$tmp/live-$cc"
++done
+diff --git a/src/labmate_capture_live.h b/src/labmate_capture_live.h
+new file mode 100644
+index 0000000..0d2be93
+--- /dev/null
++++ b/src/labmate_capture_live.h
+@@ -0,0 +1,18 @@
++#pragma once
++/* E11 Live/Held presentation only. Never infer LIVE from an attempted start.
++ * Actual IRQ/TIM2 ownership and fault state must be verified first. */
++#include <stdbool.h>
++
++static inline bool labmate_frequency_ui_live(
++    bool high_pin, bool high_active, bool low_active,
++    bool correct_owner, bool blocked, bool release_fault) {
++    return (high_pin ? high_active && !low_active :
++                       low_active && !high_active) &&
++           correct_owner && !blocked && !release_fault;
++}
++
++static inline bool labmate_pulse_ui_live(
++    bool native_irq_active, bool native_pulse_owner,
++    bool blocked, bool release_fault) {
++    return native_irq_active && native_pulse_owner && !blocked && !release_fault;
++}
+diff --git a/src/labmate_capture_session.c b/src/labmate_capture_session.c
+index c4ad822..c33a182 100644
+--- a/src/labmate_capture_session.c
++++ b/src/labmate_capture_session.c
+@@ -18,6 +18,7 @@
+ #include "labmate_scope_bridge.h"
+ #include "labmate_scope_exit_guard.h"
+ #include "labmate_capture_release_gate.h"
++#include "labmate_capture_live.h"
+ 
+ /* Pulse Analyzer uses GPIO edge interrupts, not polling.
+  * STM32 EXTI lines are shared across GPIO ports, and the firmware already
+@@ -132,6 +133,12 @@ void labmate_gpio_change(
+         } else {
+             labmate_frequency_low_start(app);
+         }
++        app->hold = !labmate_frequency_ui_live(
++            app->gpio_index == 4U, app->frequency_hw_active,
++            app->frequency_irq_active,
++            app->capture_owner == (app->gpio_index == 4U ?
++                LabMateCaptureFrequencyHigh : LabMateCaptureFrequencyLow),
++            app->capture_blocked, app->capture_release_fault);
+ 
+         return;
+     }
+@@ -149,6 +156,10 @@ void labmate_gpio_change(
+         pulse_stats_reset(app);
+         measurement_reset(app);
+         labmate_pulse_capture_start(app);
++        app->hold = !labmate_pulse_ui_live(
++            app->pulse_irq_active,
++            app->capture_owner == LabMateCapturePulse,
++            app->capture_blocked, app->capture_release_fault);
+         return;
+     }
+ 
+diff --git a/src/labmate_input_measure.c b/src/labmate_input_measure.c
+index 61bfa6b..725083f 100644
+--- a/src/labmate_input_measure.c
++++ b/src/labmate_input_measure.c
+@@ -25,6 +25,7 @@
+ #include "labmate_input_tools.h"
+ #include "labmate_doctor_pulse_bridge.h"
+ #include "labmate_doctor_frequency_bridge.h"
++#include "labmate_capture_live.h"
+ void labmate_input_button(LabMateApp* app, InputEvent event, LabMateDeferredWork* work) {
+     UNUSED(work);
+ 
+@@ -114,7 +115,11 @@ void labmate_input_gpio(LabMateApp* app, InputEvent event, LabMateDeferredWork*
+                             pulse_stats_window_reset(app);
+                             measurement_reset(app);
+                             labmate_pulse_capture_start(app);
+-                            app->hold = false;
++                            /* Failed lease/TRY-ADD must not advertise LIVE. */
++                            app->hold = !labmate_pulse_ui_live(
++                                app->pulse_irq_active,
++                                app->capture_owner == LabMateCapturePulse,
++                                app->capture_blocked, app->capture_release_fault);
+                         } else {
+                             /* Freeze displayed values and stop IRQ load. */
+                             labmate_doctor_pulse_prepare_stop(app);
+@@ -129,7 +134,30 @@ void labmate_input_gpio(LabMateApp* app, InputEvent event, LabMateDeferredWork*
+                          */
+                         if(app->screen == LabMateScreenFrequency)
+                             labmate_doctor_frequency_abandon(app);
+-                        app->hold = !app->hold;
++                        if(app->screen == LabMateScreenFrequency && app->hold &&
++                           !labmate_frequency_ui_live(
++                               app->gpio_index == 4U,
++                               app->frequency_hw_active, app->frequency_irq_active,
++                               app->capture_owner == (app->gpio_index == 4U ?
++                                   LabMateCaptureFrequencyHigh : LabMateCaptureFrequencyLow),
++                               app->capture_blocked, app->capture_release_fault)) {
++                            /* A denied start remains retryable on OK. */
++                            if(app->gpio_index == 4U)
++                                labmate_frequency_high_start(app);
++                            else
++                                labmate_frequency_low_start(app);
++                        }
++                        if(app->screen == LabMateScreenFrequency) {
++                            const bool live = labmate_frequency_ui_live(
++                                app->gpio_index == 4U,
++                                app->frequency_hw_active, app->frequency_irq_active,
++                                app->capture_owner == (app->gpio_index == 4U ?
++                                    LabMateCaptureFrequencyHigh : LabMateCaptureFrequencyLow),
++                                app->capture_blocked, app->capture_release_fault);
++                            app->hold = !live || !app->hold;
++                        } else {
++                            app->hold = !app->hold;
++                        }
+                         if(!app->hold) {
+                             /* HOLD resume cannot treat an unowned GPIO
+                              * as a valid electrical LOW sample. */
+diff --git a/src/labmate_input_menu.c b/src/labmate_input_menu.c
+index 819c807..2dec8a2 100644
+--- a/src/labmate_input_menu.c
++++ b/src/labmate_input_menu.c
+@@ -29,6 +29,7 @@
+ #include "labmate_info_ui.h"
+ #include "labmate_info_guides.h"
+ #include "labmate_settings_view.h"
++#include "labmate_capture_live.h"
+ void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork* work) {
+ 
+                 /* One navigation source defines both renderer and key map.
+@@ -93,6 +94,12 @@ void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork*
+                         } else {
+                             labmate_frequency_low_start(app);
+                         }
++                        app->hold = !labmate_frequency_ui_live(
++                            app->gpio_index == 4U, app->frequency_hw_active,
++                            app->frequency_irq_active,
++                            app->capture_owner == (app->gpio_index == 4U ?
++                                LabMateCaptureFrequencyHigh : LabMateCaptureFrequencyLow),
++                            app->capture_blocked, app->capture_release_fault);
+                         break;
+ 
+                     case LabMateToolPulse:
+@@ -106,6 +113,10 @@ void labmate_input_menu(LabMateApp* app, InputEvent event, LabMateDeferredWork*
+                         pulse_stats_reset(app);
+                         measurement_reset(app);
+                         labmate_pulse_capture_start(app);
++                        app->hold = !labmate_pulse_ui_live(
++                            app->pulse_irq_active,
++                            app->capture_owner == LabMateCapturePulse,
++                            app->capture_blocked, app->capture_release_fault);
+                         break;
+ 
+                     case LabMateToolButton:
+diff --git a/tests/test_v20_e11_ui_live_guards.c b/tests/test_v20_e11_ui_live_guards.c
+new file mode 100644
+index 0000000..39e1c5e
+--- /dev/null
++++ b/tests/test_v20_e11_ui_live_guards.c
+@@ -0,0 +1,31 @@
++#include <assert.h>
++#include <stdbool.h>
++#include <stdio.h>
++#include "labmate_capture_live.h"
++
++int main(void) {
++    unsigned count = 0;
++    for(unsigned bits = 0; bits < 64; ++bits) {
++        const bool high = !!(bits & 1U);
++        const bool hw = !!(bits & 2U);
++        const bool irq = !!(bits & 4U);
++        const bool owned = !!(bits & 8U);
++        const bool blocked = !!(bits & 16U);
++        const bool fault = !!(bits & 32U);
++        const bool expected = (high ? hw && !irq : irq && !hw) &&
++                              owned && !blocked && !fault;
++        assert(labmate_frequency_ui_live(high,hw,irq,owned,blocked,fault)==expected);
++        ++count;
++    }
++    for(unsigned bits = 0; bits < 16; ++bits) {
++        const bool active = !!(bits & 1U);
++        const bool owned = !!(bits & 2U);
++        const bool blocked = !!(bits & 4U);
++        const bool fault = !!(bits & 8U);
++        assert(labmate_pulse_ui_live(active,owned,blocked,fault)==
++               (active && owned && !blocked && !fault));
++        ++count;
++    }
++    printf("E11 UI LIVE GUARDS HOST PASS: %u truth-table cases\n", count);
++    return 0;
++}
