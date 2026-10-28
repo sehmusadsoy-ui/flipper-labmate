@@ -82,11 +82,13 @@ jobs:
           # .NET StandardInput writes are mandatory for ALL five WSL calls.
           assert p.count('Invoke-WslBash -Source') == 5
           assert p.count('--exec bash -s') == 1
-          assert 'GetBytes($Source.Replace([string][char]13, \'\') + [char]10)' in p
+          assert '($Source.Replace([string][char]13, \'\') + [char]10)' in p
           assert 'UTF8Encoding($false)' in p
-          assert 'StandardInput.BaseStream' in p
-          assert '$InputStream.Write($Bytes, 0, $Bytes.Length)' in p
-          assert 'RedirectStandardInput = $true' in p
+          assert 'WriteAllText(' in p
+          assert 'RedirectStandardInput = $InputPath' in p
+          assert 'Start-Process @Options' in p
+          assert 'StandardInput.Write' not in p and 'StandardInput.BaseStream' not in p
+          assert '[System.IO.File]::Delete($InputPath)' in p
           assert '| & wsl.exe' not in p
           assert 'bash -lc' not in p
           assert 'git clone --single-branch --branch "$BRANCH" "$URL" "$DIR"' in p
