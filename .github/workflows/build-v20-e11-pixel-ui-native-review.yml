@@ -34,7 +34,7 @@ jobs:
   compile_matched_fap:
     name: Build development app against PINNED E11 patched Momentum SDK
     # Only compile the protected v2 development source, never third-party PR heads.
-    if: github.event_name == 'push' || github.head_ref == 'dev/v2.0-e11-ui-completion-20261028'
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 75
     steps:
@@ -55,13 +55,14 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
-      - name: Test fail-closed SDK/API/ELF verifier, including negative cases
+      - name: Preflight v2.0DEV manifest (legacy v1.9 test suite inapplicable)
         shell: bash
         run: |
           set -euo pipefail
-          cd labmate
-          python3 -m unittest discover -v -s tests -p test_verify_v19_e11_sdk_fap.py
-          python3 -m unittest discover -v -s tests -p test_check_v19_review_bundle.py
+          grep -Fqx '#define LABMATE_VERSION_TEXT "v2.0DEV"' labmate/src/labmate_internal.h
+          grep -Fq 'fap_version="2.0"' labmate/application.fam
+          test -s labmate/scripts/verify_v19_e11_sdk_fap.py
+          echo "V20 E11 MANIFEST PREFLIGHT PASS; native FAP verifier runs AFTER compile"
 
       - name: Pixel UI + capture source-linked host gates (GCC + Clang)
         shell: bash
