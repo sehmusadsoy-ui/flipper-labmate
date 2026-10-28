@@ -20,39 +20,41 @@ function Invoke-LfStdinProcess {
         [Parameter(Mandatory=$true)][string]$Source,
         [switch]$CaptureOutput
     )
-    $Info = New-Object System.Diagnostics.ProcessStartInfo
-    $Info.FileName = $ExePath
-    $Info.Arguments = $Arguments
-    $Info.UseShellExecute = $false
-    $Info.RedirectStandardInput = $true
-    $Info.RedirectStandardOutput = [bool]$CaptureOutput
-    $Info.RedirectStandardError = $false
-    $Info.CreateNoWindow = $false
-    $Proc = New-Object System.Diagnostics.Process
-    $Proc.StartInfo = $Info
-    $Started = $false
+    # .NET Framework Process.StandardInput can add UTF-8 BOM even if its
+    # BaseStream is written directly. Never open its StreamWriter.
+    # Feed a BOM-free LF-only temporary script via OS-level stdin redirect.
+    $InputPath = [System.IO.Path]::GetTempFileName()
+    $OutputPath = $null
     try {
-        $Started = $Proc.Start()
-        if (-not $Started) { throw "Could not start $ExePath" }
-        # Windows PowerShell 5.1/.NET Framework's StreamWriter emits
-        # UTF-8 BOM (EF BB BF) at first write, which Bash treats as a
-        # literal part of the first command. Write raw UTF-8 NO BOM bytes.
         $NoBomUtf8 = New-Object System.Text.UTF8Encoding($false)
-        $Bytes = $NoBomUtf8.GetBytes($Source.Replace([string][char]13, '') + [char]10)
-        $InputStream = $Proc.StandardInput.BaseStream
-        $InputStream.Write($Bytes, 0, $Bytes.Length)
-        $InputStream.Flush()
-        $InputStream.Close()
-        $Output = ''
-        if ($CaptureOutput) { $Output = $Proc.StandardOutput.ReadToEnd() }
-        $Proc.WaitForExit()
+        [System.IO.File]::WriteAllText(
+            $InputPath, ($Source.Replace([string][char]13, '') + [char]10), $NoBomUtf8)
+        $Options = @{
+            FilePath = $ExePath
+            ArgumentList = $Arguments
+            RedirectStandardInput = $InputPath
+            NoNewWindow = $true
+            Wait = $true
+            PassThru = $true
+        }
+        if ($CaptureOutput) {
+            $OutputPath = [System.IO.Path]::GetTempFileName()
+            $Options['RedirectStandardOutput'] = $OutputPath
+        }
+        $Proc = Start-Process @Options
         if ($Proc.ExitCode -ne 0) {
             throw "$ExePath Bash failed (exit $($Proc.ExitCode)); NO USB WRITE"
         }
-        if ($CaptureOutput) { return $Output.Trim() }
+        if ($CaptureOutput) {
+            return ([System.IO.File]::ReadAllText($OutputPath)).Trim()
+        }
     } finally {
-        if ($Started -and -not $Proc.HasExited) { $Proc.Kill() }
-        $Proc.Dispose()
+        if ($OutputPath -and [System.IO.File]::Exists($OutputPath)) {
+            [System.IO.File]::Delete($OutputPath)
+        }
+        if ([System.IO.File]::Exists($InputPath)) {
+            [System.IO.File]::Delete($InputPath)
+        }
     }
 }
 
