@@ -18,7 +18,7 @@ int main(void) {
         {LabMateToolUart, LabMateToolI2c, LabMateToolOneWire, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
         {LabMateToolAbout, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid, LabMateToolInvalid},
     };
-    /* User-mandated ROOT order: COMM above INFO; About absolutely last.
+    /* Stable ROOT ID order: COMM above SETTINGS; About remains last.
      * Tool IDs stay stable for Profiles; only root group positions change. */
     assert(LabMateGroupMeasure == 0);
     assert(LabMateGroupOutput == 1);
@@ -26,7 +26,7 @@ int main(void) {
     assert(LabMateGroupComm == 3);
     assert(LabMateGroupInfo == 4);
     assert(LabMateGroupInfo == LabMateGroupCount - 1);
-    assert(strcmp(labmate_nav_group_title(LabMateGroupInfo), "INFO") == 0);
+    assert(strcmp(labmate_nav_group_title(LabMateGroupInfo), "SETTINGS") == 0);
     assert(strcmp(labmate_nav_group_title(LabMateGroupComm), "COMM") == 0);
     assert(labmate_nav_tool_at(LabMateGroupInfo, 0U) == LabMateToolAbout);
     assert(labmate_nav_tool_at(LabMateGroupComm, 0U) == LabMateToolUart);
@@ -96,6 +96,6 @@ int main(void) {
             assert(start <= selected && selected < (uint8_t)(start + 3U));
         }
     }
-    puts("LabMate v2.0 baseline navigation: all 17 tools reachable once; INFO last PASS");
+    puts("LabMate v2.0 baseline navigation: all 17 tools reachable once; SETTINGS last PASS");
     return 0;
 }
