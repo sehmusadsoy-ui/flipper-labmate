@@ -1,8 +1,8 @@
-name: LabMate v2.0 Compare Sample Step4 pinned E11 native review (NO FLASH)
+name: LabMate v2.0 E11 pinned native candidate review (NO FLASH)
 
 on:
   push:
-    branches: [dev/v2.0-e11-compare-sample-pixel-step4-20261028]
+    branches: [dev/v2.0-e11-compare-sample-pixel-step4-20261028, dev/v2.0-e11-legacy-ui-harness-review-20261029]
     paths:
       - "application.fam"
       - "src/**"
@@ -46,7 +46,10 @@ jobs:
           printf 'EVENT=%s\nREF=%s\nSOURCE_SHA=%s\n' "$GITHUB_EVENT_NAME" "$GITHUB_REF" "$GITHUB_SHA"
           # A push or manual run must never build application code from main.
           if [[ "$GITHUB_EVENT_NAME" != "pull_request" ]]; then
-            test "$GITHUB_REF" = "refs/heads/dev/v2.0-e11-compare-sample-pixel-step4-20261028"
+            case "$GITHUB_REF" in
+              refs/heads/dev/v2.0-e11-compare-sample-pixel-step4-20261028|refs/heads/dev/v2.0-e11-legacy-ui-harness-review-20261029) ;;
+              *) echo "NO-GO: unapproved FAP source ref" >&2; exit 2 ;;
+            esac
           fi
 
       - name: Checkout exact pixel UI review branch; never checkout Stable
@@ -65,10 +68,10 @@ jobs:
           test -s labmate/scripts/verify_v19_e11_sdk_fap.py
           echo "V20 E11 MANIFEST PREFLIGHT PASS; native FAP verifier runs AFTER compile"
 
-      - name: Pixel UI + capture source-linked host gates (GCC + Clang)
+      - name: Full reviewed E11 pre-device gates GCC+Clang (NO DEVICE)
         shell: bash
         working-directory: labmate
-        run: sh scripts/test-v20-e11-pixel-ui-host.sh
+        run: sh scripts/test-v20-e11-final-ui-predevice-host.sh
 
       - name: Checkout exact previous E11 Momentum source; never use floating main
         uses: actions/checkout@v4
@@ -233,6 +236,36 @@ jobs:
           python3 ../labmate/scripts/verify_v19_e11_sdk_fap.py \
             . build/f7-firmware-C/.extapps/labmate.fap
           sha256sum build/f7-firmware-C/.extapps/labmate.fap
+
+      - name: Attest single verified E11 labmate.fap candidate (NO INSTALL)
+        # Never expose a failed FAP or upload from a non-reviewed branch.
+        if: success() && github.ref == 'refs/heads/dev/v2.0-e11-legacy-ui-harness-review-20261029'
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE="momentum-src/build/f7-firmware-C/.extapps/labmate.fap"
+          test -s "$SOURCE"
+          test "$(git -C labmate rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git -C momentum-src rev-parse HEAD)" = "d3f89dfe2ef6b01839201598e9be1590cba80322"
+          python3 labmate/scripts/verify_v19_e11_sdk_fap.py momentum-src "$SOURCE"
+          mkdir -p verified-e11-fap
+          test ! -e verified-e11-fap/labmate.fap
+          cp "$SOURCE" verified-e11-fap/labmate.fap
+          cmp "$SOURCE" verified-e11-fap/labmate.fap
+          test "$(find verified-e11-fap -maxdepth 1 -type f | wc -l)" -eq 1
+          printf 'E11_VERIFIED_SOURCE_COMMIT=%s\n' "$GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          printf 'E11_VERIFIED_SHA256=%s\n' "$(sha256sum verified-e11-fap/labmate.fap | awk '{print $1}')" >> "$GITHUB_STEP_SUMMARY"
+          printf 'E11_VERIFIED_BYTES=%s\n' "$(stat -c %s verified-e11-fap/labmate.fap)" >> "$GITHUB_STEP_SUMMARY"
+          echo 'Candidate only: manual device transfer and physical QA required; NO FLASH.' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload only successful labmate.fap (single candidate; NO FLASH)
+        if: success() && github.ref == 'refs/heads/dev/v2.0-e11-legacy-ui-harness-review-20261029'
+        uses: actions/upload-artifact@v4
+        with:
+          name: labmate-e11-candidate-${{ github.run_id }}
+          path: verified-e11-fap/labmate.fap
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Collect read-only build diagnostics (including failed builds)
         if: always()
