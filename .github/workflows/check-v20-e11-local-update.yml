@@ -62,6 +62,13 @@ jobs:
           assert 'saved.open("xb")' in u
           assert 'device.send_file(str(args.fap),TARGET)' in u
           assert 'verify_fap(args.fap)' in u
+          assert 'parser.add_argument("--discover",action="store_true")' in u
+          assert 'if args.apply and args.discover:' in u
+          assert 'if args.discover:\n            discover_device_faps(device)\n            return 0' in u
+          assert u.index('if args.discover:\n            discover_device_faps(device)') < u.index('if not device.exist_file(TARGET):')
+          assert '[switch]$Discover' in p
+          assert 'if ($Install -and $Discover)' in p
+          assert '$UsbFlag = if ($Discover) { \'--discover\' } else { \'--apply\' }' in p
           assert 'verify_v20_e11_debuglink_parity.py' in s
           assert 'sha256sum "$HOME/.local/share/labmate-e11/labmate.fap"' in p
           # Regression: the original stale raw-CI-hash check ran AFTER the
@@ -93,6 +100,37 @@ jobs:
           assert 'bash -lc' not in p
           assert 'git clone --single-branch --branch "$BRANCH" "$URL" "$DIR"' in p
           print('E11 EXACT LOCAL WSL/USB SOURCE CONTRACT PASS; NO DEVICE')
+          PY
+          python3 - <<'PY'
+          from pathlib import Path
+          import runpy
+          from types import SimpleNamespace
+          discovery = runpy.run_path('scripts/install-v20-e11-usb.py')['discover_device_faps']
+          class FakeStorage:
+              CLI_PROMPT='>: '
+              def __init__(self):
+                  self.current=''
+                  self.listings={
+                      '/ext/apps': b'[D] Tools\\r\\n[D] GPIO\\r\\n',
+                      '/ext/apps/Tools': b'[F] LabMate-Counter-Step3-E11-Trial.fap 151552\\r\\n[F] other.fap 123\\r\\n',
+                      '/ext/apps/GPIO': b'[F] gpio.fap 456\\r\\n',
+                  }
+                  self.read=SimpleNamespace(until=lambda marker: self.listings[self.current])
+              def exist_dir(self,path):
+                  return path == '/ext/apps'
+              def send_and_wait_eol(self,command):
+                  assert command.startswith('storage list "') and command.endswith('"\\r')
+                  self.current=command.split('"')[1]
+              def has_error(self,data):
+                  return b'Storage error:' in data
+              def send_file(self,*args):
+                  raise AssertionError('USB WRITE ATTEMPT in discovery!')
+              def read_file(self,*args):
+                  raise AssertionError('USB FAP READ not authorized by discovery!')
+          files=discovery(FakeStorage())
+          assert ('/ext/apps/Tools/LabMate-Counter-Step3-E11-Trial.fap',151552) in files
+          assert ('/ext/apps/GPIO/gpio.fap',456) in files
+          print('DEVICE FAP DISCOVERY READ-ONLY / LEGACY NAME FIXTURE PASS')
           PY
   windows_parser:
     runs-on: windows-2022
