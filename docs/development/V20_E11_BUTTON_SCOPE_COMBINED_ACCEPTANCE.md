@@ -35,7 +35,7 @@
 | UI05B Button / Alerts exact current renderer tests | PASS on migration branch |
 | UI06C pure status plus exact GPIO | PASS (retained compatible gate) |
 | UI04 Profiles / History / Log Detail exact production render (300 cases per compiler) | **PASS**, Actions 40771017169 (GCC+Clang) |
-| UI05 Logger exact production render (240 cases per compiler) | **PENDING CI** |\n| Two excluded UI runners: UI05D / UI06 | **OPEN**, not waived |
+| UI05 Logger exact production render (240 cases per compiler) | **PASS**, Actions 40771605748 (GCC+Clang) |\n| Two excluded UI runners: UI05D / UI06 | **OPEN**, not waived |
 
 ### Follow-up physical acceptance (single labmate.fap only)
 
@@ -77,8 +77,9 @@ pre-device CI **PASS**, Actions 40771017169; no device or FAP work.
 **UI05 migrated to CI gate:** current Logger exact renderer (3 sources × 2 validity
 states × 10 busy/error/recording/save states × 4 scale boundaries = 240 cases per
 compiler), testing header/status precedence, mode, measurements, key hints,
-bounds, and zero app-state mutation. Await a completed CI PASS before counting
-this as verified.
+bounds, and zero app-state mutation. The combined GCC+Clang pre-device CI
+**PASS** is recorded in Actions run 40771605748. This does not certify SD
+writes or real Flipper pixels.
 
 **Still excluded:** UI05D (frequency/pulse/PWM old presentation), UI06
 (old footer/layout plus UI05D). These are two runner names, not two unrelated
