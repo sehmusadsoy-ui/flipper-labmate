@@ -23,7 +23,11 @@ void draw_i2c(Canvas* canvas, LabMateApp* app) {
         busy ? UiKitInstrumentBusy :
         (firmware_missing || failed) ? UiKitInstrumentError :
         cancelled ? UiKitInstrumentStopped : UiKitInstrumentReady;
-    const bool pulse = (app->ui_frame & 16U) != 0U;
+    /* ui_frame is a finite carousel tween (normally 6), not an ongoing
+     * COMM animation clock. The shared UI pulse phase advances at ~33ms
+     * when motion is enabled; toggle the live glyph every 15 phases
+     * (~495ms) without timers, delays or hardware effects. */
+    const bool pulse = ((app->ui_pulse_phase / 15U) & 1U) != 0U;
 
     /* The full FontPrimary header cannot geometrically share y=0 with
      * "No reply": preserve the status chip, and prefer the FULL title
@@ -132,7 +136,7 @@ void draw_i2c(Canvas* canvas, LabMateApp* app) {
             canvas_draw_str(canvas, 8U, 33U, "SCL");
             canvas_draw_str(canvas, 8U, 42U, "SDA");
             if(scanning) {
-                const uint8_t phase = (uint8_t)(app->ui_frame % 10U);
+                const uint8_t phase = (uint8_t)(app->ui_pulse_phase % 10U);
                 for(uint8_t x = 30U; x < 118U; ++x) {
                     const uint8_t current = (uint8_t)
                         (((x + phase) % 10U) < 5U ? 28U : 33U);
