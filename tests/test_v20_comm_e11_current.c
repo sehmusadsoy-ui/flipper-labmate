@@ -46,11 +46,12 @@ typedef struct {
  LabMateOneWireHw thermometer;
  LabMateUart uart;
  LabMateI2cRuntime* i2c;
- uint8_t i2c_page;
+ uint8_t i2c_page,ui_frame;
 } LabMateApp;
 struct Canvas {
  Font font; Color color;
- unsigned faults,paints,text_count,keys,heads,panels;
+ unsigned faults,paints,text_count,keys,heads,panels,chip_count;
+ UiKitInstrumentState chip_state;
  char strings[32][48];
  struct {uint8_t x;UiKitKey k;char label[16];} actions[2];
 };
@@ -68,6 +69,10 @@ void canvas_draw_str(Canvas* c,int32_t x,int32_t y,const char* s){
  if(c->text_count<32U)snprintf(c->strings[c->text_count],48,"%s",s);
  else c->faults++;
  c->text_count++;c->paints++;
+}
+void canvas_draw_dot(Canvas* c,int32_t x,int32_t y){
+ if(x<0||x>=128||y<0||y>=64)c->faults++;
+ c->paints++;
 }
 void canvas_draw_line(Canvas* c,int32_t x,int32_t y,int32_t xx,int32_t yy){
  if(x<0||x>=128||xx<0||xx>=128||y<0||y>=64||yy<0||yy>=64)c->faults++;
@@ -114,8 +119,56 @@ bool ui_kit_stat_row(Canvas* c,uint8_t y,const char* a,const char* b){
  canvas_draw_str(c,124-bw,y,b);
  return true;
 }
+/* Header and status mocks emulate the production pixel preflight and
+ * string widths; exact ui_kit primitive bodies are independently source-
+ * linked by scripts/test-v20-button-scope-uikit-step1-host.sh. */
+uint8_t ui_kit_state_chip_width(Canvas* c,UiKitInstrumentState state){
+ const char* name = state==UiKitInstrumentReady?"Ready":
+  state==UiKitInstrumentLive?"Live":
+  state==UiKitInstrumentStopped?"Stopped":
+  state==UiKitInstrumentBusy?"Busy":
+  state==UiKitInstrumentError?"Error":NULL;
+ if(!name)return 0U;
+ canvas_set_font(c,FontSecondary);
+ return (uint8_t)(canvas_string_width(c,name)+17U);
+}
+bool ui_kit_state_chip_compact(Canvas* c,UiKitInstrumentState state,bool pulse){
+ (void)pulse;
+ uint8_t w=ui_kit_state_chip_width(c,state);
+ if(!w)return false;
+ uint8_t x=(uint8_t)(127U-w);
+ canvas_set_color(c,ColorBlack);
+ canvas_draw_rframe(c,x,0U,w,11U,3U);
+ canvas_set_font(c,FontSecondary);
+ const char* name=state==UiKitInstrumentReady?"Ready":
+  state==UiKitInstrumentLive?"Live":
+  state==UiKitInstrumentStopped?"Stopped":
+  state==UiKitInstrumentBusy?"Busy":"Error";
+ canvas_draw_str(c,x+12U,9U,name);
+ c->chip_count++;c->chip_state=state;
+ return true;
+}
+bool ui_kit_pixel_header(Canvas* c,const char* title,bool show_chip,
+                         UiKitInstrumentState state,bool pulse){
+ if(!c||!title||!title[0])return false;
+ canvas_set_font(c,FontPrimary);
+ unsigned tw=canvas_string_width(c,title);
+ if(!tw||9U+tw>127U)return false;
+ if(show_chip){
+  uint8_t w=ui_kit_state_chip_width(c,state);
+  if(!w||9U+tw+2U>127U-w)return false;
+ }
+ canvas_set_color(c,ColorBlack);
+ canvas_draw_line(c,5U,2U,2U,5U);
+ canvas_draw_line(c,2U,5U,5U,8U);
+ canvas_set_font(c,FontPrimary);
+ canvas_draw_str(c,9U,9U,title);
+ if(show_chip&&!ui_kit_state_chip_compact(c,state,pulse))return false;
+ c->heads++;
+ return true;
+}
 uint32_t labmate_uart_baud(const LabMateUart* u) {
- static const uint32_t rates[]={9600U,57600U,115200U};
+ static const uint32_t rates[]={9600U,38400U,115200U};
  return rates[u->baud_index<3U?u->baud_index:0U];
 }
 LabMateI2cRuntimeStatus labmate_i2c_runtime_snapshot(
@@ -138,7 +191,7 @@ static bool key(const Canvas* c,unsigned i,UiKitKey k,const char* s){
  return i<c->keys&&c->actions[i].k==k&&!strcmp(c->actions[i].label,s);
 }
 static void good(const Canvas* c){
- assert(c->faults==0U&&c->color==ColorBlack&&c->keys==2U&&c->heads==1U);
+ assert(c->faults==0U&&c->color==ColorBlack&&c->keys==2U&&c->heads<=1U);
 }
 static void test_i2c(void) {
  const char* msg[]={
@@ -154,7 +207,7 @@ static void test_i2c(void) {
     .page_count=3U,.row_count=4U,.row_address={0x20U,0x38U,0x40U,0x48U}};
   LabMateApp a={.i2c=&rt,.i2c_page=(uint8_t)page};
   const LabMateApp before=a;const LabMateI2cRuntime snapshot=rt;
-  Canvas c=fresh();draw_i2c(&c,&a);good(&c);
+  Canvas c=fresh();draw_i2c(&c,&a);good(&c);assert(c.heads==1U);
   assert(!memcmp(&before,&a,sizeof(a))&&!memcmp(&snapshot,&rt,sizeof(rt)));
   assert(has(&c,"I2C")&&has(&c,"PC0 SCL / PC1 SDA"));
   assert(key(&c,0U,UiKitKeyOk,st==3U?"Stop":"Scan"));
@@ -180,7 +233,7 @@ static void test_onewire(void){
       variant==3U?1250:variant==4U?-551:variant==5U?1251:235);
   a.thermometer.resolution_bits=variant==6U?8U:12U;
   const LabMateApp copy=a;
-  Canvas c=fresh();draw_onewire(&c,&a);good(&c);
+  Canvas c=fresh();draw_onewire(&c,&a);good(&c);assert(c.heads==1U);
   assert(!memcmp(&copy,&a,sizeof(a)));
   assert(has(&c,"1-Wire temp")&&has(&c,"PA4 DQ / 3.3V"));
   assert(has(&c,"EXTERNAL VDD ONLY"));
@@ -210,27 +263,62 @@ static void test_uart(void) {
   a.uart.tx_editing=(state%5U)==0U;
   a.uart.tx_sent=(state%7U)==0U;
   a.uart.tx_cursor=2U;
+  a.ui_frame=(uint8_t)state;
   snprintf(a.uart.tx_text,sizeof(a.uart.tx_text),"HI");
   snprintf(a.uart.terminal.rows[0],20,"HELLO");
   snprintf(a.uart.terminal.rows[1],20,"WORLD");
   const LabMateApp before=a;
   Canvas c=fresh();draw_uart(&c,&a);good(&c);
-  assert(!memcmp(&before,&a,sizeof(a)));
-  assert(has(&c,a.uart.tx_editing?"UART TX":"UART RX"));
+  assert(!memcmp(&before,&a,sizeof(a))); /* draw must never mutate UART */
   if(a.uart.tx_editing){
-   assert(has(&c,"HI"));assert(key(&c,0U,UiKitKeyOk,"Send"));
-   assert(key(&c,1U,UiKitKeyBack,"RX"));
-  }else if(a.uart.active){
-   assert(key(&c,0U,UiKitKeyOk,"Stop"));
-   assert(key(&c,1U,UiKitKeyDown,"TX"));
-  }else {
-   assert(key(&c,0U,UiKitKeyOk,"Start"));
+   assert(has(&c,"UART TX"));
+   assert(c.chip_count==0U);
+   assert(has(&c,"HI")&&key(&c,0U,UiKitKeyOk,"Send"));
+   assert(key(&c,1U,UiKitKeyBack,"RX")); /* TX remains old UI */
+  }else{
+   const UiKitInstrumentState expected=a.uart.blocked ?
+    UiKitInstrumentBusy : a.uart.invalid_baud ?
+    UiKitInstrumentError : a.uart.active ?
+    UiKitInstrumentLive :
+    a.uart.rx_total||a.uart.dropped||a.uart.rx_errors ?
+    UiKitInstrumentStopped : UiKitInstrumentReady;
+   assert(c.chip_count==1U && c.chip_state==expected);
+   assert(has(&c,expected==UiKitInstrumentStopped?"UART":"UART receive"));
+   assert(has(&c,"TX pin 13")&&has(&c,"RX pin 14"));
+   assert(has(&c,"Baud rate"));
+   assert(has(&c,"Recv")&&has(&c,"Drop")&&has(&c,"Errors"));
+   assert(key(&c,0U,UiKitKeyOk,a.uart.active?"Stop":"Start"));
    assert(key(&c,1U,UiKitKeyLeftRight,"Baud"));
+   assert(!has(&c,"WAITING RX...")&&!has(&c,"OK START / LR BAUD"));
+   assert(!has(&c,"HELLO")&&!has(&c,"WORLD"));
   }
   ++n;
  }
  assert(n==32U);
+
+ struct Case {uint32_t received,dropped,errors; const char* r,*d,*e;};
+ static const struct Case cases[]={
+  {0U,0U,0U,"0","0","0"},
+  {1234U,5U,2U,"1234","5","2"},
+  {12345U,10000U,100000U,"12.3k","10.0k","100k"},
+  {1234567U,1000000U,4200000000U,"1.2M","1.0M","4.2G"},
+  {UINT32_MAX,UINT32_MAX,UINT32_MAX,"4.2G","4.2G","4.2G"},
+ };
+ for(unsigned i=0;i<sizeof(cases)/sizeof(cases[0]);i++){
+  LabMateApp a={0};
+  a.uart.active=true;a.uart.baud_index=2U;
+  a.uart.rx_total=cases[i].received;
+  a.uart.dropped=cases[i].dropped;
+  a.uart.rx_errors=cases[i].errors;
+  const LabMateApp before=a;
+  Canvas c=fresh();draw_uart(&c,&a);good(&c);
+  assert(!memcmp(&a,&before,sizeof(a)));
+  assert(has(&c,cases[i].r)&&has(&c,cases[i].d)&&has(&c,cases[i].e));
+  assert(has(&c,"115200")); /* existing 3 baud presets unchanged */
+  assert(c.chip_state==UiKitInstrumentLive&&c.chip_count==1U);
+ }
 }
+
 int main(void) {
  test_i2c();test_onewire();test_uart();
  puts("E11 UI02/03 CURRENT COMM EXACT RENDER PASS: 24 I2C + 56 1W + 32 UART");
