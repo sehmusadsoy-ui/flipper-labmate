@@ -51,12 +51,19 @@ typedef struct {
 struct Canvas {
  Font font; Color color;
  unsigned faults,paints,text_count,keys,heads,panels,chip_count,big_numbers_count,degree_dots;
+ unsigned primary_punctuation_count;
+ bool missing_big_dot,missing_big_minus;
  UiKitInstrumentState chip_state;
  char strings[32][48];
  struct {uint8_t x;UiKitKey k;char label[16];} actions[2];
 };
 static Canvas fresh(void){Canvas c={0};c.color=ColorBlack;return c;}
 void canvas_set_font(Canvas* c,Font f){c->font=f;}
+size_t canvas_glyph_width(Canvas* c,uint16_t symbol){
+ if(c->font==FontBigNumbers&&symbol=='.'&&c->missing_big_dot)return 0U;
+ if(c->font==FontBigNumbers&&symbol=='-'&&c->missing_big_minus)return 0U;
+ return c->font==FontPrimary?8U:c->font==FontBigNumbers?10U:6U;
+}
 uint16_t canvas_string_width(Canvas* c,const char* s){
  unsigned advance=c->font==FontPrimary?8U:c->font==FontBigNumbers?10U:6U;
  return (uint16_t)(strlen(s)*advance);
@@ -64,6 +71,8 @@ uint16_t canvas_string_width(Canvas* c,const char* s){
 void canvas_set_color(Canvas* c,Color ink){c->color=ink;}
 void canvas_draw_str(Canvas* c,int32_t x,int32_t y,const char* s){
  if(c->font==FontBigNumbers)c->big_numbers_count++;
+ if(c->font==FontPrimary&&s[0]&&s[1]=='\0'&&
+    (s[0]=='.'||s[0]=='-'))c->primary_punctuation_count++;
  int w=canvas_string_width(c,s);
  int h=c->font==FontBigNumbers?15:c->font==FontPrimary?10:8;
  if(!w||x<0||x+w>128||y<0||y>=64||y-h+1<0)c->faults++;
@@ -362,6 +371,32 @@ static void test_onewire(void){
   }
  }
 }
+static void test_onewire_missing_glyph_fallback(void) {
+ /* Exercise the ACTUAL runtime font-subset fallback, not a mocked copy. */
+ LabMateApp a={0};
+ a.thermometer.status=LabMateOneWireHwMeasured;
+ a.thermometer.temperature_tenths=-125;
+ a.thermometer.resolution_bits=12U;
+ a.thermometer.has_temperature=true;
+ const LabMateApp original=a;
+ Canvas c=fresh();
+ c.missing_big_dot=true;c.missing_big_minus=true;
+ draw_onewire(&c,&a);good(&c);
+ assert(!memcmp(&a,&original,sizeof(a)));
+ assert(c.chip_state==UiKitInstrumentDone);
+ assert(has(&c,"-")&&has(&c,".")&&has(&c,"1")&&has(&c,"2")&&has(&c,"5"));
+ assert(c.primary_punctuation_count==2U&&c.big_numbers_count==3U);
+ assert(c.degree_dots==4U&&has(&c,"C")&&has(&c,"12-bit"));
+ assert(key(&c,0U,UiKitKeyOk,"Read again"));
+
+ a.thermometer.status=LabMateOneWireHwNoSensor;
+ c=fresh();c.missing_big_dot=true;c.missing_big_minus=true;
+ draw_onewire(&c,&a);good(&c);
+ assert(c.chip_state==UiKitInstrumentNoReply);
+ assert(c.primary_punctuation_count==4U);
+ assert(c.big_numbers_count==0U && c.degree_dots==4U);
+ assert(!has(&c,"12-bit"));
+}
 static void test_uart(void) {
  unsigned n=0;
  for(unsigned state=0U;state<32U;state++){
@@ -433,7 +468,7 @@ static void test_uart(void) {
 }
 
 int main(void) {
- test_i2c();test_onewire();test_uart();
+ test_i2c();test_onewire();test_onewire_missing_glyph_fallback();test_uart();
  puts("E11 UI02/03 CURRENT COMM EXACT RENDER PASS: 24 I2C + 56 1W + 32 UART");
  return 0;
 }
