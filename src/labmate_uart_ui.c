@@ -57,15 +57,14 @@ void draw_uart(Canvas* canvas, LabMateApp* app) {
         const uint16_t chip_x = (uint16_t)(127U - chip_w);
         canvas_set_font(canvas, FontSecondary);
         const uint16_t full_w = canvas_string_width(canvas, "UART receive");
-        const bool normal_fit = 9U + full_w + 1U < chip_x;
-        const bool shifted_fit = 7U + full_w + 1U < chip_x;
-        const uint8_t title_x = normal_fit ? 9U : 7U;
+        const bool normal_fit = 9U + full_w + 1U <= chip_x;
+        const bool shifted_fit = 7U + full_w + 1U <= chip_x;
+        const uint8_t title_x = normal_fit ? 9U : shifted_fit ? 7U : 9U;
         const char* title = (normal_fit || shifted_fit) ?
             "UART receive" : "UART";
-        if(title == NULL) return; /* defensive only */
         canvas_set_font(canvas, (normal_fit || shifted_fit) ?
                         FontSecondary : FontPrimary);
-        if((uint32_t)title_x + canvas_string_width(canvas, title) + 1U >= chip_x)
+        if((uint32_t)title_x + canvas_string_width(canvas, title) + 1U > chip_x)
             return; /* fail-closed; never draw a collision */
         canvas_set_color(canvas, ColorBlack);
         canvas_draw_line(canvas, 5U, 2U, 2U, 5U);
