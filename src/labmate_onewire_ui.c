@@ -116,23 +116,59 @@ void draw_onewire(Canvas* canvas, LabMateApp* app) {
         snprintf(numeric, sizeof(numeric), "--.-");
     }
 
-    /* Use FontBigNumbers for the complete numeric token when supported and
-     * fitting; otherwise use whole FontPrimary text, never partial glyphs.
-     * The 1px degree-ring is procedural and font-independent. */
+    /* The matched E11 Canvas API supports querying individual glyphs.
+     * FontBigNumbers may be a numeric-subset font: if '.' or '-' is absent,
+     * render ONLY that punctuation in FontPrimary, retaining BigNumbers
+     * for all digits. Check width of the entire mixed hero before painting.
+     * No buffer growth, heap allocation, or silent missing characters. */
     canvas_set_font(canvas, FontBigNumbers);
-    uint16_t numeric_w = canvas_string_width(canvas, numeric);
-    canvas_set_font(canvas, FontPrimary);
-    const uint16_t unit_w = canvas_string_width(canvas, "C");
-    const uint16_t right_edge = 4U + numeric_w + 9U + unit_w;
-    if(!numeric_w || right_edge > 127U) {
-        canvas_set_font(canvas, FontPrimary);
+    const bool missing_dot = canvas_glyph_width(canvas, '.') == 0U;
+    const bool missing_minus = numeric[0] == '-' &&
+        canvas_glyph_width(canvas, '-') == 0U;
+    bool mixed_font = missing_dot || missing_minus;
+    uint16_t numeric_w = 0U;
+    if(!mixed_font) {
         numeric_w = canvas_string_width(canvas, numeric);
     } else {
-        canvas_set_font(canvas, FontBigNumbers);
+        for(uint8_t i = 0U; numeric[i]; ++i) {
+            const char symbol = numeric[i];
+            const bool punctuation_fallback =
+                (symbol == '.' && missing_dot) ||
+                (symbol == '-' && missing_minus);
+            const char glyph[2] = {symbol, '\0'};
+            canvas_set_font(canvas,
+                            punctuation_fallback ? FontPrimary : FontBigNumbers);
+            numeric_w += canvas_string_width(canvas, glyph);
+        }
+    }
+    canvas_set_font(canvas, FontPrimary);
+    const uint16_t unit_w = canvas_string_width(canvas, "C");
+    bool primary_only = false;
+    if(!numeric_w || 4U + numeric_w + 9U + unit_w > 127U) {
+        /* Final measured fallback: whole token in Primary; never clip. */
+        numeric_w = canvas_string_width(canvas, numeric);
+        mixed_font = false;
+        primary_only = true;
     }
     if(numeric_w && 4U + numeric_w + 9U + unit_w <= 127U) {
         canvas_set_color(canvas, ColorBlack);
-        canvas_draw_str(canvas, 4U, 49U, numeric);
+        if(!mixed_font) {
+            canvas_set_font(canvas, primary_only ? FontPrimary : FontBigNumbers);
+            canvas_draw_str(canvas, 4U, 49U, numeric);
+        } else {
+            uint16_t cursor = 4U;
+            for(uint8_t i = 0U; numeric[i]; ++i) {
+                const char symbol = numeric[i];
+                const bool punctuation_fallback =
+                    (symbol == '.' && missing_dot) ||
+                    (symbol == '-' && missing_minus);
+                const char glyph[2] = {symbol, '\0'};
+                canvas_set_font(canvas, punctuation_fallback ?
+                                FontPrimary : FontBigNumbers);
+                canvas_draw_str(canvas, cursor, 49U, glyph);
+                cursor += canvas_string_width(canvas, glyph);
+            }
+        }
         const uint8_t degree_x = (uint8_t)(4U + numeric_w + 5U);
         canvas_draw_dot(canvas, degree_x, 35U);
         canvas_draw_dot(canvas, degree_x-1U, 36U);
