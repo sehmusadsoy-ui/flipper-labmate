@@ -5,7 +5,28 @@ Target: patched Momentum E11, Flipper Zero 128x64, firmware API 87.1
 Branch: `dev/v2.0-e11-legacy-ui-harness-review-20261029`  
 Scope: ONLY the three COMM renderers: UART receive, I2C explorer, 1-Wire temp.  
 **Gate: host/source-link PASS; real Flipper pixel/raster acceptance PENDING.**
-No USB install, device GPIO, sensor or firmware write is implied by this document.
+This was written before device installation; the 2026-10-29 update below
+supersedes its original **no-install-yet** planning language. Do not read
+that historical wording as the current installation status.
+
+## 2026-10-29 device deployment and owner visual approval
+
+- **USB install completed:** one canonical `/ext/apps/Tools/labmate.fap`
+  (177804 bytes, SHA-256
+  `160e1c2c7e5f63418bf641fc7b5ab9a72f5bb45219126d914b94185654d10e7e`).
+  Old FAP was read back/verified and saved to the PC first; new device
+  write/readback PASS in operator-submitted console log.
+- **Visual design decision:** owner reports the unified application screens
+  look consistent and premium and explicitly approves **UI design
+  consistency**. Design iteration is closed; preserve current graphics.
+- **Do not reclassify C01–C09 as individual PASS:** a state-by-state on-device
+  screenshot and all external electrical tests have not been documented.
+  These are separate quality gates, not prerequisites for recording the
+  owner's overall visual approval.
+- **Next active track:** hardware functionality and exception handling
+  using [UI freeze / hardware handoff](V20_E11_UI_FREEZE_AND_HARDWARE_HANDOFF_2026-10-29.md).
+  No new FAP build, firmware flash or automatic re-install was performed
+  by this documentation update. Stable remains blocked.
 
 ## Source-of-truth and preservation
 
@@ -71,7 +92,16 @@ Additional distinct states **must not masquerade as target states**:
 
 ## Release/install boundary
 
-- The user's last physically tested/approved installed `/ext/apps/Tools/labmate.fap` must not be replaced automatically.
-- The development FAP generated in CI is a **candidate**, not a signed-off installed application.
-- Never rename or accumulate user-facing FAPs. A later operator-authorized USB install must retain the verified old-FAP PC backup, exact one-file migration, readback checks, and no firmware flashing.
-- Stable promotion remains blocked on on-device 128x64/DS18B20/I2C/UART tests and the broader deferred hardware matrix.
+- **Current state (2026-10-29):** the operator-authorized USB install was
+  completed and its readback PASS was logged; the app remains a
+  **v2.0DEV candidate**, not a Stable release.
+- The currently installed visually approved `/ext/apps/Tools/labmate.fap`
+  must not be replaced automatically. Do not install a new file or run
+  new FAP builds merely for documentation or stylistic experiments.
+- Keep the **verified previous FAP PC backup** and the single canonical
+  name. Any later source change requires its own full FAP SHA, new
+  backup, intentional USB consent and readback. No firmware flashing.
+- Owner overall visual approval is **complete**; detailed unusual-state
+  pixel screenshots and electrical UART/I2C/DS18B20 tests remain OPEN.
+- Stable promotion remains blocked on the device-level functional
+  and broader deferred hardware matrix.
