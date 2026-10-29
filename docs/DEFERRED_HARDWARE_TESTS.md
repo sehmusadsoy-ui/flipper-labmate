@@ -1,5 +1,28 @@
 # LabMate — Deferred physical and compatibility verification backlog
 
+## 2026-10-29 v2.0 E11 transition checkpoint
+
+The user's current device has the **single canonical v2.0DEV**
+`/ext/apps/Tools/labmate.fap` (177804 bytes; SHA-256
+`160e1c2c7e5f63418bf641fc7b5ab9a72f5bb45219126d914b94185654d10e7e`).
+The operator provided a successful USB write/readback log and confirmed
+the overall **UI design is visually accepted**. The old installed
+174192-byte FAP was verified and backed up to the PC before replacement.
+
+**This does not change any HW-01–HW-19 or QA-01 result to PASS.**
+In particular, positive I2C ACK, actual DS18B20 CRC/temperature,
+real button contact bounce, calibrated PWM/frequency and independent
+native-resource contention **remain deferred** until tested on this
+exact installed pair. Prior v1.8/1.9 device observations do not
+automatically transfer to this v2.0DEV build.
+
+Active ordered checklist and freeze policy:
+[`development/V20_E11_UI_FREEZE_AND_HARDWARE_HANDOFF_2026-10-29.md`](development/V20_E11_UI_FREEZE_AND_HARDWARE_HANDOFF_2026-10-29.md).
+Record future results with a date, exact device FAP SHA, safe wiring,
+observed counts/values, STOP/BACK behavior and PASS/FAIL/DEFERRED.
+Protect production SD data and do not flash firmware.
+
+
 **Status: OPEN / NOT TESTED where explicitly marked below.** This is a living
 hardware-validation queue for equipment that is not available yet. Do **not**
 mark PASS from CI, simulator results, or another device's digital loopback.
