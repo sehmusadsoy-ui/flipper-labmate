@@ -31,6 +31,41 @@ Do not replace the above digest with a branch HEAD hash. Documentation/test-only
 are **not new app binaries**. After future genuine production changes, record a new exact
 FAP SHA, source commit, and independently observed USB readback.
 
+## P0 after-idle Loader out-of-memory — OPEN / HARDWARE TESTS PAUSED (2026-10-29)
+
+After the four A01–A04 smoke PASS reports, the owner independently reported
+that opening the installed LabMate after extended Flipper use/idle can produce
+**"Out of memory"**, with reboot and successful reopening afterwards.
+This is a **separate startup-stability blocker**; passing prior short
+functional tests does not establish long-uptime application availability.
+
+The pinned Momentum E11 **Loader's error dialog is generated before the
+application entry point**: `LoaderStatusErrorOutOfMemory` is reached when
+an ELF section cannot be allocated. Firmware's `elf_load_section_data`
+explicitly requires `memmgr_heap_get_max_free_block() >= sh_size + 1024`.
+The exact already-installed binary has `.text=87320` bytes, so
+**88344 bytes of contiguous heap** is the relevant per-section size
+guard. The following sections include `.rodata=13742` bytes; their
+allocated total is **101135 bytes**, excluding heap metadata/loader/app
+runtime. Read-only CI artifact analysis **PASS**:
+[Actions 40888926930](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/40888926930).
+
+This is strong evidence for a large-section/contiguous-free-block
+constraint, but **NOT proof yet of which firmware service, previous app,
+heap leak, or fragmentation sequence caused the low block**. The user
+has not supplied pre-error read-only `free` measurements.
+
+**Action:** B01 and all jumper/real-input tests are **PAUSED** pending
+startup reliability triage, quantitative `free` snapshots after boot
+and before the failing launch, and a separately accepted fix/mitigation.
+The user-approved UI is untouched; no FAP changes or device firmware
+writes were made. See [P0 issue #31](https://github.com/sehmusadsoy-ui/flipper-labmate/issues/31).
+Read-only diagnostic:
+[`../../scripts/diagnose-v20-e11-oom-readonly.py`](../../scripts/diagnose-v20-e11-oom-readonly.py);
+only sends the existing firmware CLI `free` command over verified USB CDC.
+Do not construe reboot recovery as a permanent fix or overwrite the
+previous FAP backup.
+
 ## Physical checkpoint A — operator report 2026-10-29
 
 **A01–A04: 4/4 PASS, reported after performing the supplied A01–A04
