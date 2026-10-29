@@ -9,6 +9,8 @@ on:
       - "scripts/test_e11_usb_install_operator.py"
       - "scripts/update-v20-e11-from-github.ps1"
       - "scripts/install-reviewed-comm-e11.ps1"
+      - "scripts/diagnose-v20-e11-oom-readonly.py"
+      - "tests/test_v20_e11_oom_readonly.py"
       - ".github/workflows/check-v20-e11-local-update.yml"
 permissions:
   contents: read
@@ -25,7 +27,8 @@ jobs:
         run: |
           set -euo pipefail
           bash -n scripts/build-v20-e11-exact-local.sh
-          python3 -m py_compile scripts/install-v20-e11-usb.py scripts/verify_v20_e11_debuglink_parity.py scripts/test_e11_usb_install_operator.py
+          python3 -m py_compile scripts/install-v20-e11-usb.py scripts/verify_v20_e11_debuglink_parity.py scripts/test_e11_usb_install_operator.py scripts/diagnose-v20-e11-oom-readonly.py tests/test_v20_e11_oom_readonly.py
+          python3 tests/test_v20_e11_oom_readonly.py -v
           python3 - <<'PY'
           from pathlib import Path
           s=Path('scripts/build-v20-e11-exact-local.sh').read_text()
