@@ -232,6 +232,30 @@ jobs:
             . build/f7-firmware-C/.extapps/labmate.fap
           sha256sum build/f7-firmware-C/.extapps/labmate.fap
 
+      # The ONLY new user-installable artifact is the exact candidate
+      # previously reviewed by the pinned SDK job (40838850973). Changing
+      # code, patch chain, toolchain output or debuglink CRC is a NO-GO.
+      - name: Pin exact reviewed COMM FAP bytes (no USB / no release)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          fap=momentum-src/build/f7-firmware-C/.extapps/labmate.fap
+          test "$(stat -c %s "$fap")" = 177804
+          printf '%s  %s\n' '160e1c2c7e5f63418bf641fc7b5ab9a72f5bb45219126d914b94185654d10e7e' "$fap" | sha256sum -c -
+          test "$(git -C labmate diff --name-only 47fd6958441c5f7d07193fb3519f69a9d6ab195f HEAD -- src application.fam labmate_10px.png | wc -l)" = 0
+          echo "REVIEWED COMM FAP EXACT RAW SHA256 PASS (177804 bytes)"
+          mkdir -p v20-comm-install
+          cp "$fap" v20-comm-install/labmate.fap
+          sha256sum v20-comm-install/labmate.fap | tee v20-comm-install/SHA256SUMS.txt
+
+      - name: Upload EXACT reviewed COMM FAP for operator-authorized USB install
+        uses: actions/upload-artifact@v4
+        with:
+          name: labmate-e11-comm-reviewed-20261029
+          path: v20-comm-install/
+          retention-days: 7
+          if-no-files-found: error
+
       - name: Collect read-only build diagnostics (including failed builds)
         if: always()
         shell: bash
