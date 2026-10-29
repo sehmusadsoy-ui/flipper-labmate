@@ -8,6 +8,7 @@ on:
       - "scripts/verify_v20_e11_debuglink_parity.py"
       - "scripts/test_e11_usb_install_operator.py"
       - "scripts/update-v20-e11-from-github.ps1"
+      - "scripts/install-reviewed-comm-e11.ps1"
       - ".github/workflows/check-v20-e11-local-update.yml"
 permissions:
   contents: read
@@ -30,6 +31,18 @@ jobs:
           s=Path('scripts/build-v20-e11-exact-local.sh').read_text()
           p=Path('scripts/update-v20-e11-from-github.ps1').read_text()
           u=Path('scripts/install-v20-e11-usb.py').read_text()
+          reviewed=Path('scripts/install-reviewed-comm-e11.ps1').read_text()
+          assert '40838850973' in reviewed
+          assert 'labmate-e11-candidate-40838850973' in reviewed
+          assert '160e1c2c7e5f63418bf641fc7b5ab9a72f5bb45219126d914b94185654d10e7e' in reviewed
+          assert '$ExpectedBytes = 177804' in reviewed
+          assert '--reviewed-comm-v20' in reviewed
+          assert "gh.exe run download" in reviewed
+          assert 'Get-FileHash' in reviewed and 'LabMate-FAP-PC-Backups' in reviewed
+          assert 'Remove-Item -LiteralPath $TempRoot' in reviewed
+          assert 'YUKLE-E11-LABMATE' in u
+          assert 'COMM_REVIEW_BYTES=177804' in u
+          assert 'COMM_REVIEW_RAW_SHA256="160e1c2c7e5f63418bf641fc7b5ab9a72f5bb45219126d914b94185654d10e7e"' in u
           digest='6dbe192ba7d1b0f2b05702c90cf68d791f041f75ed53a6b41135176b6ad4de5b'
           source='98a3357dade93aacac83c04e01110804b3b3f7b0'
           verifier=Path('scripts/verify_v20_e11_debuglink_parity.py').read_text()
@@ -172,6 +185,17 @@ jobs:
           $ast = [System.Management.Automation.Language.Parser]::ParseFile(
             (Resolve-Path scripts/update-v20-e11-from-github.ps1),
             [ref]$tokens, [ref]$errors)
+          $commTokens=$null
+          $commErrors=$null
+          $commAst=[System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path scripts/install-reviewed-comm-e11.ps1),
+            [ref]$commTokens,[ref]$commErrors)
+          if ($commErrors.Count -gt 0) {
+            $commErrors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }
+          if (-not $commAst) { throw 'Reviewed COMM installer AST missing' }
+          Write-Host 'REVIEWED COMM POWERSHELL 5.1 SYNTAX PASS | NO USB'
           if ($errors.Count -gt 0) {
             $errors | ForEach-Object { Write-Error $_.Message }
             exit 1
@@ -243,6 +267,21 @@ jobs:
           run-id: 40774609065
           github-token: ${{ github.token }}
           path: ci-reference
+      - name: Download exact approved 177804-byte COMM candidate (NO DEVICE)
+        uses: actions/download-artifact@v4
+        with:
+          name: labmate-e11-candidate-40838850973
+          run-id: 40838850973
+          github-token: ${{ github.token }}
+          path: comm-ci-reference
+      - name: Confirm reviewed COMM source binary identity before operator installer use
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(stat -c %s comm-ci-reference/labmate.fap)" = 177804
+          echo '160e1c2c7e5f63418bf641fc7b5ab9a72f5bb45219126d914b94185654d10e7e  comm-ci-reference/labmate.fap' | sha256sum -c -
+          echo 'EXACT REVIEWED COMM ACTIONS ARTIFACT SHA256 PASS (NO USB)'
+
       - name: Validate audited CI FAP and CRC-only/tamper cases
         shell: bash
         run: |
