@@ -238,6 +238,9 @@ typedef enum {
     UiKitInstrumentWaiting,
     UiKitInstrumentMatch,
     UiKitInstrumentOff,
+    /* COMM only: append, preserving every existing state numeric ID. */
+    UiKitInstrumentDone,
+    UiKitInstrumentNoReply,
     UiKitInstrumentStateCount,
 } UiKitInstrumentState;
 
@@ -267,6 +270,13 @@ bool ui_kit_instrument_frame(
     Canvas* canvas, const char* title, const char* short_title,
     const char* context, const char* short_context,
     UiKitInstrumentState state, uint32_t tick_ms);
+
+/* COMM pixel tag: right-inclusive x_right, top y, outline r=3 height=9.
+ * FontSecondary width = measured text width + 8. Text starts x_left+4
+ * with baseline y+7. Returns false without drawing on any bounds/width
+ * failure; no clipping, allocation, clock access or UI state mutation.
+ * Intended COMM placement: x_right=123, y=12, label="3.3 V". */
+bool ui_kit_tag(Canvas* canvas, uint8_t x_right, uint8_t y, const char* text);
 
 /* 'cx' is the fixed RIGHT-EDGE anchor for the value, not a moving center.
  * The unit starts 3px after that anchor, on the SAME baseline. Values are

@@ -1,0 +1,391 @@
+name: LabMate E11 local WSL USB operator script review (NO DEVICE)
+on:
+  push:
+    branches: [dev/v2.0-e11-legacy-ui-harness-review-20261029]
+    paths:
+      - "scripts/build-v20-e11-exact-local.sh"
+      - "scripts/install-v20-e11-usb.py"
+      - "scripts/verify_v20_e11_debuglink_parity.py"
+      - "scripts/test_e11_usb_install_operator.py"
+      - "scripts/update-v20-e11-from-github.ps1"
+      - "scripts/install-reviewed-comm-e11.ps1"
+      - "scripts/diagnose-v20-e11-oom-readonly.py"
+      - "tests/test_v20_e11_oom_readonly.py"
+      - ".github/workflows/check-v20-e11-local-update.yml"
+permissions:
+  contents: read
+  actions: read
+jobs:
+  linux_static:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Bash and Python strict syntax and pinned source/target contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n scripts/build-v20-e11-exact-local.sh
+          python3 -m py_compile scripts/install-v20-e11-usb.py scripts/verify_v20_e11_debuglink_parity.py scripts/test_e11_usb_install_operator.py scripts/diagnose-v20-e11-oom-readonly.py tests/test_v20_e11_oom_readonly.py
+          python3 tests/test_v20_e11_oom_readonly.py -v
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/build-v20-e11-exact-local.sh').read_text()
+          p=Path('scripts/update-v20-e11-from-github.ps1').read_text()
+          u=Path('scripts/install-v20-e11-usb.py').read_text()
+          reviewed=Path('scripts/install-reviewed-comm-e11.ps1').read_text()
+          assert '40838850973' in reviewed
+          assert 'labmate-e11-candidate-40838850973' in reviewed
+          assert '160e1c2c7e5f63418bf641fc7b5ab9a72f5bb45219126d914b94185654d10e7e' in reviewed
+          assert '$ExpectedBytes = 177804' in reviewed
+          assert '--reviewed-comm-v20' in reviewed
+          assert "gh.exe run download" in reviewed
+          assert 'Get-FileHash' in reviewed and 'LabMate-FAP-PC-Backups' in reviewed
+          assert 'Remove-Item -LiteralPath $TempRoot' in reviewed
+          assert 'YUKLE-E11-LABMATE' in u
+          assert 'COMM_REVIEW_BYTES=177804' in u
+          assert 'COMM_REVIEW_RAW_SHA256="160e1c2c7e5f63418bf641fc7b5ab9a72f5bb45219126d914b94185654d10e7e"' in u
+          digest='6dbe192ba7d1b0f2b05702c90cf68d791f041f75ed53a6b41135176b6ad4de5b'
+          source='98a3357dade93aacac83c04e01110804b3b3f7b0'
+          verifier=Path('scripts/verify_v20_e11_debuglink_parity.py').read_text()
+          assert digest in s and digest in verifier
+          assert 'ddc27aa9e095c5ff809b000e4119d14151caf0d1a191c6a35c96f46ad1b01d72' in u
+          assert digest.upper() in p
+          assert source in s and source in p
+          assert 'd3f89dfe2ef6b01839201598e9be1590cba80322' in s
+          assert 'src application.fam labmate_10px.png' in s
+          assert 'git clone --local --no-hardlinks --no-checkout "$BASE" "$SDK"' in s
+          assert 'cp -a "$BASE" "$SDK"' not in s
+          assert 'exact-e11-ci-patch-replay.sh' in s
+          assert "script.count('python3 labmate/scripts/patch_momentum_')>=40" in s
+          import re
+          for block in re.findall(r"(?ms)^python3 - .*? <<'PY'\n(.*?)\nPY$",s):
+              compile(block,'e11-local-preflight','exec')
+          workflow=Path('.github/workflows/build-v20-e11-pixel-ui-native-review.yml').read_text()
+          start='      - name: Reapply the previously audited E11 patch chain (SOURCE ONLY)\n'
+          end='      - name: Stage v2.0 working tree into native FAP source (no install)\n'
+          assert workflow.count(start)==1 and workflow.count(end)==1
+          section=workflow.split(start,1)[1].split(end,1)[0]
+          assert section.count('        run: |\n')==1
+          command=section.split('        run: |\n',1)[1]
+          assert command.count('python3 labmate/scripts/patch_momentum_')==70
+          assert 'E11 SOURCE PATCH PARITY PASS' in command
+          assert 'sh "$APP/scripts/test-v20-e11-final-ui-predevice-host.sh"' in s
+          assert './fbt fap_labmate' in s
+          assert 'TARGET="/ext/apps/Tools/labmate.fap"' in u
+          assert 'if not args.apply and not args.discover:' in u
+          assert 'old=bytes(device.read_file(old_path))' in u
+          assert 'saved.open("xb")' in u
+          assert 'device.send_file(str(args.fap),TARGET)' in u
+          assert 'verify_fap(args.fap)' in u
+          assert 'candidates=sorted(' in u
+          assert 'mode="FIRST INSTALL (no LabMate filename found)"' in u
+          assert 'if not device.exist_file(old_path):' in u
+          assert 'if device.exist_file(old_path):' in u
+          assert 'device.remove(old_path)' in u
+          assert 'saved.read_bytes()!=old' in u
+          assert 'loader info\\r' in u
+          assert 'parser.add_argument("--discover",action="store_true")' in u
+          assert 'if args.apply and args.discover:' in u
+          assert 'if args.discover:\n            discover_device_faps(device)\n            return 0' in u
+          assert u.index('if args.discover:\n            discover_device_faps(device)') < u.index('inventory=discover_device_faps(device)')
+          assert '[switch]$Discover' in p
+          assert 'if ($Install -and $Discover)' in p
+          assert '$UsbFlag = if ($Discover) { \'--discover\' } else { \'--apply\' }' in p
+          assert 'verify_v20_e11_debuglink_parity.py' in s
+          assert 'sha256sum "$HOME/.local/share/labmate-e11/labmate.fap"' in p
+          # Windows WSL UNC FAP can read/hash but Python os.fstat() fails with
+          # Errno 22 on send_file(). Only local NTFS staging is a valid source.
+          assert "$UsbTempFolder = Join-Path $env:TEMP" in p
+          assert "[System.IO.File]::Copy($Fap, $UsbFap, $false)" in p
+          assert "$StageSHA -ine $ActualWindows -or $StageSHA -ine $ExpectedRaw" in p
+          assert "(Get-Item -LiteralPath $UsbFap).Length -ne 174192" in p
+          assert "Remove-Item -LiteralPath $UsbTempFolder -Recurse -Force" in p
+          assert p.count('$Helper,$UsbFap,$Backup,$Port,$UsbFlag') == 2
+          assert "LOCAL WINDOWS USB STAGE SHA256 PASS" in p
+          # Regression: the original stale raw-CI-hash check ran AFTER the
+          # correctly verified copy and falsely reported NO-GO every time.
+          assert 'test "$(sha256sum "$OUT" | cut -d \' \' -f 1)" = "$SHA"' not in s
+          assert '"$(sha256sum "$OUT" | cut -d \' \' -f 1)" != "$ACTUAL"' in s
+          assert 'cmp -s -- "$FAP" "$OUT"' in s
+          assert 'verify_v20_e11_debuglink_parity.py" "$OUT"' in s
+          # Strictly permit reuse ONLY of the exact previous operator-built
+          # and CI-content-verified FAP; not a generic raw SHA bypass.
+          assert '39261383d4b6ad38a74541fa8934098206e37764aee79321740404ee6dbe0bfc' in s
+          assert 'LABMATE_REUSE_EXACT_FAP:-0' in s
+          assert 'verify_v20_e11_debuglink_parity.py" "$OUT"' in s
+          assert '[switch]$ReuseVerifiedLocalFap' in p
+          assert "Replace('__LABMATE_REUSE__', $ReuseMode)" in p
+          assert 'if (-not $Install -and -not $Discover)' in p
+          # PowerShell 5.1 CRLF native pipes are forbidden: raw LF-only
+          # .NET StandardInput writes are mandatory for ALL five WSL calls.
+          assert p.count('Invoke-WslBash -Source') == 5
+          assert p.count('--exec bash -s') == 1
+          assert '($Source.Replace([string][char]13, \'\') + [char]10)' in p
+          assert 'UTF8Encoding($false)' in p
+          assert 'WriteAllText(' in p
+          assert 'RedirectStandardInput = $InputPath' in p
+          assert 'Start-Process @Options' in p
+          assert 'StandardInput.Write' not in p and 'StandardInput.BaseStream' not in p
+          assert '[System.IO.File]::Delete($InputPath)' in p
+          assert '| & wsl.exe' not in p
+          assert 'bash -lc' not in p
+          assert 'git clone --single-branch --branch "$BRANCH" "$URL" "$DIR"' in p
+          print('E11 EXACT LOCAL WSL/USB SOURCE CONTRACT PASS; NO DEVICE')
+          PY
+          python3 - <<'PY'
+          from pathlib import Path
+          import runpy,sys
+          from types import SimpleNamespace
+          sys.path.insert(0,'scripts')
+          discovery = runpy.run_path('scripts/install-v20-e11-usb.py')['discover_device_faps']
+          class FakeStorage:
+              CLI_PROMPT='>: '
+              def __init__(self):
+                  self.current=''
+                  self.listings={
+                      '/ext/apps': b'[D] Tools\r\n[D] GPIO\r\n',
+                      '/ext/apps/Tools': b'[F] LabMate-Counter-Step3-E11-Trial.fap 151552 bytes\r\n[F] other.fap 123\r\n[F] README.txt 42\r\n',
+                      '/ext/apps/GPIO': b'[F] gpio.fap 456\r\n',
+                  }
+                  self.read=SimpleNamespace(until=lambda marker: self.listings[self.current])
+              def exist_dir(self,path):
+                  return path == '/ext/apps'
+              def send_and_wait_eol(self,command):
+                  assert command.startswith('storage list "') and command.endswith('"\r')
+                  self.current=command.split('"')[1]
+              def has_error(self,data):
+                  return b'Storage error:' in data
+              def send_file(self,*args):
+                  raise AssertionError('USB WRITE ATTEMPT in discovery!')
+              def read_file(self,*args):
+                  raise AssertionError('USB FAP READ not authorized by discovery!')
+          files=discovery(FakeStorage())
+          assert ('/ext/apps/Tools/LabMate-Counter-Step3-E11-Trial.fap','151552 bytes') in files
+          assert ('/ext/apps/GPIO/gpio.fap',456) in files
+          assert ('/ext/apps/Tools/other.fap',123) in files
+          assert len(files)==3
+          assert all(p.startswith('/ext/apps/') for p,_ in files)
+          print('DEVICE FAP DISCOVERY READ-ONLY / LEGACY NAME FIXTURE PASS')
+          PY
+      - name: Mock complete guarded USB migration and first install (NO HARDWARE)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/test_e11_usb_install_operator.py
+  windows_parser:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Windows PowerShell 5.1 LF-only stdin execution test (NO USB)
+        shell: powershell
+        run: |
+          $tokens = $null
+          $errors = $null
+          $ast = [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path scripts/update-v20-e11-from-github.ps1),
+            [ref]$tokens, [ref]$errors)
+          $commTokens=$null
+          $commErrors=$null
+          $commAst=[System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path scripts/install-reviewed-comm-e11.ps1),
+            [ref]$commTokens,[ref]$commErrors)
+          if ($commErrors.Count -gt 0) {
+            $commErrors | ForEach-Object {
+              Write-Host ("COMM PARSER: line {0} column {1}: {2} at '{3}'" -f
+                $_.Extent.StartLineNumber,$_.Extent.StartColumnNumber,$_.Message,$_.Extent.Text)
+            }
+            exit 1
+          }
+          if (-not $commAst) { throw 'Reviewed COMM installer AST missing' }
+          Write-Host 'REVIEWED COMM POWERSHELL 5.1 SYNTAX PASS | NO USB'
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }
+          $functions = @($ast.FindAll({
+            param($node)
+            ($node -is [System.Management.Automation.Language.FunctionDefinitionAst]) -and
+            ($node.Name -eq 'Invoke-LfStdinProcess')
+          }, $true))
+          if ($functions.Count -ne 1) { throw "LF-only stdin function missing" }
+          # Load ONLY the production helper, NEVER execute the installer.
+          Invoke-Expression $functions[0].Extent.Text
+          $gitBash = Join-Path $env:ProgramFiles 'Git\bin\bash.exe'
+          if (-not (Test-Path -LiteralPath $gitBash)) { throw "Git Bash not installed" }
+          $probe = @'
+          set -Eeuo pipefail
+          D="$HOME/.local/share/labmate-e11-source"
+          test -n "$D"
+          case "$D" in */.local/share/labmate-e11-source) ;; *) exit 13 ;; esac
+          printf 'BASH_LF_ONLY_STDIN_PASS\n'
+          '@
+          # Deliberately create CRLF first: the helper MUST remove the CRs.
+          $probe = $probe.Replace([string][char]10, ([string][char]13 + [char]10))
+          $result = Invoke-LfStdinProcess -ExePath $gitBash -Arguments '-s' -Source $probe -CaptureOutput
+          if ($result -ne 'BASH_LF_ONLY_STDIN_PASS') { throw "CRLF entered Bash input" }
+          try {
+            Invoke-LfStdinProcess -ExePath $gitBash -Arguments '-s' -Source 'exit 17' -CaptureOutput
+            throw "Expected Bash exit status was ignored"
+          } catch {
+            if ($_.Exception.Message -notmatch 'exit 17') { throw }
+          }
+          Write-Host 'WINDOWS POWERSHELL 5.1 LF-ONLY STDIN & EXIT-STATUS PASS | NO USB WRITE'
+          # Regression for the real user's Errno 22: validate local Windows
+          # filesystem staging supports Python os.fstat() on the FAP file.
+          $original = Join-Path $env:TEMP ('labmate-origin-'+[guid]::NewGuid().ToString('N')+'.fap')
+          $stageDir = Join-Path $env:TEMP ('labmate-e11-stage-fixture-'+[guid]::NewGuid().ToString('N'))
+          try {
+            [void](New-Item -ItemType Directory -Path $stageDir)
+            $fixture = New-Object byte[] 174192
+            [System.IO.File]::WriteAllBytes($original, $fixture)
+            $localFap = Join-Path $stageDir 'labmate.fap'
+            [System.IO.File]::Copy($original, $localFap, $false)
+            $h1 = (Get-FileHash -LiteralPath $original -Algorithm SHA256).Hash
+            $h2 = (Get-FileHash -LiteralPath $localFap -Algorithm SHA256).Hash
+            if ($h1 -ine $h2 -or (Get-Item -LiteralPath $localFap).Length -ne 174192) {
+              throw 'NTFS stage digest/length mismatch'
+            }
+            if (-not (Get-Command py.exe -ErrorAction SilentlyContinue)) { throw 'Windows py.exe missing' }
+            $testSize = & py.exe -3 -c 'import os,sys; fd=os.open(sys.argv[1],os.O_RDONLY); print(os.fstat(fd).st_size); os.close(fd)' $localFap
+            if ($LASTEXITCODE -ne 0 -or $testSize -ne '174192') {
+              throw 'Windows Python local FAP open/fstat regression'
+            }
+            Write-Host 'WINDOWS LOCAL NTFS SHA256 + PYTHON FSTAT PASS | NO USB WRITE'
+          } finally {
+            Remove-Item -LiteralPath $original -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $stageDir -Recurse -Force -ErrorAction SilentlyContinue
+          }
+
+  verify_exact_ci_reference:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Retrieve exact historic CI FAP for read-only byte parity test
+        uses: actions/download-artifact@v4
+        with:
+          name: labmate-e11-candidate-40774609065
+          run-id: 40774609065
+          github-token: ${{ github.token }}
+          path: ci-reference
+      - name: Download exact approved 177804-byte COMM candidate (NO DEVICE)
+        uses: actions/download-artifact@v4
+        with:
+          name: labmate-e11-candidate-40838850973
+          run-id: 40838850973
+          github-token: ${{ github.token }}
+          path: comm-ci-reference
+      - name: Measure exact installed FAP load-section pressure (read-only ELF review)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          from struct import unpack_from
+          raw=Path('comm-ci-reference/labmate.fap').read_bytes()
+          assert raw[:4]==b'\x7fELF' and raw[4]==1 and raw[5]==1
+          shoff=unpack_from('<I',raw,32)[0]
+          count=unpack_from('<H',raw,48)[0]
+          names_index=unpack_from('<H',raw,50)[0]
+          headers=[unpack_from('<10I',raw,shoff+40*i) for i in range(count)]
+          string_header=headers[names_index]
+          string_table=raw[string_header[4]:string_header[4]+string_header[5]]
+          rows=[]
+          for h in headers:
+              name_end=string_table.find(b'\0',h[0])
+              if name_end<0: raise AssertionError('invalid ELF section string')
+              name=string_table[h[0]:name_end].decode('ascii','replace')
+              if (h[2] & 0x2) and h[5]:
+                  rows.append((h[5],name,h[1],h[2],h[8]))
+          rows.sort(reverse=True)
+          print('EXACT COMM FAP ALLOC SECTION MEMORY REQUIREMENTS')
+          for size,name,typ,flags,align in rows[:24]:
+              print(f'{name:25s} size={size:7d} align={align:4d} loader_guard_min={size+1024:7d}')
+          assert rows and any(name=='.text' for _,name,*_ in rows)
+          print('MAX_SINGLE_ALLOC_SECTION_BYTES',rows[0][0])
+          print('SUM_ALLOC_SECTIONS_BYTES',sum(row[0] for row in rows))
+          print('This is static ELF section data; NOT proof of idle heap or actual fragmentation.')
+          PY
+
+      - name: Confirm reviewed COMM source binary identity before operator installer use
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(stat -c %s comm-ci-reference/labmate.fap)" = 177804
+          echo '160e1c2c7e5f63418bf641fc7b5ab9a72f5bb45219126d914b94185654d10e7e  comm-ci-reference/labmate.fap' | sha256sum -c -
+          echo 'EXACT REVIEWED COMM ACTIONS ARTIFACT SHA256 PASS (NO USB)'
+          python3 - <<'PY'
+          import pathlib,runpy,sys,tempfile
+          sys.path.insert(0,'scripts')
+          module=runpy.run_path('scripts/install-v20-e11-usb.py')
+          actual=pathlib.Path('comm-ci-reference/labmate.fap')
+          backup=pathlib.Path(tempfile.gettempdir())/'labmate-host-pc-only'
+          original_argv=sys.argv
+          try:
+              sys.argv=['operator-test','--fap',str(actual),
+                        '--backup-root',str(backup),'--reviewed-comm-v20']
+              assert module['main']()==0
+              with tempfile.TemporaryDirectory() as dirname:
+                  altered=pathlib.Path(dirname)/'labmate.fap'
+                  data=bytearray(actual.read_bytes())
+                  data[256]^=1
+                  altered.write_bytes(data)
+                  sys.argv=['operator-test','--fap',str(altered),
+                            '--backup-root',str(backup),'--reviewed-comm-v20']
+                  try:
+                      module['main']()
+                  except RuntimeError as e:
+                      assert 'SHA256 mismatch' in str(e)
+                  else:
+                      raise AssertionError('Tampered COMM CI artifact was accepted!')
+          finally:
+              sys.argv=original_argv
+          print('PINNED COMM USB HELPER PC-ONLY ACCEPT/REJECT PASS: no serial import, no USB')
+          PY
+
+      - name: Validate audited CI FAP and CRC-only/tamper cases
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/verify_v20_e11_debuglink_parity.py ci-reference/labmate.fap
+          python3 - <<'PY'
+          import pathlib,sys,struct
+          sys.path.insert(0,'scripts')
+          from verify_v20_e11_debuglink_parity import (normalize_debuglink,verify_fap,IdentityFailure)
+          path=pathlib.Path('ci-reference/labmate.fap')
+          original=path.read_bytes()
+          normalized,_,_=normalize_debuglink(original)
+          assert verify_fap(path) == '6dbe192ba7d1b0f2b05702c90cf68d791f041f75ed53a6b41135176b6ad4de5b'
+          shoff=struct.unpack_from('<I',original,32)[0]
+          entries=struct.unpack_from('<H',original,48)[0]
+          headers=[struct.unpack_from('<10I',original,shoff+40*i) for i in range(entries)]
+          strings=headers[16]
+          names=original[strings[4]:strings[4]+strings[5]]
+          debug=None
+          text=None
+          for h in headers:
+              n=names[h[0]:names.find(b'\0',h[0])].decode('ascii')
+              if n=='.gnu_debuglink': debug=h[4]
+              if n=='.text': text=h[4]
+          assert debug is not None and text is not None
+          changed=bytearray(original)
+          changed[debug+16]^=1
+          assert normalize_debuglink(bytes(changed))[0] == normalized
+          changed=bytearray(original)
+          changed[text]^=1
+          assert normalize_debuglink(bytes(changed))[0] != normalized
+          changed=bytearray(original)
+          changed[debug]^=1
+          try:
+              normalize_debuglink(bytes(changed))
+          except IdentityFailure:
+              pass
+          else:
+              raise AssertionError('Tampered debuglink was not rejected')
+          print('CI FAP + GNU DEBUGLINK VARIANCE + EXECUTABLE TAMPER REJECTION PASS')
+          PY

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """E11 final UI source contract audit, NOT a real framebuffer/device test.
 
-The nine pre-pixel renderer fixtures are historical and not admissible as
+Pre-pixel renderer fixtures are historical and not admissible as
 release proof. This checks the production bodies against *current* semantics
 for COMM/RECORDS/LOGGER/BUTTON/ALERTS/FREQ/PULSE/PWM/MENU, without editing them.
 """
@@ -50,36 +50,87 @@ for path,items in names.items():
                     "labmate_event_counter_start(", "furi_delay_ms("),name)
 
 uart=draws["draw_uart"]
+# UART TX remains visually unmodified; UART receive alone adopts the
+# measured pixel instrument, true counter semantics, fixed baud pill.
 contains(uart,(
  "uart->blocked ? \"BUSY\"","uart->invalid_baud ? \"BAUD\"",
  "uart->dropped ? \"DROP\"","uart->rx_errors ? \"ERR\"",
  "uart->active ? \"RUN\" : \"STOP\"",
- "labmate_comm_ui_header(","ui_kit_stat_row(",
- "uart->tx_editing","uart->rx_total == 0U",
- "UiKitKeyOk, \"Send\"","UiKitKeyOk, \"Stop\"",
- "UiKitKeyOk, \"Start\"","UiKitKeyLeftRight, \"Baud\"",
+ "labmate_comm_ui_header(canvas, \"UART TX\"",
+ "uart->tx_editing", "UiKitKeyOk, \"Send\"",
+ "ui_kit_pixel_header(canvas, \"UART receive\"",
+ "UiKitInstrumentReady","UiKitInstrumentLive",
+ "UiKitInstrumentStopped","UiKitInstrumentBusy",
+ "UiKitInstrumentError","ui_kit_state_chip_width(",
+ "canvas_string_width(canvas, \"UART receive\")",
+ "canvas_draw_str(canvas, 4U, 20U, \"TX pin 13\")",
+ "canvas_draw_str(canvas, right_x, 20U, \"RX pin 14\")",
+ "canvas_draw_rframe(canvas, 58U, 24U, 66U, 12U, 3U)",
+ "canvas_draw_str(canvas, 4U, 33U, \"Baud rate\")",
+ "uart->rx_total, uart->dropped, uart->rx_errors",
+ "\"Received\",\"Dropped\",\"Errors\"",
+ "UiKitKeyOk,","UiKitKeyLeftRight, \"Baud\"",
  ),"UART")
+excludes(uart,("ui_kit_stat_row(", "WAITING RX...",
+               "OK START / LR BAUD","R:%lu","D:%lu E:%lu"),"UART receive")
 i2c=draws["draw_i2c"]
 contains(i2c,(
  "labmate_i2c_runtime_snapshot(","LabMateI2cRuntimeApiMissing",
  "LabMateI2cRuntimeBusy","LabMateI2cRuntimeScanning",
  "LabMateI2cRuntimeResults","LabMateI2cRuntimeNoDevices",
  "LabMateI2cRuntimeCancelled","LabMateI2cRuntimeFailed",
- "\"FW API\"","\"BUSY\"","\"RUN\"","\"DONE\"","\"NONE\"",
- "\"STOP\"","\"ERR\"","\"REAL ACK RESULTS\"",
- "\"NO ACKS / CHECK BUS\"","\"NO UNSAFE BUS LOCK\"",
- "i < result.row_count && i < 4U","UiKitKeyOk, scanning ? \"Stop\" : \"Scan\"",
+ 'ui_kit_pixel_header(canvas, "I2C explorer"',
+ 'ui_kit_tag(canvas, 123U, 12U, "3.3 V")',
+ "UiKitInstrumentReady","UiKitInstrumentLive",
+ "UiKitInstrumentNoReply","UiKitInstrumentBusy",
+ "UiKitInstrumentStopped","UiKitInstrumentError",
+ "canvas_draw_rframe(canvas, 4U, 24U, 120U, 21U, 3U)",
+ "canvas_draw_rframe(canvas, x, y, 28U, 10U, 3U)",
+ '"SCL PC0"','"SDA PC1"',
+ '"No devices found"','"Check wiring and pull-ups"',
+ '"Bus busy"','"Another tool is using it"',
+ '"Scanning bus..."','"Press OK to scan"',
+ '"Page %u of %u"','"Scan again"',
+ "i < result.row_count && i < 4U",
+ "UiKitKeyUpDown, \"Page\"","UiKitKeyOk,",
  ),"I2C")
+excludes(i2c,(
+ "labmate_comm_ui_header(", "labmate_comm_ui_keys(",
+ "OK: SCAN 3.3V","PC0 SCL / PC1 SDA",
+ "NO ACKS / CHECK BUS","I2C BUS / TOOL BUSY",
+ "NO UNSAFE BUS LOCK","SCAN CANCELLED","BUS / SCAN ERROR",
+ "REAL ACK RESULTS",'"Exit"', "canvas_draw_line(canvas, 4U, 24U, 123U, 24U)",
+ ),"I2C")
+
 wire=draws["draw_onewire"]
 contains(wire,(
  "s->has_temperature","s->temperature_tenths >= -550",
  "s->temperature_tenths <= 1250","s->resolution_bits >= 9U",
  "s->resolution_bits <= 12U","LabMateOneWireHwMeasured",
- "valid_temperature ? \"DONE\" : \"ERR\"",
  "LabMateOneWireHwNoSensor","LabMateOneWireHwBusy",
  "LabMateOneWireHwDataError","LabMateOneWireHwPowerCheck",
- "LabMateOneWireHwStopped","\"EXTERNAL VDD ONLY\"",
- "UiKitKeyOk, active ? \"Stop\" : \"Read\"",
+ "LabMateOneWireHwStopped",
+ 'ui_kit_pixel_header(canvas, "1-Wire temp"',
+ 'ui_kit_tag(canvas, 123U, 12U, "3.3 V")',
+ "UiKitInstrumentReady","UiKitInstrumentLive","UiKitInstrumentDone",
+ "UiKitInstrumentNoReply","UiKitInstrumentBusy",
+ "UiKitInstrumentError","UiKitInstrumentStopped",
+ '"DQ pin PA4"','"Needs external VDD power"',
+ '"Temperature"','"Check DQ wiring and power"',
+ '"Reading temperature..."','"Check external VDD power"',
+ '"Invalid temperature data"','"Measurement stopped"',
+ 'snprintf(bits, sizeof(bits), "%u-bit"',
+ "canvas_set_font(canvas, FontBigNumbers)",
+ "canvas_draw_str(canvas, 4U, 49U, numeric)",
+ 'canvas_draw_str(canvas, 4U + numeric_w + 9U, 49U, "C")',
+ '"--.-"', '"Read again"',
+ "active ? \"Stop\" : done ? \"Read again\" : \"Read\"",
+ ),"1-Wire")
+excludes(wire,(
+ "labmate_comm_ui_header(", "labmate_comm_ui_keys(",
+ "EXT. VDD REQUIRED","EXTERNAL VDD ONLY",
+ "NO SENSOR ON PA4","STOP OTHER TOOLS","85C? CHECK POWER",
+ "PA4 DQ / 3.3V","MEASUREMENT HALTED",'"Menu"'
  ),"1-Wire")
 
 records=["draw_profiles","draw_history","draw_history_detail"]
@@ -161,4 +212,4 @@ contains(chrome,(
 print("E11 CURRENT UI SOURCE CONTRACT PASS: 13 production renderer bodies")
 print("COVERAGE: COMM (UART/I2C/1W), records, logger, button/alerts,")
 print("frequency/pulse/PWM, root menu, shared measured pixel header")
-print("NOT A PIXEL RASTER, TIMER/GPIO, OLD-NINE-SUITE OR DEVICE PASS")
+print("NOT A PIXEL RASTER, TIMER/GPIO, FOUR-UNMIGRATED-SUITES OR DEVICE PASS")

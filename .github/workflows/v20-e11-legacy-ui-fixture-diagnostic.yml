@@ -1,0 +1,24 @@
+name: LabMate E11 legacy UI fixture diagnostic (NO FLASH)
+on:
+  push:
+    branches: [dev/v2.0-e11-legacy-ui-harness-review-20261029]
+    paths:
+      - "scripts/audit-v20-e11-legacy-ui-runners.sh"
+      - ".github/workflows/v20-e11-legacy-ui-fixture-diagnostic.yml"
+permissions:
+  contents: read
+jobs:
+  inventory:
+    name: Diagnose eight stale pre-pixel UI runners
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Execute historical UI suites in isolation; capture red evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          sh scripts/audit-v20-e11-legacy-ui-runners.sh

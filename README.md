@@ -7,6 +7,23 @@
 ![Platform](https://img.shields.io/badge/platform-Flipper%20Zero-orange)
 ![Firmware](https://img.shields.io/badge/firmware-Momentum-blueviolet)
 
+> [!NOTE]
+> **v2.0DEV E11 project checkpoint — 2026-10-29 (this development branch only):**
+> The owner has **approved the visual design consistency** of the installed
+> LabMate Ultimate UI. The reviewed development `labmate.fap` at
+> `/ext/apps/Tools/labmate.fap` is **177804 bytes** with SHA-256
+> `160e1c2c7e5f63418bf641fc7b5ab9a72f5bb45219126d914b94185654d10e7e`.
+> The USB write/readback and previous-version PC backup were operator-confirmed;
+> native E11/host CI passed. **Functional electrical, storage, error/lease,
+> unusual-state pixel and rollback acceptance remain pending. v2.0 is NOT
+> Stable.** The working UI is now frozen against speculative redesigns.
+> [UI freeze / hardware QA handoff](docs/development/V20_E11_UI_FREEZE_AND_HARDWARE_HANDOFF_2026-10-29.md)
+> · [COMM state QA](docs/development/V20_E11_COMM_PIXEL_VISUAL_ACCEPTANCE_2026-10-29.md).
+>
+> The public release information below describes separately published,
+> historical Stable assets; do not conflate those with this E11 development
+> installation, update any Stable release or duplicate FAP files.
+
 **Current Stable: [LabMate v1.8 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8)** (published 2026-10-14; UART Terminal and Counter STOP/RESUME, with all existing v1.7 instruments retained).
 **Verified v1.8 FAP SHA256:** `119c44bb854030a73a60fa205d38770bf77f048bb166ab379a03135c1de5f3b0`.
 **Exact tagged source:** `02b05639364d6dd71f5eb70456eca379c59218cb`; Momentum CI [38546662091](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38546662091) and post-merge identical-FAP build [38548200859](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38548200859) PASS. **Real Flipper acceptance: 19/19 user-reported PASS** (RC1 15/15 plus final v1.8 binary 4/4). GitHub Release asset digest was verified after publication.

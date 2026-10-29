@@ -30,4 +30,4 @@ for cc in gcc clang; do
     "$tmp/nav-$cc"
 done
 echo "E11 FINAL UI PRE-DEVICE ACCEPTANCE HOST PASS (GCC+CLANG)"
-echo "NO DEVICE/FAP/STABLE WRITE; nine old pixel UI fixtures remain unmigrated."
+echo "NO DEVICE/FAP/STABLE WRITE; all old UI runner migrations complete; physical acceptance still open."
