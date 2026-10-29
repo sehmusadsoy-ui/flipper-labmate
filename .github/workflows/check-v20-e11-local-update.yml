@@ -284,6 +284,34 @@ jobs:
           test "$(stat -c %s comm-ci-reference/labmate.fap)" = 177804
           echo '160e1c2c7e5f63418bf641fc7b5ab9a72f5bb45219126d914b94185654d10e7e  comm-ci-reference/labmate.fap' | sha256sum -c -
           echo 'EXACT REVIEWED COMM ACTIONS ARTIFACT SHA256 PASS (NO USB)'
+          python3 - <<'PY'
+          import pathlib,runpy,sys,tempfile
+          sys.path.insert(0,'scripts')
+          module=runpy.run_path('scripts/install-v20-e11-usb.py')
+          actual=pathlib.Path('comm-ci-reference/labmate.fap')
+          backup=pathlib.Path(tempfile.gettempdir())/'labmate-host-pc-only'
+          original_argv=sys.argv
+          try:
+              sys.argv=['operator-test','--fap',str(actual),
+                        '--backup-root',str(backup),'--reviewed-comm-v20']
+              assert module['main']()==0
+              with tempfile.TemporaryDirectory() as dirname:
+                  altered=pathlib.Path(dirname)/'labmate.fap'
+                  data=bytearray(actual.read_bytes())
+                  data[256]^=1
+                  altered.write_bytes(data)
+                  sys.argv=['operator-test','--fap',str(altered),
+                            '--backup-root',str(backup),'--reviewed-comm-v20']
+                  try:
+                      module['main']()
+                  except RuntimeError as e:
+                      assert 'SHA256 mismatch' in str(e)
+                  else:
+                      raise AssertionError('Tampered COMM CI artifact was accepted!')
+          finally:
+              sys.argv=original_argv
+          print('PINNED COMM USB HELPER PC-ONLY ACCEPT/REJECT PASS: no serial import, no USB')
+          PY
 
       - name: Validate audited CI FAP and CRC-only/tamper cases
         shell: bash
