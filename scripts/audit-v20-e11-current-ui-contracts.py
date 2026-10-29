@@ -79,11 +79,29 @@ contains(i2c,(
  "LabMateI2cRuntimeBusy","LabMateI2cRuntimeScanning",
  "LabMateI2cRuntimeResults","LabMateI2cRuntimeNoDevices",
  "LabMateI2cRuntimeCancelled","LabMateI2cRuntimeFailed",
- "\"FW API\"","\"BUSY\"","\"RUN\"","\"DONE\"","\"NONE\"",
- "\"STOP\"","\"ERR\"","\"REAL ACK RESULTS\"",
- "\"NO ACKS / CHECK BUS\"","\"NO UNSAFE BUS LOCK\"",
- "i < result.row_count && i < 4U","UiKitKeyOk, scanning ? \"Stop\" : \"Scan\"",
+ 'ui_kit_pixel_header(canvas, "I2C explorer"',
+ 'ui_kit_tag(canvas, 123U, 12U, "3.3 V")',
+ "UiKitInstrumentReady","UiKitInstrumentLive",
+ "UiKitInstrumentNoReply","UiKitInstrumentBusy",
+ "UiKitInstrumentStopped","UiKitInstrumentError",
+ "canvas_draw_rframe(canvas, 4U, 24U, 120U, 21U, 3U)",
+ "canvas_draw_rframe(canvas, x, y, 28U, 10U, 3U)",
+ '"SCL PC0"','"SDA PC1"',
+ '"No devices found"','"Check wiring and pull-ups"',
+ '"Bus busy"','"Another tool is using it"',
+ '"Scanning bus..."','"Press OK to scan"',
+ '"Page %u of %u"','"Scan again"',
+ "i < result.row_count && i < 4U",
+ "UiKitKeyUpDown, \"Page\"","UiKitKeyOk,",
  ),"I2C")
+excludes(i2c,(
+ "labmate_comm_ui_header(", "labmate_comm_ui_keys(",
+ "OK: SCAN 3.3V","PC0 SCL / PC1 SDA",
+ "NO ACKS / CHECK BUS","I2C BUS / TOOL BUSY",
+ "NO UNSAFE BUS LOCK","SCAN CANCELLED","BUS / SCAN ERROR",
+ "REAL ACK RESULTS",'"Exit"', "canvas_draw_line(canvas, 4U, 24U, 123U, 24U)",
+ ),"I2C")
+
 wire=draws["draw_onewire"]
 contains(wire,(
  "s->has_temperature","s->temperature_tenths >= -550",
