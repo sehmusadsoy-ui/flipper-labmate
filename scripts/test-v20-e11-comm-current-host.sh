@@ -21,7 +21,12 @@ for name in ("uart","i2c","onewire"):
             if level==0:break
     else:raise AssertionError("renderer body missing bracket: "+name)
     body=s[start:i+1]
-    assert "labmate_comm_ui_header(" in body and "labmate_comm_ui_keys(" in body
+    if name == "i2c":
+        assert 'ui_kit_pixel_header(canvas, "I2C explorer"' in body
+        assert 'ui_kit_tag(canvas, 123U, 12U, "3.3 V")' in body
+        assert 'ui_kit_key_hint(canvas, 4U,' in body
+    else:
+        assert "labmate_comm_ui_header(" in body and "labmate_comm_ui_keys(" in body
     for bad in ("furi_hal_gpio_","storage_file_write(",
                 "furi_hal_resource_lease_", "labmate_capture_start("):
         assert bad not in body,(name,bad)
