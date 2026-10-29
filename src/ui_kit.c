@@ -922,6 +922,8 @@ static const char* ui_kit_instrument_state_name(UiKitInstrumentState state) {
     case UiKitInstrumentWaiting: return "Waiting";
     case UiKitInstrumentMatch: return "Match";
     case UiKitInstrumentOff: return "Off";
+    case UiKitInstrumentDone: return "Done";
+    case UiKitInstrumentNoReply: return "No reply";
     default: return NULL;
     }
 }
@@ -1001,8 +1003,16 @@ static void ui_kit_instrument_glyph(
         canvas_draw_line(c, gx-1U, gy+2U, gx+1U, gy+2U);
         break;
     case UiKitInstrumentMatch:
+    case UiKitInstrumentDone:
+        /* Same documented check mark; Done is the completed COMM read. */
         canvas_draw_line(c, gx-2U, gy, gx-1U, gy+1U);
         canvas_draw_line(c, gx-1U, gy+1U, gx+2U, gy-2U);
+        break;
+    case UiKitInstrumentNoReply:
+        /* An unanswered probe is not a hardware/CRC fault; same visible
+         * exclamation silhouette as Off, with different measured label. */
+        canvas_draw_line(c, gx, gy-3U, gx, gy);
+        canvas_draw_dot(c, gx, gy+2U);
         break;
     default: break;
     }
@@ -1077,6 +1087,24 @@ bool ui_kit_instrument_frame(
         canvas_set_color(c, ColorBlack);
         canvas_draw_str(c, 4U, 19U, chosen_context);
     }
+    canvas_set_color(c, ColorBlack);
+    return true;
+}
+
+/* Measured, right-inclusive COMM tag. No pixel is drawn if the tag
+ * would run off the 128x64 canvas, even under a different secondary font. */
+bool ui_kit_tag(Canvas* c, uint8_t x_right, uint8_t y, const char* text) {
+    if(!c || !text || !text[0] || x_right >= UI_KIT_WIDTH ||
+       y > UI_KIT_HEIGHT - 9U) return false;
+    canvas_set_font(c, FontSecondary);
+    const uint16_t text_w = canvas_string_width(c, text);
+    const uint16_t tag_w = text_w + 8U;
+    if(!text_w || tag_w > (uint16_t)x_right + 1U ||
+       tag_w > UI_KIT_WIDTH) return false;
+    const uint8_t x_left = (uint8_t)((uint16_t)x_right + 1U - tag_w);
+    canvas_set_color(c, ColorBlack);
+    canvas_draw_rframe(c, x_left, y, tag_w, 9U, 3U);
+    canvas_draw_str(c, x_left + 4U, y + 7U, text);
     canvas_set_color(c, ColorBlack);
     return true;
 }
