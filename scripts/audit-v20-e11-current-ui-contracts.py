@@ -50,15 +50,29 @@ for path,items in names.items():
                     "labmate_event_counter_start(", "furi_delay_ms("),name)
 
 uart=draws["draw_uart"]
+# UART TX remains visually unmodified; UART receive alone adopts the
+# measured pixel instrument, true counter semantics, fixed baud pill.
 contains(uart,(
  "uart->blocked ? \"BUSY\"","uart->invalid_baud ? \"BAUD\"",
  "uart->dropped ? \"DROP\"","uart->rx_errors ? \"ERR\"",
  "uart->active ? \"RUN\" : \"STOP\"",
- "labmate_comm_ui_header(","ui_kit_stat_row(",
- "uart->tx_editing","uart->rx_total == 0U",
- "UiKitKeyOk, \"Send\"","UiKitKeyOk, \"Stop\"",
- "UiKitKeyOk, \"Start\"","UiKitKeyLeftRight, \"Baud\"",
+ "labmate_comm_ui_header(canvas, \"UART TX\"",
+ "uart->tx_editing", "UiKitKeyOk, \"Send\"",
+ "ui_kit_pixel_header(canvas, \"UART receive\"",
+ "UiKitInstrumentReady","UiKitInstrumentLive",
+ "UiKitInstrumentStopped","UiKitInstrumentBusy",
+ "UiKitInstrumentError","ui_kit_state_chip_width(",
+ "canvas_string_width(canvas, \"UART receive\")",
+ "canvas_draw_str(canvas, 4U, 20U, \"TX pin 13\")",
+ "canvas_draw_str(canvas, right_x, 20U, \"RX pin 14\")",
+ "canvas_draw_rframe(canvas, 58U, 24U, 66U, 12U, 3U)",
+ "canvas_draw_str(canvas, 4U, 33U, \"Baud rate\")",
+ "uart->rx_total, uart->dropped, uart->rx_errors",
+ "\"Received\",\"Dropped\",\"Errors\"",
+ "UiKitKeyOk,","UiKitKeyLeftRight, \"Baud\"",
  ),"UART")
+excludes(uart,("ui_kit_stat_row(", "WAITING RX...",
+               "OK START / LR BAUD","R:%lu","D:%lu E:%lu"),"UART receive")
 i2c=draws["draw_i2c"]
 contains(i2c,(
  "labmate_i2c_runtime_snapshot(","LabMateI2cRuntimeApiMissing",
