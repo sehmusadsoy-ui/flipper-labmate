@@ -50,7 +50,7 @@ typedef struct {
 } LabMateApp;
 struct Canvas {
  Font font; Color color;
- unsigned faults,paints,text_count,keys,heads,panels,chip_count;
+ unsigned faults,paints,text_count,keys,heads,panels,chip_count,big_numbers_count,degree_dots;
  UiKitInstrumentState chip_state;
  char strings[32][48];
  struct {uint8_t x;UiKitKey k;char label[16];} actions[2];
@@ -63,6 +63,7 @@ uint16_t canvas_string_width(Canvas* c,const char* s){
 }
 void canvas_set_color(Canvas* c,Color ink){c->color=ink;}
 void canvas_draw_str(Canvas* c,int32_t x,int32_t y,const char* s){
+ if(c->font==FontBigNumbers)c->big_numbers_count++;
  int w=canvas_string_width(c,s);
  int h=c->font==FontBigNumbers?15:c->font==FontPrimary?10:8;
  if(!w||x<0||x+w>128||y<0||y>=64||y-h+1<0)c->faults++;
@@ -72,7 +73,7 @@ void canvas_draw_str(Canvas* c,int32_t x,int32_t y,const char* s){
 }
 void canvas_draw_dot(Canvas* c,int32_t x,int32_t y){
  if(x<0||x>=128||y<0||y>=64)c->faults++;
- c->paints++;
+ c->degree_dots++;c->paints++;
 }
 void canvas_draw_line(Canvas* c,int32_t x,int32_t y,int32_t xx,int32_t yy){
  if(x<0||x>=128||xx<0||xx>=128||y<0||y>=64||yy<0||yy>=64)c->faults++;
@@ -128,7 +129,8 @@ uint8_t ui_kit_state_chip_width(Canvas* c,UiKitInstrumentState state){
   state==UiKitInstrumentStopped?"Stopped":
   state==UiKitInstrumentBusy?"Busy":
   state==UiKitInstrumentError?"Error":
-  state==UiKitInstrumentNoReply?"No reply":NULL;
+  state==UiKitInstrumentNoReply?"No reply":
+  state==UiKitInstrumentDone?"Done":NULL;
  if(!name)return 0U;
  canvas_set_font(c,FontSecondary);
  return (uint8_t)(canvas_string_width(c,name)+17U);
@@ -145,7 +147,8 @@ bool ui_kit_state_chip_compact(Canvas* c,UiKitInstrumentState state,bool pulse){
   state==UiKitInstrumentLive?"Live":
   state==UiKitInstrumentStopped?"Stopped":
   state==UiKitInstrumentBusy?"Busy":
-  state==UiKitInstrumentNoReply?"No reply":"Error";
+  state==UiKitInstrumentNoReply?"No reply":
+  state==UiKitInstrumentDone?"Done":"Error";
  canvas_draw_str(c,x+12U,9U,name);
  c->chip_count++;c->chip_state=state;
  return true;
@@ -277,22 +280,87 @@ static void test_onewire(void){
   a.thermometer.temperature_tenths=(variant==1U?-550:
       variant==3U?1250:variant==4U?-551:variant==5U?1251:235);
   a.thermometer.resolution_bits=variant==6U?8U:12U;
+  a.ui_frame=(uint8_t)variant;
+  const bool valid=variant==0U||variant==1U||variant==3U;
+  const bool done=st==2U&&valid;
   const LabMateApp copy=a;
-  Canvas c=fresh();draw_onewire(&c,&a);good(&c);assert(c.heads==1U);
+  Canvas c=fresh();draw_onewire(&c,&a);good(&c);
   assert(!memcmp(&copy,&a,sizeof(a)));
-  assert(has(&c,"1-Wire temp")&&has(&c,"PA4 DQ / 3.3V"));
-  assert(has(&c,"EXTERNAL VDD ONLY"));
-  assert(key(&c,0U,UiKitKeyOk,st==1U?"Stop":"Read"));
-  assert(key(&c,1U,UiKitKeyBack,"Menu"));
-  if(st==2U) {
-   if(variant==0U||variant==1U||variant==3U)
-    assert(has(&c,variant==1U?"-55.0":variant==3U?"125.0":"23.5"));
-   else
-    assert(has(&c,variant==2U?"NO VALID SAMPLE":"INVALID TEMP DATA"));
+  assert(c.chip_count==1U);
+  const UiKitInstrumentState expected=st==1U?UiKitInstrumentLive:
+   done?UiKitInstrumentDone:st==3U?UiKitInstrumentNoReply:
+   st==4U?UiKitInstrumentBusy:
+   (st==5U||st==6U||(st==2U&&!valid))?UiKitInstrumentError:
+   st==7U?UiKitInstrumentStopped:UiKitInstrumentReady;
+  assert(c.chip_state==expected);
+  assert(has(&c,(st==3U||st==7U)?"1-Wire":"1-Wire temp"));
+  assert(has(&c,"DQ pin PA4")&&has(&c,"3.3 V"));
+  assert(c.keys==1U);
+  assert(key(&c,0U,UiKitKeyOk,st==1U?"Stop":done?"Read again":"Read"));
+  assert(!has(&c,"EXTERNAL VDD ONLY")&&!has(&c,"EXT. VDD REQUIRED"));
+  assert(!has(&c,"Menu"));
+  const char* expected_message=st==0U?"External VDD needed":
+    st==1U?"Reading sensor...":
+    st==2U?(valid?"Temperature":"Invalid data"):
+    st==3U?"Check DQ and power":
+    st==4U?"PA4 is busy":
+    st==5U?"Invalid data":
+    st==6U?"Check VDD power":"Measurement stopped";
+  assert(has(&c,expected_message));
+  assert(c.big_numbers_count==1U&&c.degree_dots==4U);
+  assert(has(&c,"C"));
+  if(done){
+   assert(has(&c,variant==1U?"-55.0":variant==3U?"125.0":"23.5"));
+   assert(has(&c,"12-bit"));
+   assert(!has(&c,"--.-"));
+  }else{
+   assert(has(&c,"--.-"));
+   assert(!has(&c,"12-bit"));
+   assert(!has(&c,"23.5")&&!has(&c,"-55.0")&&!has(&c,"125.0"));
   }
   ++n;
  }
  assert(n==56U);
+
+ /* Additional signed decimal, 9/10/11-bit boundary and invalid samples.
+  * The display is read-only; negative and missing data must never fabricate
+  * a valid CRC, a temperature or a resolution. */
+ struct Case {int16_t temp;uint8_t bits;bool has;const char* value;bool ok;};
+ static const struct Case cases[]={
+  {-125,9U,true,"-12.5",true},
+  {-1,10U,true,"-0.1",true},
+  {0,11U,true,"0.0",true},
+  {234,12U,true,"23.4",true},
+  {1250,12U,true,"125.0",true},
+  {-550,12U,true,"-55.0",true},
+  {235,12U,false,"--.-",false},
+  {235,8U,true,"--.-",false},
+  {-551,12U,true,"--.-",false},
+  {1251,12U,true,"--.-",false},
+  {INT16_MIN,12U,true,"--.-",false},
+ };
+ for(unsigned i=0;i<sizeof(cases)/sizeof(cases[0]);i++){
+  LabMateApp a={0};
+  a.thermometer.status=LabMateOneWireHwMeasured;
+  a.thermometer.temperature_tenths=cases[i].temp;
+  a.thermometer.resolution_bits=cases[i].bits;
+  a.thermometer.has_temperature=cases[i].has;
+  const LabMateApp before=a;
+  Canvas c=fresh();draw_onewire(&c,&a);good(&c);
+  assert(!memcmp(&before,&a,sizeof(a)));
+  assert(has(&c,cases[i].value));
+  assert(c.chip_count==1U&&c.chip_state==
+         (cases[i].ok?UiKitInstrumentDone:UiKitInstrumentError));
+  assert(c.keys==1U&&key(&c,0U,UiKitKeyOk,
+                          cases[i].ok?"Read again":"Read"));
+  if(cases[i].ok){
+   char expected_bits[16];
+   snprintf(expected_bits,sizeof(expected_bits),"%u-bit",cases[i].bits);
+   assert(has(&c,expected_bits));
+  }else{
+   assert(!has(&c,"12-bit")&&!has(&c,"9-bit"));
+  }
+ }
 }
 static void test_uart(void) {
  unsigned n=0;
