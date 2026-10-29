@@ -10,7 +10,8 @@ from pathlib import Path
 s=Path(sys.argv[1]).read_text()
 header=Path(sys.argv[2]).read_text()
 for required in ("UiKitInstrumentWaiting","UiKitInstrumentMatch",
-                 "UiKitInstrumentOff","ui_kit_stat_row_unit",
+                 "UiKitInstrumentOff","UiKitInstrumentDone",
+                 "UiKitInstrumentNoReply","ui_kit_tag","ui_kit_stat_row_unit",
                  "ui_kit_mini_trace","ui_kit_scope_page_dots",
                  "ui_kit_next_cue","UI_KIT_STAT_ROW_SELECT"):
     assert required in header,required
@@ -19,7 +20,7 @@ names=(
 "ui_kit_instrument_state_name","ui_kit_state_chip_width",
 "ui_kit_instrument_disc","ui_kit_instrument_glyph",
 "ui_kit_state_chip_draw","ui_kit_state_chip_compact",
-"ui_kit_pixel_header","ui_kit_stat_row","ui_kit_stat_row_unit",
+"ui_kit_pixel_header","ui_kit_tag","ui_kit_stat_row","ui_kit_stat_row_unit",
 "ui_kit_pulse_line_dotted","ui_kit_mini_trace",
 "ui_kit_scope_page_dots","ui_kit_next_cue")
 pieces=[]
