@@ -21,8 +21,9 @@ for name in ("uart","i2c","onewire"):
             if level==0:break
     else:raise AssertionError("renderer body missing bracket: "+name)
     body=s[start:i+1]
-    if name == "i2c":
-        assert 'ui_kit_pixel_header(canvas, "I2C explorer"' in body
+    if name in ("i2c", "onewire"):
+        expected = "I2C explorer" if name == "i2c" else "1-Wire temp"
+        assert f'ui_kit_pixel_header(canvas, "{expected}"' in body
         assert 'ui_kit_tag(canvas, 123U, 12U, "3.3 V")' in body
         assert 'ui_kit_key_hint(canvas, 4U,' in body
     else:
