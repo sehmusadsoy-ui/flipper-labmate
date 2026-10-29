@@ -1,5 +1,19 @@
 # LabMate v2.0 E11 Pixel UI — General Acceptance
 
+> **Later project checkpoint (2026-10-29) — supersedes the original
+> pre-install statements below:** The operator installed the `v2.0DEV`
+> 177804-byte SHA-256 `160e1c2c7e5f63418bf641fc7b5ab9a72f5bb45219126d914b94185654d10e7e`
+> `/ext/apps/Tools/labmate.fap` with USB write/readback PASS and a verified
+> previous-FAP PC backup. The owner subsequently approved the **whole-app
+> visual design consistency** and declared UI design work complete. This
+> **does not** certify per-state pixel raster, electrical measurements,
+> resource contention, persistence or the 17-tool functional suite. These
+> still gate v2.0 Stable. The historic UI fixture numbers and plans below
+> describe their **2026-10-28** stage, not today's test status.
+> **Current source of truth:** [UI freeze and hardware handoff](V20_E11_UI_FREEZE_AND_HARDWARE_HANDOFF_2026-10-29.md)
+> and [COMM hardware/visual states](V20_E11_COMM_PIXEL_VISUAL_ACCEPTANCE_2026-10-29.md).
+>
+
 Development branch: dev/v2.0-e11-ui-completion-20261028.
 Review: Draft PR #24. No Stable/firmware/device writes.
 
