@@ -88,8 +88,12 @@ for filename in ("labmate_uart_ui.c", "labmate_i2c_ui.c",
     body = read("src/" + filename)
     check('#include "labmate_comm_ui.h"' in body,
           filename + " missing comm pixel shim")
-    expected_header = ('ui_kit_pixel_header(canvas, "I2C explorer"' if
-                       filename == "labmate_i2c_ui.c" else "labmate_comm_ui_header(")
+    expected_header = (
+        'ui_kit_pixel_header(canvas, "I2C explorer"' if
+        filename == "labmate_i2c_ui.c" else
+        'ui_kit_pixel_header(canvas, "1-Wire temp"' if
+        filename == "labmate_onewire_ui.c" else
+        "labmate_comm_ui_header(")
     check(expected_header in body,
           filename + " missing measured pixel header")
     for forbidden in ("ui_draw_header(", "ui_badge(",
