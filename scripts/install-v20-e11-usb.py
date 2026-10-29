@@ -14,6 +14,11 @@ import sys
 
 from verify_v20_e11_debuglink_parity import verify_fap, IdentityFailure
 EXPECTED="ddc27aa9e095c5ff809b000e4119d14151caf0d1a191c6a35c96f46ad1b01d72"
+# Reviewed GitHub Actions COMM v2.0 candidate from run 40838850973.
+# This mode requires the WHOLE raw binary to match, not merely its sections,
+# debuglink bytes, name, build version, or any operator-provided hash.
+COMM_REVIEW_RAW_SHA256="160e1c2c7e5f63418bf641fc7b5ab9a72f5bb45219126d914b94185654d10e7e"
+COMM_REVIEW_BYTES=177804
 TARGET="/ext/apps/Tools/labmate.fap"
 
 def discover_device_faps(device):
@@ -101,14 +106,30 @@ def main():
     parser.add_argument("--port",default="auto")
     parser.add_argument("--apply",action="store_true")
     parser.add_argument("--discover",action="store_true")
+    parser.add_argument("--reviewed-comm-v20",action="store_true",
+        help="Only SHA256-pinned 177804-byte COMM v2.0 CI candidate")
     args=parser.parse_args()
     if args.apply and args.discover:
         raise RuntimeError("NO-GO: --discover and --apply cannot be combined")
     if args.fap.name!="labmate.fap" or not args.fap.is_file():
         raise RuntimeError("NO-GO: local canonical labmate.fap missing")
-    # The ONLY permitted difference from CI is a 4-byte debuglink CRC.
-    # verify_fap checks every remaining byte against a pinned CI SHA256.
-    actual_raw_sha=verify_fap(args.fap)
+    if args.reviewed_comm_v20:
+        # Refuse any reconstructed or alternate FAP. User's initial
+        # reviewed candidate is the exact raw artifact from successful
+        # E11 run 40838850973, not the older 174192-byte baseline.
+        if args.fap.stat().st_size != COMM_REVIEW_BYTES:
+            raise RuntimeError("NO-GO: reviewed COMM FAP size differs from pinned CI artifact")
+        actual_raw_sha=hashlib.sha256(args.fap.read_bytes()).hexdigest()
+        if actual_raw_sha != COMM_REVIEW_RAW_SHA256:
+            raise RuntimeError("NO-GO: reviewed COMM FAP raw SHA256 mismatch")
+        expected_label="CI full raw SHA256 (exact artifact)"
+        expected_digest=COMM_REVIEW_RAW_SHA256
+    else:
+        # Baseline installer remains byte-identical in behavior; the ONLY
+        # permitted variance is its audited 4-byte GNU debuglink CRC.
+        actual_raw_sha=verify_fap(args.fap)
+        expected_label="CI normalized verified SHA256"
+        expected_digest=EXPECTED
     new=args.fap.read_bytes()
     if hashlib.sha256(new).hexdigest()!=actual_raw_sha:
         raise RuntimeError("NO-GO: candidate changed during verification")
@@ -194,7 +215,7 @@ def main():
         else:
             print("NO PREVIOUS LABMATE FAP FOUND BY NAME; first install requires consent.",flush=True)
         print("NEW FAP SHA256:",actual_raw_sha,flush=True)
-        print("CI normalized verified SHA256:",EXPECTED,flush=True)
+        print(expected_label+":",expected_digest,flush=True)
         # Firmware API version alone is NOT proof of patched resource ABI.
         fields={}
         for line in firmware:
