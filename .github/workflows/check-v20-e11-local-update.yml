@@ -280,6 +280,38 @@ jobs:
           run-id: 40838850973
           github-token: ${{ github.token }}
           path: comm-ci-reference
+      - name: Measure exact installed FAP load-section pressure (read-only ELF review)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          from struct import unpack_from
+          raw=Path('comm-ci-reference/labmate.fap').read_bytes()
+          assert raw[:4]==b'\x7fELF' and raw[4]==1 and raw[5]==1
+          shoff=unpack_from('<I',raw,32)[0]
+          count=unpack_from('<H',raw,48)[0]
+          names_index=unpack_from('<H',raw,50)[0]
+          headers=[unpack_from('<10I',raw,shoff+40*i) for i in range(count)]
+          string_header=headers[names_index]
+          string_table=raw[string_header[4]:string_header[4]+string_header[5]]
+          rows=[]
+          for h in headers:
+              name_end=string_table.find(b'\0',h[0])
+              if name_end<0: raise AssertionError('invalid ELF section string')
+              name=string_table[h[0]:name_end].decode('ascii','replace')
+              if (h[2] & 0x2) and h[5]:
+                  rows.append((h[5],name,h[1],h[2],h[8]))
+          rows.sort(reverse=True)
+          print('EXACT COMM FAP ALLOC SECTION MEMORY REQUIREMENTS')
+          for size,name,typ,flags,align in rows[:24]:
+              print(f'{name:25s} size={size:7d} align={align:4d} loader_guard_min={size+1024:7d}')
+          assert rows and any(name=='.text' for _,name,*_ in rows)
+          print('MAX_SINGLE_ALLOC_SECTION_BYTES',rows[0][0])
+          print('SUM_ALLOC_SECTIONS_BYTES',sum(row[0] for row in rows))
+          print('This is static ELF section data; NOT proof of idle heap or actual fragmentation.')
+          PY
+
       - name: Confirm reviewed COMM source binary identity before operator installer use
         shell: bash
         run: |
