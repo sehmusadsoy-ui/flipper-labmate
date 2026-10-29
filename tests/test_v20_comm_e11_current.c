@@ -46,12 +46,14 @@ typedef struct {
  LabMateOneWireHw thermometer;
  LabMateUart uart;
  LabMateI2cRuntime* i2c;
- uint8_t i2c_page,ui_frame;
+ uint8_t i2c_page,ui_frame,ui_pulse_phase;
 } LabMateApp;
 struct Canvas {
  Font font; Color color;
  unsigned faults,paints,text_count,keys,heads,panels,chip_count,big_numbers_count,degree_dots;
  unsigned primary_punctuation_count;
+ bool chip_pulse;
+ uint32_t scl_line_signature;
  bool missing_big_dot,missing_big_minus;
  UiKitInstrumentState chip_state;
  char strings[32][48];
@@ -86,6 +88,11 @@ void canvas_draw_dot(Canvas* c,int32_t x,int32_t y){
 }
 void canvas_draw_line(Canvas* c,int32_t x,int32_t y,int32_t xx,int32_t yy){
  if(x<0||x>=128||xx<0||xx>=128||y<0||y>=64||yy<0||yy>=64)c->faults++;
+ /* Read-only signature of visual SCL phase; excludes header and footer. */
+ if(x>=30&&xx>=30&&xx<=118&&(y==28||y==33)){
+  c->scl_line_signature=c->scl_line_signature*16777619U+
+   (uint32_t)((x<<16)^(xx<<8)^y^(yy<<24));
+ }
  c->paints++;
 }
 void canvas_draw_rbox(Canvas* c,int32_t x,int32_t y,int32_t w,int32_t h,int32_t r){
@@ -145,7 +152,7 @@ uint8_t ui_kit_state_chip_width(Canvas* c,UiKitInstrumentState state){
  return (uint8_t)(canvas_string_width(c,name)+17U);
 }
 bool ui_kit_state_chip_compact(Canvas* c,UiKitInstrumentState state,bool pulse){
- (void)pulse;
+ c->chip_pulse=pulse;
  uint8_t w=ui_kit_state_chip_width(c,state);
  if(!w)return false;
  uint8_t x=(uint8_t)(127U-w);
@@ -218,6 +225,47 @@ static bool key(const Canvas* c,unsigned i,UiKitKey k,const char* s){
 static void good(const Canvas* c){
  assert(c->faults==0U&&c->color==ColorBlack&&c->keys>=1U&&c->keys<=2U&&c->heads<=1U);
 }
+static void test_comm_motion_from_live_ui_phase(void) {
+ /* Regression: ui_frame is a one-shot carousel tween that stays at 6 in
+  * Comm. ui_pulse_phase is the only existing 33ms advancing UI phase.
+  * No sensor, UART, I2C, GPIO or button operation happens in draw. */
+ LabMateI2cRuntime rt={.status=LabMateI2cRuntimeScanning};
+ LabMateApp a={.i2c=&rt,.ui_frame=6U,.ui_pulse_phase=0U};
+ const LabMateI2cRuntime before=rt;
+ const LabMateApp original=a;
+ Canvas i0=fresh();draw_i2c(&i0,&a);good(&i0);
+ assert(i0.chip_state==UiKitInstrumentLive&&!i0.chip_pulse);
+ assert(i0.scl_line_signature!=0U);
+ a.ui_pulse_phase=1U;
+ Canvas i1=fresh();draw_i2c(&i1,&a);good(&i1);
+ assert(i0.scl_line_signature!=i1.scl_line_signature);
+ assert(!memcmp(&rt,&before,sizeof(rt)));
+ assert(a.i2c==original.i2c&&a.ui_frame==original.ui_frame);
+ a.ui_pulse_phase=15U;
+ Canvas i15=fresh();draw_i2c(&i15,&a);good(&i15);
+ assert(i15.chip_pulse&&i15.chip_state==UiKitInstrumentLive);
+ a.ui_pulse_phase=30U;
+ Canvas i30=fresh();draw_i2c(&i30,&a);good(&i30);
+ assert(!i30.chip_pulse);
+
+ LabMateApp u={0};u.ui_frame=6U;u.uart.active=true;
+ u.ui_pulse_phase=0U;
+ Canvas u0=fresh();draw_uart(&u0,&u);good(&u0);
+ assert(u0.chip_state==UiKitInstrumentLive&&!u0.chip_pulse);
+ u.ui_pulse_phase=15U;
+ Canvas u15=fresh();draw_uart(&u15,&u);good(&u15);
+ assert(u15.chip_state==UiKitInstrumentLive&&u15.chip_pulse);
+
+ LabMateApp w={0};w.ui_frame=6U;
+ w.thermometer.status=LabMateOneWireHwConverting;
+ w.ui_pulse_phase=0U;
+ Canvas w0=fresh();draw_onewire(&w0,&w);good(&w0);
+ assert(w0.chip_state==UiKitInstrumentLive&&!w0.chip_pulse);
+ w.ui_pulse_phase=15U;
+ Canvas w15=fresh();draw_onewire(&w15,&w);good(&w15);
+ assert(w15.chip_state==UiKitInstrumentLive&&w15.chip_pulse);
+}
+
 static void test_i2c(void) {
  unsigned count=0;
  for(unsigned st=0;st<8U;st++)for(unsigned page=0;page<3U;page++){
@@ -469,6 +517,7 @@ static void test_uart(void) {
 
 int main(void) {
  test_i2c();test_onewire();test_onewire_missing_glyph_fallback();test_uart();
+ test_comm_motion_from_live_ui_phase();
  puts("E11 UI02/03 CURRENT COMM EXACT RENDER PASS: 24 I2C + 56 1W + 32 UART");
  return 0;
 }
