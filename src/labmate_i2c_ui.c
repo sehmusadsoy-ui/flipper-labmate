@@ -166,7 +166,8 @@ void draw_i2c(Canvas* canvas, LabMateApp* app) {
                 firmware_missing ? "Firmware error" : title;
             const char* short_explanation = no_reply ? "Wiring / pull-ups" :
                 busy ? "Tool owns the bus" :
-                firmware_missing ? "Timed API required" : explanation;
+                firmware_missing ? "Timed API required" :
+                failed ? "Check bus / retry" : explanation;
             canvas_set_font(canvas, FontPrimary);
             uint16_t width = canvas_string_width(canvas, title);
             if(width > 112U) {
