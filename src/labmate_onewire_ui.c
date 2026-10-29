@@ -30,7 +30,11 @@ void draw_onewire(Canvas* canvas, LabMateApp* app) {
         busy ? UiKitInstrumentBusy :
         (power_check || data_error) ? UiKitInstrumentError :
         stopped ? UiKitInstrumentStopped : UiKitInstrumentReady;
-    const bool pulse = (app->ui_frame & 16U) != 0U;
+    /* ui_frame is a finite carousel tween (normally 6), not an ongoing
+     * COMM animation clock. The shared UI pulse phase advances at ~33ms
+     * when motion is enabled; toggle the live glyph every 15 phases
+     * (~495ms) without timers, delays or hardware effects. */
+    const bool pulse = ((app->ui_pulse_phase / 15U) & 1U) != 0U;
 
     /* Exact header first. Some real state-chip/title combinations cannot
      * share a row at FontPrimary: fallback to the complete title with
