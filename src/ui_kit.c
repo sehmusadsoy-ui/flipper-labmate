@@ -1098,7 +1098,7 @@ bool ui_kit_tag(Canvas* c, uint8_t x_right, uint8_t y, const char* text) {
        y > UI_KIT_HEIGHT - 9U) return false;
     canvas_set_font(c, FontSecondary);
     const uint16_t text_w = canvas_string_width(c, text);
-    const uint16_t tag_w = text_w + 8U;
+    const uint32_t tag_w = (uint32_t)text_w + 8U;
     if(!text_w || tag_w > (uint16_t)x_right + 1U ||
        tag_w > UI_KIT_WIDTH) return false;
     const uint8_t x_left = (uint8_t)((uint16_t)x_right + 1U - tag_w);
