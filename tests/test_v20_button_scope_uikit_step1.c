@@ -80,7 +80,8 @@ static void test_states(void) {
     const UiKitInstrumentState states[]={
         UiKitInstrumentReady,UiKitInstrumentLive,UiKitInstrumentHeld,
         UiKitInstrumentStopped,UiKitInstrumentBusy,UiKitInstrumentError,
-        UiKitInstrumentWaiting,UiKitInstrumentMatch,UiKitInstrumentOff};
+        UiKitInstrumentWaiting,UiKitInstrumentMatch,UiKitInstrumentOff,
+        UiKitInstrumentDone,UiKitInstrumentNoReply};
     for(unsigned j=0;j<sizeof(states)/sizeof(states[0]);j++){
         Canvas c=fresh();
         uint8_t w=ui_kit_state_chip_width(&c,states[j]);
@@ -92,6 +93,42 @@ static void test_states(void) {
     assert(!ui_kit_state_chip_compact(&c,(UiKitInstrumentState)99,false));
     assert(c.paints==0U);
 }
+/* COMM Step 1: exercise the ACTUAL right-inclusive tag body and both
+ * newly appended chip states, with the same pixel bounds mock as Scope. */
+static void test_comm_tag(void) {
+    /* Existing public enum numeric values must never change. */
+    assert(UiKitInstrumentOff==8);
+    assert(UiKitInstrumentDone==9);
+    assert(UiKitInstrumentNoReply==10);
+    Canvas c=fresh();
+    assert(ui_kit_tag(&c,123U,12U,"3.3 V"));
+    /* Secondary 6px glyphs: 5*6+8=38, left=123-38+1=86. */
+    assert(c.frames==1U && c.text_count==1U && c.faults==0U);
+    assert(c.first_text_x==90 && strcmp(c.first_text,"3.3 V")==0);
+    assert(c.leftmost==86 && c.rightmost==123);
+    assert(c.topmost==12 && c.bottommost==20);
+    assert(c.ink==ColorBlack);
+    c=fresh();
+    assert(!ui_kit_tag(&c,25U,12U,"3.3 V")); /* Cannot fit left of x=0. */
+    assert(c.paints==0U);
+    c=fresh();
+    assert(!ui_kit_tag(&c,123U,56U,"3.3 V")); /* y+9 exceeds 64. */
+    assert(c.paints==0U);
+    c=fresh();
+    assert(!ui_kit_tag(&c,123U,12U,"Way too long to fit a single tag"));
+    assert(c.paints==0U);
+    c=fresh();
+    assert(!ui_kit_tag(&c,123U,12U,""));
+    assert(c.paints==0U);
+    c=fresh();
+    assert(!ui_kit_tag(NULL,123U,12U,"3.3 V"));
+    assert(!ui_kit_tag(&c,123U,12U,NULL));
+    assert(c.paints==0U);
+    c=fresh();
+    assert(ui_kit_tag(&c,127U,55U,"V"));
+    assert(c.faults==0U && c.bottommost==63);
+}
+
 static void test_keys(void) {
     Canvas c=fresh();
     uint8_t end=ui_kit_key_hint_compact(&c,4U,UiKitKeyDown,"Details");
@@ -168,7 +205,7 @@ static void test_paging(void) {
     assert(c.leftmost==61&&c.rightmost==65&&c.topmost==59&&c.bottommost==61);
 }
 int main(void){
-    test_header();test_states();test_keys();test_rows();
+    test_header();test_states();test_comm_tag();test_keys();test_rows();
     test_dotted();test_trace();test_paging();
     puts("BUTTON/SCOPE STEP1 UI-KIT SOURCE-LINKED HOST PASS: headers, states,");
     puts("keys, stat rows, dotted empty, min/max traces, 4-page dots and next cue");
