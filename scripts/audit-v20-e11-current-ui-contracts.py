@@ -107,11 +107,30 @@ contains(wire,(
  "s->has_temperature","s->temperature_tenths >= -550",
  "s->temperature_tenths <= 1250","s->resolution_bits >= 9U",
  "s->resolution_bits <= 12U","LabMateOneWireHwMeasured",
- "valid_temperature ? \"DONE\" : \"ERR\"",
  "LabMateOneWireHwNoSensor","LabMateOneWireHwBusy",
  "LabMateOneWireHwDataError","LabMateOneWireHwPowerCheck",
- "LabMateOneWireHwStopped","\"EXTERNAL VDD ONLY\"",
- "UiKitKeyOk, active ? \"Stop\" : \"Read\"",
+ "LabMateOneWireHwStopped",
+ 'ui_kit_pixel_header(canvas, "1-Wire temp"',
+ 'ui_kit_tag(canvas, 123U, 12U, "3.3 V")',
+ "UiKitInstrumentReady","UiKitInstrumentLive","UiKitInstrumentDone",
+ "UiKitInstrumentNoReply","UiKitInstrumentBusy",
+ "UiKitInstrumentError","UiKitInstrumentStopped",
+ '"DQ pin PA4"','"Needs external VDD power"',
+ '"Temperature"','"Check DQ wiring and power"',
+ '"Reading temperature..."','"Check external VDD power"',
+ '"Invalid temperature data"','"Measurement stopped"',
+ 'snprintf(bits, sizeof(bits), "%u-bit"',
+ "canvas_set_font(canvas, FontBigNumbers)",
+ "canvas_draw_str(canvas, 4U, 49U, numeric)",
+ 'canvas_draw_str(canvas, 4U + numeric_w + 9U, 49U, "C")',
+ '"--.-"', '"Read again"',
+ "active ? \"Stop\" : done ? \"Read again\" : \"Read\"",
+ ),"1-Wire")
+excludes(wire,(
+ "labmate_comm_ui_header(", "labmate_comm_ui_keys(",
+ "EXT. VDD REQUIRED","EXTERNAL VDD ONLY",
+ "NO SENSOR ON PA4","STOP OTHER TOOLS","85C? CHECK POWER",
+ "PA4 DQ / 3.3V","MEASUREMENT HALTED",'"Menu"'
  ),"1-Wire")
 
 records=["draw_profiles","draw_history","draw_history_detail"]
