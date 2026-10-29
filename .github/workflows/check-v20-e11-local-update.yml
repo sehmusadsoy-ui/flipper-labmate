@@ -191,7 +191,10 @@ jobs:
             (Resolve-Path scripts/install-reviewed-comm-e11.ps1),
             [ref]$commTokens,[ref]$commErrors)
           if ($commErrors.Count -gt 0) {
-            $commErrors | ForEach-Object { Write-Error $_.Message }
+            $commErrors | ForEach-Object {
+              Write-Host ("COMM PARSER: line {0} column {1}: {2} at '{3}'" -f
+                $_.Extent.StartLineNumber,$_.Extent.StartColumnNumber,$_.Message,$_.Extent.Text)
+            }
             exit 1
           }
           if (-not $commAst) { throw 'Reviewed COMM installer AST missing' }
