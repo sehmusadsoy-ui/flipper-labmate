@@ -127,7 +127,8 @@ uint8_t ui_kit_state_chip_width(Canvas* c,UiKitInstrumentState state){
   state==UiKitInstrumentLive?"Live":
   state==UiKitInstrumentStopped?"Stopped":
   state==UiKitInstrumentBusy?"Busy":
-  state==UiKitInstrumentError?"Error":NULL;
+  state==UiKitInstrumentError?"Error":
+  state==UiKitInstrumentNoReply?"No reply":NULL;
  if(!name)return 0U;
  canvas_set_font(c,FontSecondary);
  return (uint8_t)(canvas_string_width(c,name)+17U);
@@ -143,7 +144,8 @@ bool ui_kit_state_chip_compact(Canvas* c,UiKitInstrumentState state,bool pulse){
  const char* name=state==UiKitInstrumentReady?"Ready":
   state==UiKitInstrumentLive?"Live":
   state==UiKitInstrumentStopped?"Stopped":
-  state==UiKitInstrumentBusy?"Busy":"Error";
+  state==UiKitInstrumentBusy?"Busy":
+  state==UiKitInstrumentNoReply?"No reply":"Error";
  canvas_draw_str(c,x+12U,9U,name);
  c->chip_count++;c->chip_state=state;
  return true;
@@ -165,6 +167,17 @@ bool ui_kit_pixel_header(Canvas* c,const char* title,bool show_chip,
  canvas_draw_str(c,9U,9U,title);
  if(show_chip&&!ui_kit_state_chip_compact(c,state,pulse))return false;
  c->heads++;
+ return true;
+}
+bool ui_kit_tag(Canvas* c,uint8_t x_right,uint8_t y,const char* s){
+ if(!c||!s||!s[0]||x_right>=128U||y>55U)return false;
+ canvas_set_font(c,FontSecondary);
+ uint32_t w=(uint32_t)canvas_string_width(c,s)+8U;
+ if(w>x_right+1U)return false;
+ uint8_t x=(uint8_t)(x_right+1U-w);
+ canvas_set_color(c,ColorBlack);
+ canvas_draw_rframe(c,x,y,(int32_t)w,9U,3U);
+ canvas_draw_str(c,x+4U,y+7U,s);
  return true;
 }
 uint32_t labmate_uart_baud(const LabMateUart* u) {
@@ -191,37 +204,69 @@ static bool key(const Canvas* c,unsigned i,UiKitKey k,const char* s){
  return i<c->keys&&c->actions[i].k==k&&!strcmp(c->actions[i].label,s);
 }
 static void good(const Canvas* c){
- assert(c->faults==0U&&c->color==ColorBlack&&c->keys==2U&&c->heads<=1U);
+ assert(c->faults==0U&&c->color==ColorBlack&&c->keys>=1U&&c->keys<=2U&&c->heads<=1U);
 }
 static void test_i2c(void) {
- const char* msg[]={
-  "OK: SCAN 3.3V","NEEDS TIMED FW API","I2C BUS / TOOL BUSY",
-  "SCANNING BUS...","REAL ACK RESULTS","NO ACKS / CHECK BUS",
-  "SCAN CANCELLED","BUS / SCAN ERROR"
- };
  unsigned count=0;
  for(unsigned st=0;st<8U;st++)for(unsigned page=0;page<3U;page++){
   LabMateI2cRuntime rt={0};
   rt.status=(LabMateI2cRuntimeStatus)st;
   rt.view=(LabMateI2cView){.found_total=4U,.page=(uint8_t)page,
     .page_count=3U,.row_count=4U,.row_address={0x20U,0x38U,0x40U,0x48U}};
-  LabMateApp a={.i2c=&rt,.i2c_page=(uint8_t)page};
+  LabMateApp a={.i2c=&rt,.i2c_page=(uint8_t)page,
+                 .ui_frame=(uint8_t)(7U+page)};
   const LabMateApp before=a;const LabMateI2cRuntime snapshot=rt;
-  Canvas c=fresh();draw_i2c(&c,&a);good(&c);assert(c.heads==1U);
+  Canvas c=fresh();draw_i2c(&c,&a);good(&c);
   assert(!memcmp(&before,&a,sizeof(a))&&!memcmp(&snapshot,&rt,sizeof(rt)));
-  assert(has(&c,"I2C")&&has(&c,"PC0 SCL / PC1 SDA"));
-  assert(key(&c,0U,UiKitKeyOk,st==3U?"Stop":"Scan"));
-  assert(key(&c,1U,UiKitKeyBack,"Exit"));
+  assert(c.chip_count==1U);
+  const UiKitInstrumentState expected=st==3U?UiKitInstrumentLive:
+   st==5U?UiKitInstrumentNoReply:
+   st==2U?UiKitInstrumentBusy:
+   (st==1U||st==7U)?UiKitInstrumentError:
+   st==6U?UiKitInstrumentStopped:UiKitInstrumentReady;
+  assert(c.chip_state==expected);
+  assert(has(&c,(st==5U||st==6U)?"I2C":"I2C explorer"));
+  assert(has(&c,"3.3 V")&&has(&c,"SCL0 / SDA1"));
+  assert(key(&c,0U,UiKitKeyOk,st==3U?"Stop":
+       (st==4U||st==5U)?"Scan again":"Scan"));
   if(st==4U){
+   assert(c.keys==2U&&key(&c,1U,UiKitKeyUpDown,"Page"));
    assert(has(&c,"0x20")&&has(&c,"0x48"));
-   assert(has(&c,"4 FOUND P1/3")||has(&c,"4 FOUND P2/3")||has(&c,"4 FOUND P3/3"));
-  }else {
-   assert(has(&c,msg[st]));
-   if(st==1U)assert(has(&c,"NO UNSAFE BUS LOCK"));
+   assert(has(&c,"4")&&has(&c,"found"));
+   assert(has(&c,page==0U?"Page 1 of 3":
+          page==1U?"Page 2 of 3":"Page 3 of 3"));
+  }else{
+   assert(c.keys==1U);
+   if(st==0U||st==3U){
+    assert(has(&c,st==3U?"Scanning bus...":"Press OK to scan"));
+    assert(has(&c,"SCL")&&has(&c,"SDA"));
+   }else if(st==1U) {
+    assert(has(&c,"Firmware error")&&has(&c,"Timed API required"));
+   }else if(st==2U){
+    assert(has(&c,"Bus busy")&&has(&c,"Tool owns the bus"));
+   }else if(st==5U){
+    assert(has(&c,"No devices found")&&has(&c,"Wiring / pull-ups"));
+   }else if(st==6U){
+    assert(has(&c,"Scan cancelled")&&has(&c,"Press OK to scan"));
+   }else if(st==7U){
+    assert(has(&c,"Scan error")&&has(&c,"Check bus / retry"));
+   }
   }
+  assert(!has(&c,"Exit")&&!has(&c,"NO ACKS / CHECK BUS"));
   ++count;
  }
  assert(count==24U);
+ /* No false ACK or page chip when a scan returned only one address. */
+ LabMateI2cRuntime rt={.status=LabMateI2cRuntimeResults,
+  .view={.found_total=1U,.page_count=1U,.row_count=1U,
+         .row_address={0x3CU}}};
+ LabMateApp a={.i2c=&rt};
+ const LabMateI2cRuntime before=rt;
+ Canvas c=fresh();draw_i2c(&c,&a);good(&c);
+ assert(c.keys==1U);
+ assert(has(&c,"0x3C")&&has(&c,"device found"));
+ assert(!has(&c,"Page 1 of 1"));
+ assert(!memcmp(&rt,&before,sizeof(rt)));
 }
 static void test_onewire(void){
  unsigned n=0;
