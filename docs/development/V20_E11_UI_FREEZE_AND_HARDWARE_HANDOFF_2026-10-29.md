@@ -31,6 +31,62 @@ Do not replace the above digest with a branch HEAD hash. Documentation/test-only
 are **not new app binaries**. After future genuine production changes, record a new exact
 FAP SHA, source commit, and independently observed USB readback.
 
+## Physical checkpoint A — operator report 2026-10-29
+
+**A01–A04: 4/4 PASS, reported after performing the supplied A01–A04
+instructions on the already installed 177804-byte v2.0DEV E11.**
+The user supplied only outcome labels, not screenshots, measured counter
+values, exact status/error strings or independent instrument traces.
+
+| Test | Report | Scope of acceptance |
+| --- | --- | --- |
+| A01, navigation | **USER-REPORTED PASS** | Five groups, tool navigation, BACK/re-entry smoke; not 17 independently calibrated tools |
+| A02, UART RX | **USER-REPORTED PASS** | Start/Stop, idle with no peer, re-entry; not real RX bytes or baud accuracy |
+| A03, I2C | **USER-REPORTED PASS** | No-device scan/re-entry; positive ACK, real external peripheral and contention remain OPEN |
+| A04, 1-Wire | **USER-REPORTED PASS** | No-sensor read/re-entry; external 3.3V DS18B20, CRC and actual temperature remain OPEN |
+
+No observable failure was reported within this smoke scope; do not infer
+that fault/error states or electrical performance have been exhaustively
+tested. The separate **read-only Settings/Records smoke and SD data
+integrity** line remains PENDING. The installed candidate identity is
+the previously USB-confirmed SHA-256 listed above; there was **no new
+independent FAP/firmware readout** in this 3A result.
+
+### Next gate B01 — controlled internal PA7 to PC1 loopback (PENDING)
+
+- Before connecting anything, identify the real external pinout in
+  [official Flipper Zero GPIO documentation](https://docs.flipper.net/zero/gpio-and-modules).
+  **PA7 = external header pin 2; PC1 = external header pin 15.**
+  GPIO is 3.3V logic. Do not use +5V pin 1, +3.3V pin 9,
+  an external power source or any ambiguous header pin.
+- Only when both pin numbers are independently confirmed, ensure LabMate
+  has exited and PWM is **STOPPED**. With no power source attached,
+  connect **one jumper PA7 (pin 2) → PC1 (pin 15)**. The same device
+  shares its own ground; do not add a separate supply for this test.
+- Reopen LabMate, set PWM Studio to preset **100 Hz, 50% duty** while
+  stopped; start intentionally with short **OK**, check for a visible RUN
+  and no BUSY/ERR. BACK leaves the running PA7 output active inside the app
+  by existing deliberate behavior.
+- Open Frequency Meter and explicitly choose **LOW PC1** (not HIGH PB3)
+  if it defaults otherwise. Compare a stabilized observed frequency
+  against the selected 100 Hz reference; capture the exact reading and
+  HOLD/BACK behavior. Do not claim calibrated output frequency from a
+  Flipper measuring its own PWM: this is a loopback functional test only.
+- Return to PWM Studio and **OK STOP**. Verify stopped output and
+  safe BACK/re-entry. Fully exit LabMate before physically disconnecting
+  the jumper. A different test at 1000 Hz or Pulse Duty is a **separate
+  gate after B01**, not automatically passed.
+- If any BUSY, ERR, restart, wrong pin or unexpected measurement appears,
+  STOP and save the observed screen/log; no blind retry or rewiring
+  while PWM is running.
+- Evidence required for B01 PASS: exact running/stopped states,
+  selected 100 Hz / 50%, selected LOW PC1, observed Hz, abnormal messages,
+  and STOP/BACK cleanup. Without confirmed jumper/pin identification,
+  mark **DEFERRED**, not FAIL.
+
+**B01 has not yet been performed or marked PASS.** UI remains frozen; there
+is no new FAP build, SD write, firmware flash or Stable promotion.
+
 ## UI freeze policy (effective now)
 
 1. Treat the current visual language—back chevron, measured text, status chips,
