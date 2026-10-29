@@ -50,7 +50,11 @@ void draw_uart(Canvas* canvas, LabMateApp* app) {
      * left at most 2px (x=7). Stopped has a long status: if even the
      * secondary title cannot fit, render 'UART' rather than corrupt pixels.
      * See COMM Step 2 documented visual deviations. */
-    const bool pulse = (app->ui_frame & 16U) != 0U;
+    /* ui_frame is a finite carousel tween (normally 6), not an ongoing
+     * COMM animation clock. The shared UI pulse phase advances at ~33ms
+     * when motion is enabled; toggle the live glyph every 15 phases
+     * (~495ms) without timers, delays or hardware effects. */
+    const bool pulse = ((app->ui_pulse_phase / 15U) & 1U) != 0U;
     if(!ui_kit_pixel_header(canvas, "UART receive", true, instrument_state, pulse)) {
         const uint8_t chip_w = ui_kit_state_chip_width(canvas, instrument_state);
         if(!chip_w) return;
