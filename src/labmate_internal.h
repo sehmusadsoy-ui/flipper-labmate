@@ -33,7 +33,7 @@
 #include "labmate_signal_stats.h"
 #include "labmate_ui_prefs.h"
 
-#define LABMATE_VERSION_TEXT "v2.0DEV"
+#define LABMATE_VERSION_TEXT "v2.0"
 /* Shared menu/pin counts: UI and input handling must agree. */
 #define MENU_COUNT LabMateToolCount
 #define GPIO_COUNT LABMATE_MONITOR_PIN_COUNT
@@ -348,6 +348,7 @@ typedef struct {
     bool history_past_header;
     bool history_line_has_comma;
     bool history_in_timestamp;
+    bool history_timestamp_digits;
     uint8_t history_mode;
     char history_first_row[80];
     uint8_t history_first_row_len;

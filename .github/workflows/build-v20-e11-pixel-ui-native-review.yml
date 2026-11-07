@@ -2,9 +2,15 @@ name: LabMate v2.0 E11 pinned native candidate review (NO FLASH)
 
 on:
   push:
-    branches: [dev/v2.0-e11-compare-sample-pixel-step4-20261028, dev/v2.0-e11-legacy-ui-harness-review-20261029]
+    branches: [dev/v2.0-e11-compare-sample-pixel-step4-20261028, dev/v2.0-e11-legacy-ui-harness-review-20261029, audit/software-fixes-20261107]
     paths:
       - "application.fam"
+      - "labmate_sections.ld"
+      - "scripts/prepare-labmate-e11-sections.py"
+      - "scripts/verify-labmate-e11-sections.py"
+      - "scripts/test-v20-e11-section-layout.py"
+      - "scripts/audit-v20-e11-*.py"
+      - "scripts/audit-v20-e11-*.sh"
       - "src/**"
       - "tests/test_labmate_scope_navigation.c"
       - "tests/test_v18_tim2_lease_integration.py"
@@ -47,7 +53,7 @@ jobs:
           # A push or manual run must never build application code from main.
           if [[ "$GITHUB_EVENT_NAME" != "pull_request" ]]; then
             case "$GITHUB_REF" in
-              refs/heads/dev/v2.0-e11-compare-sample-pixel-step4-20261028|refs/heads/dev/v2.0-e11-legacy-ui-harness-review-20261029) ;;
+              refs/heads/dev/v2.0-e11-compare-sample-pixel-step4-20261028|refs/heads/dev/v2.0-e11-legacy-ui-harness-review-20261029|refs/heads/audit/software-fixes-20261107) ;;
               *) echo "NO-GO: unapproved FAP source ref" >&2; exit 2 ;;
             esac
           fi
@@ -59,11 +65,11 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
-      - name: Preflight v2.0DEV manifest (legacy v1.9 test suite inapplicable)
+      - name: Preflight v2.0 manifest
         shell: bash
         run: |
           set -euo pipefail
-          grep -Fqx '#define LABMATE_VERSION_TEXT "v2.0DEV"' labmate/src/labmate_internal.h
+          grep -Fqx '#define LABMATE_VERSION_TEXT "v2.0"' labmate/src/labmate_internal.h
           grep -Fq 'fap_version="2.0"' labmate/application.fam
           test -s labmate/scripts/verify_v19_e11_sdk_fap.py
           echo "V20 E11 MANIFEST PREFLIGHT PASS; native FAP verifier runs AFTER compile"
@@ -71,7 +77,7 @@ jobs:
       - name: Full reviewed E11 pre-device gates GCC+Clang (NO DEVICE)
         shell: bash
         working-directory: labmate
-        run: sh scripts/test-v20-e11-final-ui-predevice-host.sh
+        run: sh scripts/audit-v20-e11-legacy-coverage.sh
 
       - name: Checkout exact previous E11 Momentum source; never use floating main
         uses: actions/checkout@v4
@@ -211,14 +217,14 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p momentum-src/applications_user/labmate/src
-          cp labmate/application.fam labmate/labmate_10px.png momentum-src/applications_user/labmate/
+          cp labmate/application.fam labmate/labmate_10px.png labmate/labmate_sections.ld momentum-src/applications_user/labmate/
           cp labmate/src/*.c labmate/src/*.h momentum-src/applications_user/labmate/src/
           test -f momentum-src/applications_user/labmate/src/labmate_scope_bridge.c
           test -f momentum-src/applications_user/labmate/src/labmate_scope_native.c
-          grep -Fqx '#define LABMATE_VERSION_TEXT "v2.0DEV"' momentum-src/applications_user/labmate/src/labmate_internal.h
+          grep -Fqx '#define LABMATE_VERSION_TEXT "v2.0"' momentum-src/applications_user/labmate/src/labmate_internal.h
           grep -Fqx '    fap_version="2.0",' momentum-src/applications_user/labmate/application.fam
           test "$(git -C labmate rev-parse HEAD)" = "$GITHUB_SHA"
-          echo "V2.0 WORKING SOURCE STAGED; v2.0DEV manifest is BUILD-ONLY, no device access."
+          echo "V2.0 WORKING SOURCE STAGED FOR THE E11 BUILD."
 
       - name: Compile development FAP using exact patched E11 SDK (NO FLASH)
         shell: bash
@@ -231,15 +237,20 @@ jobs:
           # No updater_package, flash_usb, selfupdate.py, runfap.py or target device.
           # Keep the exact compiler/linker transcript for review even on
           # a failed build. pipefail preserves a nonzero FBT exit code.
+          python3 ../labmate/scripts/prepare-labmate-e11-sections.py . --apply
           ./fbt fap_labmate 2>&1 | tee ../v20-fap-build-output.log
           test -s build/f7-firmware-C/.extapps/labmate.fap
+          python3 ../labmate/scripts/verify-labmate-e11-sections.py \
+            build/f7-firmware-C/.extapps/labmate.fap | tee ../v20-fap-section-layout.json
+          python3 ../labmate/scripts/test-v20-e11-section-layout.py \
+            build/f7-firmware-C/.extapps/labmate.fap | tee ../v20-fap-section-negative-tests.json
           python3 ../labmate/scripts/verify_v19_e11_sdk_fap.py \
             . build/f7-firmware-C/.extapps/labmate.fap
           sha256sum build/f7-firmware-C/.extapps/labmate.fap
 
       - name: Attest single verified E11 labmate.fap candidate (NO INSTALL)
         # Never expose a failed FAP or upload from a non-reviewed branch.
-        if: success() && github.ref == 'refs/heads/dev/v2.0-e11-legacy-ui-harness-review-20261029'
+        if: success() && (github.ref == 'refs/heads/dev/v2.0-e11-legacy-ui-harness-review-20261029' || github.ref == 'refs/heads/audit/software-fixes-20261107')
         shell: bash
         run: |
           set -euo pipefail
@@ -259,7 +270,7 @@ jobs:
           echo 'Candidate only: manual device transfer and physical QA required; NO FLASH.' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload only successful labmate.fap (single candidate; NO FLASH)
-        if: success() && github.ref == 'refs/heads/dev/v2.0-e11-legacy-ui-harness-review-20261029'
+        if: success() && (github.ref == 'refs/heads/dev/v2.0-e11-legacy-ui-harness-review-20261029' || github.ref == 'refs/heads/audit/software-fixes-20261107')
         uses: actions/upload-artifact@v4
         with:
           name: labmate-e11-candidate-${{ github.run_id }}
@@ -285,6 +296,9 @@ jobs:
           if test -f v20-e11-patch-failure.txt; then
             cp v20-e11-patch-failure.txt v20-diagnostics/E11_PATCH_FAILURE.txt
           fi
+          for report in v20-fap-section-layout.json v20-fap-section-negative-tests.json; do
+            if test -s "$report"; then cp "$report" v20-diagnostics/; fi
+          done
           echo '## LabMate v2.0 development E11 compile review' >> "$GITHUB_STEP_SUMMARY"
           echo "Source commit: \`$GITHUB_SHA\`" >> "$GITHUB_STEP_SUMMARY"
           echo "Run ID: \`$GITHUB_RUN_ID\`" >> "$GITHUB_STEP_SUMMARY"

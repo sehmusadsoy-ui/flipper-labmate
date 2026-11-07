@@ -48,33 +48,40 @@ void labmate_history_scan(LabMateApp* app) {
 
     Storage* storage = furi_record_open(RECORD_STORAGE);
     File* dir = NULL;
-    if(storage && storage_sd_status(storage) == FSE_OK &&
-       storage_dir_exists(storage, LOGGER_DIR)) {
-        dir = storage_file_alloc(storage);
-        if(dir) {
-            if(storage_dir_open(dir, LOGGER_DIR)) {
-                ok = true;
-                FileInfo info;
-                char name[64];
-                while(storage_dir_read(dir, &info, name, sizeof(name))) {
-                    uint16_t id;
-                    if(file_info_is_dir(&info) || !labmate_logger_filename_id(name, &id)) continue;
-                    ++total;
-                    uint8_t insert = 0U;
-                    while(insert < count && latest[insert] > id) ++insert;
-                    if(insert >= LOGGER_HISTORY_LIMIT) continue;
-                    if(count < LOGGER_HISTORY_LIMIT) ++count;
-                    for(uint8_t j = count - 1U; j > insert; --j) {
-                        latest[j] = latest[j - 1U];
+    if(storage && storage_sd_status(storage) == FSE_OK) {
+        FileInfo directory_info;
+        const FS_Error stat_error =
+            storage_common_stat(storage, LOGGER_DIR, &directory_info);
+        /* A healthy, fresh SD need not contain our data directory yet.
+         * Preserve real stat/media errors and a non-directory collision. */
+        if(stat_error == FSE_NOT_EXIST) ok = true;
+        else if(stat_error == FSE_OK && file_info_is_dir(&directory_info)) {
+            dir = storage_file_alloc(storage);
+            if(dir) {
+                if(storage_dir_open(dir, LOGGER_DIR)) {
+                    ok = true;
+                    FileInfo info;
+                    char name[64];
+                    while(storage_dir_read(dir, &info, name, sizeof(name))) {
+                        uint16_t id;
+                        if(file_info_is_dir(&info) || !labmate_logger_filename_id(name, &id)) continue;
+                        ++total;
+                        uint8_t insert = 0U;
+                        while(insert < count && latest[insert] > id) ++insert;
+                        if(insert >= LOGGER_HISTORY_LIMIT) continue;
+                        if(count < LOGGER_HISTORY_LIMIT) ++count;
+                        for(uint8_t j = count - 1U; j > insert; --j) {
+                            latest[j] = latest[j - 1U];
+                        }
+                        latest[insert] = id;
                     }
-                    latest[insert] = id;
+                    if(storage_file_get_error(dir) != FSE_NOT_EXIST &&
+                       storage_file_get_error(dir) != FSE_OK) ok = false;
                 }
-                if(storage_file_get_error(dir) != FSE_NOT_EXIST &&
-                   storage_file_get_error(dir) != FSE_OK) ok = false;
+                /* Directory handles must be closed even if open fails. */
+                if(!storage_dir_close(dir)) ok = false;
+                storage_file_free(dir);
             }
-            /* Directory handles must be closed even if open fails. */
-            storage_dir_close(dir);
-            storage_file_free(dir);
         }
     }
     if(storage) furi_record_close(RECORD_STORAGE);
@@ -138,6 +145,7 @@ void labmate_history_open(LabMateApp* app) {
     app->history_past_header = false;
     app->history_line_has_comma = false;
     app->history_in_timestamp = true;
+    app->history_timestamp_digits = false;
     app->history_mode = 0U; /* unknown until first data row */
     app->history_first_row_len = 0U;
     app->history_first_row[0] = '\0';
@@ -178,6 +186,7 @@ void labmate_history_read_step(LabMateApp* app) {
             app->history_line_has_comma = false;
             app->history_line_ms = 0U;
             app->history_in_timestamp = true;
+            app->history_timestamp_digits = false;
             continue;
         }
         if(!app->history_past_header) continue;
@@ -186,17 +195,31 @@ void labmate_history_read_step(LabMateApp* app) {
             app->history_first_row[app->history_first_row_len++] = ch;
         }
         if(ch == ',') {
+            if(app->history_in_timestamp && !app->history_timestamp_digits) {
+                ok = false;
+                finished = true;
+                break;
+            }
             app->history_line_has_comma = true;
             app->history_in_timestamp = false;
         } else if(app->history_in_timestamp) {
-            if(ch >= '0' && ch <= '9' && app->history_line_ms <= 429496729U) {
+            const uint32_t digit = (uint32_t)(ch - '0');
+            if(ch >= '0' && ch <= '9' &&
+               app->history_line_ms <= (UINT32_MAX - digit) / 10U) {
                 app->history_line_ms =
-                    app->history_line_ms * 10U + (uint32_t)(ch - '0');
+                    app->history_line_ms * 10U + digit;
+                app->history_timestamp_digits = true;
             } else {
-                app->history_in_timestamp = false;
+                /* Reject the row before publishing a wrapped/partial time.
+                 * Parser flags survive chunk boundaries in app state. */
+                ok = false;
+                finished = true;
+                break;
             }
         }
     }
+    if(finished && app->history_past_header &&
+       (app->history_timestamp_digits || app->history_line_has_comma)) ok = false;
     if(finished) {
         app->history_loading = false;
         if(!ok) app->history_error = true;

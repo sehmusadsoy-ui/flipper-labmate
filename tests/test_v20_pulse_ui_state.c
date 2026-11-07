@@ -1,4 +1,5 @@
-#include "labmate_pulse_ui_state.h"
+/* Same 16 historical assertions against the current production inline helper. */
+#include "labmate_capture_live.h"
 #include <assert.h>
 #include <stdio.h>
 int main(void) {

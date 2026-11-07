@@ -46,16 +46,27 @@ LabMateProfileIoResult labmate_profile_sd_load(
         furi_record_close(RECORD_STORAGE);
         return LabMateProfileIoError;
     }
-    if(!storage_dir_exists(storage, PROFILE_DIR)) {
+    FileInfo directory_info;
+    const FS_Error directory_status =
+        storage_common_stat(storage, PROFILE_DIR, &directory_info);
+    if(directory_status != FSE_OK || !file_info_is_dir(&directory_info)) {
         furi_record_close(RECORD_STORAGE);
-        return LabMateProfileIoEmpty;
+        return directory_status == FSE_NOT_EXIST ?
+            LabMateProfileIoEmpty : LabMateProfileIoError;
     }
 
     bool any_exists = false;
+    bool metadata_error = false;
     bool valid = false;
     uint8_t candidate[LABMATE_PROFILE_BYTES];
     for(uint8_t i = 0U; i < 2U; ++i) {
-        if(!storage_file_exists(storage, profile_paths[i])) continue;
+        FileInfo info;
+        const FS_Error status = storage_common_stat(storage, profile_paths[i], &info);
+        if(status == FSE_NOT_EXIST) continue;
+        if(status != FSE_OK || file_info_is_dir(&info)) {
+            metadata_error = true;
+            continue;
+        }
         any_exists = true;
 
         if(!profile_read_file(storage, i, candidate)) {
@@ -79,6 +90,7 @@ LabMateProfileIoResult labmate_profile_sd_load(
     furi_record_close(RECORD_STORAGE);
 
     if(valid) return LabMateProfileIoOk;
+    if(metadata_error) return LabMateProfileIoError;
     return any_exists ? LabMateProfileIoCorrupt : LabMateProfileIoEmpty;
 }
 

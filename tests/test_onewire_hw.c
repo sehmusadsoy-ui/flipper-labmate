@@ -136,6 +136,10 @@ int main(void) {
     assert(owner==LabMateCommNone && stops==1 && frees==1);
     labmate_onewire_hw_stop(&s);
     assert(stops==1 && frees==1 && s.status==LabMateOneWireHwMeasured);
+    labmate_onewire_hw_reenter(&s);
+    assert(s.status==LabMateOneWireHwIdle && !s.has_temperature);
+    assert(!s.host && !s.owner && !s.firmware_lease_handle && !s.firmware_release_fault);
+    assert(owner==LabMateCommNone && !pin_leased && stops==1 && frees==1);
 
     fixture();
     labmate_onewire_hw_init(&s);
@@ -202,9 +206,17 @@ int main(void) {
     assert(!labmate_onewire_hw_start(&s,&owner,clear));
     labmate_onewire_hw_stop(&s);
     assert(allocs==alloc_before && fw_releases==1U);
+    labmate_onewire_hw_reenter(&s);
+    labmate_onewire_hw_reenter(&s);
+    assert(s.firmware_release_fault && s.firmware_lease_handle==777U);
+    assert(s.status==LabMateOneWireHwBusy && s.owner==&owner && !s.has_temperature);
+    assert(owner==LabMateCommOneWirePa4 && pin_leased);
+    assert(!labmate_onewire_hw_start(&s,&owner,clear));
+    assert(allocs==alloc_before && fw_releases==1U);
 
     puts("Direct PA4 OneWireHost driver native START/STOP/CRC/85C/BUSY/wrap PASS (FAKE HAL)");
     puts("PA4 firmware claim rejection, owner retention, failed-release safety PASS.");
+    puts("PA4 menu re-entry clears released results but retains failed lease/fault PASS.");
     return 0;
 #endif
 }

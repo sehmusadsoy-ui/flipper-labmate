@@ -159,3 +159,17 @@ void labmate_onewire_hw_stop(LabMateOneWireHw* s) {
     if(s->status == LabMateOneWireHwConverting)
         s->status = LabMateOneWireHwStopped;
 }
+
+void labmate_onewire_hw_reenter(LabMateOneWireHw* s) {
+    if(!s) return;
+    labmate_onewire_hw_stop(s);
+    /* A menu visit cannot erase an unresolved firmware lease. Only a
+     * fully released session may reset its presentation/measurement state. */
+    if(!s->firmware_release_fault && s->firmware_lease_handle == 0U &&
+       !s->host && !s->owner) {
+        labmate_onewire_hw_init(s);
+    } else {
+        s->has_temperature = false;
+        s->status = LabMateOneWireHwBusy;
+    }
+}

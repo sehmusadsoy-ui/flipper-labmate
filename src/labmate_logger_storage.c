@@ -164,6 +164,14 @@ bool labmate_logger_storage_start(LabMateApp* app) {
         /* Handle the rare case another app created the file after our
          * existence check; all other errors should stop the search. */
         if(storage_file_get_error(app->logger_file) != FSE_EXIST) break;
+        /* A failed CREATE_NEW still owns an attempted-open handle.
+         * Close it before trying the next ID; never reuse or truncate
+         * the competing writer's file. */
+        if(!storage_file_close(app->logger_file)) {
+            storage_file_free(app->logger_file);
+            app->logger_file = NULL;
+            break;
+        }
     }
 
     if(!opened) {

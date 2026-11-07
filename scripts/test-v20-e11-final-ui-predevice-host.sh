@@ -6,6 +6,7 @@ tmp=$(mktemp -d)
 trap 'rm -rf -- "$tmp"' EXIT HUP INT TERM
 command -v python3 >/dev/null 2>&1 || exit 2
 for cc in gcc clang; do command -v "$cc" >/dev/null 2>&1 || exit 2; done
+sh "$root/scripts/test-v20-storage-audit-fixes-host.sh"
 
 # First re-run ALL valid earlier regression suites, including UI source
 # pixel host test, Button 4096, Counter 4608 and GPIO 1280 per compiler.
@@ -30,4 +31,4 @@ for cc in gcc clang; do
     "$tmp/nav-$cc"
 done
 echo "E11 FINAL UI PRE-DEVICE ACCEPTANCE HOST PASS (GCC+CLANG)"
-echo "NO DEVICE/FAP/STABLE WRITE; all old UI runner migrations complete; physical acceptance still open."
+echo "NO DEVICE/FAP/STABLE WRITE; current E11 acceptance passed; historical runner inventory and physical acceptance remain separate."

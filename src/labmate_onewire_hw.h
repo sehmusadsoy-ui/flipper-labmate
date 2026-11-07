@@ -47,3 +47,5 @@ bool labmate_onewire_hw_start(
 void labmate_onewire_hw_poll(LabMateOneWireHw* state);
 /* Immediate GPIO cleanup, no wait for sensor conversion. */
 void labmate_onewire_hw_stop(LabMateOneWireHw* state);
+/* Re-enter an initialized tool: stop first, reset only after proven release. */
+void labmate_onewire_hw_reenter(LabMateOneWireHw* state);

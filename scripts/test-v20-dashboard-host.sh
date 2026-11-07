@@ -29,7 +29,7 @@ for path,expr in [
     ('src/labmate_doctor_pulse_bridge.c','labmate_signal_stats_record')]:
     assert expr in (r/path).read_text(),path
 app=(r/'src/labmate_internal.h').read_text()
-assert '#define LABMATE_VERSION_TEXT "v2.0DEV"' in app
+assert '#define LABMATE_VERSION_TEXT "v2.0"' in app.splitlines(), 'expected v2.0 display version'
 fam=(r/'application.fam').read_text()
 assert 'fap_version="2.0"' in fam
 assert 'LabMateToolDashboard' in (r/'src/labmate_navigation.c').read_text()

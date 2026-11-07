@@ -18,4 +18,4 @@ for suite in dashboard snapshot signal-stats doctor-advice scope-period-stats; d
     sh "$root/scripts/test-v20-$suite-host.sh"
 done
 echo "E11 REVIEWED PRE-DEVICE HOST PASS: 8 UI/safety + 10 core + 5 evidence suites"
-echo "PENDING: zero unmigrated old UI runners; physical pixel raster, resource contention, SD and device gates."
+echo "PENDING: physical raster, runtime loader/OOM, resource contention and real SD/fault gates. Retired historical features are separate."

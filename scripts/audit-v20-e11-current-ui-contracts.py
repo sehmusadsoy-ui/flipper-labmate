@@ -212,4 +212,4 @@ contains(chrome,(
 print("E11 CURRENT UI SOURCE CONTRACT PASS: 13 production renderer bodies")
 print("COVERAGE: COMM (UART/I2C/1W), records, logger, button/alerts,")
 print("frequency/pulse/PWM, root menu, shared measured pixel header")
-print("NOT A PIXEL RASTER, TIMER/GPIO, FOUR-UNMIGRATED-SUITES OR DEVICE PASS")
+print("SOURCE ONLY: NOT A PIXEL RASTER, TIMER/GPIO, RETIRED-FEATURE OR DEVICE PASS")

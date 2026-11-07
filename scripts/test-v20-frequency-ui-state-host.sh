@@ -26,8 +26,7 @@ PY
 for cc in gcc clang; do
   "$cc" -std=c11 -O1 -g -Wall -Wextra -Werror -pedantic \
     -fsanitize=address,undefined -fno-omit-frame-pointer -I"$root/src" \
-    "$root/tests/test_v20_frequency_ui_state.c" \
-    "$root/src/labmate_frequency_ui_state.c" -o "$tmp/frequi-$cc"
+    "$root/tests/test_v20_frequency_ui_state.c" -o "$tmp/frequi-$cc"
   "$tmp/frequi-$cc"
 done
 echo "V20 FREQUENCY UI HOST PASS GCC+Clang | NO DEVICE CLAIM"

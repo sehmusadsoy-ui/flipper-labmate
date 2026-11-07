@@ -53,7 +53,8 @@ def verify_sources(root: Path) -> None:
     internal = (app / "src/labmate_internal.h").read_text(encoding="utf-8")
     native = (app / "src/labmate_scope_native.c").read_text(encoding="utf-8")
     require('fap_version="2.0"' in fam, "staged FAP is not v2.0DEV")
-    require('#define LABMATE_VERSION_TEXT "v2.0DEV"' in internal, "staged app does not display v2.0DEV")
+    require(any(f'#define LABMATE_VERSION_TEXT "{version}"' in internal
+                for version in ("v2.0DEV", "v2.0")), "staged app has an unexpected v2.0 display version")
     require("furi_hal_resource_lease_try_acquire(" in native and
             "furi_hal_gpio_try_add_int_callback(" in native,
             "staged driver does not call patched native ABI")

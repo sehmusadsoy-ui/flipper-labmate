@@ -40,7 +40,6 @@ def function(text, name):
 git("merge-base", "--is-ancestor", base, "HEAD")
 inputs = (
     "src/labmate_input.c",
-    "src/labmate_input_menu.c",
     "src/labmate_input_measure.c",
     "src/labmate_capture_session.c",
     "src/labmate_capture_core.c",
@@ -49,10 +48,39 @@ inputs = (
     "src/labmate_frequency_tim2.c",
     "src/labmate_pulse_capture.c",
     "src/labmate_scope_native.c",
-    "src/labmate_logger_storage.c",
 )
-changed = git("diff", "--name-only", base, "HEAD", "--", *inputs).decode().strip()
+changed = git("diff", "--name-only", base, "--", *inputs).decode().strip()
 check(not changed, "Native/input source changed unexpectedly: " + changed)
+# Keep the approved menu byte-for-byte except for the reviewed failed-release
+# fix. Include working-tree changes so uncommitted safety edits are not hidden.
+menu_original = git("show", base + ":src/labmate_input_menu.c").decode()
+menu_old = (
+    "                        labmate_onewire_hw_stop(&app->thermometer);\n"
+    "                        labmate_onewire_hw_init(&app->thermometer);"
+)
+menu_new = "                        labmate_onewire_hw_reenter(&app->thermometer);"
+check(menu_original.count(menu_old) == 1, "OneWire menu baseline changed")
+check(read("src/labmate_input_menu.c") == menu_original.replace(menu_old, menu_new),
+      "Menu changed beyond the reviewed OneWire failed-release fix")
+# The persistence audit found that an EXIST collision still leaves an
+# attempted-open handle. Permit only its reviewed close-before-retry block;
+# compare index + working tree bytes, never only committed HEAD.
+logger_original = git("show", base + ":src/labmate_logger_storage.c").decode()
+logger_anchor = "        if(storage_file_get_error(app->logger_file) != FSE_EXIST) break;\n"
+logger_close = (
+    "        /* A failed CREATE_NEW still owns an attempted-open handle.\n"
+    "         * Close it before trying the next ID; never reuse or truncate\n"
+    "         * the competing writer's file. */\n"
+    "        if(!storage_file_close(app->logger_file)) {\n"
+    "            storage_file_free(app->logger_file);\n"
+    "            app->logger_file = NULL;\n"
+    "            break;\n"
+    "        }\n"
+)
+check(logger_original.count(logger_anchor) == 1, "Logger retry baseline changed")
+check(read("src/labmate_logger_storage.c") == logger_original.replace(
+          logger_anchor, logger_anchor + logger_close),
+      "Logger changed beyond the reviewed close-before-retry fix")
 original = git("show", base + ":src/labmate_ui_screens.c").decode()
 current = read("src/labmate_ui_screens.c")
 for name in (

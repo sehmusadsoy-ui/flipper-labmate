@@ -32,8 +32,7 @@ PY
 for cc in gcc clang; do
     "$cc" -std=c11 -O1 -g -Wall -Wextra -Werror -pedantic \
       -fsanitize=address,undefined -fno-omit-frame-pointer \
-      -I"$root/src" "$root/tests/test_v20_pulse_ui_state.c" \
-      "$root/src/labmate_pulse_ui_state.c" -o "$tmp/pulseui-$cc"
+      -I"$root/src" "$root/tests/test_v20_pulse_ui_state.c" -o "$tmp/pulseui-$cc"
     "$tmp/pulseui-$cc"
 done
 echo "V20 PULSE RESUME HOST PASS GCC+Clang | DEVICE NOT TESTED"
