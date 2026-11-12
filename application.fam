@@ -12,6 +12,7 @@ App(
     fap_category="Tools",
     fap_author="SauronLAB / Sehmus",
     fap_icon="labmate_10px.png",
+    fap_file_assets="files",  # i18n_tr.bin: Turkish UI, read only when selected
     fap_version="2.0",
     fap_description="LabMate Ultimate v2.0: 3.3V digital diagnostics and measurement dashboard.",
 )

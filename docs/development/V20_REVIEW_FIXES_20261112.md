@@ -32,7 +32,8 @@ permits explicitly; geometry and draw calls are unchanged.
   the user's system sound/vibro settings apply). Trip logic is unchanged.
 - **Turkish UI**: Settings → Language switches English/Türkçe and persists in
   the existing `ui_prefs` record (language byte 1). `labmate_i18n.c` swaps
-  English UI literals for entries in `labmate_i18n_table.h` (429 strings)
+  English UI literals using `files/i18n_tr.bin` (429 strings, 9 KB), which is
+  read from the app's SD assets only while Turkish is selected
   and draws ç ğ ı ö ş ü İ procedurally on top of the ASCII-only fonts.
   Renderers and their geometry are untouched; UI sources only gain one
   trailing `#include "labmate_i18n.h"`.
@@ -42,3 +43,12 @@ permits explicitly; geometry and draw calls are unchanged.
 - Verified on host only: acceptance runner PASS (GCC), plus a throwaway
   raster test of the mark drawing with the real u8g2 font data. Not yet
   reviewed on the device screen.
+
+### Out-of-memory fix (same day)
+
+The first Turkish build (215,864 bytes) hit the loader's out-of-memory error:
+loaded sections grew by ~22 KB (table in `.rodata` +14.5 KB, per-call text
+hooks +7 KB). The table now ships as an embedded file asset
+(`fap_file_assets="files"`) and is loaded into heap only while Turkish is on;
+text hooks are one small wrapper per source file. Regenerate the table with
+`python3 scripts/gen-i18n-tr.py` after editing `i18n/tr.tsv`.

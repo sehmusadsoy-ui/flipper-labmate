@@ -1,26 +1,109 @@
 #define LABMATE_I18N_IMPL
 #include "labmate_i18n.h"
 #include "labmate_ui_prefs.h"
+#include <furi.h>
+#include <storage/storage.h>
+#include <stdlib.h>
 #include <string.h>
 
-/* App-thread writes the language; the GUI thread reads it and owns the
- * font-tracking state below. No GPIO, IRQ, storage or capture access. */
+/* Language and table change only under the UI mutex (labmate_i18n_swap);
+ * the GUI thread reads them under the same mutex and owns the font state.
+ * No GPIO, IRQ or capture access. The table lives on SD, never in .rodata. */
 static uint8_t i18n_language = LabMateLangEnglish;
 /* 0 = unknown/other (no marks), 1 = FontSecondary, 2 = FontPrimary. */
 static uint8_t i18n_font = 1U;
 
+/* files/i18n_tr.bin, built by scripts/gen-i18n-tr.py. */
+#define I18N_PATH APP_ASSETS_PATH("i18n_tr.bin")
+#define I18N_MAX_BYTES 16384U
+#define I18N_HEADER 8U
+#define I18N_ENTRY 8U
+
 typedef struct {
-    const char* en;
-    const char* tr;
-} LabMateI18nEntry;
+    uint16_t count;
+    const uint8_t* entries; /* count x {u32 hash, u16 offset, u16 0} */
+    const char* blob;
+    uint32_t blob_size;
+    uint8_t data[];
+} LabMateI18nTable;
 
-static const LabMateI18nEntry i18n_table[] = {
-#include "labmate_i18n_table.h"
-};
-#define I18N_COUNT (sizeof(i18n_table) / sizeof(i18n_table[0]))
+static LabMateI18nTable* i18n_table;
 
-void labmate_i18n_set_language(uint8_t language) {
-    i18n_language = language == LabMateLangTurkish ? LabMateLangTurkish : LabMateLangEnglish;
+static uint32_t i18n_hash(const char* s) {
+    uint32_t h = 0x811C9DC5U;
+    while(*s) {
+        h ^= (uint8_t)*s++;
+        h *= 0x01000193U;
+    }
+    return h;
+}
+
+static uint32_t i18n_u32(const uint8_t* p) {
+    return (uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16) |
+           ((uint32_t)p[3] << 24);
+}
+
+static uint16_t i18n_u16(const uint8_t* p) {
+    return (uint16_t)(p[0] | (p[1] << 8));
+}
+
+/* Accept the table only if every offset lands on a NUL-terminated string. */
+static bool i18n_validate(LabMateI18nTable* t, uint32_t size) {
+    const uint8_t* d = t->data;
+    if(size < I18N_HEADER || memcmp(d, "LMT1", 4) != 0) return false;
+    const uint16_t count = i18n_u16(d + 4);
+    const uint32_t index_end = I18N_HEADER + (uint32_t)count * I18N_ENTRY;
+    if(!count || index_end >= size || d[size - 1U] != 0U) return false;
+    t->count = count;
+    t->entries = d + I18N_HEADER;
+    t->blob = (const char*)(d + index_end);
+    t->blob_size = size - index_end;
+    uint32_t previous = 0U;
+    for(uint16_t i = 0U; i < count; ++i) {
+        const uint8_t* e = t->entries + (uint32_t)i * I18N_ENTRY;
+        const uint32_t hash = i18n_u32(e);
+        if(i && hash <= previous) return false; /* strictly sorted, unique */
+        previous = hash;
+        if(i18n_u16(e + 4) >= t->blob_size) return false;
+    }
+    return true;
+}
+
+void* labmate_i18n_load_turkish(void) {
+    Storage* storage = furi_record_open(RECORD_STORAGE);
+    if(!storage) return NULL;
+    LabMateI18nTable* table = NULL;
+    File* file = storage_file_alloc(storage);
+    if(file) {
+        if(storage_file_open(file, I18N_PATH, FSAM_READ, FSOM_OPEN_EXISTING)) {
+            const uint64_t size = storage_file_size(file);
+            if(size > I18N_HEADER && size <= I18N_MAX_BYTES) {
+                table = malloc(sizeof(LabMateI18nTable) + (size_t)size);
+                if(table &&
+                   (storage_file_read(file, table->data, (size_t)size) != (size_t)size ||
+                    !i18n_validate(table, (uint32_t)size))) {
+                    free(table);
+                    table = NULL;
+                }
+            }
+        }
+        storage_file_close(file); /* required even after a failed open */
+        storage_file_free(file);
+    }
+    furi_record_close(RECORD_STORAGE);
+    return table;
+}
+
+void* labmate_i18n_swap(uint8_t language, void* table) {
+    void* previous = i18n_table;
+    i18n_table = table;
+    i18n_language = language == LabMateLangTurkish && table ? LabMateLangTurkish :
+                                                               LabMateLangEnglish;
+    return previous;
+}
+
+void labmate_i18n_free(void* table) {
+    free(table);
 }
 
 uint8_t labmate_i18n_language(void) {
@@ -28,15 +111,18 @@ uint8_t labmate_i18n_language(void) {
 }
 
 const char* labmate_i18n_tr(const char* text) {
-    if(!text || i18n_language != LabMateLangTurkish) return text;
-    size_t lo = 0U;
-    size_t hi = I18N_COUNT;
+    const LabMateI18nTable* t = i18n_table;
+    if(!text || !t || i18n_language != LabMateLangTurkish) return text;
+    const uint32_t hash = i18n_hash(text);
+    uint32_t lo = 0U;
+    uint32_t hi = t->count;
     while(lo < hi) {
-        const size_t mid = lo + (hi - lo) / 2U;
-        const int cmp = strcmp(text, i18n_table[mid].en);
-        if(cmp == 0) return i18n_table[mid].tr;
-        if(cmp < 0) hi = mid;
-        else lo = mid + 1U;
+        const uint32_t mid = lo + (hi - lo) / 2U;
+        const uint8_t* e = t->entries + mid * I18N_ENTRY;
+        const uint32_t h = i18n_u32(e);
+        if(h == hash) return t->blob + i18n_u16(e + 4);
+        if(h < hash) lo = mid + 1U;
+        else hi = mid;
     }
     return text;
 }

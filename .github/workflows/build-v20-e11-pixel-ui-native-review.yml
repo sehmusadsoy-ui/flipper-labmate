@@ -219,6 +219,7 @@ jobs:
           mkdir -p momentum-src/applications_user/labmate/src
           cp labmate/application.fam labmate/labmate_10px.png labmate/labmate_sections.ld momentum-src/applications_user/labmate/
           cp labmate/src/*.c labmate/src/*.h momentum-src/applications_user/labmate/src/
+          cp -r labmate/files momentum-src/applications_user/labmate/
           test -f momentum-src/applications_user/labmate/src/labmate_scope_bridge.c
           test -f momentum-src/applications_user/labmate/src/labmate_scope_native.c
           grep -Fqx '#define LABMATE_VERSION_TEXT "v2.0"' momentum-src/applications_user/labmate/src/labmate_internal.h

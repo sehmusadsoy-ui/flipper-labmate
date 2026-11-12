@@ -150,7 +150,8 @@ int32_t labmate_app(void* p) {
         GuiLayerFullscreen);
 
     NotificationApp* notifications = furi_record_open(RECORD_NOTIFICATION);
-    labmate_i18n_set_language(app->ui_prefs.language);
+    /* Language applied last; 255 forces one load on the first iteration. */
+    uint8_t i18n_applied = 255U;
 
     InputEvent event = {0};
 
@@ -204,11 +205,24 @@ int32_t labmate_app(void* p) {
         }
         labmate_input_postfilter(app, status, &event, screen_before_input);
         labmate_ui_motion_step(app);
-        labmate_i18n_set_language(app->ui_prefs.language);
+        const uint8_t i18n_wanted = app->ui_prefs.language;
         labmate_deferred_prepare(app, &work);
         furi_mutex_release(app->mutex);
 
         labmate_deferred_execute(app, &work, viewport);
+        /* SD read outside the mutex; publish under it; free outside it.
+         * A missing/invalid table keeps English and is not retried until
+         * the user changes the language again. */
+        if(i18n_wanted != i18n_applied) {
+            i18n_applied = i18n_wanted;
+            void* table = i18n_wanted == LabMateLangTurkish ?
+                labmate_i18n_load_turkish() : NULL;
+            furi_mutex_acquire(app->mutex, FuriWaitForever);
+            void* previous = labmate_i18n_swap(i18n_wanted, table);
+            furi_mutex_release(app->mutex);
+            labmate_i18n_free(previous);
+            view_port_update(viewport);
+        }
         labmate_redraw_maybe(&redraw, app, status, event, viewport);
     }
 
@@ -252,6 +266,7 @@ int32_t labmate_app(void* p) {
     furi_record_close(
         RECORD_GUI);
     furi_record_close(RECORD_NOTIFICATION);
+    labmate_i18n_free(labmate_i18n_swap(LabMateLangEnglish, NULL));
 
     furi_message_queue_free(
         queue);

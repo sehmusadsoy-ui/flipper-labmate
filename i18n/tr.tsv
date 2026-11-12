@@ -1,0 +1,430 @@
+# English UI literal<TAB>Turkish. Regenerate files/i18n_tr.bin with scripts/gen-i18n-tr.py
+ of 17	 / 17
+1-Wire Temp	1-Wire Isı
+1-Wire data pin	1-Wire veri pini
+1-Wire temp	1-Wire ısı
+17 guides	17 kılavuz
+3.3 V I2C bus.	cihaz bul.
+3.3 V bus	3.3 V hat
+3.3 V digital	3.3 V dijital
+3.3 V only	Yalnız 3.3 V
+3.3 V supply	3.3 V güç
+64-bit count	64-bit sayım
+ALERT LATCHED	UYARI KİLİTLİ
+About	Hakkında
+Action	İşlem
+Adjust	Ayarla
+Advice	Öneri
+Advisory	Öneri
+Advisory results	Öneri sonuçları
+Alert	Uyarı
+Alert stays set	Uyarı kalıcıdır
+Alerts	Uyarı
+Allowed difference	İzin verilen fark
+Another tool is using PA4	PA4 başka araçta
+Another tool is using it	Başka araç kullanıyor
+Arm	Kur
+BELOW LIMIT	LİMİT ALTI
+BUSY	DOLU
+BUTTON SETTLE	BUTON OTURMA
+Back	Geri
+Baud rate	Baud hızı
+Both values off	İkisi de sapmış
+Bounce time	Sıçrama
+Bounces	Sıçrama
+Browse	Gez
+Bus busy	Hat dolu
+Busy	Dolu
+Button	Buton
+Button Analyzer	Buton Analizi
+Button analyzer	Buton analizi
+CANCELLED	İPTAL
+CAPTURE BLOCKED	YAKALAMA YOK
+COMM	İLETİŞİM
+CSV saved on SD	CSV SD'ye yazılır
+Cancel	İptal
+Capture / Stop	Yakala / Dur
+Capture a little	Kıyas için biraz
+Capture a signal,	Sinyal yakala,
+Capture again	Yine yakala
+Capture again.	Yine yakala.
+Capture data	Veri yakala
+Capture is busy	Yakalama dolu
+Capture longer	Uzun yakala
+Capture new B	Yeni B yakala
+Capture then save	Yakala ve sakla
+Check DQ and power	DQ ve güce bak
+Check DQ wiring and power	DQ kablo ve güce bak
+Check VDD power	VDD gücüne bak
+Check bus and retry	Hatta bak, yine dene
+Check clock	Saate bak
+Check clock stability.	Saat kararlılığına bak.
+Check duty	Duty'ye bak
+Check external VDD power	Harici VDD gücüne bak
+Check signal	Sinyale bak
+Check source	Kaynağa bak
+Check source and wire.	Kaynak ve kabloya bak.
+Check switch input	Anahtar girişini ve
+Check the signal line.	Sinyal hattına bak.
+Check wiring	Kabloya bak
+Check wiring and pull-ups	Kablo ve pull-up'a bak
+Checks pin changes	Pin değişimini izler
+Choose log	Kayıt seç
+Clear	Sil
+Clear when armed	Kuruluyken sil
+Clock	Saat
+Clock or overflow	Saat veya taşma
+Clock or sample loss	Saat/örnek kaybı
+Closed	Kapalı
+Comm	İletişim
+Compare	Kıyas
+Compare samples	Örnekleri kendi
+Confirm deletions	Silmeyi onayla
+Confirm?	Emin mi?
+Count	Sayım
+Count rising signal	Yükselen kenarları
+Counter	Sayaç
+DELETE	SİL
+DELETED	SİLİNDİ
+DISARMED	KAPALI
+Dashboard	Pano
+Data Logger	Veri Kaydı
+Data logger	Veri kaydı
+Delete	Sil
+Delete log?	Silinsin mi?
+Details	Detay
+Doctor	Doktor
+Done	Bitti
+Drifting	Kayıyor
+Dropped	Kaçan
+Duty percentage	Doluluk yüzdesi
+EDGE COUNT	KENAR SAYI
+EMPTY	BOŞ
+ERROR	HATA
+Edit TX	TX yaz
+Editing	Düzen
+Eight logic pins	Sekiz lojik pin
+Elapsed time shown	Geçen süre görünür
+Empty	Boş
+Error	Hata
+Errors	Hata
+Event Counter	Olay Sayacı
+Event counter	Olay sayacı
+Evidence	Kanıt
+Exclusive 3.3 V bus	Özel 3.3 V hat
+Exit	Çık
+Expected frequency.	Beklenen frekans.
+External VDD needed	Harici VDD gerekli
+External sensor VDD	Harici sensör VDD
+FREQUENCY	FREKANS
+Find tool help and	Araç yardımı ve
+Firmware API missing	Firmware API yok
+Firmware error	Firmware hata
+Frequency	Frekans
+Frequency Meter	Frekans Ölçer
+Frequency differs	Frekans farklı,
+Frequency meter	Frekans ölçer
+Frequency off	Frekans farkı
+Frequency or Pulse.	Frekans veya Darbe.
+GPIO Monitor	GPIO İzleyici
+GPIO monitor	GPIO izleyici
+Generate a square	PA7'den kare
+Group	Grup
+Guide	Kılavuz
+Held	Tut
+High / low / period	Yük/düş/periyot
+High level held	Yüksekte kaldı
+History	Geçmiş
+Hold	Tut
+Hold time	Basılı
+I2C Explorer	I2C Tarayıcı
+I2C explorer	I2C tarayıcı
+Info	Bilgi
+Info and links	Bilgi ve link
+Invalid data	Hatalı veri
+Invalid sample	Hatalı örnek
+Invalid temperature data	Geçersiz sıcaklık verisi
+Irregular pulse widths	Düzensiz darbe
+LIMIT	LİMİT
+LIMIT REACHED	LİMİT AŞILDI
+LOAD	AL
+LOADED	YÜKLÜ
+Language	Dil
+Language and motion	Dil ve hareket
+Language and settings	Dil ve ayarlar
+List	Liste
+Listening...	Dinleniyor...
+Live	Canlı
+Load, save, delete	Yükle, kaydet, sil
+Log History	Kayıt Geçmişi
+Log history	Geçmiş
+Log view	Kayıt
+Logger	Kayıt
+Logic Scope	Lojik Skop
+Logic scope	Lojik skop
+Logs	Kayıt
+Low level held	Düşükte kaldı
+Low means pressed	Düşük = basılı
+MEASURE	ÖLÇÜM
+MODE	MOD
+Match	Uygun
+Measure	Ölçüm
+Measure how often a	Sinyalin tekrar
+Measure pulse width	Darbe genişliği ve
+Measured duty differs	Ölçülen duty
+Measured edges only	Yalnız ölçülen kenar
+Measured frequency	Ölçülen frekans
+Measurement stopped	Ölçüm durduruldu
+Menu	Menü
+Minimum quiet time	En az sessiz süre
+Mode	Mod
+More	Daha
+Motion	Hareket
+NO DEVICES	CİHAZ YOK
+NO LOG SELECTED	KAYIT SEÇİLMEDİ
+NO SIGNAL	SİNYAL YOK
+NO VALID FREQ	FREKANS YOK
+NO VALID PULSE	DARBE YOK
+NOT SCANNED	TARANMADI
+Need more data	Daha çok veri
+Needs external VDD power	Harici VDD gücü gerekli
+Never connect 5 V or	GPIO pinlerine 5 V
+Next	İleri
+No anomaly observed	Anormallik yok
+No capture	Kayıt yok
+No changes observed.	Değişim görülmedi.
+No data yet	Veri yok
+No devices	Cihaz yok
+No devices found	Cihaz bulunamadı
+No edges observed.	Kenar görülmedi.
+No edges seen	Kenar yok
+No external pins	Harici pin yok
+No issue seen	Sorun yok
+No reference	Referans yok
+No reference yet	Referans yok
+No reply	Yanıtsız
+No sample A	Örnek A yok
+No sample B	Örnek B yok
+No saved data	Kayıtlı veri yok
+No saved logs	Kayıt yok
+No scope capture	Skop kaydı yok
+No signal	Sinyal yok
+No valid cycle	Döngü yok
+Not enough verified	Yeterli doğrulanmış
+Not set	Ayarsız
+OK Reference	OK Referans
+OK Settings	OK Ayarlar
+OPENING SD	SD AÇILIYOR
+OPENING SD...	SD AÇILIYOR...
+OUTPUT	ÇIKIŞ
+Open / Delete	Aç / Sil
+Open or delete logs	Kayıt aç veya sil
+Output	Çıkış
+Over range	Aralık dışı
+PA4 data	PA4 veri
+PA4 is busy	PA4 meşgul
+PA7 output	PA7 çıkış
+PC0 clock	PC0 saat
+PC1 busy	PC1 dolu
+PC1 data	PC1 veri
+PC1 input	PC1 giriş
+PC1 pulse	PC1 darbe
+PULSE DUTY	DARBE DUTY
+PWM Studio	PWM Stüdyo
+PWM stays stopped	PWM durmuş kalır
+PWM studio	PWM stüdyo
+Page	Sayfa
+Pages	Sayfa
+Period or counts	Periyot/sayım
+Periods vary in time.	Periyotlar değişiyor.
+Press OK to run	Başlat: OK
+Press OK to scan	Taramak için OK
+Profiles	Profiller
+Project	Proje
+Pulse	Darbe
+Pulse Analyzer	Darbe Analizi
+Pulse analyzer	Darbe analizi
+Pulses missing	Eksik darbe
+Quiet time	Sessizlik
+READ ONLY	SALT OKU
+READ ROWS	OKUNAN
+READY	HAZIR
+READY / 1 SEC SAMPLE	HAZIR / 1 SN ÖRNEK
+RECORDS	KAYITLAR
+RESTART REQUIRED	YENİDEN BAŞLAT
+RESULTS	SONUÇ
+ROWS	SATIR
+Read	Oku
+Read / Stop	Oku / Dur
+Read again	Yine oku
+Read an external	Harici sıcaklık
+Read-only overview	Salt okunur özet
+Reading sensor...	Okunuyor...
+Reading temperature...	Sıcaklık okunuyor...
+Reading unavailable	Ölçüm yok
+Ready	Hazır
+Received	Alınan
+Record	Kaydet
+Record / Stop	Kaydet / Dur
+Record a measurement	Bir ölçüm kaydet
+Records	Kayıtlar
+Reference	Referans
+Reopen Doctor.	Doktor'u yeniden aç.
+Reset	Sıfırla
+Reset UI	Sıfırla
+Reset interface?	Sıfırlansın mı?
+Reset stats	İstat. sıfırla
+Resume	Sürdür
+Retry	Yine
+Review or delete	Kayıtlı CSV'leri
+Review past data	Geçmiş veriyi
+Rising edges on PB3	PB3 yükselen kenar
+Run Scope, then stop.	Skop'u çalıştır, durdur.
+Running	Açık
+SAVE	YAZ
+SAVING TO SD	SD'YE YAZ
+SCANNING	TARAMA
+SCANNING SD...	SD TARA...
+SD BUSY - WAIT	SD MEŞGUL
+SD READ ERROR	SD HATASI
+SD WRITE ERROR	SD YAZ HATA
+SD card	SD kart
+SETTINGS	AYARLAR
+SOURCE	KAYNAK
+Safety	Güvenlik
+Sample A	Örnek A
+Sample B	Örnek B
+Samples every 1 s	1 sn'de bir örnek
+Save	Yaz
+Save A / B	A / B sakla
+Save failed	Kayıt yok
+Save measurements	Ölçümleri SD'ye
+Save three device	Üç cihaz ayarını
+Save two captures	İki yakalama sakla
+Saved	Kayıtlı
+Saved CSV	Kayıtlı CSV
+Saved capture	Kayıtlı veri
+Saved result	Kayıtlı sonuç
+Saving...	Kayıt...
+Scan	Tara
+Scan / Stop	Tara / Dur
+Scan again	Yine tara
+Scan bus devices	Hattı tara
+Scan cancelled	Tarama iptal
+Scan error	Hata
+Scan on phone	Telefonla tara
+Scanning bus...	Hat taranıyor...
+Scope	Skop
+Select	Seç
+Select an input.	Bir giriş seç.
+Send	Yolla
+Send and read data	Seri hattan veri
+Serial messages	Seri mesajlar
+Set a reference to start	Başlamak için ref. gir
+Set expected duty.	Beklenen doluluk.
+Set one to compare	Kıyas için bir
+Set reference	Referans gir
+Set step with arrows.	Adımı oklarla seç.
+Settings	Ayarlar
+Settings return to	Ayarlar varsayılana
+Settle	Otur
+Settle time	Oturma
+Settling	Oturma
+Setup row	Ayar satırı
+Signal	Sinyal
+Signal Doctor	Sinyal Doktoru
+Signal doctor	Sinyal doktoru
+Source	Kaynak
+Source and	Kaynak ve
+Stable	Kararlı
+Start	Başla
+Start / Stop	Başlat / Dur
+Start a recording	Bir kayıt başlat
+Startup intro	Açılış ekranı
+Stats	İstat.
+Stop	Dur
+Stop capture	Durdur
+Stop the capture,	Yakalamayı durdur,
+Stopped	Durdu
+Summary	Özet
+TIME	SÜRE
+Target	Hedef
+Temperature	Sıcaklık
+Test load	Yük testi
+Test under load	Yükte dene
+The line fell quiet.	Hat sessizleşti.
+Threshold Alerts	Eşik Uyarıları
+Threshold alerts	Eşik uyarıları
+Time	Süre
+Timing varies	Oynak süre
+Tolerance	Tolerans
+Tool	Araç
+Tool guides	Kılavuzlar
+Try again	Yine dene
+Two input modes	İki giriş modu
+UART receive	UART alım
+UNKNOWN	BELİRSİZ
+Unavailable	Yok
+Unknown voltage and	Bilinmeyen gerilim,
+Unsafe data	Riskli veri
+Until acknowledged	Onaylanana kadar
+Up/Down: change	Yuk/Aşağı: değiş
+Use verified signals.	Sinyali doğrula.
+User reference	Kullanıcı ref.
+User-set reference	Kullanıcı referansı
+Using LabMate	LabMate kullanımı
+WAITING FOR INPUT	GİRİŞ BEKLENİYOR
+Wait next edge	Kenar bekle
+Waiting	Bekliyor
+Watch eight pins	Sekiz pinin 1/0
+Watch readings for	Ölçümleri seçtiğin
+Watch signal timing	PC1 yakalamasında
+Weak pulses	Zayıf darbe
+Wiring	Kablo
+Within the chosen	Seçilen referans
+Your logs stay.	Kayıtların kalır.
+and contact bounce.	sıçramayı incele.
+and duty cycle.	doluluk oranı ölç.
+and duty differs too.	duty de farklı.
+as CSV files on SD.	CSV olarak kaydet.
+automotive signals:	araç sinyalleri:
+before no signal.	(sinyal yok için).
+changes over time.	zamanla say.
+device found	cihaz var
+devices found	cihaz bulundu
+differs from expected.	beklenenden farklı.
+edges	kenar
+events	olay
+found	var
+from a PC1 capture.	zamanlamayı izle.
+from expected value.	(beklenen değerden).
+from expected.	beklenenden farklı.
+go back to defaults.	varsayılana döner.
+go high or low.	olmasını izle.
+in one place.	tek yerde gör.
+in this capture.	(bu yakalamada).
+limits you choose.	limitlere göre izle.
+live readings.	referans gir.
+longer to compare.	daha uzun yakala.
+made capture unsafe.	kaydı güvensiz yaptı.
+mains to the GPIO pins.	veya şebeke bağlama.
+never connect directly.	doğrudan bağlama.
+over a serial link.	gönder ve oku.
+prevents assessment.	değerlendirmeyi önler.
+project details.	proje bilgileri.
+readings yet.	ölçüm yok.
+reference range.	aralığında.
+releases	sürümler
+rows	satır
+saved CSV readings.	incele veya sil.
+setups for later.	sonrası için sakla.
+signal repeats.	sıklığını ölç.
+temperature sensor.	sensörünü oku.
+their defaults.	geri döner.
+then stop.	sonra durdur.
+then try again.	yine dene.
+to your reference.	referansınla kıyasla.
+tool	araç
+tools	araç
+wave from PA7.	dalga üret.
+were captured.	genişlikleri görüldü.
