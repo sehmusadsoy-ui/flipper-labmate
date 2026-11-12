@@ -15,7 +15,7 @@ typedef struct {
 } LabMateI18nEntry;
 
 static const LabMateI18nEntry i18n_table[] = {
-#include "labmate_i18n_table.inc"
+#include "labmate_i18n_table.h"
 };
 #define I18N_COUNT (sizeof(i18n_table) / sizeof(i18n_table[0]))
 

@@ -32,7 +32,7 @@ permits explicitly; geometry and draw calls are unchanged.
   the user's system sound/vibro settings apply). Trip logic is unchanged.
 - **Turkish UI**: Settings → Language switches English/Türkçe and persists in
   the existing `ui_prefs` record (language byte 1). `labmate_i18n.c` swaps
-  English UI literals for entries in `labmate_i18n_table.inc` (429 strings)
+  English UI literals for entries in `labmate_i18n_table.h` (429 strings)
   and draws ç ğ ı ö ş ü İ procedurally on top of the ASCII-only fonts.
   Renderers and their geometry are untouched; UI sources only gain one
   trailing `#include "labmate_i18n.h"`.
