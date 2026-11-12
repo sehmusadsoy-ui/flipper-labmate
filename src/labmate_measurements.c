@@ -50,6 +50,7 @@ void measurement_reset(LabMateApp* app) {
     app->frequency_millihz = 0;
     app->frequency_edge_seen = false;
     app->frequency_valid = false;
+    app->frequency_over_range = false;
 
     memset(
         app->frequency_period_samples,
@@ -301,6 +302,7 @@ void measurement_update(LabMateApp* app) {
                        (tick_frequency * 3U)) {
                     app->frequency_millihz = 0U;
                     app->frequency_valid = false;
+                    app->frequency_over_range = false;
                     app->frequency_hw_gate_started = false;
                 }
 
@@ -340,6 +342,7 @@ void measurement_update(LabMateApp* app) {
                                        sample_millihz)) {
                                     app->frequency_millihz = sample_millihz;
                                     app->frequency_valid = true;
+                                    app->frequency_over_range = false;
                                     frequency_stats_record(app);
                                     labmate_doctor_frequency_note_high(app);
                                 } else {
@@ -347,6 +350,15 @@ void measurement_update(LabMateApp* app) {
                                      * expose a fresh VALID display reading. */
                                     app->frequency_valid = false;
                                 }
+                            } else if(gate_edges >= LABMATE_HIGH_GATE_MIN_EDGES) {
+                                /* Enough real edges were counted, so the
+                                 * only remaining NoSample cause is a rate
+                                 * above the uint32 millihertz range. Say so
+                                 * instead of showing a stale or "No signal"
+                                 * state; no value is published or logged. */
+                                app->frequency_millihz = 0U;
+                                app->frequency_valid = false;
+                                app->frequency_over_range = true;
                             }
                         }
                     }
@@ -440,12 +452,17 @@ void measurement_update(LabMateApp* app) {
         /*
          * No rising edge for 3 seconds -> signal lost.
          */
-        if(app->frequency_irq_last_tick != 0 &&
+        /* Snapshot the ISR timestamp FIRST, then read the kernel tick.
+         * The ISR may stamp a newer tick than a `now` taken at function
+         * entry; `now - last` would then wrap to ~UINT32_MAX and look like
+         * a 3 s silence, wiping a perfectly live reading. */
+        const uint32_t last_edge_tick = app->frequency_irq_last_tick;
+        if(last_edge_tick != 0 &&
            tick_frequency > 0) {
 
             uint32_t no_edge_ticks =
-                now -
-                app->frequency_irq_last_tick;
+                furi_get_tick() -
+                last_edge_tick;
 
             if(no_edge_ticks >
                (tick_frequency * 3U)) {
@@ -495,8 +512,12 @@ void measurement_update(LabMateApp* app) {
         /* A disconnected or stopped source must not display stale data.
          * Restart synchronization after a long quiet interval.
          */
+        /* `last_tick` was copied inside the critical section above and may be
+         * newer than the `now` read at function entry. Compare it with a
+         * tick taken AFTER the snapshot so the difference cannot wrap. */
+        now = furi_get_tick();
         if(tick_frequency > 0U &&
-           (now - last_tick) > (tick_frequency * 3U)) {
+           (uint32_t)(now - last_tick) > (tick_frequency * 3U)) {
             FURI_CRITICAL_ENTER();
             app->pulse_irq_seen = false;
             app->pulse_irq_high_valid = false;

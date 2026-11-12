@@ -22,7 +22,9 @@ static const char* const labmate_gpio_names[]={"PC0","PC1","PC3","PB2","PB3","PA
 typedef struct {
     uint8_t gpio_index,generator_freq_index,generator_duty_percent,generator_custom_step_index;
     uint8_t ui_pulse_phase,ui_frequency_trace_count,ui_frequency_trace_head,ui_frequency_trace[100];
+    uint8_t ui_frequency_recent_count,ui_frequency_recent_head;uint32_t ui_frequency_recent[32];
     bool hold,capture_blocked,capture_release_fault,frequency_valid,frequency_stats_valid;
+    bool frequency_over_range;
     uint32_t frequency_millihz,frequency_min_millihz,frequency_max_millihz,edges;
     Threshold threshold;
     bool generator_editing,generator_running,generator_blocked,generator_release_fault;
@@ -147,6 +149,29 @@ static unsigned frequency_test(void){
         if(!a.frequency_valid)assert(has(&c,"No signal"));
         cases++;
     }
+    {   /* Over range: counted edges above the uint32 millihertz limit. */
+        LabMateApp a={0};Canvas c={0};a.gpio_index=4U;a.frequency_over_range=true;
+        LabMateApp before=a;draw_frequency(&c,&a);check(&c,&a,&before);
+        assert(has(&c,"Over range")&&!has(&c,"No signal")&&!has(&c,"Stable"));cases++;
+    }
+    {   /* Session Min/Max far apart, recent readings steady: Stable. */
+        LabMateApp a={0};Canvas c={0};a.gpio_index=1U;
+        a.frequency_valid=a.frequency_stats_valid=true;a.frequency_millihz=1000000U;
+        a.frequency_min_millihz=100000U;a.frequency_max_millihz=1000000U;
+        a.ui_frequency_recent_count=3U;a.ui_frequency_recent_head=3U;
+        a.ui_frequency_recent[0]=a.ui_frequency_recent[1]=a.ui_frequency_recent[2]=1000000U;
+        LabMateApp before=a;draw_frequency(&c,&a);check(&c,&a,&before);
+        assert(has(&c,"Stable")&&!has(&c,"Drifting"));cases++;
+    }
+    {   /* Recent readings spread by more than 5%: Drifting. */
+        LabMateApp a={0};Canvas c={0};a.gpio_index=1U;
+        a.frequency_valid=a.frequency_stats_valid=true;a.frequency_millihz=1100000U;
+        a.frequency_min_millihz=1000000U;a.frequency_max_millihz=1100000U;
+        a.ui_frequency_recent_count=2U;a.ui_frequency_recent_head=2U;
+        a.ui_frequency_recent[0]=1000000U;a.ui_frequency_recent[1]=1100000U;
+        LabMateApp before=a;draw_frequency(&c,&a);check(&c,&a,&before);
+        assert(has(&c,"Drifting"));cases++;
+    }
     return cases;
 }
 static unsigned generator_test(void){
@@ -216,7 +241,7 @@ static unsigned pulse_test(void){
 }
 int main(void){
     const unsigned f=frequency_test(),g=generator_test(),p=pulse_test();
-    assert(f==288U&&g==384U&&p==4032U);
+    assert(f==291U&&g==384U&&p==4032U); /* 288 matrix + over-range + 2 drift cases */
     printf("E11 UI05D EXACT RENDER PASS: frequency=%u PWM=%u pulse=%u total=%u\n",f,g,p,f+g+p);
     return 0;
 }

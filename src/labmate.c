@@ -9,6 +9,7 @@
 #include "labmate_view.h"
 #include "labmate_capture_session.h"
 #include "labmate_input.h"
+#include "labmate_input_filter.h"
 #include "labmate_deferred.h"
 #include "labmate_event_counter.h"
 #include "labmate_button_capture.h"
@@ -176,7 +177,13 @@ int32_t labmate_app(void* p) {
         if(app->screen == LabMateScreenOneWire) labmate_onewire_hw_poll(&app->thermometer);
         if(app->i2c) labmate_i2c_runtime_poll(app->i2c);
 
-        labmate_input_dispatch(app, status, event, &work);
+        /* UI-only input shaping: editor hold-to-repeat and the Signal Doctor
+         * entry guard. Never touches capture, lease or storage state. */
+        const LabMateScreen screen_before_input = app->screen;
+        if(labmate_input_prefilter(app, status, &event)) {
+            labmate_input_dispatch(app, status, event, &work);
+        }
+        labmate_input_postfilter(app, status, &event, screen_before_input);
         labmate_ui_motion_step(app);
         labmate_deferred_prepare(app, &work);
         furi_mutex_release(app->mutex);

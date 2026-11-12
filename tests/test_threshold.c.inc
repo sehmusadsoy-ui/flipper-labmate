@@ -61,6 +61,22 @@ int main(void) {
     assert(a.trips == 1U && a.latched);
     labmate_threshold_toggle(&a);
     assert(labmate_threshold_source_name(LabMateAlertSourceCount)[0] == '\0');
+    /* Hold-to-repeat acceleration: scaled steps clamp and never wrap. */
+    labmate_threshold_init(&a);
+    labmate_threshold_change_limit_scaled(&a, 1, 0U); /* 0 behaves as 1x */
+    assert(a.limit == 110U);
+    labmate_threshold_change_limit_scaled(&a, 1, 100U);
+    assert(a.limit == 1110U);
+    labmate_threshold_change_limit_scaled(&a, 1, UINT32_MAX);
+    assert(a.limit == 50000U);
+    labmate_threshold_change_limit_scaled(&a, -1, 1000U);
+    assert(a.limit == 40000U);
+    labmate_threshold_change_limit_scaled(&a, -1, UINT32_MAX);
+    assert(a.limit == 1U);
+    labmate_threshold_toggle(&a); /* armed limits stay locked */
+    labmate_threshold_change_limit_scaled(&a, 1, 1000U);
+    assert(a.limit == 1U);
+    labmate_threshold_toggle(&a);
     puts("Threshold Alerts portable tests PASS");
     return 0;
 }

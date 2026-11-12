@@ -84,11 +84,59 @@ check(read("src/labmate_logger_storage.c") == logger_original.replace(
 original = git("show", base + ":src/labmate_ui_screens.c").decode()
 current = read("src/labmate_ui_screens.c")
 for name in (
-    "draw_menu", "draw_gpio", "draw_counter", "draw_frequency",
+    "draw_menu", "draw_gpio", "draw_counter",
     "draw_pulse", "draw_pulse_stats", "draw_generator",
 ):
     check(function(original, name) == function(current, name),
           "Approved renderer changed: " + name)
+# 2026-11-12 review: Frequency keeps its approved geometry. Permit only two
+# reviewed text-state fixes: an explicit "Over range" state above the uint32
+# millihertz limit, and Stable/Drifting judged on recent readings instead of
+# session Min/Max. Coordinates, fonts and every draw call stay byte-identical.
+freq_hero_old = (
+    '        ui_kit_center_text(canvas, 31, "No signal", NULL);\n'
+)
+freq_hero_new = (
+    '        ui_kit_center_text(\n'
+    '            canvas, 31, app->frequency_over_range ? "Over range" : "No signal", NULL);\n'
+)
+freq_drift_old = (
+    '    const bool drifting = app->frequency_stats_valid &&\n'
+    '                          app->frequency_min_millihz > 0U &&\n'
+    '                          app->frequency_max_millihz - app->frequency_min_millihz >\n'
+    '                              app->frequency_min_millihz / 20U;\n'
+    '    const char* status = alert ? "Alert" : app->capture_blocked ? "Busy" :\n'
+    '                         app->hold ? "Held" : !app->frequency_valid ? "No signal" :\n'
+    '                         drifting ? "Drifting" : "Stable";\n'
+)
+freq_drift_new = (
+    '    /* Drift is judged on the last ~3 s of valid readings, not on session\n'
+    '     * Min/Max: one earlier frequency change must not pin "Drifting". */\n'
+    '    uint32_t recent_min = UINT32_MAX;\n'
+    '    uint32_t recent_max = 0U;\n'
+    '    const uint8_t recent_count =\n'
+    '        app->ui_frequency_recent_count <= 32U ? app->ui_frequency_recent_count : 32U;\n'
+    '    for(uint8_t i = 0U; i < recent_count; ++i) {\n'
+    '        const uint32_t sample = app->ui_frequency_recent[i];\n'
+    '        if(sample < recent_min) recent_min = sample;\n'
+    '        if(sample > recent_max) recent_max = sample;\n'
+    '    }\n'
+    '    const bool drifting = recent_count >= 2U && recent_min > 0U &&\n'
+    '                          recent_max - recent_min > recent_min / 20U;\n'
+    '    const char* status = alert ? "Alert" : app->capture_blocked ? "Busy" :\n'
+    '                         app->hold ? "Held" :\n'
+    '                         app->frequency_over_range ? "Over range" :\n'
+    '                         !app->frequency_valid ? "No signal" :\n'
+    '                         drifting ? "Drifting" : "Stable";\n'
+)
+freq_original = function(original, "draw_frequency")
+check(freq_original.count(freq_hero_old) == 1 and
+      freq_original.count(freq_drift_old) == 1,
+      "Frequency renderer baseline changed")
+check(function(current, "draw_frequency") ==
+          freq_original.replace(freq_hero_old, freq_hero_new)
+                       .replace(freq_drift_old, freq_drift_new),
+      "Frequency renderer changed beyond the reviewed state-text fixes")
 
 migrated = (
     "draw_alerts", "draw_button", "draw_logger", "draw_history",

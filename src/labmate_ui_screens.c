@@ -901,17 +901,29 @@ void draw_frequency(Canvas* canvas, LabMateApp* app) {
         (void)ui_kit_text(canvas, 100, 30, 26, unit, NULL);
     } else {
         canvas_set_font(canvas, FontPrimary);
-        ui_kit_center_text(canvas, 31, "No signal", NULL);
+        ui_kit_center_text(
+            canvas, 31, app->frequency_over_range ? "Over range" : "No signal", NULL);
     }
 
     const bool alert = app->threshold.armed && app->threshold.latched &&
                        app->threshold.source == LabMateAlertFrequency;
-    const bool drifting = app->frequency_stats_valid &&
-                          app->frequency_min_millihz > 0U &&
-                          app->frequency_max_millihz - app->frequency_min_millihz >
-                              app->frequency_min_millihz / 20U;
+    /* Drift is judged on the last ~3 s of valid readings, not on session
+     * Min/Max: one earlier frequency change must not pin "Drifting". */
+    uint32_t recent_min = UINT32_MAX;
+    uint32_t recent_max = 0U;
+    const uint8_t recent_count =
+        app->ui_frequency_recent_count <= 32U ? app->ui_frequency_recent_count : 32U;
+    for(uint8_t i = 0U; i < recent_count; ++i) {
+        const uint32_t sample = app->ui_frequency_recent[i];
+        if(sample < recent_min) recent_min = sample;
+        if(sample > recent_max) recent_max = sample;
+    }
+    const bool drifting = recent_count >= 2U && recent_min > 0U &&
+                          recent_max - recent_min > recent_min / 20U;
     const char* status = alert ? "Alert" : app->capture_blocked ? "Busy" :
-                         app->hold ? "Held" : !app->frequency_valid ? "No signal" :
+                         app->hold ? "Held" :
+                         app->frequency_over_range ? "Over range" :
+                         !app->frequency_valid ? "No signal" :
                          drifting ? "Drifting" : "Stable";
     canvas_set_font(canvas, FontSecondary);
     (void)ui_kit_text(canvas, 4, 41, 74, status, NULL);

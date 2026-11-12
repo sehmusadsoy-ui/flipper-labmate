@@ -31,12 +31,14 @@ void labmate_input_alerts(LabMateApp* app, InputEvent event, LabMateDeferredWork
                 } else if(event.key == InputKeyRight) {
                     labmate_threshold_change_source(&app->threshold, 1);
                 } else if(event.key == InputKeyUp) {
-                    labmate_threshold_change_limit(&app->threshold, 1);
+                    labmate_threshold_change_limit_scaled(
+                        &app->threshold, 1, labmate_input_repeat_multiplier(app));
                 } else if(event.key == InputKeyDown) {
                     if(app->threshold.armed) {
                         labmate_threshold_acknowledge(&app->threshold);
                     } else {
-                        labmate_threshold_change_limit(&app->threshold, -1);
+                        labmate_threshold_change_limit_scaled(
+                            &app->threshold, -1, labmate_input_repeat_multiplier(app));
                     }
                 } else if(event.key == InputKeyOk) {
                     labmate_threshold_toggle(&app->threshold);

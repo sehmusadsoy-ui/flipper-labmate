@@ -178,6 +178,14 @@ void labmate_ui_motion_step(LabMateApp* app) {
     /* Small UI-only history; never alters capture, logger or statistics.
      * Each sample is a normalized *relative trend* around recorded extrema,
      * not invented edge timing or an electrical waveform. */
+    /* The drift window belongs to one Frequency visit on one pin. */
+    if(app->screen != LabMateScreenFrequency) {
+        app->ui_frequency_recent_pin = 255U;
+    } else if(app->ui_frequency_recent_pin != app->gpio_index) {
+        app->ui_frequency_recent_pin = app->gpio_index;
+        app->ui_frequency_recent_head = 0U;
+        app->ui_frequency_recent_count = 0U;
+    }
     if(app->screen == LabMateScreenFrequency && app->frequency_valid &&
        !app->hold && (uint32_t)(now - app->ui_trace_tick) >= tps / 10U) {
         app->ui_trace_tick = now;
@@ -190,6 +198,11 @@ void labmate_ui_motion_step(LabMateApp* app) {
             display = (uint8_t)((uint64_t)(mhz - app->frequency_min_millihz) * 255U /
                                 (app->frequency_max_millihz - app->frequency_min_millihz));
         }
+        app->ui_frequency_recent[app->ui_frequency_recent_head] =
+            app->frequency_millihz;
+        app->ui_frequency_recent_head =
+            (uint8_t)((app->ui_frequency_recent_head + 1U) % 32U);
+        if(app->ui_frequency_recent_count < 32U) ++app->ui_frequency_recent_count;
         app->ui_frequency_trace[app->ui_frequency_trace_head] = display;
         app->ui_frequency_trace_head = (app->ui_frequency_trace_head + 1U) % 100U;
         if(app->ui_frequency_trace_count < 100U) ++app->ui_frequency_trace_count;

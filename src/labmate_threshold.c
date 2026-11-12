@@ -35,14 +35,25 @@ void labmate_threshold_change_source(LabMateThreshold* a, int8_t direction) {
 }
 
 void labmate_threshold_change_limit(LabMateThreshold* a, int8_t direction) {
+    labmate_threshold_change_limit_scaled(a, direction, 1U);
+}
+
+void labmate_threshold_change_limit_scaled(
+    LabMateThreshold* a, int8_t direction, uint32_t multiplier) {
     if(a->armed || direction == 0) return;
     const uint32_t min = min_limits[a->source];
     const uint32_t max = max_limits[a->source];
-    const uint32_t step = limit_steps[a->source];
+    if(multiplier == 0U) multiplier = 1U;
+    /* Bound the step by the whole range so step arithmetic cannot wrap. */
+    const uint32_t range = max - min;
+    uint32_t step = limit_steps[a->source];
+    step = multiplier > range / step ? range : step * multiplier;
+    if(a->limit < min) a->limit = min;
+    if(a->limit > max) a->limit = max;
     if(direction > 0) {
-        a->limit = a->limit >= max - step ? max : a->limit + step;
+        a->limit = step >= max - a->limit ? max : a->limit + step;
     } else {
-        a->limit = a->limit <= min + step ? min : a->limit - step;
+        a->limit = step >= a->limit - min ? min : a->limit - step;
     }
     a->active = false;
     a->latched = false;

@@ -27,6 +27,10 @@ typedef struct {
 void labmate_threshold_init(LabMateThreshold* alert);
 void labmate_threshold_change_source(LabMateThreshold* alert, int8_t direction);
 void labmate_threshold_change_limit(LabMateThreshold* alert, int8_t direction);
+/* Same as change_limit with the source step multiplied (hold-to-repeat
+ * acceleration). multiplier 0 is treated as 1; result clamps to min/max. */
+void labmate_threshold_change_limit_scaled(
+    LabMateThreshold* alert, int8_t direction, uint32_t multiplier);
 void labmate_threshold_toggle(LabMateThreshold* alert);
 void labmate_threshold_acknowledge(LabMateThreshold* alert);
 void labmate_threshold_update(LabMateThreshold* alert, bool valid, uint64_t sample);

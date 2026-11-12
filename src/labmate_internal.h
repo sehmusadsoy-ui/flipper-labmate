@@ -102,6 +102,14 @@ typedef struct {
     uint8_t ui_frequency_trace[100];
     uint8_t ui_frequency_trace_count;
     uint8_t ui_frequency_trace_head;
+    /* Recent valid readings (10 Hz, ~3 s) for the Stable/Drifting chip only.
+     * Session Min/Max stay separate and are never derived from this ring. */
+    uint32_t ui_frequency_recent[32];
+    uint8_t ui_frequency_recent_count;
+    uint8_t ui_frequency_recent_head;
+    uint8_t ui_frequency_recent_pin; /* pin the ring belongs to; 255 = none */
+    /* Hold-to-repeat streak of the current key; UI input pacing only. */
+    uint8_t ui_repeat_streak;
 
     /* Separate versioned UI-only preferences; never part of profiles/logs. */
     LabMateUiPreferences ui_prefs;
@@ -172,6 +180,9 @@ typedef struct {
     uint32_t frequency_millihz;
     bool frequency_edge_seen;
     bool frequency_valid;
+    /* HIGH/PB3 gate counted real edges but the rate exceeds the uint32
+     * millihertz range (~4.29 MHz). Display hint only; never a reading. */
+    bool frequency_over_range;
     /* v1.4-dev: running minimum and maximum of valid frequency readings.
      * Units are millihertz (same as frequency_millihz). */
     uint32_t frequency_min_millihz;
@@ -384,6 +395,7 @@ typedef struct {
     LabMateDoctorSetupUi doctor_setup_ui; /* presentation/edit rollback only */
     bool doctor_show_advice;
     bool doctor_show_symptoms; /* page 4/4, only reachable from advice */
+    bool doctor_skip_entry_ok; /* ignore the menu OK's own Short/Long event */
     LabMateDashboardStore doctor_store;
     LabMateSignalStats signal_stats;
     uint8_t dashboard_source;
