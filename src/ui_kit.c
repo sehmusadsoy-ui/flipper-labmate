@@ -1,6 +1,7 @@
 #include "ui_kit.h"
 #include "labmate_icon_gear_outline.h"
 #include "labmate_icon_categories_outline.h"
+#include "labmate_i18n.h" /* keep last: routes text calls through translation */
 
 /* Every draw starts in black and ends in black, regardless of inversion. */
 static bool ui_kit_rect(int16_t x, int16_t y, uint8_t w, uint8_t h) {

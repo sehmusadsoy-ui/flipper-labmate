@@ -4,6 +4,7 @@
 #include "ui_kit.h"
 #include <string.h>
 #include <stdio.h>
+#include "labmate_i18n.h" /* keep last: routes text calls through translation */
 
 /* ---------- STATELESS DRAWING PRIMITIVES (v1.6-dev) ---------- */
 

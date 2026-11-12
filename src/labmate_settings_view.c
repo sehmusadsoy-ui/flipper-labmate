@@ -1,5 +1,6 @@
 #include "labmate_settings_view.h"
 #include "ui_kit.h"
+#include "labmate_i18n.h" /* keep last: routes text calls through translation */
 
 /* Display-only names: persisted identifiers/record lengths are unchanged. */
 static const char* const labels[] = {
@@ -13,19 +14,30 @@ static UiKitSettingsOptionKind option_kind(uint8_t index) {
     return UiKitSettingsOptionDestructive;
 }
 
-static void draw_language(Canvas* c) {
+/* UTF-8 "Turkce" with its real letters; the i18n layer draws the marks. */
+#define LABMATE_LANGUAGE_NAME_TR "T\xc3\xbc" "rk\xc3\xa7" "e"
+
+static void draw_language(Canvas* c, uint8_t language) {
     ui_kit_back_title(c, "Language", NULL, NULL);
-    ui_kit_pill(c, 2, 13, 124, 13);
-    canvas_set_color(c, ColorWhite);
-    canvas_set_font(c, FontSecondary);
-    (void)ui_kit_text(c, 6, 22, 100, "English", NULL);
-    /* Check mark is procedural: no dependency on a Unicode font glyph. */
-    canvas_draw_line(c, 110, 19, 113, 22);
-    canvas_draw_line(c, 113, 22, 119, 16);
+    const bool turkish = language == LabMateLangTurkish;
+    /* The active language carries the pill and the check mark. */
+    for(uint8_t row = 0U; row < 2U; ++row) {
+        const uint8_t y = (uint8_t)(13U + 14U * row);
+        const bool active = (row == 1U) == turkish;
+        if(active) ui_kit_pill(c, 2, y, 124, 13);
+        canvas_set_color(c, active ? ColorWhite : ColorBlack);
+        canvas_set_font(c, FontSecondary);
+        (void)ui_kit_text(
+            c, 6, (uint8_t)(y + 9U), 100, row ? LABMATE_LANGUAGE_NAME_TR : "English", NULL);
+        if(active) {
+            /* Check mark is procedural: no dependency on a font glyph. */
+            canvas_draw_line(c, 110, (uint8_t)(y + 6U), 113, (uint8_t)(y + 9U));
+            canvas_draw_line(c, 113, (uint8_t)(y + 9U), 119, (uint8_t)(y + 3U));
+        }
+    }
     canvas_set_color(c, ColorBlack);
     canvas_set_font(c, FontSecondary);
-    (void)ui_kit_text(c, 6, 39, 116, "More languages", NULL);
-    (void)ui_kit_text(c, 6, 49, 116, "Coming soon", NULL);
+    (void)ui_kit_key_hint(c, 4U, UiKitKeyOk, "Select");
 }
 
 static void draw_reset_dialog(Canvas* c, bool confirm_selected) {
@@ -50,7 +62,7 @@ void labmate_settings_draw_animated(
     if(!c || !prefs || selected > 4U) return;
     canvas_set_color(c, ColorBlack);
     if(page == LabMateSettingsLanguage) {
-        draw_language(c);
+        draw_language(c, prefs->language);
         return;
     }
     ui_kit_back_title(c, "Settings", NULL, NULL);
@@ -77,7 +89,8 @@ void labmate_settings_draw_animated(
         /* Whole glyphs only. No label is ever clipped by the LCD border. */
         if(row_y < 13 || row_y > 51) continue;
         const bool inverse = pill_y - row_y > -7 && pill_y - row_y < 7;
-        const char* value = index == 0U ? "English" : NULL;
+        const char* value = index != 0U ? NULL :
+            prefs->language == LabMateLangTurkish ? LABMATE_LANGUAGE_NAME_TR : "English";
         const bool switch_on = index == 1U ? prefs->animations : prefs->startup_animation;
         uint8_t switch_frame = 4U;
         if(visual && visual->toggle_motion && visual->toggle_index == index)

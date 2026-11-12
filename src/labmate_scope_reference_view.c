@@ -3,6 +3,7 @@
 #include "ui_kit.h"
 #include <stdio.h>
 #include <string.h>
+#include "labmate_i18n.h" /* keep last: routes text calls through translation */
 
 /* Exact comparison is independent of rendering and number formatting.
  * A stale PASS after changing target or capture is always rejected. */

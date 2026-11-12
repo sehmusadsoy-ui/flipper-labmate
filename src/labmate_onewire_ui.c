@@ -1,6 +1,7 @@
 #include "labmate_ui_screens.h"
 #include "labmate_comm_ui.h"
 #include <stdio.h>
+#include "labmate_i18n.h" /* keep last: routes text calls through translation */
 
 /* COMM Step 4 — visual-only DS18B20 temperature instrument.
  * No OneWireHost/GPIO/CRC/power/session/input behavior is modified here.

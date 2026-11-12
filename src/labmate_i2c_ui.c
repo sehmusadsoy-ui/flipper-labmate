@@ -2,6 +2,7 @@
 #include "labmate_comm_ui.h"
 #include "labmate_i2c_runtime.h"
 #include <stdio.h>
+#include "labmate_i18n.h" /* keep last: routes text calls through translation */
 
 /* COMM Step 3: a purely visual I2C dashboard. The actual scanner still
  * scans PC0 SCL / PC1 SDA with bounded firmware bus ownership; the

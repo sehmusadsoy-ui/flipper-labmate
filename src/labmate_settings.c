@@ -74,8 +74,17 @@ void labmate_settings_input(
     LabMateApp* app, InputEvent event, LabMateDeferredWork* work) {
     if(!app || !work || app->ui_prefs_busy) return;
     if(app->settings_page == LabMateSettingsLanguage) {
-        if(event.key == InputKeyBack || event.key == InputKeyOk)
+        if(event.key == InputKeyBack) {
             app->settings_page = LabMateSettingsList;
+        } else if(event.key == InputKeyOk || event.key == InputKeyUp ||
+                  event.key == InputKeyDown) {
+            /* Two shipped languages: every choice key switches and saves. */
+            app->ui_prefs.language =
+                app->ui_prefs.language == LabMateLangTurkish ?
+                    LabMateLangEnglish : LabMateLangTurkish;
+            app->settings_toast_reset = false;
+            prefs_save_request(app, work);
+        }
         return;
     }
     if(app->settings_page == LabMateSettingsReset) {

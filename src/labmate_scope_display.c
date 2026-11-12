@@ -3,6 +3,7 @@
 #include "ui_kit.h"
 #include <stdio.h>
 #include <string.h>
+#include "labmate_i18n.h" /* keep last: routes text calls through translation */
 
 /* Only verified, completed H-L-H samples are eligible for HOLD readings.
  * Display formatting never changes the full-precision measurement result. */

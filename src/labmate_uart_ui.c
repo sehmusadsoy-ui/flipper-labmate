@@ -3,6 +3,7 @@
 #include "labmate_uart.h"
 #include <stdio.h>
 #include <string.h>
+#include "labmate_i18n.h" /* keep last: routes text calls through translation */
 
 /* GUI is passive. Never acquire UART, drain ISR bytes or send TX here. */
 void draw_uart(Canvas* canvas, LabMateApp* app) {

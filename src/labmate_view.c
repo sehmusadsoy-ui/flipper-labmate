@@ -13,6 +13,7 @@
 #include "labmate_ui_motion.h"
 #include "ui_kit.h"
 #include "labmate_settings.h"
+#include "labmate_i18n.h" /* keep last: routes text calls through translation */
 
 /* ---------- DRAWING (stateful screens) ---------- */
 
@@ -27,6 +28,8 @@ void labmate_view_render_callback(
         FuriWaitForever);
 
     canvas_clear(canvas);
+    /* New frame: the GUI has reset the canvas font to FontSecondary. */
+    if(labmate_i18n_frame_begin) labmate_i18n_frame_begin(canvas);
 
     if(app->ui_splash) {
         canvas_set_color(canvas, ColorBlack);

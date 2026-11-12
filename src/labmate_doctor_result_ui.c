@@ -1,5 +1,6 @@
 #include "labmate_doctor_result_ui.h"
 #include <stdio.h>
+#include "labmate_i18n.h" /* keep last: routes text calls through translation */
 
 /* Presentation words are deliberately independent of the existing ALL-CAPS
  * diagnostic labels. Only a pre-existing assessment chooses the finding. */

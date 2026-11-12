@@ -24,3 +24,21 @@ permits explicitly; geometry and draw calls are unchanged.
   covers Over range and recent-window Stable/Drifting (291 frequency cases).
 - Pending: native E11 build in CI (GCC + Clang), and on-device checks of all
   five items.
+
+## Follow-up (same day): alert notification and Turkish UI
+
+- **Threshold Alerts** now announce a new latch once with two short
+  vibration + beep pulses and the red LED (`labmate.c`, notification service;
+  the user's system sound/vibro settings apply). Trip logic is unchanged.
+- **Turkish UI**: Settings → Language switches English/Türkçe and persists in
+  the existing `ui_prefs` record (language byte 1). `labmate_i18n.c` swaps
+  English UI literals for entries in `labmate_i18n_table.inc` (429 strings)
+  and draws ç ğ ı ö ş ü İ procedurally on top of the ASCII-only fonts.
+  Renderers and their geometry are untouched; UI sources only gain one
+  trailing `#include "labmate_i18n.h"`.
+- Translations wider than the English text were shortened or left in
+  English so that no label can overflow its approved box. Formatted strings
+  (values with units) and a few long legacy ALL-CAPS lines stay English.
+- Verified on host only: acceptance runner PASS (GCC), plus a throwaway
+  raster test of the mark drawing with the real u8g2 font data. Not yet
+  reviewed on the device screen.

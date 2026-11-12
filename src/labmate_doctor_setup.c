@@ -1,6 +1,7 @@
 #include "labmate_doctor_setup.h"
 #include "ui_kit.h"
 #include <stdio.h>
+#include "labmate_i18n.h" /* keep last: routes text calls through translation */
 
 void labmate_doctor_setup_reset(LabMateDoctorSetupUi* ui, LabMateDoctorPanel* panel) {
     if(!ui || !panel) return;

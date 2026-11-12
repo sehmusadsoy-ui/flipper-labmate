@@ -5,6 +5,7 @@
 #include "labmate_pixel_ui.h"
 #include <stdio.h>
 #include <stdint.h>
+#include "labmate_i18n.h" /* keep last: routes text calls through translation */
 
 static const char* const labels[LabMateSnapshotSourceCount] = {
     "FREQ", "PULSE", "SCOPE", "COUNT", "LOGGER"

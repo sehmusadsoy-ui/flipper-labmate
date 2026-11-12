@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include "labmate_i18n.h" /* keep last: routes text calls through translation */
 
 /* Passive UI renderers only: app state is read under the UI mutex.
  * No SD, IRQ, GPIO or timer access in this module.

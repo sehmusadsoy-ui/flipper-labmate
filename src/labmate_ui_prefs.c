@@ -32,7 +32,8 @@ void labmate_ui_prefs_defaults(LabMateUiPreferences* prefs) {
 }
 
 bool labmate_ui_prefs_encode(const LabMateUiPreferences* prefs, uint8_t* b) {
-    if(!prefs || !b || prefs->language != LabMateLangEnglish) return false;
+    if(!prefs || !b || (prefs->language != LabMateLangEnglish &&
+                        prefs->language != LabMateLangTurkish)) return false;
     b[0] = 'L'; b[1] = 'M'; b[2] = 'U'; b[3] = '1';
     b[4] = 1U;
     b[5] = prefs->language;
@@ -47,7 +48,7 @@ bool labmate_ui_prefs_encode(const LabMateUiPreferences* prefs, uint8_t* b) {
 bool labmate_ui_prefs_decode(LabMateUiPreferences* prefs, const uint8_t* b, size_t len) {
     if(!prefs || !b || len != LABMATE_UI_PREFS_BYTES ||
        b[0] != 'L' || b[1] != 'M' || b[2] != 'U' || b[3] != '1' ||
-       b[4] != 1U || b[5] != LabMateLangEnglish ||
+       b[4] != 1U || (b[5] != LabMateLangEnglish && b[5] != LabMateLangTurkish) ||
        (b[6] & 0xFCU) || b[7] != 0U ||
        prefs_u32(b + 12U) != prefs_crc32(b, 12U)) return false;
 

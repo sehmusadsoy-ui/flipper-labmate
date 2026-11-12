@@ -10,6 +10,8 @@
 #include "labmate_capture_session.h"
 #include "labmate_input.h"
 #include "labmate_input_filter.h"
+#include "labmate_i18n.h"
+#include <notification/notification_messages.h>
 #include "labmate_deferred.h"
 #include "labmate_event_counter.h"
 #include "labmate_button_capture.h"
@@ -24,6 +26,15 @@
 #include "labmate_doctor_pulse_bridge.h"
 #include "labmate_ui_motion.h"
 #include "labmate_ui_prefs_storage.h"
+
+/* Threshold trip: two short buzz + beep pulses with the red LED. The
+ * notification service applies the user's own volume/vibro/LED settings. */
+static const NotificationSequence labmate_alert_sequence = {
+    &message_red_255,   &message_vibro_on,  &message_note_c7,   &message_delay_100,
+    &message_sound_off, &message_vibro_off, &message_delay_50,  &message_vibro_on,
+    &message_note_c7,   &message_delay_100, &message_sound_off, &message_vibro_off,
+    &message_delay_250, &message_red_0,     NULL,
+};
 
 /* App coordinator: lifecycle, sampling, dispatch and teardown only. */
 int32_t labmate_app(void* p) {
@@ -138,6 +149,9 @@ int32_t labmate_app(void* p) {
         viewport,
         GuiLayerFullscreen);
 
+    NotificationApp* notifications = furi_record_open(RECORD_NOTIFICATION);
+    labmate_i18n_set_language(app->ui_prefs.language);
+
     InputEvent event = {0};
 
     LabMateRedrawThrottle redraw;
@@ -172,7 +186,12 @@ int32_t labmate_app(void* p) {
         if(app->screen == LabMateScreenScope) {
             labmate_scope_bridge_poll(app);
         }
+        const uint32_t alert_trips_before = app->threshold.trips;
         threshold_update_from_measurement(app);
+        /* A new latch is announced once; an already active alert is silent. */
+        if(app->threshold.armed && app->threshold.trips > alert_trips_before) {
+            notification_message(notifications, &labmate_alert_sequence);
+        }
         if(app->screen == LabMateScreenUart) labmate_uart_poll(&app->uart);
         if(app->screen == LabMateScreenOneWire) labmate_onewire_hw_poll(&app->thermometer);
         if(app->i2c) labmate_i2c_runtime_poll(app->i2c);
@@ -185,6 +204,7 @@ int32_t labmate_app(void* p) {
         }
         labmate_input_postfilter(app, status, &event, screen_before_input);
         labmate_ui_motion_step(app);
+        labmate_i18n_set_language(app->ui_prefs.language);
         labmate_deferred_prepare(app, &work);
         furi_mutex_release(app->mutex);
 
@@ -231,6 +251,7 @@ int32_t labmate_app(void* p) {
 
     furi_record_close(
         RECORD_GUI);
+    furi_record_close(RECORD_NOTIFICATION);
 
     furi_message_queue_free(
         queue);

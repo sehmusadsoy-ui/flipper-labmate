@@ -3,6 +3,7 @@
 #include "ui_kit.h"
 #include <stdio.h>
 #include <string.h>
+#include "labmate_i18n.h" /* keep last: routes text calls through translation */
 
 /* A and B are SEQUENTIAL captures from PC1. Do not invent dual channels.
  * All LCD text is formatted and bounds-checked before the first pixel. */

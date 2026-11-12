@@ -6,7 +6,7 @@ App(
     # Exclude host-only native tests: Momentum's default "*.c*" would
     # accidentally include tests/test_resource_policy.c.inc in the FAP linker.
     sources=["src/*.c"],
-    requires=["gui"],
+    requires=["gui", "notification"],
     stack_size=4 * 1024,
     order=20,
     fap_category="Tools",

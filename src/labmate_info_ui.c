@@ -2,6 +2,7 @@
 #include "labmate_info_qr_matrix.h"
 #include "labmate_info_guides.h"
 #include "ui_kit.h"
+#include "labmate_i18n.h" /* keep last: routes text calls through translation */
 
 /* Monochrome presentation only. Font widths must be checked in pixels,
  * never inferred from the number of characters. */
