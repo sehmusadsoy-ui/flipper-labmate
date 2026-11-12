@@ -2,7 +2,7 @@ name: LabMate v2.0 E11 pinned native candidate review (NO FLASH)
 
 on:
   push:
-    branches: [dev/v2.0-e11-compare-sample-pixel-step4-20261028, dev/v2.0-e11-legacy-ui-harness-review-20261029, audit/software-fixes-20261107]
+    branches: [dev/v2.0-e11-compare-sample-pixel-step4-20261028, dev/v2.0-e11-legacy-ui-harness-review-20261029, audit/software-fixes-20261107, fix/v20-review-fixes-20261112]
     paths:
       - "application.fam"
       - "labmate_sections.ld"
@@ -53,7 +53,7 @@ jobs:
           # A push or manual run must never build application code from main.
           if [[ "$GITHUB_EVENT_NAME" != "pull_request" ]]; then
             case "$GITHUB_REF" in
-              refs/heads/dev/v2.0-e11-compare-sample-pixel-step4-20261028|refs/heads/dev/v2.0-e11-legacy-ui-harness-review-20261029|refs/heads/audit/software-fixes-20261107) ;;
+              refs/heads/dev/v2.0-e11-compare-sample-pixel-step4-20261028|refs/heads/dev/v2.0-e11-legacy-ui-harness-review-20261029|refs/heads/audit/software-fixes-20261107|refs/heads/fix/v20-review-fixes-20261112) ;;
               *) echo "NO-GO: unapproved FAP source ref" >&2; exit 2 ;;
             esac
           fi
@@ -250,7 +250,7 @@ jobs:
 
       - name: Attest single verified E11 labmate.fap candidate (NO INSTALL)
         # Never expose a failed FAP or upload from a non-reviewed branch.
-        if: success() && (github.ref == 'refs/heads/dev/v2.0-e11-legacy-ui-harness-review-20261029' || github.ref == 'refs/heads/audit/software-fixes-20261107')
+        if: success() && (github.ref == 'refs/heads/dev/v2.0-e11-legacy-ui-harness-review-20261029' || github.ref == 'refs/heads/audit/software-fixes-20261107' || github.ref == 'refs/heads/fix/v20-review-fixes-20261112')
         shell: bash
         run: |
           set -euo pipefail
@@ -270,7 +270,7 @@ jobs:
           echo 'Candidate only: manual device transfer and physical QA required; NO FLASH.' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload only successful labmate.fap (single candidate; NO FLASH)
-        if: success() && (github.ref == 'refs/heads/dev/v2.0-e11-legacy-ui-harness-review-20261029' || github.ref == 'refs/heads/audit/software-fixes-20261107')
+        if: success() && (github.ref == 'refs/heads/dev/v2.0-e11-legacy-ui-harness-review-20261029' || github.ref == 'refs/heads/audit/software-fixes-20261107' || github.ref == 'refs/heads/fix/v20-review-fixes-20261112')
         uses: actions/upload-artifact@v4
         with:
           name: labmate-e11-candidate-${{ github.run_id }}
