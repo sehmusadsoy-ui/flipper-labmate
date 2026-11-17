@@ -11,8 +11,8 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = ROOT / ".github" / "workflows"
-USES = re.compile(r"^\\s*-?\\s*uses:\\s*([^\\s#]+)", flags=re.MULTILINE)
-PIN = re.compile(r"^[^@\\s]+@[a-fA-F0-9]{40}$")
+USES = re.compile(r"^\s*-?\s*uses:\s*([^\s#]+)", flags=re.MULTILINE)
+PIN = re.compile(r"^[^@\s]+@[a-fA-F0-9]{40}$")
 
 
 def main() -> int:
@@ -25,9 +25,9 @@ def main() -> int:
     count = 0
     for path in sources:
         text = path.read_text(encoding="utf-8")
-        if re.search(r"(?m)^\\s*pull_request_target\\s*:", text):
+        if re.search(r"(?m)^\s*pull_request_target\s*:", text):
             failures.append(f"{path.name}: pull_request_target requires separate review")
-        if not re.search(r"(?m)^permissions\\s*:", text):
+        if not re.search(r"(?m)^permissions\s*:", text):
             failures.append(f"{path.name}: explicit workflow permissions missing")
         for match in USES.finditer(text):
             uses = match.group(1)
