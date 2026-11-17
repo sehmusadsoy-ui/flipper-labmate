@@ -26,9 +26,9 @@
 > **Canonical roadmap:** [`../ROADMAP.md`](../ROADMAP.md), including
 > its original 2026-10-08 vision, version milestones and development rules.
 > **Current v1.8 original-scope checklist:**
-> [`V1_8_ORIGINAL_SCOPE_COMPLETION.md`](V1_8_ORIGINAL_SCOPE_COMPLETION.md).
+> [`V1_8_ORIGINAL_SCOPE_COMPLETION.md`](https://github.com/sehmusadsoy-ui/flipper-labmate/blob/dev/v1.9-logic-scope/docs/V1_8_ORIGINAL_SCOPE_COMPLETION.md).
 > **Physical evidence / release gates:**
-> [`V1_8_PHYSICAL_ACCEPTANCE_GATE.md`](V1_8_PHYSICAL_ACCEPTANCE_GATE.md).
+> [`V1_8_PHYSICAL_ACCEPTANCE_GATE.md`](https://github.com/sehmusadsoy-ui/flipper-labmate/blob/dev/v1.9-logic-scope/docs/V1_8_PHYSICAL_ACCEPTANCE_GATE.md).
 >
 > The prior `ROADMAP.md` and historical GitHub Stable tags, releases,
 > checksums and device results are **not edited or retroactively redefined**
