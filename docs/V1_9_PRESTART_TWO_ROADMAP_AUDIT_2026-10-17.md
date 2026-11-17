@@ -7,7 +7,7 @@
 
 1. [Canonical product roadmap](../ROADMAP.md): v1.5 Data Logger, v1.6 Refactor, v1.7 PWM Studio & Counter, v1.8 Communications, **v1.9 Logic Scope & Signal Compare**, **v2.0 LabMate Ultimate / Signal Doctor**. It defines **WHAT must ship and in what order**.
 2. [Master Roadmap V2 quality addendum](MASTER_ROADMAP_V2_ADDENDUM.md): firmware/Momentum ABI safety, recovery, cooperative ownership, confidence boundaries, test evidence, maintainability and optional free/premium architecture study. It defines **HOW to validate** and explicitly **does not replace** v1.9 or v2.0 functionality. When the two conflict, canonical feature and release goals win unless the operator explicitly approves a change.
-3. [E11 functional / release evidence](V1_8_E11_FINAL_RELEASE_GATE_2026-10-17.md) on E11 development branch, [deferred hardware backlog](DEFERRED_HARDWARE_TESTS.md), [v1.9/v2.0 engineering handoff](https://github.com/sehmusadsoy-ui/flipper-labmate/blob/dev/v1.9-logic-scope/docs/V1_9_V2_0_ENGINEERING_HANDOFF_2026-10-17.md). The latter two development documents are not yet merged to ordinary `main`.
+3. [E11 functional / release evidence](https://github.com/sehmusadsoy-ui/flipper-labmate/blob/dev/v1.9-logic-scope/docs/V1_8_E11_FINAL_RELEASE_GATE_2026-10-17.md) on E11 development branch, [deferred hardware backlog](DEFERRED_HARDWARE_TESTS.md), [v1.9/v2.0 engineering handoff](https://github.com/sehmusadsoy-ui/flipper-labmate/blob/dev/v1.9-logic-scope/docs/V1_9_V2_0_ENGINEERING_HANDOFF_2026-10-17.md). The latter two development documents are not yet merged to ordinary `main`.
 
 ## What is actually completed
 

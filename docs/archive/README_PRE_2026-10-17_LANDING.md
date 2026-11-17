@@ -17,9 +17,9 @@
 
 **[Download v1.8 labmate.fap](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/download/v1.8/labmate.fap)** ·
 [SHA256SUMS.txt](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/download/v1.8/SHA256SUMS.txt) ·
-[v1.8 Release notes](docs/releases/RELEASE_NOTES_v1.8.md) ·
-[Acceptance record](docs/V1_8_STABLE_CANDIDATE.md) ·
-[Roadmap](ROADMAP.md)
+[v1.8 Release notes](../../docs/releases/RELEASE_NOTES_v1.8.md) ·
+[Acceptance record](../../docs/V1_8_STABLE_CANDIDATE.md) ·
+[Roadmap](../../ROADMAP.md)
 
 ## Public download choices — 2026-10-17
 
@@ -65,8 +65,8 @@ The app now has focused capture, input, GUI and deferred-SD modules.
 Tag `v1.8` is pinned to exact compiled source `02b05639364d6dd71f5eb70456eca379c59218cb`;
 CI/host/USB verified and the user reported **19/19 physical functional
 PASS** including UART receive/STOP, PWM, Counter, saved Profile S1 and
-historical CSV Log History. [Acceptance evidence](docs/V1_8_STABLE_CANDIDATE.md)
-· [v1.8 release notes](docs/releases/RELEASE_NOTES_v1.8.md).
+historical CSV Log History. [Acceptance evidence](../../docs/V1_8_STABLE_CANDIDATE.md)
+· [v1.8 release notes](../../docs/releases/RELEASE_NOTES_v1.8.md).
 Counter STOP/RESUME also passed C1–C8 real-device regressions and
 merged in [PR #6](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/6).
 **UART Terminal development milestone merged into `main` in [PR #7](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/7)**:
@@ -88,10 +88,10 @@ claimed PASS. Historical research PRs #8/#9 are closed unmerged, and
 the sequential Stable gate for v1.9 is now OPEN; implementation of
 v1.9 has not yet started or been merged.
 No demo FAPs are required or included in v1.8.
-[Refactor test record](docs/V1_8_DEV_NOTES.md) ·
-[UART acceptance plan](docs/V1_8_UART_PLAN.md) ·
-[real-device test log](docs/V1_8_UART_ESP32_TEST.md) ·
-[UART integration acceptance/limitations](docs/V1_8_UART_ACCEPTANCE.md).
+[Refactor test record](../../docs/V1_8_DEV_NOTES.md) ·
+[UART acceptance plan](../../docs/V1_8_UART_PLAN.md) ·
+[real-device test log](../../docs/V1_8_UART_ESP32_TEST.md) ·
+[UART integration acceptance/limitations](../../docs/V1_8_UART_ACCEPTANCE.md).
 
 ## Repository layout
 
@@ -99,16 +99,16 @@ The top level is intentionally short; development resources live in grouped fold
 
 | Path | Contents |
 | --- | --- |
-| [`src/`](src/) | LabMate app entry point and all C/header measurement, UI, storage and GPIO modules |
-| [`docs/releases/`](docs/releases/) | Historical and current release notes; downloadable binaries remain in GitHub Releases |
-| [`docs/archive/`](docs/archive/) | Old v1.5 development/draft planning notes, retained for reference |
-| [`docs/`](docs/) | Hardware QA backlog, architecture, installation guide and device test records |
-| [`tests/`](tests/) | Portable native C regression fixtures (not compiled into Flipper FAP) |
-| [`scripts/`](scripts/) | SHA256-verified Windows USB installers and static checks |
-| [`.github/workflows/`](.github/workflows/) | CI and historical release automation |
-| [`dist/`](dist/) / [`screenshots/`](screenshots/) | Historical build examples and UI screenshots |
+| [`src/`](../../src/) | LabMate app entry point and all C/header measurement, UI, storage and GPIO modules |
+| [`docs/releases/`](../../docs/releases/) | Historical and current release notes; downloadable binaries remain in GitHub Releases |
+| [`docs/archive/`](../../docs/archive/) | Old v1.5 development/draft planning notes, retained for reference |
+| [`docs/`](../../docs/) | Hardware QA backlog, architecture, installation guide and device test records |
+| [`tests/`](../../tests/) | Portable native C regression fixtures (not compiled into Flipper FAP) |
+| [`scripts/`](../../scripts/) | SHA256-verified Windows USB installers and static checks |
+| [`.github/workflows/`](../../.github/workflows/) | CI and historical release automation |
+| [`dist/`](../../dist/) / [`screenshots/`](../../screenshots/) | Historical build examples and UI screenshots |
 
-The app manifest [`application.fam`](application.fam) remains at the root and builds
+The app manifest [`application.fam`](../../application.fam) remains at the root and builds
 `src/*.c`. The current binary is distributed from the official [v1.8 Stable release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8);
 moving source folders does **not** modify any previously published tag or release asset.
 
@@ -134,7 +134,7 @@ moving source folders does **not** modify any previously published tag or releas
   then updates only `/ext/apps/Tools/labmate.fap` over USB. On-device
   Stable-channel VerifyOnly and actual COM7 USB installation both passed
   on Windows 2026-10-12, in addition to Windows CI mock tests.
-  [Installer guide](docs/V1_7_INSTALL_GUIDE.md).
+  [Installer guide](../../docs/V1_7_INSTALL_GUIDE.md).
 
 On-device tests cover the Flipper's own 3.3 V digital loopback, not
 independent calibrated measurements. External oscilloscope, real
@@ -160,8 +160,8 @@ remain available.
 - **Safer generator/resource handling:** PA7 is reserved when PWM is
   running, and a stopped generator releases the pin.
 
-See the [v1.6 release notes](docs/releases/RELEASE_NOTES_v1.6.md) and
-[physical test record](docs/V1_6_FIRST_DEVICE_TEST.md) for
+See the [v1.6 release notes](../../docs/releases/RELEASE_NOTES_v1.6.md) and
+[physical test record](../../docs/V1_6_FIRST_DEVICE_TEST.md) for
 test coverage, limitations and detailed outcomes.
 
 ## Instruments and pins
@@ -257,8 +257,8 @@ share timing references; agreement does **not** constitute
 independent calibration or certified accuracy. External inputs and
 all duty/frequency combinations are not exhaustively verified.
 Deliberate full/corrupt/unmounted microSD and abrupt power loss
-fault tests remain undone. See [v1.7 release notes](docs/releases/RELEASE_NOTES_v1.7.md)
-and [deferred checks](docs/DEFERRED_HARDWARE_TESTS.md).
+fault tests remain undone. See [v1.7 release notes](../../docs/releases/RELEASE_NOTES_v1.7.md)
+and [deferred checks](../../docs/DEFERRED_HARDWARE_TESTS.md).
 
 ## Build from source
 
@@ -277,21 +277,21 @@ In a matching Momentum Firmware checkout, place the sources at
 ```
 
 For reproducible Linux/Windows CI compilation, see
-[the v1.7 source workflow](.github/workflows/build-v1.7.yml).
+[the v1.7 source workflow](../../.github/workflows/build-v1.7.yml).
 The release FAP was compiled against the Momentum **dev** SDK.
 Firmware/API mismatches may require a rebuild.
 
 ## Project links
 
 - [LabMate v1.7 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7) ·
-  [Stable release notes](docs/releases/RELEASE_NOTES_v1.7.md) ·
+  [Stable release notes](../../docs/releases/RELEASE_NOTES_v1.7.md) ·
   [Previous v1.6.1 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1)
-- [Master roadmap](ROADMAP.md) ·
-  [Changelog](CHANGELOG.md) ·
-  [v1.6 device test report](docs/V1_6_FIRST_DEVICE_TEST.md)
-- [Source code](src/labmate.c) · [App manifest](application.fam) ·
-  [Historical v1.2 screenshots](screenshots/v1.2/)
+- [Master roadmap](../../ROADMAP.md) ·
+  [Changelog](../../CHANGELOG.md) ·
+  [v1.6 device test report](../../docs/V1_6_FIRST_DEVICE_TEST.md)
+- [Source code](../../src/labmate.c) · [App manifest](../../application.fam) ·
+  [Historical v1.2 screenshots](../../screenshots/v1.2/)
 
 ## Author and license
 
-Created by **Sehmus (SauronLAB)** — [GitHub: sehmusadsoy-ui](https://github.com/sehmusadsoy-ui). Licensed under the [MIT License](LICENSE).
+Created by **Sehmus (SauronLAB)** — [GitHub: sehmusadsoy-ui](https://github.com/sehmusadsoy-ui). Licensed under the [MIT License](../../LICENSE).
