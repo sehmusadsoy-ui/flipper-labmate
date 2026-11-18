@@ -2,6 +2,8 @@
 
 **Digital signal diagnostics for Flipper Zero · Built for Momentum Firmware**
 
+> **LabMate v2.0 Ultimate RC1 — prepared, E11 custom Momentum only.** The release candidate is staged as a **GitHub draft, not yet publicly downloadable**. Its exact source is [`a3822fee`](https://github.com/sehmusadsoy-ui/flipper-labmate/tree/a3822feec6d09aa61d9c1ba7d7523f2b8b2dd8ca); [host CI](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/42362782593) and [native E11 CI](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/42362782596) passed. Once published, it will appear on [GitHub Releases](https://github.com/sehmusadsoy-ui/flipper-labmate/releases) as a **pre-release**, not Stable. Physical/electrical validation remains pending, and [intermittent loader OOM #31](https://github.com/sehmusadsoy-ui/flipper-labmate/issues/31) is under observation (no recent recurrence reported, not conclusively fixed). **Do not install on ordinary Momentum firmware.** The verified v1.9 E11 and v1.8 ordinary Momentum Stable releases below remain separate.
+
 [![v1.9 Stable E11](https://img.shields.io/badge/Stable-v1.9%20(E11%20only)-2e8b57?style=flat-square)](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.9)
 [![Ordinary Momentum Stable](https://img.shields.io/badge/Ordinary%20Momentum-v1.8%20(Latest)-525a80?style=flat-square)](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8)
 [![E11 v1.8 predecessor](https://img.shields.io/badge/E11%20v1.8-Historical%20prerelease-777777?style=flat-square)](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8-e11-custom-momentum)
