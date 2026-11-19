@@ -2,7 +2,7 @@
 
 **Digital signal diagnostics for Flipper Zero · Built for Momentum Firmware**
 
-> **LabMate v2.0 Ultimate RC1 — E11 custom Momentum only (hardware-validation-pending pre-release).** [RC1 release page](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v2.0-rc.1) *(publicly visible only after its GitHub draft is published)*. Candidate source: [`a3822fee`](https://github.com/sehmusadsoy-ui/flipper-labmate/tree/a3822feec6d09aa61d9c1ba7d7523f2b8b2dd8ca). [Host CI](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/42362782593) and [native E11 CI](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/42362782596) passed. This RC is **not Stable**: physical/electrical validation remains pending, and [intermittent loader OOM #31](https://github.com/sehmusadsoy-ui/flipper-labmate/issues/31) is under observation (no recent recurrence reported, not conclusively fixed). **Do not install on ordinary Momentum firmware.** The verified v1.9 E11 and v1.8 ordinary Momentum Stable releases below remain separate.
+> **LabMate v2.0 Ultimate RC1 is available as a public pre-release for matched E11 custom Momentum firmware.** Candidate source [`a3822fee`](https://github.com/sehmusadsoy-ui/flipper-labmate/tree/a3822feec6d09aa61d9c1ba7d7523f2b8b2dd8ca) passed [host CI](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/42362782593) and [native E11 CI](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/42362782596). Electrical validation remains pending and [loader OOM #31](https://github.com/sehmusadsoy-ui/flipper-labmate/issues/31) remains open. [RC1 release page](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v2.0-rc.1)
 
 [![v1.9 Stable E11](https://img.shields.io/badge/Stable-v1.9%20(E11%20only)-2e8b57?style=flat-square)](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.9)
 [![Ordinary Momentum Stable](https://img.shields.io/badge/Ordinary%20Momentum-v1.8%20(Latest)-525a80?style=flat-square)](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8)
@@ -15,7 +15,7 @@
 
 *LabMate concept artwork — the depicted interface is illustrative, not an actual application screenshot. Check the [release notes](https://github.com/sehmusadsoy-ui/flipper-labmate/releases) for real supported features and firmware compatibility.*
 
-**Current milestone: [LabMate v1.9 Stable — Logic Scope & Signal Compare](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.9).** The public v1.9 release is verified **only for matched E11-patched Momentum firmware**. The GitHub **Latest** shortcut intentionally remains [v1.8 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8) for ordinary compatible Momentum setups. They are two different compatibility profiles, not an unfinished v1.9 release.
+**Current Stable releases.** [LabMate v1.9 Stable — Logic Scope & Signal Compare](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.9) is verified for matched E11-patched Momentum firmware. The GitHub **Latest** shortcut points to [v1.8 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8) for ordinary compatible Momentum setups.
 
 **Measure · Generate · Record · Diagnose**
 
@@ -26,6 +26,7 @@ Designed for practical fault-finding, honest measurements, clear controls and pr
 [**Get v1.9 Stable — E11 only**](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.9) ·
 [**Get v1.8 Stable — ordinary Momentum**](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8) ·
 [**Documentation**](docs/) ·
+[**Device screenshots**](#screenshots) ·
 [**Roadmaps**](ROADMAP.md) ·
 [**Türkçe özet**](docs/README_TR.md)
 
@@ -35,16 +36,18 @@ Designed for practical fault-finding, honest measurements, clear controls and pr
 
 | Edition | Recommended for | Download |
 | :--- | :--- | :--- |
+| **v2.0 Ultimate RC1 — E11 pre-release** | Review of Signal Doctor and Dashboard on matched E11-patched Momentum firmware. Electrical validation pending | [RC1 FAP and SHA-256](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v2.0-rc.1) |
 | **v1.9 Stable — E11 Custom Momentum ONLY** | **Only Flipper Zero devices already running independently verified, exactly matching E11-patched Momentum firmware/native APIs.** Adds real single-channel PC1 digital Logic Scope and sequential A/B Signal Compare; **not for ordinary Momentum** | [Download verified v1.9 FAP + SHA256](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.9) |
 | **v1.8 Stable** — ordinary Latest | Flipper Zero with a **compatible Momentum SDK/API**; original verified integrated UART/PWM/logger tools | [Download FAP and SHA256](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8) |
 | **v1.8 E11 — Custom Momentum** — historical prerelease | **Only an independently verified, exactly matched E11-patched Momentum firmware/native-resource environment**; expanded I²C / 1-Wire and resource-owner experiments | [Review binaries, compatibility and risks](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8-e11-custom-momentum) |
 | **Older versions** | Historical behaviour, compatible prior Momentum builds or explicitly tested rollback | [Browse all Releases](https://github.com/sehmusadsoy-ui/flipper-labmate/releases) |
 
 > [!IMPORTANT]
-> **Firmware compatibility comes first.** The newest version number is **v1.9**, but **v1.9 is NOT a general-purpose ordinary Momentum update**. Its digital Scope requires additional E11 native lease and GPIO callback APIs. An FAP built for one Momentum firmware/API is not guaranteed to run on another build, on official Flipper firmware, or on Unleashed/Xtreme and other custom firmware. In particular, the **E11 FAP does not work as a standalone update on unpatched Momentum**. Its full firmware package is labeled **expert review only**; exact previous custom-firmware rollback and firmware-wide compatibility are not proven. Read the release-specific instructions before changing your device.
+> **Firmware compatibility comes first.** The digital Scope in v1.9 Stable requires the native lease and GPIO callback APIs in matched E11-patched Momentum. Use v1.8 Stable for ordinary compatible Momentum. The full E11 firmware package is labeled **expert review only**. Rollback to the exact previous custom firmware and firmware-wide compatibility still need verification. Read the release-specific instructions before changing your device.
 
 **Release integrity**
 
+- **v2.0 Ultimate RC1 (E11 only)** · `labmate.fap` · **179,380 bytes** · SHA-256 `b6afca083348acf17d47150a44b65e51f46f7741e090d7281dc5bc3c92212412` · [source tag v2.0-rc.1](https://github.com/sehmusadsoy-ui/flipper-labmate/tree/v2.0-rc.1)
 - **Current v1.9 Stable (E11 only):** `labmate.fap` · **101,468 bytes** · SHA256 `d8bb04cf6de6ebaa466e7487e619d9f68af21dac49df2aa51e91dfae1f9f55c2` · [source tag v1.9](https://github.com/sehmusadsoy-ui/flipper-labmate/tree/v1.9)
 - Ordinary v1.8 Stable: `labmate.fap` · SHA256 `119c44bb854030a73a60fa205d38770bf77f048bb166ab379a03135c1de5f3b0`
 - E11 Custom Edition: `LabMate-v1.8-E11-CUSTOM-MOMENTUM.fap` · SHA256 `393fe3e52aa710162a42d7299aa053f538b2ee1ad6542755cf402b83c1931b61`
@@ -96,6 +99,8 @@ Choose a low-frequency 50% waveform to validate basic timing. **Generator-to-met
 
 ## Validation and limitations
 
+On 2026-11-20, the connected Flipper Zero showed a loader out-of-memory dialog with the installed v2.0 E11 review build. LabMate opened after one restart and its menus were accessible. The [device check](docs/DEVICE_CHECK_2026-11-20.md) records the exact build, measurements of available RAM and the scope of the check.
+
 The **v1.9 Stable E11-only release** was built with an isolated, pinned Windows E11 SDK. Its exact **101,468-byte FAP** was installed and independently read back twice with historical FAP backups preserved. On one matching device, the operator supplied screenshots for 100.00 Hz and 1.00 kHz / 50% Logic Scope measurements, sequential A/B details (5.00 ms and 500 µs HIGH/LOW respectively), +900 Hz A/B frequency delta, reference PASS for matching targets and FAIL for the wrong target. STOP/BACK and resource handoff to Frequency Meter / Pulse Analyzer were operator-reported PASS. The scope is **one digital PC1 channel**, with static **256-edge** capture storage and bounded 5-second sessions; no analog, simultaneous multi-channel, high-speed throughput or independent accuracy-calibration claim. [Public v1.9 release and caveats](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.9) · [physical acceptance](https://github.com/sehmusadsoy-ui/flipper-labmate/blob/dev/v1.9-logic-scope/docs/V1_9_PHYSICAL_ACCEPTANCE_AND_RELEASE_GATE_2026-10-20.md).
 
 The normal v1.8 Stable FAP was built and checked against its pinned Momentum development SDK and accepted on a physical Flipper (**19/19 user-reported scoped checks**). The exact E11 final FAP was independently checksummed, then tested on **one already-matched patched Momentum setup**: on-device UI, ESP32-S2 UART at 115200, PA7→PC1 PWM/Frequency/Pulse at 100 Hz and 1 kHz / 50%, STOP–RESTART and isolated fresh CSV/Profile persistence were reported **PASS**.
@@ -115,7 +120,7 @@ Evidence levels are deliberately distinct: **operator-observed physical tests, s
 | **v1.7** | PWM Studio, true counter, Button Analyzer and alerts | Historical Stable released |
 | **v1.8** | UART, Counter RESUME; separately published E11 custom I²C/1-Wire branch | Ordinary Stable + scoped E11 prerelease published |
 | **v1.9** | **Digital Logic Scope and Signal Compare**: actual edge timestamps, bounded buffers, triggers and tolerances | **Stable published (E11 firmware only)**; [v1.9 release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.9); [engineering Draft PR](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/15) remains unmerged |
-| **v2.0** | **LabMate Ultimate / Signal Doctor**: measurement-based fault reasoning, integrated dashboard and polished workflow | Planned |
+| **v2.0** | **LabMate Ultimate / Signal Doctor**: measurement-based fault reasoning, integrated dashboard and polished workflow | [Public RC1 pre-release (E11 only)](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v2.0-rc.1). Electrical validation pending |
 
 **Both approved roadmaps are maintained together:**
 
@@ -134,7 +139,7 @@ flipper-labmate/
 ├── tests/                 # Host/native regressions
 ├── scripts/               # Verified build and maintenance tools
 ├── docs/                  # Engineering notes and release checks
-├── screenshots/           # Historical UI captures
+├── screenshots/           # Device screenshots and historical UI captures
 └── .github/workflows/     # CI and archived release workflows
 ```
 
@@ -151,6 +156,18 @@ The E11-only code additionally depends on matched native firmware patches; it is
 Detailed historical controls, legacy install snippets and original notes remain preserved in the [pre-redesign README archive](docs/archive/README_PRE_2026-10-17_LANDING.md).
 
 ## Screenshots
+
+### Flipper Zero · 2026-11-20
+
+Captured over USB from the installed LabMate Ultimate v2.0 E11 review build. [Device check and CI build details](docs/DEVICE_CHECK_2026-11-20.md)
+
+| Main menu | Measure | Signal Doctor |
+| :---: | :---: | :---: |
+| ![LabMate Ultimate v2.0 main menu with Measure selected](screenshots/2026-11-20/main-menu.png) | ![Measure menu with GPIO Monitor selected](screenshots/2026-11-20/measure-menu.png) | ![Signal Doctor frequency reference setup](screenshots/2026-11-20/signal-doctor.png) |
+
+| Dashboard | Settings | Loader warning before restart |
+| :---: | :---: | :---: |
+| ![Dashboard frequency view with no saved measurement](screenshots/2026-11-20/dashboard.png) | ![LabMate Settings with Language selected](screenshots/2026-11-20/settings.png) | ![Flipper loader out-of-memory dialog with Reboot button](screenshots/2026-11-20/loader-out-of-memory.png) |
 
 <details>
 <summary>View historical UI examples (v1.0–v1.2 era, not screenshots of the current v1.8/E11 release)</summary>

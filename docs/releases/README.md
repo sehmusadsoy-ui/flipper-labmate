@@ -8,14 +8,16 @@ assets remain available unchanged.
 - [v1.4](RELEASE_NOTES_v1.4.md) · [v1.5](RELEASE_NOTES_v1.5.md) · [v1.6](RELEASE_NOTES_v1.6.md)
 - [v1.7 Stable](RELEASE_NOTES_v1.7.md) · [v1.8 Stable](RELEASE_NOTES_v1.8.md)
 - [v1.8 E11 Custom Momentum pre-release — live GitHub release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8-e11-custom-momentum)
+- [v1.9 Stable — matched E11-patched Momentum firmware](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.9)
+- [v2.0 Ultimate RC1 — matched E11-patched Momentum firmware, electrical validation pending](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v2.0-rc.1)
 
 **v1.1** is a historical development milestone, not a separately
 published GitHub release/tag. Existing older releases were built for
 particular Momentum SDK/API versions; a historical Stable FAP is **not**
 guaranteed to work on official Flipper firmware or arbitrary third-party
-firmware. The E11 pre-release **specifically requires patched, matched
-Momentum firmware/native resources** and is not a general replacement
-for original [v1.8 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8).
+firmware. The E11 releases require **matched E11-patched Momentum
+firmware and native APIs**. Ordinary Momentum users can use
+[v1.8 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8) with a compatible SDK/API.
 
 **Download releases from [GitHub Releases](https://github.com/sehmusadsoy-ui/flipper-labmate/releases)**,
 not from this documentation directory.

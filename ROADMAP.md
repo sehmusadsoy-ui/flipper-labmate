@@ -1,11 +1,14 @@
 # LabMate Master Roadmap — v1.0 to v2.0
 
-> **Current milestone status — 2026-10-20 (supersedes older dated status paragraphs below):**
+> **Current milestone status — 2026-11-20**
+>
 > **[v1.9 Stable — Logic Scope & Signal Compare](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.9) has been released** as a non-prerelease app for **exactly matched E11-patched Momentum firmware only**. The single-channel PC1 digital waveform, bounded timestamp capture (256 edge records; max 5 s), sequential A/B saved signal metrics, 100 Hz / 1 kHz tolerance profiles and guarded STOP/BACK were accepted on the operator's already-matched device. Frequency/duty observed at 100 Hz and 1 kHz / 50%; A/B compare +900 Hz and wrong-reference FAIL / correct-reference PASS were captured in device screenshots. No analog, independently calibrated, simultaneous multichannel or high-speed sampling throughput claim.
 >
 > The **ordinary Momentum [v1.8 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8)** remains GitHub's **Latest** as a separate compatibility profile. `main` still points to the ordinary v1.8 source/manifest; the exact physically accepted v1.9 source is **[tag v1.9](https://github.com/sehmusadsoy-ui/flipper-labmate/tree/v1.9)** (commit `72eb58d6c65d31f510acf6f532ee23c543a9149d`) and its FAP SHA256 is `d8bb04cf6de6ebaa466e7487e619d9f68af21dac49df2aa51e91dfae1f9f55c2`. v1.9 native E11 code remains unmerged in [engineering PR #15](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/15). These compatibility branches must not be confused or combined without a separately tested ordinary Momentum build.
 >
-> **Next active milestone: v2.0 — LabMate Ultimate / Signal Doctor**, unified dashboard and professional UX redesign. External oscilloscope calibration, real foreign native contention and optional sensor fixtures are still deferred where not physically validated. Older 2026-10-14/17 statuses below are historical snapshots, not statements that v1.9 is still planned.
+> **[v2.0 Ultimate RC1](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v2.0-rc.1)** is a public pre-release for matched E11-patched Momentum firmware. It introduces Signal Doctor and a unified measurement dashboard. Electrical validation remains pending, and [intermittent startup OOM #31](https://github.com/sehmusadsoy-ui/flipper-labmate/issues/31) remains open. Independent oscilloscope calibration, native-resource contention tests, and optional sensor checks remain deferred where physical validation is pending.
+>
+> The dated October status paragraphs below are historical snapshots.
 
 
 **Two complementary planning documents:** This is the **canonical feature roadmap**
@@ -250,8 +253,8 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
 | **v1.5** | **Data Logger, CSV recording and Log History** | **Stable published 2026-10-09** |
 | v1.6 | Code/UI refactor | Stable published; v1.6.1 remains a previous Stable fallback |
 | **v1.7** | **PWM Studio and Counter** | **Previous Stable published 2026-10-12; retained for rollback** |
-| **v1.8** | **Coordinator cleanup → Counter resume → real UART; I²C + optional 1-Wire DEFERRED by operator** | **CURRENT STABLE published 2026-10-14. Tested exact FAP and SHA256 release assets VERIFIED; RC1 15/15 + final 4/4 PASS** |
-| v1.9 | Logic Scope and Signal Compare | Planned |
-| v2.0 | LabMate Ultimate / Signal Doctor | Planned |
+| **v1.8** | **Coordinator cleanup → Counter resume → real UART; I²C + optional 1-Wire DEFERRED by operator** | **Ordinary Momentum Latest**, published 2026-10-14. Verified FAP and SHA-256 release assets. RC1 15/15 and final 4/4 PASS. |
+| v1.9 | Logic Scope and Signal Compare | [Stable published](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.9) for matched E11-patched Momentum firmware |
+| v2.0 | LabMate Ultimate / Signal Doctor | [RC1 published](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v2.0-rc.1) for matched E11-patched Momentum firmware. Electrical validation pending. |
 
 The sequence above remains the agreed project roadmap. The 2026-10-09 documentation update records the completed v1.5 milestone **without changing any future version goals**. Subsequent scope changes should be explicit and agreed.
