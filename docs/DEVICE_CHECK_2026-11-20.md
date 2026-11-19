@@ -18,7 +18,7 @@ The SHA-256 was calculated from the FAP read back over USB. It matches the E11 n
 
 ## Startup and menu check
 
-1. Before the restart, the USB CLI reported `Preload failed ... Not enough memory`. Opening LabMate from the on-device Tools list also displayed [`Error: Out of Memory`](../screenshots/2026-11-20/loader-out-of-memory.png).
+1. Before the restart, the USB CLI reported `Preload failed ... Not enough memory`. Opening LabMate from the on-device Tools list also displayed `Error: Out of Memory`.
 2. After one restart, the USB CLI opened the same FAP and reported `Application "LabMate Ultimate" is running`. The [main menu](../screenshots/2026-11-20/main-menu.png), [Measure menu](../screenshots/2026-11-20/measure-menu.png), [Signal Doctor reference setup](../screenshots/2026-11-20/signal-doctor.png), [empty Dashboard](../screenshots/2026-11-20/dashboard.png) and [Settings](../screenshots/2026-11-20/settings.png) were visible. The app then exited through its Back controls.
 
 | USB CLI `free` snapshot | Free heap | Largest free block |
@@ -26,4 +26,4 @@ The SHA-256 was calculated from the FAP read back over USB. It matches the E11 n
 | After the failed launch, before the restart | 92,552 bytes | 73,760 bytes |
 | After the restart, before the successful launch | 139,440 bytes | 139,440 bytes |
 
-These are USB-connected snapshots taken outside the failing allocation. The observed error and recovery are relevant to [issue #31](https://github.com/sehmusadsoy-ui/flipper-labmate/issues/31). The failure's root cause and long-idle startup stability still need verification. Electrical measurements and loopback validation are pending. The five interface captures and loader warning came from the device's 128 × 64 display and are shown at 3× pixel scale.
+These are USB-connected snapshots taken outside the failing allocation. The observed error and recovery are relevant to [issue #31](https://github.com/sehmusadsoy-ui/flipper-labmate/issues/31). The failure's root cause and long-idle startup stability still need verification. Electrical measurements and loopback validation are pending. The five interface captures came from the device's 128 × 64 display and are shown at 3× pixel scale.

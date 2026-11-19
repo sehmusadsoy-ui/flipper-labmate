@@ -165,9 +165,9 @@ Captured over USB from the installed LabMate Ultimate v2.0 E11 review build. [De
 | :---: | :---: | :---: |
 | ![LabMate Ultimate v2.0 main menu with Measure selected](screenshots/2026-11-20/main-menu.png) | ![Measure menu with GPIO Monitor selected](screenshots/2026-11-20/measure-menu.png) | ![Signal Doctor frequency reference setup](screenshots/2026-11-20/signal-doctor.png) |
 
-| Dashboard | Settings | Loader warning before restart |
-| :---: | :---: | :---: |
-| ![Dashboard frequency view with no saved measurement](screenshots/2026-11-20/dashboard.png) | ![LabMate Settings with Language selected](screenshots/2026-11-20/settings.png) | ![Flipper loader out-of-memory dialog with Reboot button](screenshots/2026-11-20/loader-out-of-memory.png) |
+| Dashboard | Settings |
+| :---: | :---: |
+| ![Dashboard frequency view with no saved measurement](screenshots/2026-11-20/dashboard.png) | ![LabMate Settings with Language selected](screenshots/2026-11-20/settings.png) |
 
 <details>
 <summary>View historical UI examples (v1.0–v1.2 era, not screenshots of the current v1.8/E11 release)</summary>
