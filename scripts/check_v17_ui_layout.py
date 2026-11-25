@@ -64,7 +64,7 @@ assert '"SIGNAL GENERATOR"' not in UI, "Obsolete About label returned"
 for page in pages:
     for line in page:
         assert fits(line), f"About text would exceed 128px: {line}"
-for text in ('"SauronLAB / Sehmus"', '"3.3V GPIO ONLY"',
+for text in ('"WorksDevLabs"', '"3.3V GPIO ONLY"',
              '"flipper-labmate"'):
     assert text in UI
 

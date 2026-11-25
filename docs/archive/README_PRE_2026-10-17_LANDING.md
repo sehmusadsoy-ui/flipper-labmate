@@ -6,17 +6,17 @@
 
 **Pocket-sized digital signal diagnostics for Flipper Zero on Momentum Firmware.**
 
-[![Latest release](https://img.shields.io/github/v/release/sehmusadsoy-ui/flipper-labmate?label=stable%20release)](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/latest)
+[![Latest release](https://img.shields.io/github/v/release/WorksDevLabs/flipper-labmate?label=stable%20release)](https://github.com/WorksDevLabs/flipper-labmate/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Flipper%20Zero-orange)
 ![Firmware](https://img.shields.io/badge/firmware-Momentum-blueviolet)
 
-**Current Stable: [LabMate v1.8 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8)** (published 2026-10-14; UART Terminal and Counter STOP/RESUME, with all existing v1.7 instruments retained).
+**Current Stable: [LabMate v1.8 Stable](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.8)** (published 2026-10-14; UART Terminal and Counter STOP/RESUME, with all existing v1.7 instruments retained).
 **Verified v1.8 FAP SHA256:** `119c44bb854030a73a60fa205d38770bf77f048bb166ab379a03135c1de5f3b0`.
-**Exact tagged source:** `02b05639364d6dd71f5eb70456eca379c59218cb`; Momentum CI [38546662091](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38546662091) and post-merge identical-FAP build [38548200859](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38548200859) PASS. **Real Flipper acceptance: 19/19 user-reported PASS** (RC1 15/15 plus final v1.8 binary 4/4). GitHub Release asset digest was verified after publication.
+**Exact tagged source:** `02b05639364d6dd71f5eb70456eca379c59218cb`; Momentum CI [38546662091](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38546662091) and post-merge identical-FAP build [38548200859](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38548200859) PASS. **Real Flipper acceptance: 19/19 user-reported PASS** (RC1 15/15 plus final v1.8 binary 4/4). GitHub Release asset digest was verified after publication.
 
-**[Download v1.8 labmate.fap](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/download/v1.8/labmate.fap)** ·
-[SHA256SUMS.txt](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/download/v1.8/SHA256SUMS.txt) ·
+**[Download v1.8 labmate.fap](https://github.com/WorksDevLabs/flipper-labmate/releases/download/v1.8/labmate.fap)** ·
+[SHA256SUMS.txt](https://github.com/WorksDevLabs/flipper-labmate/releases/download/v1.8/SHA256SUMS.txt) ·
 [v1.8 Release notes](../../docs/releases/RELEASE_NOTES_v1.8.md) ·
 [Acceptance record](../../docs/V1_8_STABLE_CANDIDATE.md) ·
 [Roadmap](../../ROADMAP.md)
@@ -27,9 +27,9 @@ Choose a build **by firmware compatibility**, not simply by the highest tag numb
 
 | Channel | Download | Firmware scope |
 | --- | --- | --- |
-| **Latest ordinary Stable: v1.8** | [v1.8 Stable + SHA256](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8) | Compatible Momentum SDK/API; not guaranteed to load on official Flipper firmware or every third-party build |
-| **v1.8 E11 — Custom Momentum Edition** | [E11 compatibility-limited pre-release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8-e11-custom-momentum) | **Only matching E11-patched Momentum firmware and native resources**; do not install its FAP on stock/unpatched Momentum |
-| **Historical versions** | [All published Releases](https://github.com/sehmusadsoy-ui/flipper-labmate/releases) | v1.0, v1.2, v1.3, v1.4, v1.5, v1.6, v1.6.1, v1.7, v1.8 remain downloadable; v1.1 was a development milestone without an independent public v1.1 tag/release |
+| **Latest ordinary Stable: v1.8** | [v1.8 Stable + SHA256](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.8) | Compatible Momentum SDK/API; not guaranteed to load on official Flipper firmware or every third-party build |
+| **v1.8 E11 — Custom Momentum Edition** | [E11 compatibility-limited pre-release](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.8-e11-custom-momentum) | **Only matching E11-patched Momentum firmware and native resources**; do not install its FAP on stock/unpatched Momentum |
+| **Historical versions** | [All published Releases](https://github.com/WorksDevLabs/flipper-labmate/releases) | v1.0, v1.2, v1.3, v1.4, v1.5, v1.6, v1.6.1, v1.7, v1.8 remain downloadable; v1.1 was a development milestone without an independent public v1.1 tag/release |
 
 The E11 pre-release contains the integrated application (including I2C
 Explorer and optional 1-Wire features) and a **separately marked expert-review
@@ -47,7 +47,7 @@ Older FAPs were built against their respective Momentum API/SDK versions:
 every official/custom firmware or with every later SDK**. Preserve CSV and
 profile backups before changing versions.
 
-Previous [v1.7 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7), [v1.6.1 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1) and older published releases remain preserved for rollback. No change was made to their tags or binaries. Real hardware observations do not constitute independent electrical or timing calibration.
+Previous [v1.7 Stable](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.7), [v1.6.1 Stable](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.6.1) and older published releases remain preserved for rollback. No change was made to their tags or binaries. Real hardware observations do not constitute independent electrical or timing calibration.
 
 > [!IMPORTANT]
 > **3.3 V GPIO ONLY.** Never connect unknown voltage, 5 V, automotive,
@@ -58,18 +58,18 @@ Previous [v1.7 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/release
 
 The old ~1,200-line coordinator refactor has **passed R1–R10 device
 regression** (user-reported) and was merged to `main` in
-[PR #5](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/5).
+[PR #5](https://github.com/WorksDevLabs/flipper-labmate/pull/5).
 The app now has focused capture, input, GUI and deferred-SD modules.
 **The final, physically accepted `v1.8` `labmate.fap` is published** in the
-[official GitHub Release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8).
+[official GitHub Release](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.8).
 Tag `v1.8` is pinned to exact compiled source `02b05639364d6dd71f5eb70456eca379c59218cb`;
 CI/host/USB verified and the user reported **19/19 physical functional
 PASS** including UART receive/STOP, PWM, Counter, saved Profile S1 and
 historical CSV Log History. [Acceptance evidence](../../docs/V1_8_STABLE_CANDIDATE.md)
 · [v1.8 release notes](../../docs/releases/RELEASE_NOTES_v1.8.md).
 Counter STOP/RESUME also passed C1–C8 real-device regressions and
-merged in [PR #6](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/6).
-**UART Terminal development milestone merged into `main` in [PR #7](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/7)**:
+merged in [PR #6](https://github.com/WorksDevLabs/flipper-labmate/pull/6).
+**UART Terminal development milestone merged into `main` in [PR #7](https://github.com/WorksDevLabs/flipper-labmate/pull/7)**:
 COMM menu, USART pins 13/14, bounded RX display, 9600/38400/115200 baud
 and an explicit 12-character TX editor. This feature was then
 physically verified in the v1.8 release candidate.
@@ -109,7 +109,7 @@ The top level is intentionally short; development resources live in grouped fold
 | [`dist/`](../../dist/) / [`screenshots/`](../../screenshots/) | Historical build examples and UI screenshots |
 
 The app manifest [`application.fam`](../../application.fam) remains at the root and builds
-`src/*.c`. The current binary is distributed from the official [v1.8 Stable release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8);
+`src/*.c`. The current binary is distributed from the official [v1.8 Stable release](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.8);
 moving source folders does **not** modify any previously published tag or release asset.
 
 ## What's new in v1.7 Stable
@@ -199,7 +199,7 @@ test coverage, limitations and detailed outcomes.
 ## Install previous v1.7 Stable (rollback)
 
 Download the published `labmate.fap` and `SHA256SUMS.txt`
-from the [v1.7 Stable release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7),
+from the [v1.7 Stable release](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.7),
 verify the FAP hash, and install to `/ext/apps/Tools/labmate.fap`.
 The device should show `v1.7`.
 
@@ -208,7 +208,7 @@ installer from immutable `v1.7` source, review it and run:
 
 ```powershell
 $script = "$env:TEMP\install-labmate-v17-stable.ps1"
-Invoke-WebRequest -UseBasicParsing "https://raw.githubusercontent.com/sehmusadsoy-ui/flipper-labmate/v1.7/scripts/install-v17-from-github.ps1" -OutFile $script
+Invoke-WebRequest -UseBasicParsing "https://raw.githubusercontent.com/WorksDevLabs/flipper-labmate/v1.7/scripts/install-v17-from-github.ps1" -OutFile $script
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script -Channel Stable -VerifyOnly
 if ($LASTEXITCODE -ne 0) { throw "Stable verification failed" }
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script -Channel Stable -Port COM7
@@ -283,9 +283,9 @@ Firmware/API mismatches may require a rebuild.
 
 ## Project links
 
-- [LabMate v1.7 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7) ·
+- [LabMate v1.7 Stable](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.7) ·
   [Stable release notes](../../docs/releases/RELEASE_NOTES_v1.7.md) ·
-  [Previous v1.6.1 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1)
+  [Previous v1.6.1 Stable](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.6.1)
 - [Master roadmap](../../ROADMAP.md) ·
   [Changelog](../../CHANGELOG.md) ·
   [v1.6 device test report](../../docs/V1_6_FIRST_DEVICE_TEST.md)
@@ -294,4 +294,4 @@ Firmware/API mismatches may require a rebuild.
 
 ## Author and license
 
-Created by **Sehmus (SauronLAB)** — [GitHub: sehmusadsoy-ui](https://github.com/sehmusadsoy-ui). Licensed under the [MIT License](../../LICENSE).
+Created by **Sehmus (SauronLAB)** — [GitHub: WorksDevLabs](https://github.com/WorksDevLabs). Licensed under the [MIT License](../../LICENSE).

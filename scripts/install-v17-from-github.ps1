@@ -12,7 +12,7 @@ param(
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-$repo = 'sehmusadsoy-ui/flipper-labmate'
+$repo = 'WorksDevLabs/flipper-labmate'
 $tag = if($Channel -eq 'Stable') { 'v1.7' } else { 'v1.7-rc1' }
 $shouldBePrerelease = $Channel -eq 'RC1'
 $rc1Source = 'd55eec032e5f341f39aa7c98915ec2062995e66b'

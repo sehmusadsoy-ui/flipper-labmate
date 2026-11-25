@@ -38,7 +38,7 @@ These are **functional self-tests**, not independent calibration. The internal s
 
 ## Compatibility and installation
 
-Download the published [`labmate-v1.4.fap`](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/download/v1.4/labmate-v1.4.fap) from [LabMate v1.4 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.4). Copy it to `/ext/apps/Tools/labmate.fap`, then open **Apps > Tools > LabMate**.
+Download the published [`labmate-v1.4.fap`](https://github.com/WorksDevLabs/flipper-labmate/releases/download/v1.4/labmate-v1.4.fap) from [LabMate v1.4 Stable](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.4). Copy it to `/ext/apps/Tools/labmate.fap`, then open **Apps > Tools > LabMate**.
 
 The on-device development builds and the GitHub Actions binary both used Momentum Firmware **API 87.1**, verified in the successful release workflow logs. A future firmware/API update may require rebuilding from source. Rebuild with your installed Momentum Firmware checkout if needed:
 

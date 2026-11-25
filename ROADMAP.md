@@ -2,11 +2,11 @@
 
 > **Current milestone status — 2026-11-20**
 >
-> **[v1.9 Stable — Logic Scope & Signal Compare](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.9) has been released** as a non-prerelease app for **exactly matched E11-patched Momentum firmware only**. The single-channel PC1 digital waveform, bounded timestamp capture (256 edge records; max 5 s), sequential A/B saved signal metrics, 100 Hz / 1 kHz tolerance profiles and guarded STOP/BACK were accepted on the operator's already-matched device. Frequency/duty observed at 100 Hz and 1 kHz / 50%; A/B compare +900 Hz and wrong-reference FAIL / correct-reference PASS were captured in device screenshots. No analog, independently calibrated, simultaneous multichannel or high-speed sampling throughput claim.
+> **[v1.9 Stable — Logic Scope & Signal Compare](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.9) has been released** as a non-prerelease app for **exactly matched E11-patched Momentum firmware only**. The single-channel PC1 digital waveform, bounded timestamp capture (256 edge records; max 5 s), sequential A/B saved signal metrics, 100 Hz / 1 kHz tolerance profiles and guarded STOP/BACK were accepted on the operator's already-matched device. Frequency/duty observed at 100 Hz and 1 kHz / 50%; A/B compare +900 Hz and wrong-reference FAIL / correct-reference PASS were captured in device screenshots. No analog, independently calibrated, simultaneous multichannel or high-speed sampling throughput claim.
 >
-> The **ordinary Momentum [v1.8 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8)** remains GitHub's **Latest** as a separate compatibility profile. `main` still points to the ordinary v1.8 source/manifest; the exact physically accepted v1.9 source is **[tag v1.9](https://github.com/sehmusadsoy-ui/flipper-labmate/tree/v1.9)** (commit `72eb58d6c65d31f510acf6f532ee23c543a9149d`) and its FAP SHA256 is `d8bb04cf6de6ebaa466e7487e619d9f68af21dac49df2aa51e91dfae1f9f55c2`. v1.9 native E11 code remains unmerged in [engineering PR #15](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/15). These compatibility branches must not be confused or combined without a separately tested ordinary Momentum build.
+> The **ordinary Momentum [v1.8 Stable](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.8)** remains GitHub's **Latest** as a separate compatibility profile. `main` still points to the ordinary v1.8 source/manifest; the exact physically accepted v1.9 source is **[tag v1.9](https://github.com/WorksDevLabs/flipper-labmate/tree/v1.9)** (commit `72eb58d6c65d31f510acf6f532ee23c543a9149d`) and its FAP SHA256 is `d8bb04cf6de6ebaa466e7487e619d9f68af21dac49df2aa51e91dfae1f9f55c2`. v1.9 native E11 code remains unmerged in [engineering PR #15](https://github.com/WorksDevLabs/flipper-labmate/pull/15). These compatibility branches must not be confused or combined without a separately tested ordinary Momentum build.
 >
-> **[v2.0 Ultimate RC1](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v2.0-rc.1)** is a public pre-release for matched E11-patched Momentum firmware. It introduces Signal Doctor and a unified measurement dashboard. Electrical validation remains pending, and [intermittent startup OOM #31](https://github.com/sehmusadsoy-ui/flipper-labmate/issues/31) remains open. Independent oscilloscope calibration, native-resource contention tests, and optional sensor checks remain deferred where physical validation is pending.
+> **[v2.0 Ultimate RC1](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v2.0-rc.1)** is a public pre-release for matched E11-patched Momentum firmware. It introduces Signal Doctor and a unified measurement dashboard. Electrical validation remains pending, and [intermittent startup OOM #31](https://github.com/WorksDevLabs/flipper-labmate/issues/31) remains open. Independent oscilloscope calibration, native-resource contention tests, and optional sensor checks remain deferred where physical validation is pending.
 >
 > The dated October status paragraphs below are historical snapshots.
 
@@ -22,9 +22,9 @@ physical equipment/university oscilloscope checks.
 
 
 > **Current development update — 2026-10-17:** The original
-> [v1.8 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8)
+> [v1.8 Stable](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.8)
 > remains GitHub's ordinary **Latest** release, while the expanded
-> [v1.8 E11 — Custom Momentum Edition](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8-e11-custom-momentum)
+> [v1.8 E11 — Custom Momentum Edition](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.8-e11-custom-momentum)
 > is **public as a separate compatibility-limited pre-release**.
 > It contains the same integrated application with E11 I2C/1-Wire
 > source and matched native resource ownership, requiring its own
@@ -34,7 +34,7 @@ physical equipment/university oscilloscope checks.
 > STOP/RESTART, scratch CSV Logger and isolated Profile persistence
 > passed. External I2C ACK, DS18B20, independent calibration, exact
 > custom-firmware rollback and broad native third-party coexistence
-> remain unverified. E11 development [PR #13](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/13)
+> remain unverified. E11 development [PR #13](https://github.com/WorksDevLabs/flipper-labmate/pull/13)
 > is **still Draft and unmerged**; publishing a checked binary does
 > not prove universal Stock-Momentum compatibility or mean its code
 > is already on `main`.
@@ -50,10 +50,10 @@ physical equipment/university oscilloscope checks.
 > published ordinary v1.8 Stable decision, rather than describing
 > the later separate E11 pre-release.
 
-**Status:** Updated 2026-10-14: **[LabMate v1.8 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8) is PUBLISHED**, not a draft. Modular coordinator (PR #5), Counter STOP/RESUME (PR #6), and real UART Terminal (PR #7) are integrated into the actual single `labmate.fap`. RC1 15/15 and exact final v1.8 FAP 4/4 operator-reported on-device PASS; Momentum/Windows CI, COM7 USB installer and published-asset SHA256 all PASS. I²C Explorer and optional 1-Wire explicitly DEFERRED, not delivered. v1.9 may now proceed, but its Draft PR #10 has not been merged.  
-**Current published Stable:** [v1.8 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8), tag source `02b05639364d6dd71f5eb70456eca379c59218cb`, exact published FAP SHA256 `119c44bb854030a73a60fa205d38770bf77f048bb166ab379a03135c1de5f3b0`, published 2026-10-14. CI [38546662091](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38546662091) and final functional device tests 4/4 PASS following RC1 15/15.  
-**Previous Stable fallback:** [v1.7 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7) (original v1.7 tag `d0e1bc6a95b257841533f0aa8745e3a79bbc8dcd`, later PWM Studio label asset adjustment remains untouched), [v1.6.1 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1), [v1.6 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6), and older unchanged releases.  
-**Previous pre-release:** [v1.7 RC1](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7-rc1) remains available at unchanged source `d55eec03`.
+**Status:** Updated 2026-10-14: **[LabMate v1.8 Stable](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.8) is PUBLISHED**, not a draft. Modular coordinator (PR #5), Counter STOP/RESUME (PR #6), and real UART Terminal (PR #7) are integrated into the actual single `labmate.fap`. RC1 15/15 and exact final v1.8 FAP 4/4 operator-reported on-device PASS; Momentum/Windows CI, COM7 USB installer and published-asset SHA256 all PASS. I²C Explorer and optional 1-Wire explicitly DEFERRED, not delivered. v1.9 may now proceed, but its Draft PR #10 has not been merged.
+**Current published Stable:** [v1.8 Stable](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.8), tag source `02b05639364d6dd71f5eb70456eca379c59218cb`, exact published FAP SHA256 `119c44bb854030a73a60fa205d38770bf77f048bb166ab379a03135c1de5f3b0`, published 2026-10-14. CI [38546662091](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38546662091) and final functional device tests 4/4 PASS following RC1 15/15.
+**Previous Stable fallback:** [v1.7 Stable](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.7) (original v1.7 tag `d0e1bc6a95b257841533f0aa8745e3a79bbc8dcd`, later PWM Studio label asset adjustment remains untouched), [v1.6.1 Stable](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.6.1), [v1.6 Stable](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.6), and older unchanged releases.
+**Previous pre-release:** [v1.7 RC1](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.7-rc1) remains available at unchanged source `d55eec03`.
 **Validation summary:** v1.7 historical tests remain recorded unchanged. For the current v1.8 Stable: coordinator R1–R10, Counter C1–C8, external UART peer checks, RC1 Test 18-R1 6/6, 18-R2 4/4, 18-R3 5/5, and final `v1.8`-labeled 18-FINAL F1–F4 **4/4 user-reported PASS**. Combined new release physical smoke 19/19. Exact-source Momentum CI from `02b05639364d6dd71f5eb70456eca379c59218cb` yielded published `labmate.fap` hash `119c44bb854030a73a60fa205d38770bf77f048bb166ab379a03135c1de5f3b0`; main post-merge CI generated the identical FAP SHA256. GitHub Release and tag/asset checks confirmed public, non-prerelease, two checksum-valid assets. Known scope deferrals and uncalibrated measurements remain explicit. Next **v1.9 Logic Scope and Signal Compare** (not yet implemented), then **v2.0 Ultimate**.
 
 ## Non-negotiable sequential Stable gate (operator requirement — 2026-10-14)
@@ -79,7 +79,7 @@ until technically justified later. The actual single `labmate.fap`
 passed source CI, checksum-verified COM7 install and physical final
 4/4 test after the 15/15 RC1 smoke. Publish **only that tested artifact**
 with the documented exclusions. Published as the verified `v1.8` Release;
-[tag + checksum-verified download](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8). [Acceptance evidence](docs/V1_8_STABLE_CANDIDATE.md)
+[tag + checksum-verified download](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.8). [Acceptance evidence](docs/V1_8_STABLE_CANDIDATE.md)
 · [release notes](docs/releases/RELEASE_NOTES_v1.8.md).
 
 **The sequential Stable gate is now satisfied for v1.8**: next planned
@@ -105,7 +105,7 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
 - **Delivered:** PC1 rising-edge frequency input with high-resolution `DWT->CYCCNT` timing; Pulse Analyzer HIGH/LOW/PERIOD/DUTY readings; TIM2-based PA7 square-wave generation at fixed 50% duty and 1/2/5 Hz presets.
 - **Validated:** On-device PA7-to-PC1 loopback gave 1.00, 2.00 and 5.00 Hz readings for the respective generator presets; Pulse Analyzer functionality was also checked.
 - **Stability decision:** Runtime frequency input switching was deliberately disabled in v1.0; PC1 was the fixed input.
-- **Published:** [LabMate v1.0](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.0) with the original `labmate.fap`.
+- **Published:** [LabMate v1.0](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.0) with the original `labmate.fap`.
 
 ### v1.1 — Hardware frequency counter and PWM expansion (Historical milestone 2026-10-05)
 
@@ -120,7 +120,7 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
 - **Delivered:** Compact dashboard-style menu, per-tool icons, clearer selection highlighting and a visible application version indicator.
 - **Delivered:** LIVE/HOLD and RUN/STOP badges, improved key hints and redesigned Frequency Meter, Generator and About screen layouts.
 - **Retained:** LOW PC1 / HIGH PB3 measurement paths, PC1-based Pulse Analyzer functionality and PA7 hardware PWM presets from 1 Hz to 50 kHz.
-- **Published:** [LabMate v1.2 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.2) with a prebuilt FAP for the tested Momentum Firmware environment.
+- **Published:** [LabMate v1.2 Stable](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.2) with a prebuilt FAP for the tested Momentum Firmware environment.
 
 ### v1.3 — Interrupt capture and stability (Stable published 2026-10-08)
 
@@ -128,7 +128,7 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
 - **Delivered:** Pulse capture pin choices PC0, PC1, PB2 and PA4, avoiding conflicting or reserved interrupt lines.
 - **Delivered:** Faster HIGH PB3 hardware-counter refresh (about 100 ms), GPIO interrupt edge cleanup, and running Generator frequency changes without stop/restart freezes.
 - **Validated:** Flipper loopback functionality up to 50 kHz with 3.3 V-compatible signals; observations were functional checks, not independent calibration.
-- **Published:** [LabMate v1.3 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.3).
+- **Published:** [LabMate v1.3 Stable](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.3).
 
 ### v1.4 — MIN/MAX statistics and UI stability (Stable published 2026-10-08)
 
@@ -136,7 +136,7 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
 - **Delivered:** Pulse Analyzer MIN/MAX statistics for HIGH/LOW/PERIOD/DUTY with reset controls and five-sample median filtering of high-frequency extrema.
 - **Delivered:** Clearer 128×64 screen layout and rate-limited redraws to reduce USB-connected UI stalls.
 - **Validated:** Device loopback checks at 1, 20 and 50 kHz, selected statistics/hold controls, and a five-minute USB-connected navigation session; not an external calibrated accuracy claim.
-- **Published:** [LabMate v1.4 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.4), with FAP and SHA-256 file.
+- **Published:** [LabMate v1.4 Stable](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.4), with FAP and SHA-256 file.
 
 ### v1.5 — Data Logger and Log History (Stable published 2026-10-09)
 
@@ -149,7 +149,7 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
   is not available in the current operator environment. LibreOffice Calc import
   succeeded; see [deferred compatibility checks](docs/DEFERRED_HARDWARE_TESTS.md).
   No paid Excel purchase is required for the current Stable maintenance.
-- **Published:** [LabMate v1.5 Stable release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.5), with FAP, release notes and SHA-256. Physical-device tests were performed on the preceding development build; the final CI-produced FAP was installed afterward.
+- **Published:** [LabMate v1.5 Stable release](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.5), with FAP, release notes and SHA-256. Physical-device tests were performed on the preceding development build; the final CI-produced FAP was installed afterward.
 - **Known untested scenario:** Real microSD failure/recovery (e.g. read/write failures, full/corrupt/unmounted media or long blocked I/O) was **not** hardware-validated; see [v1.5 release notes](docs/releases/RELEASE_NOTES_v1.5.md). This is a documented limitation, not an outstanding condition requiring further v1.5 tests.
 
 ### v1.6 — Navigation, resource safety and Profiles (Stable published 2026-10-10)
@@ -160,13 +160,13 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
 - **Delivered:** Three CRC-validated redundant microSD Profile slots with SAVE/LOAD/DELETE and active-generator LOAD safety guard.
 - **Delivered:** GitHub Actions plus checksum-verified one-command PowerShell/USB installation; normal CSV logging/history from v1.5 retained.
 - **Validated:** Menus, capture, STATS/HOLD, profiles, Data Logger/History and final Stable FAP startup smoke on a physical Flipper.
-- **Published:** [LabMate v1.6 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6). Independent reference calibration and destructive SD fault-injection remain outside the demonstrated test coverage.
+- **Published:** [LabMate v1.6 Stable](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.6). Independent reference calibration and destructive SD fault-injection remain outside the demonstrated test coverage.
 
 ### v1.6.1 — Maintenance and verified Stable (published 2026-10-10)
 
 - **Delivered:** Additional capture ownership, GPIO/EXTI release and low/high frequency reliability hardening, plus modular logger and pulse/frequency math extraction.
 - **Validated:** Physical Gate A (8/8) and Gate B (6/6) on RC1 source; final INFO follow-up (3/3) on Stable source. These were not independent metrology calibration.
-- **Published:** [v1.6.1 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1) from `bc63271a`; release assets and checksum remain unchanged.
+- **Published:** [v1.6.1 Stable](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.6.1) from `bc63271a`; release assets and checksum remain unchanged.
 - **Version label maintenance:** A later `v1.6.1-dev` build corrected the device display/manifest version without replacing the published Stable artifact. That locally installed build is the source baseline for `v1.7-dev`.
 - **Deferred to v1.7:** extraction of remaining physical capture drivers and stronger centralized GPIO/TIM/EXTI ownership, alongside the official v1.7 functional scope.
 
@@ -254,7 +254,7 @@ Turn LabMate into an **electronic technician's digital pocketknife** on Flipper 
 | v1.6 | Code/UI refactor | Stable published; v1.6.1 remains a previous Stable fallback |
 | **v1.7** | **PWM Studio and Counter** | **Previous Stable published 2026-10-12; retained for rollback** |
 | **v1.8** | **Coordinator cleanup → Counter resume → real UART; I²C + optional 1-Wire DEFERRED by operator** | **Ordinary Momentum Latest**, published 2026-10-14. Verified FAP and SHA-256 release assets. RC1 15/15 and final 4/4 PASS. |
-| v1.9 | Logic Scope and Signal Compare | [Stable published](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.9) for matched E11-patched Momentum firmware |
-| v2.0 | LabMate Ultimate / Signal Doctor | [RC1 published](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v2.0-rc.1) for matched E11-patched Momentum firmware. Electrical validation pending. |
+| v1.9 | Logic Scope and Signal Compare | [Stable published](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.9) for matched E11-patched Momentum firmware |
+| v2.0 | LabMate Ultimate / Signal Doctor | [RC1 published](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v2.0-rc.1) for matched E11-patched Momentum firmware. Electrical validation pending. |
 
 The sequence above remains the agreed project roadmap. The 2026-10-09 documentation update records the completed v1.5 milestone **without changing any future version goals**. Subsequent scope changes should be explicit and agreed.

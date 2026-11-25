@@ -27,9 +27,9 @@ This is the first **v1.7 Stable** release following the published v1.7 RC1 pre-r
 
 ## Verification
 
-The refactored Stable Candidate FAP (CI [38191036835](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38191036835), SHA256 `94883B517D526EAA0F64E2AEAC89F89D181F85FD4F3ABB9056F3EEC2B68123E0`) completed **36/36 user-reported Flipper checks** across tests 7A–7F: PWM/Pulse, Frequency LOW/HIGH, Event Counter, Button with clean digital input, Thresholds, CSV Logger/History, Profiles protections, navigation and data persistence. Test 7B included screenshot-reviewed PWM/Pulse readings at 100 Hz with 5/50/95% duty.
+The refactored Stable Candidate FAP (CI [38191036835](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38191036835), SHA256 `94883B517D526EAA0F64E2AEAC89F89D181F85FD4F3ABB9056F3EEC2B68123E0`) completed **36/36 user-reported Flipper checks** across tests 7A–7F: PWM/Pulse, Frequency LOW/HIGH, Event Counter, Button with clean digital input, Thresholds, CSV Logger/History, Profiles protections, navigation and data persistence. Test 7B included screenshot-reviewed PWM/Pulse readings at 100 Hz with 5/50/95% duty.
 
-The separately built, final **`v1.7`-labeled** FAP (CI [38234204272](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38234204272), SHA256 `5A7CB0EAE601EEAC8856790211C4D2831A9198C31853631E1DAF0308CE724335`) passed **4/4 user-reported on-device smoke checks**: LCD/About version, startup/STOP, preserved S1 and CSV records, and 100 Hz / 50% PWM-to-PC1 Pulse with STOP after exit. A later packaging/installer-only CI reproduced the same exact FAP SHA256 and completed 2/2 PASS; all release publishing steps enforce that checksum.
+The separately built, final **`v1.7`-labeled** FAP (CI [38234204272](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38234204272), SHA256 `5A7CB0EAE601EEAC8856790211C4D2831A9198C31853631E1DAF0308CE724335`) passed **4/4 user-reported on-device smoke checks**: LCD/About version, startup/STOP, preserved S1 and CSV records, and 100 Hz / 50% PWM-to-PC1 Pulse with STOP after exit. A later packaging/installer-only CI reproduced the same exact FAP SHA256 and completed 2/2 PASS; all release publishing steps enforce that checksum.
 
 These are **functional tests using the Flipper's own 3.3 V loopback**, not independent instrument calibration.
 

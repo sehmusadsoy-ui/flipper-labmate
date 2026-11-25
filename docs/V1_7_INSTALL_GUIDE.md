@@ -1,6 +1,6 @@
 # LabMate v1.7 Stable — GitHub-to-USB installer
 
-**Published Stable:** [v1.7](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7)
+**Published Stable:** [v1.7](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.7)
 with two assets, `labmate.fap` and `SHA256SUMS.txt`.
 The v1.7 release keeps its **original tag/version**, but its FAP and
 SHA256SUMS assets received an in-place, 4/4 device-tested PWM Studio
@@ -29,13 +29,13 @@ not flash firmware or intentionally delete CSV/Profile data.
 ## 1. Verify the Stable release without installing
 
 Review the
-[immutable v1.7 installer source](https://github.com/sehmusadsoy-ui/flipper-labmate/blob/v1.7/scripts/install-v17-from-github.ps1),
+[immutable v1.7 installer source](https://github.com/WorksDevLabs/flipper-labmate/blob/v1.7/scripts/install-v17-from-github.ps1),
 then run in Windows PowerShell:
 
 ```powershell
 $ErrorActionPreference = 'Stop'
 $script = Join-Path $env:TEMP 'install-labmate-v17-stable.ps1'
-Invoke-WebRequest -UseBasicParsing 'https://raw.githubusercontent.com/sehmusadsoy-ui/flipper-labmate/v1.7/scripts/install-v17-from-github.ps1' -OutFile $script
+Invoke-WebRequest -UseBasicParsing 'https://raw.githubusercontent.com/WorksDevLabs/flipper-labmate/v1.7/scripts/install-v17-from-github.ps1' -OutFile $script
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script -Channel Stable -VerifyOnly
 if ($LASTEXITCODE -ne 0) { throw 'LabMate v1.7 Stable VerifyOnly FAILED' }
 Write-Host 'LabMate v1.7 Stable release checksum PASS' -ForegroundColor Green
@@ -82,8 +82,8 @@ changing any jumper wiring; use known 3.3 V-compatible signals only.
 
 ## Fallback and unresolved compatibility test
 
-- Published [v1.6.1 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1)
-  and [v1.7 RC1](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7-rc1)
+- Published [v1.6.1 Stable](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.6.1)
+  and [v1.7 RC1](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.7-rc1)
   remain unchanged.
 - Older `scripts/install-from-github.ps1` is intentionally pinned
   to **v1.6**. Use the v1.7-specific installer above for current Stable.

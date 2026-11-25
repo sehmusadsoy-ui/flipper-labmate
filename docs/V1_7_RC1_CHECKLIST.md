@@ -27,7 +27,7 @@ RC1 candidate still needs an exact-artifact checksum/device handoff before publi
 
 - [x] Record last successful *source* CI baseline:
   `b5bbd31804d3bed068aaf425e0b408fa7962ddbc`.
-- [x] CI [38185793925](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38185793925):
+- [x] CI [38185793925](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38185793925):
   Momentum FAP build/guards/host checks and Windows mock installer
   **2/2 PASS**; artifact `labmate` contains `labmate.fap` and
   `SHA256SUMS.txt` (artifact ID `11719268606`).
@@ -109,7 +109,7 @@ STOP before moving any jumper, and no external voltage source.
 - [x] Source branch: `v1.7-profiles-ux-fix`, derived directly from base RC1
   `dcd7d32572304f0db7f3ebecbd8fe36771faa708`.
 - [x] Exact fix FAP source `f6bebbe996d22cbafe49097abde336911e5dc8c3`.
-- [x] [CI 38188798973](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38188798973)
+- [x] [CI 38188798973](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38188798973)
   2/2 PASS. Artifact `labmate` ID `11720740569`; installed to
   `/ext/apps/Tools/labmate.fap` over COM7, SHA256 verified (above).
 - [x] Test 6A: 5/5 PASS (empty slots, SAVE confirmation, BACK cancellation,

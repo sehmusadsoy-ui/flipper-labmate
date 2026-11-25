@@ -5,7 +5,7 @@ isolated follow-up to completed coordinator refactor PR #5. Official v1.7
 Stable remains unchanged.
 
 The exact development FAP was produced by CI
-[38299402235](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38299402235)
+[38299402235](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38299402235)
 from commit `989f6f37250f3bdba76144cfb4373ae236b97291`,
 SHA256 `6ABB24285C1103429A6D978FF45B191922394D7CA2C462E05FBD207ED4BCAECB`.
 CI completed 2/2 PASS (Momentum SDK API 87.1, host C math,

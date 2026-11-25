@@ -54,7 +54,7 @@ No new version or release asset change was made.
 - [x] Freeze and device-check original `v1.7` Stable-labeled FAP.
   Original publication checksum matched Test 7G's FAP before the
   subsequent explicitly disclosed PWM Studio display-name correction.
-- [x] Candidate CI [38191036835](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38191036835)
+- [x] Candidate CI [38191036835](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38191036835)
   **2/2 PASS** on source `bdb1de1058961b9d5285944c3d41e16c19183478`:
   SDK FAP compile, architecture and host tests, Windows mock installer.
   CI artifact `labmate`, subsequently installed and functionally device-tested
@@ -106,7 +106,7 @@ No new version or release asset change was made.
 - [x] **Test 7G: 4/4 PASS (user-reported), 2026-10-12.** Final
   `v1.7`-labeled FAP source
   `1f7a47b2b44e48a4792e1ddce81e3a82f7f3137b`, CI
-  [38234204272](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38234204272)
+  [38234204272](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38234204272)
   **2/2 PASS** (Momentum SDK 87.1 + Windows mock transport), checksum
   `5A7CB0EAE601EEAC8856790211C4D2831A9198C31853631E1DAF0308CE724335`
   from CI log `SHA256SUMS.txt`. User reports successful checksum-guarded

@@ -3,9 +3,9 @@
 > **Dated update — 2026-10-17:** This addendum was approved on 2026-10-15 and
 > preserved as originally authored below; items describing E11 as
 > 'ACTIVE / not published' are historical instructions at that date.
-> A compatibility-limited [E11 Custom Momentum pre-release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8-e11-custom-momentum)
+> A compatibility-limited [E11 Custom Momentum pre-release](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.8-e11-custom-momentum)
 > was subsequently published on 2026-10-17; original
-> [v1.8 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8)
+> [v1.8 Stable](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.8)
 > remains the ordinary Latest release, and the E11 integration PR #13
 > remains Draft/unmerged to main. Operator-reported UI/UART/PWM/STOP/
 > CSV/Profile evidence PASSED on one matched device. Remaining hardware
@@ -26,9 +26,9 @@
 > **Canonical roadmap:** [`../ROADMAP.md`](../ROADMAP.md), including
 > its original 2026-10-08 vision, version milestones and development rules.
 > **Current v1.8 original-scope checklist:**
-> [`V1_8_ORIGINAL_SCOPE_COMPLETION.md`](https://github.com/sehmusadsoy-ui/flipper-labmate/blob/dev/v1.9-logic-scope/docs/V1_8_ORIGINAL_SCOPE_COMPLETION.md).
+> [`V1_8_ORIGINAL_SCOPE_COMPLETION.md`](https://github.com/WorksDevLabs/flipper-labmate/blob/dev/v1.9-logic-scope/docs/V1_8_ORIGINAL_SCOPE_COMPLETION.md).
 > **Physical evidence / release gates:**
-> [`V1_8_PHYSICAL_ACCEPTANCE_GATE.md`](https://github.com/sehmusadsoy-ui/flipper-labmate/blob/dev/v1.9-logic-scope/docs/V1_8_PHYSICAL_ACCEPTANCE_GATE.md).
+> [`V1_8_PHYSICAL_ACCEPTANCE_GATE.md`](https://github.com/WorksDevLabs/flipper-labmate/blob/dev/v1.9-logic-scope/docs/V1_8_PHYSICAL_ACCEPTANCE_GATE.md).
 >
 > The prior `ROADMAP.md` and historical GitHub Stable tags, releases,
 > checksums and device results are **not edited or retroactively redefined**
@@ -72,7 +72,7 @@
 
 1. **Latest development FAP:** verify the completed patched Momentum
    + LabMate full-build CI run
-   [38645876409](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38645876409).
+   [38645876409](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38645876409).
    Inspect official artifact `11931799735`, its `SHA256SUMS.txt`,
    `PROVENANCE.txt`, exact FAP and DFU digests and
    `APPCHK`. Do **not** infer any new FAP SHA until actually read.

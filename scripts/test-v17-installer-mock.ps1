@@ -20,19 +20,19 @@ if args[:2] == ["auth", "status"]:
     sys.exit(0)
 if args and args[0] == "api" and len(args) > 1:
     endpoint = args[1]
-    if endpoint == "repos/sehmusadsoy-ui/flipper-labmate/git/ref/tags/v1.7":
+    if endpoint == "repos/WorksDevLabs/flipper-labmate/git/ref/tags/v1.7":
         print(json.dumps({"object": {"type": "commit", "sha": sha}}))
         sys.exit(0)
-    if endpoint == "repos/sehmusadsoy-ui/flipper-labmate/releases/tags/v1.7":
+    if endpoint == "repos/WorksDevLabs/flipper-labmate/releases/tags/v1.7":
         print(json.dumps({"tag_name": "v1.7", "draft": False, "prerelease": False,
               "target_commitish": sha, "assets": [{"name": "labmate.fap"},
               {"name": "SHA256SUMS.txt"}]}))
         sys.exit(0)
-    if endpoint == "repos/sehmusadsoy-ui/flipper-labmate/git/ref/tags/v1.7-rc1":
+    if endpoint == "repos/WorksDevLabs/flipper-labmate/git/ref/tags/v1.7-rc1":
         print(json.dumps({"object": {"type": "commit",
               "sha": "d55eec032e5f341f39aa7c98915ec2062995e66b"}}))
         sys.exit(0)
-    if endpoint == "repos/sehmusadsoy-ui/flipper-labmate/releases/tags/v1.7-rc1":
+    if endpoint == "repos/WorksDevLabs/flipper-labmate/releases/tags/v1.7-rc1":
         print(json.dumps({"tag_name": "v1.7-rc1", "draft": False, "prerelease": True,
               "target_commitish": "d55eec032e5f341f39aa7c98915ec2062995e66b",
               "assets": [{"name": "labmate.fap"}, {"name": "SHA256SUMS.txt"}]}))
