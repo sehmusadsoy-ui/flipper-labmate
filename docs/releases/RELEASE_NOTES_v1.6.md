@@ -1,12 +1,12 @@
 # LabMate v1.6 Stable — Release Notes
 
 **Published:** 2026-10-10  
-**Download:** [LabMate v1.6 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6)  
+**Download:** [LabMate v1.6 Stable](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.6)
 **Released source/tag:** `v1.6` at commit
 `4a890002fea0acf8d524b7c772db3bbd3e239848`  
-**Verified build:** [GitHub Actions 38007158577](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38007158577)  
+**Verified build:** [GitHub Actions 38007158577](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38007158577)
 **Assets:** `labmate.fap` and matching `SHA256SUMS.txt`  
-**Previous Stable:** [v1.5](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.5), preserved for rollback.
+**Previous Stable:** [v1.5](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.5), preserved for rollback.
 
 ## New in v1.6
 
@@ -50,7 +50,7 @@ The development FAP underwent extensive operator-reported Flipper tests:
 
 Host C regressions, source boundaries, the Momentum SDK compile,
 FAP checksum and mocked Windows installer transport passed in the
-[successful build](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38007158577).
+[successful build](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38007158577).
 
 These are operator-reported functional measurements and tests,
 not third-party laboratory calibration. Detailed evidence is in
@@ -83,7 +83,7 @@ No Momentum firmware flashing is involved. Existing
 `/ext/apps_data/labmate/` CSV and Profile data is not
 intentionally removed by installation; back up important files.
 
-The previous [v1.5 Stable release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.5)
+The previous [v1.5 Stable release](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.5)
 and its original assets remain available.
 
 The default `main` source branch tracks this stable release's

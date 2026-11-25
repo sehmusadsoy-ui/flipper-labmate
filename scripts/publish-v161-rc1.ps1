@@ -4,7 +4,7 @@
 param()
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-$repo = 'sehmusadsoy-ui/flipper-labmate'
+$repo = 'WorksDevLabs/flipper-labmate'
 $sourceSha = '9c087b64504083e5f977544bc27cd9ce37840819'
 $runId = '38056474953'
 $tag = 'v1.6.1-rc.1'

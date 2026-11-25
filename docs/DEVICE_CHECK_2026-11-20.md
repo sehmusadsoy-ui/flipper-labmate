@@ -14,7 +14,7 @@ One LabMate launch on the connected Flipper Zero showed an out-of-memory dialog.
 | Installed FAP size | 180,200 bytes |
 | Installed FAP SHA-256 | `da85b8ff1cfa726cbb794723f5bccc03f75a209c61ea8b0cad2607b0ea662a8d` |
 
-The SHA-256 was calculated from the FAP read back over USB. It matches the E11 native CI artifact built at [`156c0b670d9b996eff34668d0fc144c5d2c24e2d`](https://github.com/sehmusadsoy-ui/flipper-labmate/tree/156c0b670d9b996eff34668d0fc144c5d2c24e2d). The public `v2.0-rc.1` release ships a separate 179,380-byte FAP. [Native CI job and build attestation](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/43245154786/job/131275720319) · [Public RC1 release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v2.0-rc.1)
+The SHA-256 was calculated from the FAP read back over USB. It matches the E11 native CI artifact built at [`156c0b670d9b996eff34668d0fc144c5d2c24e2d`](https://github.com/WorksDevLabs/flipper-labmate/tree/156c0b670d9b996eff34668d0fc144c5d2c24e2d). The public `v2.0-rc.1` release ships a separate 179,380-byte FAP. [Native CI job and build attestation](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/43245154786/job/131275720319) · [Public RC1 release](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v2.0-rc.1)
 
 ## Startup and menu check
 
@@ -26,4 +26,4 @@ The SHA-256 was calculated from the FAP read back over USB. It matches the E11 n
 | After the failed launch, before the restart | 92,552 bytes | 73,760 bytes |
 | After the restart, before the successful launch | 139,440 bytes | 139,440 bytes |
 
-These are USB-connected snapshots taken outside the failing allocation. The observed error and recovery are relevant to [issue #31](https://github.com/sehmusadsoy-ui/flipper-labmate/issues/31). The failure's root cause and long-idle startup stability still need verification. Electrical measurements and loopback validation are pending. The five interface captures came from the device's 128 × 64 display and are shown at 3× pixel scale.
+These are USB-connected snapshots taken outside the failing allocation. The observed error and recovery are relevant to [issue #31](https://github.com/WorksDevLabs/flipper-labmate/issues/31). The failure's root cause and long-idle startup stability still need verification. Electrical measurements and loopback validation are pending. The five interface captures came from the device's 128 × 64 display and are shown at 3× pixel scale.

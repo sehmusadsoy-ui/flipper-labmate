@@ -2,7 +2,7 @@
 
 **Branch:** `v1.6-dev` (forked from the published v1.5 Stable `main` baseline).  
 **Status:** Work in progress; **not Stable**, no device validation claimed.  
-**Release baseline:** [LabMate v1.5 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.5).  
+**Release baseline:** [LabMate v1.5 Stable](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.5).
 **Main rule:** preserve measurement and logger behavior until a dedicated regression test passes.
 
 ## Observed architecture at kickoff
@@ -225,7 +225,7 @@ Do not pull IRQ handling or storage writes into the render module.
 ## Most recent development verification
 
 Commit `fd42a8c` (not a Stable release) completed the CI pipeline at
-[Actions run 37991404581](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/37991404581):
+[Actions run 37991404581](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/37991404581):
 - Architectural boundary validation, including IRQ pin tracking.
 - Host-native C pin/owner/flag mismatch tests.
 - Momentum development SDK multi-file FAP compilation.

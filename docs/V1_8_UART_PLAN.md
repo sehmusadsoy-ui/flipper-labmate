@@ -158,7 +158,7 @@ acceptance gates.
 ### Checkpoint A — U1–U4: 4/4 PASS (operator report, 2026-10-13)
 
 The operator completed the first on-device checks using the exact
-development candidate from [CI run 38305108729](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38305108729),
+development candidate from [CI run 38305108729](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38305108729),
 code commit `e5708831573d16140e0c71387d78ef4875b7b0bf`,
 FAP SHA256
 `466115746C4420903D21CE3CABA6A0532C799F1117CAC3406D9FF90F015A56BE`.
@@ -234,7 +234,7 @@ the already PASS 115200 ST2, not forced only to trigger DROP.
   of RUN-time baud change, STOP-only reset of old counters/display,
   preservation of `AT`, and new-baud RX success with E0 D0.
 - **CI VERIFIED PASS:** GitHub Actions run
-  [38434053595](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38434053595)
+  [38434053595](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38434053595)
   completed both the Momentum development FAP build (including host UART
   assertions) and Windows installer-mock safety job **success**; the
   stable publishing job correctly **skipped**. Run artifact

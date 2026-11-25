@@ -47,7 +47,7 @@ The drawing path must never write SD or configure a peripheral.
 
 ## Real Windows/Flipper USB install: PASS (operator logs, 2026-10-12)
 
-- Tested **exact development artifact** from CI [38294967172](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38294967172), source commit `f9bac4d30330428792bafee6df8732af46ddb273`.
+- Tested **exact development artifact** from CI [38294967172](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38294967172), source commit `f9bac4d30330428792bafee6df8732af46ddb273`.
 - Artifact SHA256 was verified both by `Get-FileHash` and installer `-VerifyOnly`:
   `08B830A6D7FB07D065663E2BEDEBA65E389801CED5A018F6CBF54871D446B2D0`.
 - `install-labmate.ps1 -Port COM7` verified the same FAP, transferred it to
@@ -146,7 +146,7 @@ a guarantee of long-duration/SD-failure resilience.
 
 **Merge verification:** PR #5 squash-merged to `main` as
 `737bf6470dbf3d722d2fe8c5b4b6ee78a10b9821`.
-Post-merge [CI 38298760383](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38298760383)
+Post-merge [CI 38298760383](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38298760383)
 passed 2/2; no release job ran. Official v1.7 Stable SHA256 remained
 `A0B305E5FD8D71C85C51480EE06A8B7E5EBD5BEE0E82935B0ED3B7E74E7EBCEA`.
 No v1.8 Stable release is authorized by these checks.

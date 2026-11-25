@@ -35,7 +35,7 @@ releases and historical data are retained.
   The `v1.8` tag should point to this **tested source commit**;
   historical acceptance documentation merged later is not part of
   the binary and should not be interpreted as a different FAP build.
-- **GitHub Actions CI:** [run 38546662091](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38546662091).
+- **GitHub Actions CI:** [run 38546662091](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38546662091).
   Momentum SDK build, portable/native regressions, structural checks
   and Windows installer mock **PASS**.
 - **Release asset:** `labmate.fap` from Actions artifact `labmate`
@@ -92,7 +92,7 @@ releases and historical data are retained.
 ## Installing / upgrading
 
 Download **both** `labmate.fap` and `SHA256SUMS.txt` from the
-[`v1.8` GitHub Release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8)
+[`v1.8` GitHub Release](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.8)
 *once that release has been published*. Verify the SHA256 above,
 exit any running LabMate session on Flipper, and install **only**
 to `/ext/apps/Tools/labmate.fap`. The Momentum installer
@@ -102,7 +102,7 @@ does not flash or modify Flipper firmware, stored Profiles or CSV logs.
 If the running LabMate cannot be closed automatically, exit it
 manually and rerun the same checksum-verified installer.
 
-Previous verified [v1.7 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7)
+Previous verified [v1.7 Stable](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.7)
 remains available for rollback. No further preview/demo application
 is required.
 

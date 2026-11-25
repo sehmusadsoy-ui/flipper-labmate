@@ -350,7 +350,7 @@ hardware stays STOP. A source guard prevents reverting to the
 reset-on-every-entry behavior.
 
 Commit `ae396a588225f700d93a0940db7d4d9141dedfb8` built
-successfully on [CI run 38318186745](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38318186745):
+successfully on [CI run 38318186745](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38318186745):
 Momentum SDK API 87.1, native checks, Linux candidate build, and
 Windows installer mock **2/2 jobs PASS**. Candidate `labmate.fap`
 SHA256: `7bfdcb21c344b76bc3dbebfca7c979870b7bbfba28a34c9fe7c63e6ec5e76a20`.
@@ -486,7 +486,7 @@ pseudo-code copy. The fixture models:
 - Explicit TX, idempotent STOP, baud preservation on re-entry,
   reset of session counters, and BAUD unsupported clean exit.
 
-**GitHub CI PASS:** [run 38326055111](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38326055111)
+**GitHub CI PASS:** [run 38326055111](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38326055111)
 for code commit `07e9464a4c502b21e3fb7dadb92f7c10d21ca5c5`.
 The native host test printed:
 `UART host HAL: ownership BUSY, RX queue DROP, ERR, STOP, re-entry PASS`.
@@ -613,7 +613,7 @@ Consider whether a dedicated hardware stress rig is warranted;
 do not repeatedly flash or overload the user's working peer just
 to force D>0.
 
-Host-only [CI run 38326055111](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38326055111)
+Host-only [CI run 38326055111](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38326055111)
 tested the *Flipper* UART firmware with HAL shims, not this Arduino sketch.
 
 
@@ -645,7 +645,7 @@ a separate unrelated firmware service while simultaneously running
 LabMate. On-device 2/2 PASS was later operator-reported; see the current checkpoint below.
 
 **Standalone probe CI PASS** (2026-10-13):
-[run 38328444425](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38328444425)
+[run 38328444425](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38328444425)
 built the independent diagnostic `labmate_busydiag.fap` with the
 Momentum development SDK from code commit
 `213f682eb0e3c1cd0e60df4259690d0596d8aa04`.

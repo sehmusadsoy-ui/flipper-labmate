@@ -4,7 +4,7 @@
 param([string]$PackageDir = (Join-Path $HOME 'LabMate-v1.6.1-Stable'))
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-$repo = 'sehmusadsoy-ui/flipper-labmate'
+$repo = 'WorksDevLabs/flipper-labmate'
 $tag = 'v1.6.1'
 $source = 'bc63271afe572c393c1febd0f0ef7039404bc937'
 $runId = '38057529062'

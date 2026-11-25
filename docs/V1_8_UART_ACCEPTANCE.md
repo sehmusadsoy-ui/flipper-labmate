@@ -12,7 +12,7 @@
 - ST2 at 115200: two bounded, explicitly triggered ESP32 stress events; cumulative R = **20569** then **41281**, final D = **0**, E = **0**, responsive GUI and STOP/BACK; **PASS for bounded sustained receive**, **not for physical DROP**.
 - Controlled USART resource ownership: standalone `labmate_busydiag.fap` real-Flipper-HAL **BUSY REFUSAL PASS** and **RESTART/STOP PASS**, operator-reported. The test reserves the USART handle within the standalone diagnostic, **not** by an unrelated concurrent service.
 - SBR1 same-screen STOP → baud change → re-RUN recovery **operator-reported functional PASS**. The operator replied **"hepsi passs"** for the prescribed sequence without supplying numeric post-test R/D/E snapshots; do **not** invent numeric SBR1 results.
-- Corrected UART source `db5392119f84f48ca7391ce8dbab11895d82437c`, final host-test source `12977d2dd4dfa661a790e3d8ce9dc5d73258d8e4`. GitHub Actions [38434053595](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38434053595) **build PASS + Windows installer safety PASS**, publishing job SKIP. Exact user-installed FAP SHA256 `f3ce6438280524692908212c0b3c8b4c9a830b7afc467b503aab667d2e7f12d2`; USB port COM7, 9/9 chunks transferred, app launched. Following this successful source CI run, only documentation changed on the PR branch before acceptance.
+- Corrected UART source `db5392119f84f48ca7391ce8dbab11895d82437c`, final host-test source `12977d2dd4dfa661a790e3d8ce9dc5d73258d8e4`. GitHub Actions [38434053595](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38434053595) **build PASS + Windows installer safety PASS**, publishing job SKIP. Exact user-installed FAP SHA256 `f3ce6438280524692908212c0b3c8b4c9a830b7afc467b503aab667d2e7f12d2`; USB port COM7, 9/9 chunks transferred, app launched. Following this successful source CI run, only documentation changed on the PR branch before acceptance.
 
 ## Explicitly accepted limitations, **not hardware PASS**
 
@@ -32,6 +32,6 @@
 
 ## Actual integration result (2026-10-13)
 
-- [PR #7](https://github.com/sehmusadsoy-ui/flipper-labmate/pull/7) was marked ready and merged into development `main` with merge commit `6dbea4c9c6909c111b6f6b7600c548347dc13b14` after the gates above were reviewed.
+- [PR #7](https://github.com/WorksDevLabs/flipper-labmate/pull/7) was marked ready and merged into development `main` with merge commit `6dbea4c9c6909c111b6f6b7600c548347dc13b14` after the gates above were reviewed.
 - The physical queue DROP condition `D>0` remains **unverified**, not upgraded to PASS by merge. SBR1 and external UART functional results remain user-reported.
 - Development then moved to an isolated **I²C Explorer** Draft PR #8, with no v1.8 Stable/RC publication or change to the existing v1.7 Stable release.

@@ -2,8 +2,8 @@
 
 **Status:** Ready for the **first device test**; NOT tested on hardware yet.  
 **Candidate source commit:** `a69c231e631b446db33c28c36f7aaf7ea1d45725`  
-**Momentum dev SDK CI:** [successful build and artifact](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/37992919485)  
-**Device currently on:** [v1.5 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.5) (do not claim v1.6 installed).  
+**Momentum dev SDK CI:** [successful build and artifact](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/37992919485)
+**Device currently on:** [v1.5 Stable](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.5) (do not claim v1.6 installed).
 **Test order:** smoke test **now**, before wiring up profile persistence to microSD.
 
 ## Why test now?
@@ -18,7 +18,7 @@ harder. This gate is deliberately inserted **before** profile file I/O.
 ## Preparation and safe install
 
 1. Keep the currently working v1.5 Stable release link available for rollback:
-   https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.5
+   https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.5
 2. Open the successful Actions run above, download the artifact named
    `labmate-v1.6-dev-fap`, and **extract the ZIP**. It includes
    `labmate-v1.6-dev.fap` and `SHA256SUMS.txt`. Signing in to GitHub may
@@ -26,7 +26,7 @@ harder. This gate is deliberately inserted **before** profile file I/O.
    authenticates the extracted file against the build archive, not the
    identity of the uploader; use the trusted repository/run.
 3. Inspect the pinned source of `scripts/install-labmate.ps1` at
-   https://github.com/sehmusadsoy-ui/flipper-labmate/blob/a69c231e631b446db33c28c36f7aaf7ea1d45725/scripts/install-labmate.ps1
+   https://github.com/WorksDevLabs/flipper-labmate/blob/a69c231e631b446db33c28c36f7aaf7ea1d45725/scripts/install-labmate.ps1
    and run it on Windows from a matching local `v1.6-dev` checkout, for
    example:
 
@@ -125,7 +125,7 @@ that any device test took place.
 ## First physical test report — user-reported (2026-10-10)
 
 **Firmware candidate under test:** development FAP from CI
-[37992919485](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/37992919485),
+[37992919485](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/37992919485),
 code SHA `a69c231`; `v1.6d` was installed and launched on the Flipper via
 Momentum runfap.py, COM7. This evidence was supplied by the device operator,
 not collected by GitHub CI or by the development assistant directly.
@@ -265,7 +265,7 @@ connections. No manual ZIP downloads: use the PowerShell GitHub installer.
 ## Third physical retest: HIGH PB3 stability (user-reported, 2026-10-10)
 
 **FAP build:** GitHub Actions
-[37999740904](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/37999740904),
+[37999740904](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/37999740904),
 source SHA `f2edde8dbd31022daa4ca182e48855fac2779422`.
 This is device-operator evidence, not an independent oscilloscope
 calibration or a GitHub CI hardware test.

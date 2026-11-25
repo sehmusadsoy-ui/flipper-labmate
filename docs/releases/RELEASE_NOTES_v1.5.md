@@ -77,5 +77,5 @@ GitHub Actions builds the release from the exact commit tagged `v1.5`,
 uploads the compiled FAP and its SHA-256 checksum, and records the
 Momentum SDK API version alongside the release artifact.
 
-The earlier [v1.4 Stable release](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.4)
+The earlier [v1.4 Stable release](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.4)
 is preserved as a fallback.

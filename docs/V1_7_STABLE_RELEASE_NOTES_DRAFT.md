@@ -46,14 +46,14 @@ firmware. The final release asset will replace only
 
 ## Verification, provenance and release status
 
-- **RC1 published and tested:** [v1.7 RC1](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.7-rc1)
+- **RC1 published and tested:** [v1.7 RC1](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.7-rc1)
   from `d55eec032e5f341f39aa7c98915ec2062995e66b`. Profiles UX
   fix on-device tests **16/16 PASS**, and tagged RC1 FAP matched that
   tested artifact byte-for-byte.
 - **Refactored Stable Candidate source:** `bdb1de1058961b9d5285944c3d41e16c19183478`;
   FAP SHA256 `94883B517D526EAA0F64E2AEAC89F89D181F85FD4F3ABB9056F3EEC2B68123E0`.
   Momentum FAP + Windows mock installer CI
-  [38191036835](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38191036835) **2/2 PASS**.
+  [38191036835](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38191036835) **2/2 PASS**.
 - **On-device regression on the exact refactored candidate FAP, user-reported,
   2026-10-12: 36/36 PASS.**
   7A launch/version/STOP/S1 persistence 3/3;
@@ -65,7 +65,7 @@ firmware. The final release asset will replace only
   cleanup and persistence 6/6. Only 7B timings were screenshot-reviewed;
   the other checks are user reports.
 - **Final stable-label FAP source commit:** `1f7a47b2b44e48a4792e1ddce81e3a82f7f3137b`.
-  Final build [CI 38234204272](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38234204272)
+  Final build [CI 38234204272](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38234204272)
   **2/2 PASS**, Momentum SDK 87.1, plus Windows mock installer.
 - **Final stable-label FAP SHA256:** `5A7CB0EAE601EEAC8856790211C4D2831A9198C31853631E1DAF0308CE724335`
   from final CI logs; `SHA256SUMS.txt` created and checked in CI.

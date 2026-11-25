@@ -3,7 +3,7 @@
 param([string]$OutputDirectory = (Join-Path $HOME 'LabMate-v1.6.1-Stable'))
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-$repo = 'sehmusadsoy-ui/flipper-labmate'
+$repo = 'WorksDevLabs/flipper-labmate'
 $sourceSha = 'bc63271afe572c393c1febd0f0ef7039404bc937'
 $runId = '38057529062'
 $tag = 'v1.6.1'
@@ -49,7 +49,7 @@ For Momentum Firmware / Flipper Zero.
 - Modular logger codec/storage, read-only Log History and backward-compatible CSV.
 - Centralized capture ownership, EXTI cleanup and protected TIM1/PA7 background PWM.
 - Grouped navigation and Profiles save/load persistence.
-- INFO screen displays SauronLAB, Sehmus, repository address and 3.3V GPIO warning.
+- INFO screen displays WorksDevLabs, repository address and 3.3V GPIO warning.
 
 ## Verification
 - Firmware source: bc63271afe572c393c1febd0f0ef7039404bc937

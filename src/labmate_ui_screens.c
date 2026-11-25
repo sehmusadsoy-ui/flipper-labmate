@@ -176,13 +176,13 @@ void draw_about(Canvas* canvas, LabMateApp* app) {
     canvas_set_font(canvas, FontSecondary);
     if(page == 0U) {
         canvas_draw_str(canvas, 3, 23, "LabMate " LABMATE_VERSION_TEXT);
-        canvas_draw_str(canvas, 3, 33, "SauronLAB / Sehmus");
+        canvas_draw_str(canvas, 3, 33, "WorksDevLabs");
         canvas_draw_str(canvas, 3, 43, "12 instrument guides");
         canvas_draw_str(canvas, 3, 51, "3.3V GPIO ONLY");
     } else if(page == 1U) {
         canvas_draw_str(canvas, 3, 23, "Source / releases:");
         canvas_draw_str(canvas, 3, 33, "github.com/");
-        canvas_draw_str(canvas, 3, 43, "sehmusadsoy-ui/");
+        canvas_draw_str(canvas, 3, 43, "WorksDevLabs/");
         canvas_draw_str(canvas, 3, 51, "flipper-labmate");
     } else {
         const LabMateHelpPage* help = &labmate_help[page - 2U];

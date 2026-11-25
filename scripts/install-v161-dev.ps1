@@ -8,7 +8,7 @@ param(
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-$repo = 'sehmusadsoy-ui/flipper-labmate'
+$repo = 'WorksDevLabs/flipper-labmate'
 $target = '/ext/apps/Tools/labmate.fap'
 $tempDir = $null
 

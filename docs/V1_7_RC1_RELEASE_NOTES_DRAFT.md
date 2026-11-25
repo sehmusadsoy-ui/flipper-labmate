@@ -99,7 +99,7 @@ or CI test does not replace physical validation.
 `b5bbd31804d3bed068aaf425e0b408fa7962ddbc`
 
 **Latest corresponding development CI:**
-[GitHub Actions 38185793925](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38185793925)
+[GitHub Actions 38185793925](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38185793925)
 — 2/2 jobs PASS (Momentum FAP, layout/static/host tests, file
 SHA256 creation and verification, and a mocked Windows installer).
 Artifact: `labmate` (FAP + `SHA256SUMS.txt`).
@@ -124,7 +124,7 @@ SAVE/DELETE while PWM was still running.
 
 A focused fix was implemented separately on `v1.7-profiles-ux-fix`:
 source `f6bebbe996d22cbafe49097abde336911e5dc8c3`,
-[CI run 38188798973](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38188798973)
+[CI run 38188798973](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38188798973)
 2/2 PASS, FAP SHA256
 `ED2E91A02AB0F720D6B48EAC13D505D37570FB3A4A1F8E8A76D59E1B79FE14AA`.
 Its user-confirmed Tests 6A (5/5), 6B (5/5), and 6C (6/6) all PASS:
@@ -184,7 +184,7 @@ checksums are not valid for a newly compiled integrated artifact.
 - Branch: `v1.7-rc1` (no public Release or tag).
 - First RC1-labeled source commit:
   `55edee5890c2d62ea229f9271c97c6260b067b5a`.
-- [RC1-specific CI run 38186623651](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38186623651): **2/2 PASS** — Momentum FAP, host/layout/security
+- [RC1-specific CI run 38186623651](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38186623651): **2/2 PASS** — Momentum FAP, host/layout/security
   checks, SHA256 file creation and check, Windows mocked installer.
 - GitHub Actions artifact `labmate` (id `11719294967`) contains
   `labmate.fap` and `SHA256SUMS.txt`. The artifact ZIP digest is

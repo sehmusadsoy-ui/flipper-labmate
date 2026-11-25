@@ -1,7 +1,7 @@
 # LabMate v1.8 — Single-App Stable Candidate Acceptance
 
 **Decision: 2026-10-14 — operator-authorized scope deferral.**
-**Status: RELEASED — [v1.8 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8) published 2026-10-14. RC1 15/15 + exact final FAP 4/4 operator-reported physical PASS; compiled binary, checksum, USB install and published release assets VERIFIED.**
+**Status: RELEASED — [v1.8 Stable](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.8) published 2026-10-14. RC1 15/15 + exact final FAP 4/4 operator-reported physical PASS; compiled binary, checksum, USB install and published release assets VERIFIED.**
 This is the *actual* `labmate.fap` built from `src/*.c`, not a UI demo
 or separate tool application. All planned release gates were satisfied
 before GitHub Stable publication. The previously published v1.7 Stable
@@ -52,7 +52,7 @@ advancement to v1.9 before actual v1.8 Stable publication.
 
 ## Candidate gates
 
-- [x] **C1 PASS — exact source** `d2e3fe8b41599289464db077f1d4a9d26dc442e7` at [run 38482399817](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38482399817), compile job `115587842090` and Windows installer mock job `115587842270` both successful; Stable publishing job intentionally SKIPPED. SDK compiled the real `labmate.fap`, all bundled host regressions and boundary guards passed. Artifact `labmate` ID `11858875740`, source SHA matches run. CI's explicit **FAP file SHA256** `3d33cca37e9c59927e42f101b7cea118677e457eaefae1306aab741999c97d63`; the artifact ZIP digest `5584e52bf3287402ce3c929076f4c2b6340fec0939365103bf320f8a948bba10` is not the FAP hash. No physical USB/Flipper results claimed yet.
+- [x] **C1 PASS — exact source** `d2e3fe8b41599289464db077f1d4a9d26dc442e7` at [run 38482399817](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38482399817), compile job `115587842090` and Windows installer mock job `115587842270` both successful; Stable publishing job intentionally SKIPPED. SDK compiled the real `labmate.fap`, all bundled host regressions and boundary guards passed. Artifact `labmate` ID `11858875740`, source SHA matches run. CI's explicit **FAP file SHA256** `3d33cca37e9c59927e42f101b7cea118677e457eaefae1306aab741999c97d63`; the artifact ZIP digest `5584e52bf3287402ce3c929076f4c2b6340fec0939365103bf320f8a948bba10` is not the FAP hash. No physical USB/Flipper results claimed yet.
 - [x] **C2 PASS — final FAP SHA256 and one existing LabMate target (operator terminal log, 2026-10-14 13:06 local).** User downloaded artifact `labmate` from run `38546662091`; local SHA256 matched `119c44bb854030a73a60fa205d38770bf77f048bb166ab379a03135c1de5f3b0`. First USB attempt at 13:04 showed `100%, chunk 9 of 9`, but stopped with exit code 4 when the already-open LabMate refused `loader close` (must close manually). Following manual exit, the second installer invocation at **13:06** re-verified the exact SHA256, used COM7, targeted only `/ext/apps/Tools/labmate.fap`, printed `Launching app: /ext/apps/Tools/labmate.fap` and `SUCCESS: runfap.py exited 0 and requested app launch.` with process exit code **0**. The device's post-install app contents/label and tool behavior **have not yet been physically rechecked for final v1.8**; installer success is not a substitute for C6 final-device smoke. No duplicate FAP install destination or data deletion was requested.
 - [x] **C3 PASS — user-reported on-device Test 18-R1, 6/6**, 2026-10-14:
   R1 app opens + `v1.8RC1` badge; R2 COMM/UART present; R3 UART screen
@@ -83,7 +83,7 @@ advancement to v1.9 before actual v1.8 Stable publication.
 - [x] **C6 PHYSICAL ACCEPTANCE PASS — FINAL `v1.8`-LABEL FAP SDK/host CI,
   COM7 checksum-verified install/launch and real Flipper 18-FINAL 4/4 PASS.**
   At source commit `02b05639364d6dd71f5eb70456eca379c59218cb`,
-  GitHub Actions [38546662091](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38546662091)
+  GitHub Actions [38546662091](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38546662091)
   compiled the actual single `labmate.fap` with Momentum SDK;
   compile job `115794345536` and Windows installer mock job
   `115794345068` PASSED; v1.7 publishing was intentionally SKIPPED.
@@ -173,7 +173,7 @@ identical checksum-verified binary was published as Stable.
 ## Final-labeled FAP handoff (completed, v1.8 Stable published)
 
 - **Actual candidate artifact:** GitHub Actions run
-  [38546662091](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38546662091),
+  [38546662091](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38546662091),
   artifact name `labmate`, `labmate.fap` and `SHA256SUMS.txt`;
   source commit `02b05639364d6dd71f5eb70456eca379c59218cb`.
 - **Exact verified FAP SHA256:**
@@ -232,14 +232,14 @@ v1.8 publication is now VERIFIED and did not precede physical acceptance.
 
 ## GitHub v1.8 Stable — publication verified 2026-10-14
 
-- **Release:** [LabMate v1.8 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.8)
+- **Release:** [LabMate v1.8 Stable](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.8)
   is public, `draft=false`, `prerelease=false` and the latest Release.
 - **Tag immutability:** `v1.8` references exact tested source commit
   `02b05639364d6dd71f5eb70456eca379c59218cb`.
   The PR #11 merge changed only documentation compared to that compiled
-  source; post-merge [CI 38548200859](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38548200859)
+  source; post-merge [CI 38548200859](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38548200859)
   independently produced the **same** `labmate.fap` SHA256.
-- **Publishing CI:** [one-time run 38548634392](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38548634392)
+- **Publishing CI:** [one-time run 38548634392](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38548634392)
   PASS, including source/CI guard, selected artifact download,
   SHA256 verification, publication, GitHub tag checks and an actual
   second download/verification of the published release assets.

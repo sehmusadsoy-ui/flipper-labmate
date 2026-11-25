@@ -92,4 +92,4 @@ frequency calibration or verification against an external standard.**
 
 If a test fails, continue on `v1.5-dev`; do not tag or publish Stable.
 
-**Current published release:** [LabMate v1.4 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.4).
+**Current published release:** [LabMate v1.4 Stable](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.4).

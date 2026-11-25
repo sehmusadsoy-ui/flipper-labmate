@@ -27,7 +27,7 @@ Existing v1.6 tag/release and v1.5 Stable are unchanged.
 ## Step 1 — real Flipper regression: PASS (operator report)
 
 The operator installed exact CI FAP from run
-[38045960606](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38045960606)
+[38045960606](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38045960606)
 (commit `c593a3322f1ca6505d2b02d0305e597998b595b1`)
 via the checksum-checked PowerShell installer and confirmed all seven
 smoke/compatibility tests PASS:
@@ -58,7 +58,7 @@ or intentional corrupt/full-microSD fault injection.
 ## Step 2 — real Flipper regression: PASS (operator report)
 
 After GitHub Actions build
-[38046508627](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38046508627)
+[38046508627](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38046508627)
 reported SUCCESS, the operator installed its checksum-verified
 `labmate.fap` over COM7 for exact commit
 `a89729141ea89e767b024de9cfe8c3d1a9adb517`.
@@ -92,7 +92,7 @@ prove all microSD error-handling or power-loss cases.
 ## Step 3 — real Flipper regression: PASS (operator report)
 
 For exact commit `e9ad287e332e8e5b680aad37a4ae78cb108d6819`
-(GitHub Actions run [38046956822](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38046956822)),
+(GitHub Actions run [38046956822](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38046956822)),
 the operator installed the SHA256-verified FAP over COM7 and reported
 all seven real-device checks **PASS**:
 
@@ -126,7 +126,7 @@ Only known 3.3 V GPIO-compatible signals are permitted.
 
 The operator installed the checksum-verified FAP for exact commit
 `62194ae2910cfda3d683d6c63e168a83881ca94c` from GitHub Actions
-[38049466166](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38049466166)
+[38049466166](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38049466166)
 over COM7. Installation reported SHA256 OK and successful app launch request.
 The operator subsequently reported all seven physical tests **PASS**:
 
@@ -155,7 +155,7 @@ Do not modify v1.6 Stable, main or previously published release assets.
 ## Step 5 — real Flipper regression: PASS (operator report)
 
 For exact commit `1e42b6a8c7f97473476f1f95f9d0c1fb70c53f55`,
-GitHub Actions [38050554917](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38050554917)
+GitHub Actions [38050554917](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38050554917)
 completed successfully. The operator reported nine real-device checks **PASS**:
 
 1. LOW PC1 frequency readings at 10 Hz.
@@ -189,7 +189,7 @@ Keep stable v1.6 and all existing CSV/Profile data unchanged.
 ## Step 6.1 — real Flipper regression: PASS (operator report)
 
 For exact commit `948ed0a1b0ff5f87dc25fe1320bf58da639bc802`,
-GitHub Actions [38051780686](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38051780686)
+GitHub Actions [38051780686](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38051780686)
 completed SUCCESS. The operator installed the checksum-verified FAP over COM7
 and reported **9/9 PASS**: LOW-to-HIGH, HIGH-to-Pulse and Pulse-to-LOW
 transitions without freezes; PA7 reserved while PWM RUN and selectable after
@@ -209,7 +209,7 @@ Momentum CI and a separate on-device regression before acceptance.
 
 The operator installed exact commit `8dd53b43437f7c55d23424eae47241b3957980dd`
 from successful GitHub Actions run
-[38052489517](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38052489517).
+[38052489517](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38052489517).
 PowerShell verified SHA256 and reported a successful single-FAP update via COM7.
 The operator reported **10/10 PASS** for these real-device checks:
 
@@ -270,7 +270,7 @@ ordering. Require Momentum CI PASS and a separate on-device regression.
 ## Step 6.4 — real Flipper regression: PASS (operator report)
 
 For exact commit `b7d4e2b4a29dd63b64803d9f477e579a37f44cd6`,
-GitHub Actions [38055872768](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38055872768)
+GitHub Actions [38055872768](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38055872768)
 completed successfully. The operator reported **10/10 PASS**:
 
 1. LOW PC1 -> Pulse PC1 -> LOW PC1 transition.
@@ -298,7 +298,7 @@ Require CI success and a new physical regression check before acceptance.
 ## Step 6.5 — real Flipper regression: PASS (operator report)
 
 For exact commit `ddf7367070cf06f2d625991d1b0f3f8546da62e8`,
-GitHub Actions [38056187365](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38056187365)
+GitHub Actions [38056187365](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38056187365)
 completed SUCCESS. The operator installed the build on the device and
 reported **5/5 PASS**:
 
@@ -344,7 +344,7 @@ release decision.
 ## Gate A — completed device integration checks: PASS (operator report)
 
 Exact firmware commit `9c087b64504083e5f977544bc27cd9ce37840819`
-passed GitHub Actions [38056474953](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38056474953).
+passed GitHub Actions [38056474953](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38056474953).
 The operator reported **8/8 PASS** in the combined device session:
 
 1. MEASURE / OUTPUT / RECORDS / INFO grouped menus; all tools accessible.
@@ -381,7 +381,7 @@ unchanged pending a separately authorized release decision.
 ## Gate B — release-candidate physical validation: PASS (operator report)
 
 **Frozen source commit:** `9c087b64504083e5f977544bc27cd9ce37840819`.
-GitHub Actions [38056474953](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38056474953)
+GitHub Actions [38056474953](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38056474953)
 completed SUCCESS for this exact firmware commit. The operator reports
 **6/6 PASS** in the final device acceptance session:
 
@@ -416,12 +416,12 @@ explicit separate release instruction.
 
 ## v1.6.1 RC1 — published and independently checked (2026-10-10)
 
-Pre-release [v1.6.1-rc.1](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1-rc.1)
+Pre-release [v1.6.1-rc.1](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.6.1-rc.1)
 is published (not a draft), with assets `labmate.fap` and
 `SHA256SUMS.txt`. The GitHub tag resolves to the frozen, physically
 tested firmware commit `9c087b64504083e5f977544bc27cd9ce37840819`.
 The operator's publishing script verified CI SUCCESS and the artifact
-SHA256 before upload. The previous [v1.6 Stable](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6)
+SHA256 before upload. The previous [v1.6 Stable](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.6)
 remains published as a non-prerelease. RC1 is **not** promoted to Stable.
 
 ## Post-RC1 cosmetic request (not in published RC1)
@@ -455,7 +455,7 @@ matrix for a broad UI overhaul.
 ## Post-RC1 INFO screen — real Flipper regression: PASS (operator report)
 
 For exact code commit `bc63271afe572c393c1febd0f0ef7039404bc937`,
-GitHub Actions [38057529062](https://github.com/sehmusadsoy-ui/flipper-labmate/actions/runs/38057529062)
+GitHub Actions [38057529062](https://github.com/WorksDevLabs/flipper-labmate/actions/runs/38057529062)
 completed SUCCESS. Operator reported **3/3 PASS**:
 
 1. SauronLAB, Sehmus and repository GitHub address are readable on INFO.
@@ -472,7 +472,7 @@ approved release strategy is selected.
 
 ## v1.6.1 Stable — published and checked (2026-10-10)
 
-GitHub Stable release [v1.6.1](https://github.com/sehmusadsoy-ui/flipper-labmate/releases/tag/v1.6.1)
+GitHub Stable release [v1.6.1](https://github.com/WorksDevLabs/flipper-labmate/releases/tag/v1.6.1)
 exists and is published (not prerelease/draft). Tag resolves to physical INFO-tested
 firmware source `bc63271afe572c393c1febd0f0ef7039404bc937`.
 Assets: `labmate.fap` (38,232 bytes) and `SHA256SUMS.txt`.
