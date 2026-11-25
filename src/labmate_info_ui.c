@@ -316,7 +316,7 @@ void labmate_info_draw_project_motion(
     (void)info_line_shifted(canvas, 44U, 36U, 83U, "Scan on phone", slide_px);
     (void)info_line_shifted(canvas, 44U, 45U, 83U, "flipper-labmate", slide_px);
     (void)info_line_shifted(canvas, 44U, 54U, 83U, "github.com/", slide_px);
-    (void)info_line_shifted(canvas, 44U, 63U, 83U, "sehmusadsoy-ui", slide_px);
+    (void)info_line_shifted(canvas, 44U, 63U, 83U, "WorksDevLabs", slide_px);
     guide_dither_fade(canvas, fade_strength);
 }
 
